@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --border: #e2e6ec;
+  --text: #121826;
+  --muted: #5b6474;
+  /* Contrast floor (WCAG AA, 4.5:1 for small text) is pinned by tests/unit/shell.test.ts:
+     --faint and --accent on every light surface and soft tint they are used on. */
+  --faint: #646d7d;
+  --accent: #1d58f0;
+  --accent-soft: #e8efff;
+  --bad: #c2312b;
+  --bad-soft: #fdecea;
+  --warn: #a35d00;
+  --warn-soft: #fff4e0;
+  --good: #137a4b;
+  --good-soft: #e6f5ed;
+  --shell: #0f1b2d;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-shell: var(--shell);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}

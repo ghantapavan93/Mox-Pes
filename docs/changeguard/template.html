@@ -1,0 +1,379 @@
+<title>ChangeGuard Case File</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A Revenue Signal extension by Pavankalyan Ghanta: a real 2026 Google platform change, a hypothetical pipeline failure, and a budget decision the system refuses to trust until the records are repaired. Synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 90-second docket. Thesis + decision panel, then change → symptom → evidence →
+   gate → repair → proof, read top to bottom. Same visual family as the Revenue Signal case file. */
+:root {
+  --paper: #eef2f0;
+  --sheet: #fbfcfb;
+  --ink: #14211d;
+  --ink-2: #44534e;
+  --ink-3: #6d7c77;
+  --rule: #d3dcd8;
+  --accent: #0d6a5a;
+  --held: #a8650f;
+  --held-soft: #f6e6cc;
+  --other: #b9c6c1;
+  --bad: #a83a2a;
+  --bad-soft: #f7e3df;
+  --good-soft: #d5ebe5;
+  --code-bg: #152420;
+  --code-fg: #d9e6e1;
+  --code-dim: #7f948d;
+  --code-key: #8fd3c1;
+  --code-hit: #f0b25a;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1412; --sheet: #131c19; --ink: #e2ebe7; --ink-2: #aebdb7; --ink-3: #82938d; --rule: #26332f;
+    --accent: #52c3a7; --held: #e2a64e; --held-soft: #3a2a12; --other: #3b4a45; --bad: #e57a66; --bad-soft: #3a1c17;
+    --good-soft: #163a32; --code-bg: #0a100e; --code-fg: #d9e6e1; --code-dim: #6f847d; --code-key: #8fd3c1; --code-hit: #f0b25a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1412; --sheet: #131c19; --ink: #e2ebe7; --ink-2: #aebdb7; --ink-3: #82938d; --rule: #26332f;
+  --accent: #52c3a7; --held: #e2a64e; --held-soft: #3a2a12; --other: #3b4a45; --bad: #e57a66; --bad-soft: #3a1c17;
+  --good-soft: #163a32; --code-bg: #0a100e; --code-fg: #d9e6e1; --code-dim: #6f847d; --code-key: #8fd3c1; --code-hit: #f0b25a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font: 400 16px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4.2vw, 3rem); line-height: 1.07; font-weight: 800; }
+h2 { font-size: clamp(1.4rem, 2.8vw, 1.95rem); line-height: 1.15; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+.label { font: 500 0.72rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
+
+.mast { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; align-items: baseline; padding-block: 20px 14px; border-bottom: 1px solid var(--rule); }
+.mast .who { font: 700 0.95rem/1.2 var(--display); }
+.mast .file { font: 500 0.75rem/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.04em; }
+
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 44px; align-items: start; }
+.hero-copy { display: grid; gap: 20px; min-width: 0; }
+.lede { font-size: 1.1rem; color: var(--ink-2); }
+.truth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; font-size: 0.84rem; }
+.truth div { background: var(--sheet); padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.truth ul { margin: 0; padding-left: 18px; color: var(--ink-2); display: grid; gap: 4px; overflow-wrap: anywhere; }
+
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; display: grid; gap: 16px; box-shadow: 0 1px 0 var(--rule), 0 18px 40px -28px rgba(10, 30, 25, 0.35); min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.stamp { font: 600 0.7rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 8px; border-radius: 4px; border: 1.5px solid currentColor; transform: rotate(-2deg); white-space: nowrap; }
+.stamp.bad { color: var(--bad); }
+.stamp.ok { color: var(--accent); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); border-radius: 8px; padding: 3px; gap: 3px; }
+.seg button { font: 600 0.85rem/1.2 var(--body); padding: 9px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.signal { font: 700 1.15rem/1.35 var(--display); }
+.signal .x { font-size: 2.2rem; font-weight: 800; font-variant-numeric: tabular-nums; display: block; line-height: 1.05; }
+.signal .x.bad { color: var(--bad); }
+.signal .x.ok { color: var(--accent); }
+.verdict { padding: 10px 12px; border-radius: 6px; font-size: 0.88rem; }
+.verdict.bad { background: var(--bad-soft); }
+.verdict.ok { background: var(--good-soft); }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+th, td { padding: 9px 8px; border-bottom: 1px solid var(--rule); text-align: right; font-variant-numeric: tabular-nums; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font: 500 0.7rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+td.chg { font-weight: 600; }
+td.same { color: var(--ink-3); }
+.scroll { overflow-x: auto; min-width: 0; }
+
+.sect { display: grid; gap: 22px; }
+.sect-head { display: grid; gap: 10px; }
+.step { font: 600 0.75rem/1 var(--mono); color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+.prose { display: grid; gap: 14px; color: var(--ink-2); min-width: 0; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.sub { color: var(--ink-2); }
+.facts { display: grid; gap: 10px; }
+.fact { overflow-wrap: anywhere; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 12px 14px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; font-size: 0.9rem; }
+.fact .tag { font: 600 0.68rem/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.fact .tag.hyp { color: var(--held); }
+.fact small { display: block; color: var(--ink-3); font-size: 0.78rem; margin-top: 4px; overflow-wrap: anywhere; }
+
+.chart { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 12px; display: grid; gap: 12px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.plot { position: relative; height: 210px; margin-left: 40px; }
+.grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--rule); }
+.grid-line span { position: absolute; left: -42px; top: -8px; width: 36px; text-align: right; font: 400 0.68rem/1 var(--mono); color: var(--ink-3); }
+.bars { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(60, 1fr); gap: 1px; align-items: end; isolation: isolate; }
+.bar { display: flex; flex-direction: column-reverse; height: 100%; position: relative; }
+.bar div { transition: height 0.6s cubic-bezier(.2,.7,.2,1); }
+.bar .lsa { background: var(--accent); }
+.bar .search { background: var(--other); }
+.bar.cut::before { content: ""; position: absolute; left: -1px; top: -6px; bottom: 0; border-left: 2px solid var(--held); z-index: 1; }
+.xaxis { position: relative; height: 16px; margin-left: 40px; font: 400 0.68rem/1 var(--mono); color: var(--ink-3); }
+.xaxis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.xaxis span:first-child { transform: none; }
+.xaxis span:last-child { transform: translateX(-100%); }
+.chart .note { font: 500 0.75rem/1.3 var(--mono); color: var(--held); }
+
+.code { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 16px 18px; font: 400 0.78rem/1.6 var(--mono); overflow-x: auto; white-space: pre; min-width: 0; }
+.code .k { color: var(--code-key); }
+.code .d { color: var(--code-dim); }
+.code .hit { color: var(--code-hit); }
+.records { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+
+.ledger td:nth-child(2), .ledger td:nth-child(3) { font-family: var(--mono); font-size: 0.82rem; }
+.tests { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tests li { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; font-size: 0.88rem; color: var(--ink-2); }
+.tests li b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+.ask { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font: 600 1.15rem/1.45 var(--display); max-width: 60ch; }
+footer { border-top: 1px solid var(--rule); padding-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 0.82rem; color: var(--ink-3); }
+
+@media (max-width: 860px) {
+  .hero, .two, .records { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .wrap { gap: 52px; }
+}
+@media (max-width: 560px) {
+  .truth, .tests { grid-template-columns: minmax(0, 1fr); }
+  .fact { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .plot, .xaxis { margin-left: 34px; }
+  .grid-line span { left: -36px; width: 30px; }
+  .panel { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .bar div { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <span class="who">Pavankalyan Ghanta</span>
+    <span class="file">REVENUE SIGNAL · CHANGEGUARD · OCT 2026</span>
+  </header>
+
+  <section class="hero" aria-labelledby="thesis">
+    <div class="hero-copy">
+      <span class="label">Extension of Revenue Signal · 90-second case</span>
+      <h1 id="thesis">Google changed how Local Services campaigns are typed. A budget decision should not change with it.</h1>
+      <p class="lede">In 2026 Google is moving Local Services Ads into Performance Max campaigns with pay-per-lead goals, and pest control is in the first wave. If a pipeline still sorts spend into channels the old way, that spend lands under Search. Nothing errors. ChangeGuard catches it, refuses to trust the budget signal built on it, and repairs history without counting anything twice.</p>
+      <div class="truth">
+        <div><span class="label">Real, from Google's documentation</span>
+          <ul><li>The migration, its timeline and pest control in phase 1</li><li>Old LSA performance reports do not move to Google Ads</li><li>Migrated campaigns report as <code>PERFORMANCE_MAX</code> with local services enabled</li></ul>
+        </div>
+        <div><span class="label">Invented for this demo</span>
+          <ul><li>The branch, the migration date and every number</li><li>The pipeline failure: a mapper that types channels by platform</li><li>No evidence Moxie uses Local Services Ads or has this problem</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel" aria-labelledby="panel-title">
+      <div class="panel-head">
+        <div>
+          <span class="label">Branch <span id="b-id"></span> · October · budget signal</span>
+          <h3 id="panel-title">Should this branch move money from Search to Local Services?</h3>
+        </div>
+        <span class="stamp bad" id="stamp">Not trustworthy yet</span>
+      </div>
+      <div class="seg" role="group" aria-label="Show numbers">
+        <button type="button" id="view-before" aria-pressed="true">As reported</button>
+        <button type="button" id="view-after" aria-pressed="false">After re-map</button>
+      </div>
+      <p class="signal" aria-live="polite"><span class="x bad" id="ratio"></span><span id="signal-text"></span></p>
+      <div class="verdict bad" id="verdict"></div>
+      <div class="scroll"><table><thead><tr><th>Paid channel</th><th>Spend</th><th>New customers</th><th>Cost per customer</th></tr></thead><tbody id="channels"></tbody></table></div>
+    </aside>
+  </section>
+
+  <section class="sect" aria-labelledby="h-change">
+    <div class="sect-head"><span class="step">1 · The change</span><h2 id="h-change">What Google documents, and what it does not.</h2></div>
+    <div class="facts">
+      <div class="fact"><span class="tag">Verified</span><div>Existing Local Services campaigns migrate automatically to a Performance Max type with pay-per-lead goals. Phase 1 started August 2026 for some U.S. businesses, including pest control.<small>support.google.com/google-ads/answer/17213585</small></div></div>
+      <div class="fact"><span class="tag">Verified</span><div>Local Services performance reports do not transition to Google Ads, and the old dashboard becomes inaccessible. Past lead records do transfer.<small>support.google.com/google-ads/answer/17213585</small></div></div>
+      <div class="fact"><span class="tag">Verified</span><div>In the Google Ads API, a migrated campaign is <code>PERFORMANCE_MAX</code> with <code>pmax_campaign_settings.local_services_enabled = true</code>, not <code>LOCAL_SERVICES</code>.<small>developers.google.com/google-ads/api/docs/campaigns/local-service-campaigns (updated 2026-10-30)</small></div></div>
+      <div class="fact"><span class="tag hyp">Inferred</span><div>The migrated campaign gets a new campaign id, since a campaign's channel type cannot change. Google does not say so directly.</div></div>
+      <div class="fact"><span class="tag hyp">Hypothetical</span><div>A pipeline that classifies channel by platform or by <code>LOCAL_SERVICES</code> files the migrated spend as Google Search. That is the failure this demo engineers.</div></div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-symptom">
+    <div class="sect-head"><span class="step">2 · The symptom</span><h2 id="h-symptom">Local Services spend stops on October 13. Its leads do not.</h2></div>
+    <div class="two">
+      <div class="chart" role="img" aria-label="Daily spend for the branch, Local Services and Search, September and October" id="chart">
+        <div class="legend"><span><i style="background:var(--accent)"></i>Google Local Services</span><span><i style="background:var(--other)"></i>Google Search</span></div>
+        <div class="plot" id="plot"></div>
+        <div class="xaxis" id="xaxis"></div>
+        <span class="note" id="chart-note"></span>
+      </div>
+      <div class="prose">
+        <p>Total spend at the branch did not change, so the branch scorecard looks normal. The money moved between channels: from Local Services to Search.</p>
+        <p><strong><span id="leads"></span> Local Services leads kept arriving after the spend stopped.</strong> A channel with leads and no cost is the signature of a classification break, not of free customers.</p>
+        <p>A cross-system rule caught it at the daily run on <span id="detected"></span>: a paid channel keeps producing leads while its spend stops, and a new campaign starts in the same ad account.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-evidence">
+    <div class="sect-head"><span class="step">3 · The evidence</span><h2 id="h-evidence">Two stored records, one day apart, filed in different channels.</h2>
+      <p class="sub">Same ad account, same business, new campaign id and type. Mapper <code>ads@1.0</code> reads the platform and nothing else.</p></div>
+    <div class="records" id="records"></div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-gate">
+    <div class="sect-head"><span class="step">4 · The gate</span><h2 id="h-gate">The budget signal is shown with what makes it untrustworthy.</h2></div>
+    <div class="two">
+      <div class="prose">
+        <p>The rule is deliberately simple and labelled as such: flag a paid channel that costs at least 1.5× another per new customer. It stands in for whatever person or model acts on channel cost.</p>
+        <p>As reported, Search looks <strong><span id="g-before"></span>×</strong> as expensive as Local Services. That would justify a large shift. While the coverage gap is open, the signal is marked <strong>not trustworthy</strong> and links to the incident.</p>
+      </div>
+      <div class="prose">
+        <p>After the re-map, the gap is real but much smaller: <strong><span id="g-after"></span>×</strong>. Local Services still looks cheaper here, so a shift may still be right. It is now a shift sized on correct numbers.</p>
+        <p>The gate blocks on incidents that change what a channel cost or which customers it produced: coverage gaps, held source records, spend nobody has mapped.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-repair">
+    <div class="sect-head"><span class="step">5 · The repair and the proof</span><h2 id="h-repair">Re-map the stored records. Move classification, never money.</h2>
+      <p class="sub">Mapper <code>ads@1.1</code> reads the campaign type and the local-services flag. A re-projection replay re-maps the stored records, claims each record once, records the campaign lineage, and recomputes every number from the database.</p></div>
+    <div class="two">
+      <div class="scroll"><table class="ledger"><thead><tr><th>Step</th><th>Records</th><th>Result</th></tr></thead><tbody id="steps"></tbody></table></div>
+      <div class="scroll"><table class="ledger"><thead><tr><th>All 44 branches</th><th>Before</th><th>After</th></tr></thead><tbody id="ledger"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-tests">
+    <div class="sect-head"><span class="step">6 · Verified by tests</span><h2 id="h-tests">What the automated tests hold it to.</h2></div>
+    <ul class="tests">
+      <li><b>Idempotent</b>The same key returns the stored result; a new key finds nothing left to claim; a reused key for a different request is refused.</li>
+      <li><b>Concurrent</b>Four re-maps racing on real Postgres claim each record exactly once.</li>
+      <li><b>Fails safe</b>An injected database failure mid-replay rolls everything back; the same request then succeeds.</li>
+      <li><b>Refuses to guess</b>A record the new mapper cannot read keeps its earlier projection instead of being reclassified.</li>
+      <li><b>History survives</b>A post-migration re-pull that no longer returns the old Local Services rows deletes nothing.</li>
+      <li><b>Continuous and conserved</b>After the re-map, Local Services spend exists for all 60 days; spend, customers, invoices and payments are unchanged across all 44 branches.</li>
+    </ul>
+  </section>
+
+  <section class="sect" aria-labelledby="h-ask">
+    <div class="sect-head"><span class="label">The question this earns</span><h2 id="h-ask">I would not assume you have this problem. I would ask.</h2></div>
+    <p class="ask">"When Google re-typed Local Services campaigns as Performance Max, did your channel reports notice, and who would have?"</p>
+  </section>
+
+  <footer>
+    <span>Pavankalyan Ghanta · Revenue Signal, an independent interview concept · not affiliated with Moxie</span>
+    <span>Synthetic data. Every number here was computed by the app (<span class="mono">npm run export:changeguard</span>).</span>
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+const $ = (id) => document.getElementById(id);
+const usd = (c) => (c === null || c === undefined ? "—" : "$" + Math.round(c / 100).toLocaleString("en-US"));
+const usdExact = (c) => "$" + (Number(c) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const int = (n) => Number(n).toLocaleString("en-US");
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const utc = (iso, opts) => new Date(iso).toLocaleString("en-US", { timeZone: "UTC", ...opts });
+const shortDate = (d) => utc(d + "T00:00:00Z", { month: "short", day: "numeric" });
+
+$("b-id").textContent = DATA.branch;
+$("leads").textContent = int(DATA.gap.leadsSinceGap);
+$("detected").textContent = utc(DATA.gap.detectedAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }) + " UTC";
+$("g-before").textContent = DATA.signal.before.ratio.toFixed(1);
+$("g-after").textContent = DATA.signal.after.ratio.toFixed(1);
+
+// ---- Decision panel ------------------------------------------------------------
+function setView(which) {
+  const sig = DATA.signal[which];
+  $("view-before").setAttribute("aria-pressed", String(which === "before"));
+  $("view-after").setAttribute("aria-pressed", String(which === "after"));
+  const ratio = $("ratio");
+  ratio.textContent = sig.ratio.toFixed(1) + "×";
+  ratio.className = "x " + (sig.trustworthy ? "ok" : "bad");
+  $("signal-text").textContent = `${sig.from.label} costs that much more than ${sig.to.label} per new customer.`;
+  const stamp = $("stamp");
+  stamp.className = "stamp " + (sig.trustworthy ? "ok" : "bad");
+  stamp.textContent = sig.trustworthy ? "Evidence is sound" : "Not trustworthy yet";
+  const verdict = $("verdict");
+  verdict.className = "verdict " + (sig.trustworthy ? "ok" : "bad");
+  verdict.textContent = sig.trustworthy
+    ? `Re-mapped. The gap is real but ${DATA.signal.before.ratio.toFixed(1)}× was ${(DATA.signal.before.ratio / sig.ratio).toFixed(1)} times too large. Spend, customers and revenue did not change.`
+    : `Do not act on this. An open incident (#${DATA.gap.id}) says ${usd(DATA.gap.misfiledCents)} of Local Services spend is being counted as Search.`;
+  const prev = DATA.signal[which === "before" ? "after" : "before"].channels;
+  $("channels").innerHTML = sig.channels.map((c) => {
+    const p = prev.find((x) => x.code === c.code);
+    const cls = p && p.spendCents !== c.spendCents ? "chg" : "same";
+    return `<tr><td>${esc(c.label)}</td><td class="${cls}">${usd(c.spendCents)}</td><td class="same">${int(c.acquired)}</td><td class="${cls}">${usd(c.cacCents)}</td></tr>`;
+  }).join("");
+  drawChart(which);
+}
+$("view-before").addEventListener("click", () => setView("before"));
+$("view-after").addEventListener("click", () => setView("after"));
+
+// ---- Daily spend chart (div bars so heights transition) -------------------------
+const maxDay = Math.max(...DATA.days.flatMap((d) => [d.before.lsa + d.before.search, d.after.lsa + d.after.search]));
+const step = 20000; // $200 gridlines
+const yMax = Math.ceil(maxDay / step) * step;
+const ticks = Array.from({ length: yMax / step + 1 }, (_, i) => i * step);
+$("plot").innerHTML = ticks.map((t) => `<div class="grid-line" style="bottom:${(t / yMax) * 100}%"><span>${usd(t)}</span></div>`).join("")
+  + `<div class="bars">${DATA.days.map((d) => `<div class="bar${d.date === DATA.gap.gapStart ? " cut" : ""}" title="${d.date}"><div class="lsa"></div><div class="search"></div></div>`).join("")}</div>`;
+const labelDays = ["2026-09-01", "2026-09-15", "2026-10-01", DATA.gap.gapStart, "2026-10-30"];
+$("xaxis").innerHTML = labelDays.map((d) => {
+  const i = DATA.days.findIndex((x) => x.date === d);
+  return `<span style="left:${((i + 0.5) / DATA.days.length) * 100}%">${shortDate(d)}</span>`;
+}).join("");
+function drawChart(which) {
+  const bars = $("plot").querySelectorAll(".bar");
+  DATA.days.forEach((d, i) => {
+    const v = d[which];
+    bars[i].children[0].style.height = (v.lsa / yMax) * 100 + "%";
+    bars[i].children[1].style.height = (v.search / yMax) * 100 + "%";
+    bars[i].title = `${d.date}: Local Services ${usd(v.lsa)}, Search ${usd(v.search)}`;
+  });
+  $("chart-note").textContent = which === "before"
+    ? `Line: ${shortDate(DATA.gap.gapStart)}, migration. Local Services spend reads $0 from here on.`
+    : "Same days after the re-map: Local Services continuous, Search back to its own level.";
+}
+
+// ---- Stored records --------------------------------------------------------------
+(function renderRecords() {
+  const keys = ["platform", "accountId", "campaignId", "campaignType", "localServicesEnabled", "date", "costMicros"];
+  const hit = new Set(["platform", "campaignId", "campaignType", "localServicesEnabled"]);
+  $("records").innerHTML = DATA.samples.map((r, i) => {
+    const lines = keys.filter((k) => k in r.payload).map((k) => {
+      const v = JSON.stringify(r.payload[k]);
+      return `  <span class="k">"${k}"</span>: ${i === 1 && hit.has(k) ? `<span class="hit">${esc(v)}</span>` : esc(v)},`;
+    });
+    return `<div class="code"><span class="d">// raw_events #${r.id} · ${esc(r.version)}</span>\n{\n${lines.join("\n")}\n}\n<span class="${i === 1 ? "hit" : "k"}">→ filed as ${esc(r.classified)}</span></div>`;
+  }).join("");
+})();
+
+// ---- Repair steps and conservation ledger -----------------------------------------
+(function renderProof() {
+  const r = DATA.remap;
+  $("steps").innerHTML = [
+    ["Re-map with ads@1.1", r.real.claimed, `${r.real.projected} records re-classified, ${r.real.errors} left as they were. Incident ${DATA.status}. Lineage recorded from ${shortDate(DATA.lineage.effectiveDate)}.`],
+    ["Same request again", r.repeat.claimed, r.repeat.alreadyProcessed ? "Stored result returned. Nothing ran again." : "Ran again"],
+    ["New request key", r.newKey.claimed, "Nothing left to claim: every record already carries ads@1.1."],
+  ].map(([a, n, res]) => `<tr><td>${a}</td><td>${int(n)}</td><td style="text-align:left">${res}</td></tr>`).join("");
+  const b = DATA.ledger.before, a = DATA.ledger.after;
+  const rows = [
+    ["Ad spend rows", int(b.spendRows), int(a.spendRows)],
+    ["Ad spend", usdExact(b.spendCents), usdExact(a.spendCents)],
+    ["CRM customers", int(b.customers), int(a.customers)],
+    ["Invoiced", usdExact(b.invoicedCents), usdExact(a.invoicedCents)],
+    ["Payments collected", usdExact(b.collectedCents), usdExact(a.collectedCents)],
+    ["Lead records", int(b.leads), int(a.leads)],
+    ["Raw source records", int(b.rawEvents), int(a.rawEvents)],
+  ];
+  $("ledger").innerHTML = rows.map(([k, x, y]) => `<tr><td>${k}</td><td class="same">${x}</td><td class="${x === y ? "same" : "chg"}">${y}</td></tr>`).join("");
+})();
+
+setView("before");
+</script>

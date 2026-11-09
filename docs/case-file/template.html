@@ -1,0 +1,640 @@
+<title>Revenue Signal Case File</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="An independent proof-of-work by Pavankalyan Ghanta: a reconciliation layer that finds where marketing and CRM records disagree, fixes them safely, and proves the number changed. Synthetic data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single evidence docket read top to bottom: thesis + live incident panel, then
+   symptom → cause → fix → proof, then the machinery and the open questions. */
+:root {
+  --paper: #eef2f0;
+  --sheet: #fbfcfb;
+  --ink: #14211d;
+  --ink-2: #44534e;
+  --ink-3: #6d7c77;
+  --rule: #d3dcd8;
+  --accent: #0d6a5a;
+  --accent-soft: #d5ebe5;
+  --held: #a8650f;
+  --held-soft: #f6e6cc;
+  --other: #b9c6c1;
+  --bad: #a83a2a;
+  --code-bg: #152420;
+  --code-fg: #d9e6e1;
+  --code-dim: #7f948d;
+  --code-key: #8fd3c1;
+  --code-hit: #f0b25a;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1412; --sheet: #131c19; --ink: #e2ebe7; --ink-2: #aebdb7; --ink-3: #82938d; --rule: #26332f;
+    --accent: #52c3a7; --accent-soft: #163a32; --held: #e2a64e; --held-soft: #3a2a12; --other: #3b4a45; --bad: #e57a66;
+    --code-bg: #0a100e; --code-fg: #d9e6e1; --code-dim: #6f847d; --code-key: #8fd3c1; --code-hit: #f0b25a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1412; --sheet: #131c19; --ink: #e2ebe7; --ink-2: #aebdb7; --ink-3: #82938d; --rule: #26332f;
+  --accent: #52c3a7; --accent-soft: #163a32; --held: #e2a64e; --held-soft: #3a2a12; --other: #3b4a45; --bad: #e57a66;
+  --code-bg: #0a100e; --code-fg: #d9e6e1; --code-dim: #6f847d; --code-key: #8fd3c1; --code-hit: #f0b25a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 72px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 4.6vw, 3.25rem); line-height: 1.06; font-weight: 800; }
+h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.15; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+.label {
+  font: 500 0.72rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3);
+}
+
+/* Masthead */
+.mast {
+  display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; align-items: baseline;
+  padding-block: 20px 14px; border-bottom: 1px solid var(--rule);
+}
+.mast .who { font: 700 0.95rem/1.2 var(--display); }
+.mast .file { font: 500 0.75rem/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.04em; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: start; padding-top: 8px; }
+.hero-copy { display: grid; gap: 22px; min-width: 0; }
+.lede { font-size: 1.13rem; color: var(--ink-2); }
+.disclose {
+  display: grid; gap: 6px; padding: 14px 16px; border: 1px dashed var(--rule); border-radius: 6px;
+  font-size: 0.86rem; color: var(--ink-2); max-width: 60ch;
+}
+.disclose strong { color: var(--ink); font-weight: 600; }
+.jump { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 6px; font: 600 0.9rem/1 var(--body);
+  text-decoration: none; border: 1px solid var(--ink); color: var(--ink); background: transparent; cursor: pointer;
+}
+.btn.primary { background: var(--ink); color: var(--sheet); }
+.btn:hover { border-color: var(--accent); }
+.btn.primary:hover { background: var(--accent); border-color: var(--accent); color: var(--sheet); }
+
+/* Incident panel */
+.panel {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 22px; display: grid; gap: 18px;
+  box-shadow: 0 1px 0 var(--rule), 0 18px 40px -28px rgba(10, 30, 25, 0.35); min-width: 0;
+}
+.panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.panel-head h3 { font-size: 1.2rem; }
+.stamp {
+  font: 600 0.7rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 8px; border-radius: 4px;
+  border: 1.5px solid currentColor; transform: rotate(-2deg); white-space: nowrap;
+}
+.stamp.held { color: var(--held); }
+.stamp.ok { color: var(--accent); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); border-radius: 8px; padding: 3px; gap: 3px; }
+.seg button {
+  font: 600 0.85rem/1.2 var(--body); padding: 9px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-2);
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.kpi { background: var(--sheet); padding: 14px; display: grid; gap: 4px; min-width: 0; }
+.kpi .v { font: 800 clamp(1.6rem, 3.4vw, 2.1rem)/1 var(--display); font-variant-numeric: tabular-nums; transition: color 0.4s; }
+.kpi .v.warn { color: var(--held); }
+.kpi .v.good { color: var(--accent); }
+.kpi .ref { font-size: 0.8rem; color: var(--ink-3); }
+.panel-note { font-size: 0.86rem; color: var(--ink-2); }
+.unchanged { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; color: var(--ink-3); }
+.unchanged span::before { content: "="; font-family: var(--mono); margin-right: 5px; color: var(--accent); }
+
+/* Sections */
+.sect { display: grid; gap: 24px; }
+.sect-head { display: grid; gap: 10px; }
+.step { display: flex; gap: 10px; align-items: baseline; }
+.step b { font: 600 0.75rem/1 var(--mono); color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.prose { display: grid; gap: 14px; color: var(--ink-2); min-width: 0; }
+.prose strong { color: var(--ink); font-weight: 600; }
+
+/* Weekly chart */
+.chart { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px 20px 14px; display: grid; gap: 14px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.plot { position: relative; height: 230px; margin-left: 28px; }
+.grid-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--rule); }
+.grid-line span { position: absolute; left: -28px; top: -8px; font: 400 0.7rem/1 var(--mono); color: var(--ink-3); width: 22px; text-align: right; }
+.bars { isolation: isolate; position: absolute; inset: 0; display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; align-items: end; }
+.bar { display: flex; flex-direction: column-reverse; height: 100%; justify-content: flex-start; position: relative; }
+.bar div { transition: height 0.7s cubic-bezier(.2,.7,.2,1); min-height: 0; }
+.bar .paid { background: var(--accent); border-radius: 0 0 2px 2px; }
+.bar .other { background: var(--other); }
+.bar .unknown { background: var(--held); border-radius: 2px 2px 0 0; }
+.bar.drift::after {
+  content: ""; position: absolute; inset: -6px -4px; border-radius: 4px; background: var(--held-soft); z-index: -1; opacity: var(--drift-op, 1);
+  transition: opacity 0.5s;
+}
+.xaxis { display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px; margin-left: 28px; font: 400 0.68rem/1.2 var(--mono); color: var(--ink-3); text-align: center; }
+.chart .marker { font: 500 0.75rem/1.3 var(--mono); color: var(--held); }
+
+/* Payload */
+.code {
+  background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 18px 20px; font: 400 0.82rem/1.65 var(--mono);
+  overflow-x: auto; min-width: 0; white-space: pre;
+}
+.code .k { color: var(--code-key); }
+.code .d { color: var(--code-dim); }
+.code .hit { color: var(--code-hit); background: rgba(240, 178, 90, 0.12); border-radius: 3px; padding: 0 3px; }
+.code .err { display: block; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); color: var(--code-hit); white-space: pre-wrap; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.fact { background: var(--sheet); padding: 14px 16px; display: grid; gap: 4px; }
+.fact .v { font: 800 1.5rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.fact .t { font-size: 0.82rem; color: var(--ink-2); }
+
+/* Replay ledger */
+.ledger { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.ledger th, .ledger td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.ledger th { font: 500 0.72rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.ledger td.n { font-variant-numeric: tabular-nums; font-family: var(--mono); white-space: nowrap; }
+.ledger .what { font-weight: 600; }
+.ledger .why { color: var(--ink-3); font-size: 0.82rem; margin-top: 2px; }
+.scroll { overflow-x: auto; min-width: 0; }
+
+/* Proof table */
+.proof { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.proof th, .proof td { padding: 11px 10px; border-bottom: 1px solid var(--rule); text-align: right; font-variant-numeric: tabular-nums; }
+.proof th:first-child, .proof td:first-child { text-align: left; }
+.proof thead th { font: 500 0.72rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+.proof tbody th { font-weight: 500; }
+.proof .group th { padding-top: 22px; font: 600 0.75rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border-bottom-color: transparent; }
+.proof .same { color: var(--ink-3); }
+.proof .chg { font-weight: 600; }
+.proof small { display: block; color: var(--ink-3); font-weight: 400; font-size: 0.78rem; }
+
+/* Bridge */
+.bridge { display: grid; gap: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; min-width: 0; }
+.brow { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr) 64px; gap: 14px; align-items: center; font-size: 0.88rem; }
+.brow .track { height: 22px; position: relative; }
+.brow .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--ink); }
+.brow.sub .fill { background: var(--other); }
+.brow.win .fill { background: var(--accent); }
+.brow .n { font: 500 0.88rem/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.brow .name small { display: block; color: var(--ink-3); font-size: 0.76rem; }
+.bdiv { border-top: 1px dashed var(--rule); margin: 4px 0; }
+
+/* Machinery */
+.mach { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.cell { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.cell .v { font: 800 1.45rem/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.cell p { font-size: 0.88rem; color: var(--ink-2); }
+.cell code { font: 400 0.78rem/1.5 var(--mono); color: var(--ink-3); overflow-wrap: anywhere; }
+
+/* Media */
+.media { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+video, .shot img { width: 100%; max-width: 100%; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); display: block; }
+.shots { display: grid; gap: 16px; }
+.shot { display: grid; gap: 6px; margin: 0; }
+.shot figcaption { font-size: 0.8rem; color: var(--ink-3); }
+
+/* Limits + questions */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.list li { padding-left: 18px; position: relative; color: var(--ink-2); font-size: 0.93rem; }
+.list li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 7px; height: 7px; border: 1.5px solid var(--ink-3); border-radius: 50%; }
+.qs { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: q; }
+.qs li { counter-increment: q; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 6px; font-size: 0.97rem; }
+.qs li::before { content: counter(q); font: 700 0.8rem/1.9 var(--mono); color: var(--accent); }
+
+footer { border-top: 1px solid var(--rule); padding-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; font-size: 0.82rem; color: var(--ink-3); }
+
+@media (max-width: 860px) {
+  .hero, .two, .media, .cols { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .mach { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .wrap { gap: 56px; }
+}
+@media (max-width: 520px) {
+  .mach, .facts { grid-template-columns: minmax(0, 1fr); }
+  .brow { grid-template-columns: minmax(0, 1fr) 56px; }
+  .brow .track { grid-column: 1 / -1; grid-row: 2; height: 14px; }
+  .bars, .xaxis { gap: 4px; }
+  .xaxis { font-size: 0.6rem; }
+  .panel { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar div, .kpi .v, .bar.drift::after { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <span class="who">Pavankalyan Ghanta</span>
+    <span class="file">REVENUE SIGNAL · CASE FILE · OCT 2026</span>
+  </header>
+
+  <section class="hero" aria-labelledby="thesis">
+    <div class="hero-copy">
+      <span class="label">Proof-of-work for Moxie's marketing engineering role</span>
+      <h1 id="thesis">When ad platforms and the CRM disagree, budget follows the wrong number.</h1>
+      <p class="lede">I built a working layer that finds the disagreement record by record, fixes it safely, and proves the number changed. Nobody asked me to. I wanted to show how I would approach the job before we talk.</p>
+      <div class="disclose">
+        <span><strong>Independent work, not affiliated with Moxie.</strong> No Moxie system or data was accessed.</span>
+        <span>The 44 branches, customers and calls are synthetic, shaped like the public FieldRoutes and CallRail APIs. Branch names are fictional on purpose.</span>
+      </div>
+      <div class="jump">
+        <a class="btn primary" href="#walkthrough">Watch the 1-minute walkthrough</a>
+        <a class="btn" href="#symptom">Read the case</a>
+      </div>
+    </div>
+
+    <aside class="panel" aria-labelledby="panel-title">
+      <div class="panel-head">
+        <div>
+          <span class="label">Branch <span id="b-id"></span> · October</span>
+          <h3 id="panel-title"><span id="b-name"></span> looks like the worst branch in the company</h3>
+        </div>
+        <span class="stamp held" id="stamp">119 records held</span>
+      </div>
+      <div class="seg" role="group" aria-label="Show numbers">
+        <button type="button" id="view-before" aria-pressed="true">As reported</button>
+        <button type="button" id="view-after" aria-pressed="false">After the fix</button>
+      </div>
+      <div class="kpis" aria-live="polite">
+        <div class="kpi">
+          <span class="label">Paid cost per customer</span>
+          <span class="v warn" id="k-cac"></span>
+          <span class="ref">Company: <span class="num" id="k-cac-co"></span></span>
+        </div>
+        <div class="kpi">
+          <span class="label">Customers with no known source</span>
+          <span class="v warn" id="k-unk"></span>
+          <span class="ref">Company: <span class="num" id="k-unk-co"></span></span>
+        </div>
+      </div>
+      <p class="panel-note" id="panel-note"></p>
+      <div class="unchanged" aria-label="Unchanged by the fix">
+        <span>Ad spend <b class="num" id="u-spend"></b></span>
+        <span>New customers <b class="num" id="u-acq"></b></span>
+        <span>Revenue collected <b class="num" id="u-rev"></b></span>
+      </div>
+    </aside>
+  </section>
+
+  <section class="sect" id="symptom" aria-labelledby="h-symptom">
+    <div class="sect-head">
+      <div class="step"><b>Symptom</b></div>
+      <h2 id="h-symptom">Paid customers fall away and "unknown" triples in one week.</h2>
+    </div>
+    <div class="two">
+      <div class="chart" role="img" aria-label="Weekly new customers for the branch by credited source" id="chart">
+        <div class="legend">
+          <span><i style="background:var(--accent)"></i>Paid media</span>
+          <span><i style="background:var(--other)"></i>Door-to-door, referral, organic</span>
+          <span><i style="background:var(--held)"></i>No known source</span>
+        </div>
+        <div class="plot" id="plot"></div>
+        <div class="xaxis" id="xaxis"></div>
+        <span class="marker" id="chart-marker">Shaded weeks: call-tracking records held since Oct 6</span>
+      </div>
+      <div class="prose">
+        <p>Spend at this branch was steady. Leads were steady. What changed is that from the week of October 12, most new customers stopped matching any marketing source.</p>
+        <p><strong>Customer behaviour does not change like that in a week. Measurement does.</strong></p>
+        <p>A marketer looking only at the dashboard would cut this branch's budget. This chart is the reason a reconciliation layer has to work at the level of single records, not totals.</p>
+        <p class="label">Toggle "After the fix" above to redraw this chart from the replayed data.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-cause">
+    <div class="sect-head">
+      <div class="step"><b>Cause</b></div>
+      <h2 id="h-cause">The call-tracking feed changed shape on October 6.</h2>
+    </div>
+    <div class="two">
+      <div class="code" id="payload" aria-label="Held call record, as stored"></div>
+      <div class="prose">
+        <p>The phone number moved from <code class="mono">customer_phone_number</code> to <code class="mono">caller.number</code>. The old mapper rejected every new call. That join between a tracked call and a CRM customer is the one no vendor provides, so losing it erases the marketing source of every customer the call brought in.</p>
+        <p><strong>Nothing was dropped.</strong> Each call was stored as received, with its error, and held aside. Phone numbers are hashed before anything is stored.</p>
+        <div class="facts">
+          <div class="fact"><span class="v" id="f-held"></span><span class="t">calls held</span></div>
+          <div class="fact"><span class="v" id="f-cust"></span><span class="t">sold customers lost their source</span></div>
+          <div class="fact"><span class="v" id="f-det"></span><span class="t" id="f-det-t"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-fix">
+    <div class="sect-head">
+      <div class="step"><b>Fix</b></div>
+      <h2 id="h-fix">Preview the fix, apply it once, and keep the record.</h2>
+      <p class="prose">Mapper 1.1 reads both shapes. The fix runs against the stored records, never against the source again.</p>
+    </div>
+    <div class="scroll">
+      <table class="ledger">
+        <thead><tr><th>Step</th><th>Records</th><th>Result</th></tr></thead>
+        <tbody id="ledger"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-proof">
+    <div class="sect-head">
+      <div class="step"><b>Proof</b></div>
+      <h2 id="h-proof">Spend and revenue did not move. What we know about them did.</h2>
+    </div>
+    <div class="two">
+      <div class="scroll">
+        <table class="proof">
+          <thead><tr><th>Branch <span id="p-id"></span>, October</th><th>Before</th><th>After</th></tr></thead>
+          <tbody id="proof"></tbody>
+        </table>
+      </div>
+      <div class="prose">
+        <p>The fix also <strong>surfaced three new problems</strong>. Three customers had called from a paid ad, then signed with a door-to-door rep. While the calls were held, nobody could see that a commission and a click were both being counted as the reason for one sale.</p>
+        <p>That is the point of the design. A repair that makes every warning disappear is suspicious. A repair that tells you something new is evidence it reconnected real records.</p>
+        <p>Only conversions that reconcile go back to Google Ads. The ones with a door-to-door conflict are held for a person to decide. This step is a dry run: nothing is sent.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-bridge">
+    <div class="sect-head">
+      <span class="label">All 44 branches · October</span>
+      <h2 id="h-bridge">Where <span id="br-claimed"></span> platform conversions went.</h2>
+      <p class="prose">Most of the gap between what ad platforms claim and what the CRM shows is normal: duplicates, existing customers, people who did not buy. Every step is a count from the database, each prospect lands in exactly one bucket, and a test checks they add up.</p>
+    </div>
+    <div class="bridge" id="bridge"></div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-mach">
+    <div class="sect-head">
+      <span class="label">Under the hood</span>
+      <h2 id="h-mach">Built for the day an integration breaks.</h2>
+    </div>
+    <div class="mach" id="mach"></div>
+  </section>
+
+  <section class="sect" id="walkthrough" aria-labelledby="h-walk">
+    <div class="sect-head">
+      <span class="label">The running app</span>
+      <h2 id="h-walk">The same story, clicked through.</h2>
+    </div>
+    <div class="media">
+      <video controls preload="metadata" playsinline poster="screens/01-overview.jpg" src="demo-walkthrough.webm">
+        Your browser cannot play this video.
+      </video>
+      <div class="shots">
+        <figure class="shot">
+          <img src="screens/06-exception-dry-run.jpg" alt="Exception page with a dry-run result showing before and after metrics" loading="lazy">
+          <figcaption>The held-records exception with its dry run: numbers recomputed inside a transaction that rolls back.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="screens/04-integrations.jpg" alt="Integrations page listing ingestion runs, duplicates absorbed and a failed run" loading="lazy">
+          <figcaption>Every ingestion run, the simulated CRM outage on Oct 9, and the run that recovered its window.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-open">
+    <div class="cols">
+      <div class="sect-head">
+        <span class="label">What I would ask you first</span>
+        <h2 id="h-open">I built this on public information. These are the questions it can't answer.</h2>
+        <ol class="qs">
+          <li>When Google Ads and FieldRoutes disagree, who decides which is right today, and where do the records that don't match go?</li>
+          <li>How does a CallRail call get linked to a FieldRoutes customer, and how often does that link fail without anyone noticing?</li>
+          <li>Is the first need for this role new marketing capability, or making the existing integrations and reporting dependable?</li>
+        </ol>
+      </div>
+      <div class="sect-head">
+        <span class="label">Known limits</span>
+        <h3>What this prototype is not</h3>
+        <ul class="list">
+          <li>Not built on Moxie data. If your data lake already lands these sources, this layer should read those tables instead of ingesting a second time.</li>
+          <li>Months are cut in UTC, not each branch's local time.</li>
+          <li>Door-to-door commission and Local Services Ads credits are not modelled, so door-to-door is excluded from paid cost per customer, visibly.</li>
+          <li>Demo roles have no passwords. Branch limits are enforced on the server; production would use your existing Google sign-in.</li>
+          <li>No AI. Every candidate feature did no better than plain rules here, so I left it out and wrote down when that would change.</li>
+          <li>Not deployed. It runs locally with two commands, and the repository is available on request.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Pavankalyan Ghanta · Revenue Signal, an independent interview concept</span>
+    <span>Synthetic data. Every number on this page was computed by the app (<span class="mono">npm run export:snapshot</span>).</span>
+  </footer>
+</div>
+
+<script>
+const DATA = __DATA__;
+
+const $ = (id) => document.getElementById(id);
+const usd = (cents) => "$" + Math.round(cents / 100).toLocaleString("en-US");
+const pct = (x) => Math.round(x * 100) + "%";
+const int = (n) => Number(n).toLocaleString("en-US");
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const B = DATA.branch.before, A = DATA.branch.after;
+const dateUtc = (iso, opts) => new Date(iso).toLocaleString("en-US", { timeZone: "UTC", ...opts });
+
+// ---- Incident panel ----------------------------------------------------------
+$("b-id").textContent = B.id;
+$("b-name").textContent = B.name;
+$("p-id").textContent = B.id;
+$("u-spend").textContent = usd(B.spendCents);
+$("u-acq").textContent = int(B.acquired);
+$("u-rev").textContent = usd(B.collectedCents);
+
+function tween(el, from, to, fmt) {
+  if (reduceMotion || from === to) { el.textContent = fmt(to); return; }
+  const start = performance.now(), dur = 650;
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(from + (to - from) * e);
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+let view = "before";
+function setView(next) {
+  const prev = view === "before" ? B : A, cur = next === "before" ? B : A;
+  const co = next === "before" ? DATA.company.before : DATA.company.after;
+  view = next;
+  $("view-before").setAttribute("aria-pressed", String(next === "before"));
+  $("view-after").setAttribute("aria-pressed", String(next === "after"));
+  tween($("k-cac"), prev.paidCacCents, cur.paidCacCents, usd);
+  tween($("k-unk"), prev.unknownShare, cur.unknownShare, pct);
+  $("k-cac-co").textContent = usd(co.paidCacCents);
+  $("k-unk-co").textContent = pct(co.unknownShare);
+  for (const id of ["k-cac", "k-unk"]) {
+    $(id).classList.toggle("warn", next === "before");
+    $(id).classList.toggle("good", next === "after");
+  }
+  const stamp = $("stamp");
+  stamp.className = "stamp " + (next === "before" ? "held" : "ok");
+  stamp.textContent = next === "before" ? DATA.incident.records + " records held" : "Resolved by replay";
+  $("panel-note").textContent = next === "before"
+    ? `${(B.paidCacCents / DATA.company.before.paidCacCents).toFixed(1)}× the company's paid cost per customer. On this number alone, a reasonable marketer cuts the branch's budget.`
+    : `${B.paidAcquired} → ${A.paidAcquired} customers credited to paid media after ${DATA.replay.real.projected} held calls were replayed. In line with the company.`;
+  drawChart(next);
+}
+$("view-before").addEventListener("click", () => setView("before"));
+$("view-after").addEventListener("click", () => setView("after"));
+
+// ---- Weekly chart (div bars so heights can transition everywhere) -------------
+const MAX = 40, TICKS = [0, 10, 20, 30, 40];
+const DRIFT_FROM = DATA.incident.firstOccurredAt.slice(0, 10);
+const plot = $("plot");
+plot.innerHTML = TICKS.map((t) => `<div class="grid-line" style="bottom:${(t / MAX) * 100}%"><span>${t}</span></div>`).join("")
+  + `<div class="bars">${DATA.weekly.map((w) => {
+      const end = new Date(Date.parse(w.week) + 6 * 864e5).toISOString().slice(0, 10);
+      const drift = end >= DRIFT_FROM;
+      return `<div class="bar${drift ? " drift" : ""}" data-week="${w.week}"><div class="paid"></div><div class="other"></div><div class="unknown"></div></div>`;
+    }).join("")}</div>`;
+$("xaxis").innerHTML = DATA.weekly.map((w) => `<span>${dateUtc(w.week + "T00:00:00Z", { month: "short", day: "numeric" })}</span>`).join("");
+const maxTotal = Math.max(...DATA.weekly.flatMap((w) => [w.before, w.after].map((x) => x.paid + x.other + x.unknown)));
+if (maxTotal > MAX) console.warn("Chart scale too small for data", maxTotal);
+
+function drawChart(which) {
+  const bars = plot.querySelectorAll(".bar");
+  DATA.weekly.forEach((w, i) => {
+    const v = w[which];
+    const [paid, other, unknown] = bars[i].children;
+    paid.style.height = (v.paid / MAX) * 100 + "%";
+    other.style.height = (v.other / MAX) * 100 + "%";
+    unknown.style.height = (v.unknown / MAX) * 100 + "%";
+    bars[i].title = `Week of ${w.week}: ${v.paid} paid, ${v.other} other known, ${v.unknown} unknown`;
+    bars[i].style.setProperty("--drift-op", which === "before" ? "1" : "0");
+  });
+  $("chart-marker").textContent = which === "before"
+    ? "Shaded weeks: call-tracking records held since Oct 6"
+    : "Same weeks, redrawn after the replay";
+}
+
+// ---- Held payload ------------------------------------------------------------
+(function renderPayload() {
+  const p = DATA.incident.sample.payload;
+  const short = (v) => typeof v === "string" && v.startsWith("h:phone:") ? `"h:phone:${v.slice(8, 20)}…"` : JSON.stringify(v);
+  const line = (k, v, cls) => `  <span class="k">"${esc(k)}"</span>: ${cls ? `<span class="${cls}">${esc(v)}</span>` : esc(v)},`;
+  const rows = [
+    `<span class="d">// raw_events #${DATA.incident.sample.id} · calls@1.0 · status: quarantined</span>`,
+    "{",
+    line("id", JSON.stringify(p.id)),
+    line("start_time", JSON.stringify(p.start_time)),
+    line("source", JSON.stringify(p.source)),
+    line("campaign", JSON.stringify(p.campaign)),
+    line("branch_tag", JSON.stringify(p.branch_tag)),
+    `  <span class="hit">"caller": { "number": ${esc(short(p.caller.number))} }</span>,`,
+    line("tracking_phone_number", short(p.tracking_phone_number)),
+    `  <span class="d">// expected: "customer_phone_number"  (missing)</span>`,
+    "}",
+    `<span class="err">${esc(DATA.incident.error)}</span>`,
+  ];
+  $("payload").innerHTML = rows.join("\n");
+})();
+$("f-held").textContent = int(DATA.incident.records);
+$("f-cust").textContent = int(DATA.incident.customersWithoutLead);
+$("f-det").textContent = dateUtc(DATA.incident.detectedAt, { month: "short", day: "numeric" });
+$("f-det-t").textContent = `detected, ${dateUtc(DATA.incident.detectedAt, { hour: "2-digit", minute: "2-digit", hour12: false })} UTC, at the next daily check after the first bad call (${dateUtc(DATA.incident.firstOccurredAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} UTC)`;
+
+// ---- Replay ledger -----------------------------------------------------------
+(function renderLedger() {
+  const r = DATA.replay, d = r.dryRun;
+  const rows = [
+    ["Dry run", "Same code, inside a database transaction that is rolled back.", d.claimed,
+      `Paid cost per customer ${usd(d.before.paidCacCents)} → ${usd(d.after.paidCacCents)} for the branch's whole Sep–Oct period. Nothing saved.`],
+    ["Replay", "Each held record is claimed by a conditional update, so two people clicking at once cannot process it twice.", r.real.claimed,
+      `${r.real.projected} records applied, ${r.real.stillQuarantined} still held. Metrics recomputed in the same transaction.`],
+    ["Same request again", "The idempotency key is bound to the request.", r.repeat.claimed,
+      "Returned the stored result. No record was processed a second time."],
+  ];
+  $("ledger").innerHTML = rows.map(([what, why, n, res]) =>
+    `<tr><td><div class="what">${what}</div><div class="why">${why}</div></td><td class="n">${int(n)}</td><td>${res}</td></tr>`).join("");
+})();
+
+// ---- Proof table -------------------------------------------------------------
+(function renderProof() {
+  const fb = DATA.feedback;
+  const group = (t) => `<tr class="group"><th colspan="3">${t}</th></tr>`;
+  const row = (label, b, a, note, cls) => `<tr><th>${label}${note ? `<small>${note}</small>` : ""}</th><td class="${cls}">${b}</td><td class="${cls}">${a}</td></tr>`;
+  $("proof").innerHTML = [
+    group("Did not change"),
+    row("Paid media spend", usd(B.spendCents), usd(A.spendCents), "", "same"),
+    row("New customers serviced", int(B.acquired), int(A.acquired), "", "same"),
+    row("Revenue collected", usd(B.collectedCents), usd(A.collectedCents), "Successful payments minus refunds", "same"),
+    group("Changed"),
+    row("Customers credited to paid media", int(B.paidAcquired), int(A.paidAcquired), "", "chg"),
+    row("Customers with no known source", int(B.unknownAcquired), int(A.unknownAcquired), "", "chg"),
+    row("Paid cost per customer", usd(B.paidCacCents), usd(A.paidCacCents), `Company: ${usd(DATA.company.before.paidCacCents)} → ${usd(DATA.company.after.paidCacCents)}`, "chg"),
+    row("Paid call, then door-to-door sale", int(B.channelConflicts), int(A.channelConflicts), "Hidden while the calls were held", "chg"),
+    row("Conversions to report to Google Ads", int(fb.before.upload), int(fb.after.upload), `Whole Sep–Oct period. ${fb.after.held_channel_conflict} held for a person to review.`, "chg"),
+  ].join("");
+})();
+
+// ---- Conversion bridge -------------------------------------------------------
+(function renderBridge() {
+  const b = DATA.bridge, top = b.platformClaimed;
+  $("br-claimed").textContent = int(top);
+  const row = (name, note, n, cls) => `<div class="brow ${cls}"><span class="name">${name}${note ? `<small>${note}</small>` : ""}</span>`
+    + `<span class="track"><span class="fill" style="width:${Math.max(0.4, (n / top) * 100)}%"></span></span><span class="n">${int(n)}</span></div>`;
+  $("bridge").innerHTML = [
+    row("Claimed by ad platforms", "Includes view-throughs and repeat conversions", b.platformClaimed, ""),
+    row("Paid lead records", "Calls, forms and Local Services leads that arrived", b.paidLeadRecords, ""),
+    row("Unique paid prospects", "One person, not one record", b.paidProspects, ""),
+    `<div class="bdiv"></div>`,
+    row("Did not buy (yet)", "", b.notSold, "sub"),
+    row("Already a customer", "An add-on, not an acquisition", b.existingCustomers, "sub"),
+    row("Sold, not yet serviced", "Sold-then-cancelled is not acquired", b.soldNotServiced, "sub"),
+    b.creditedElsewhere ? row("Credited to another source", "", b.creditedElsewhere, "sub") : "",
+    row("New customers serviced", "", b.serviced, "win"),
+  ].join("");
+})();
+
+// ---- Machinery ---------------------------------------------------------------
+(function renderMachinery() {
+  const g = DATA.ingestion;
+  const cells = [
+    [int(g.duplicates), "duplicate deliveries absorbed",
+      `${int(g.deliveries)} deliveries from five sources became ${int(g.events)} unique record versions. Each source record version is written exactly once.`,
+      "unique (source, external_id)"],
+    [`${g.failedRuns} of ${int(g.runs)}`, "runs failed, and recovered",
+      "A simulated CRM outage on Oct 9. The run failed, its cursor stayed put, and the next run re-read the window. Nothing was lost or doubled.",
+      "cursor advances only on success"],
+    ["5", "cross-system checks",
+      "Held source records, payments without an invoice, lead branch vs CRM office, ad spend not mapped to a branch, paid touch followed by a door-to-door sale.",
+      "lib/reconcile/reconcile.ts"],
+    ["80 + 6", "automated tests",
+      "Unit and database tests on real Postgres, including four replays racing each other, plus browser tests of this exact story. Revenue matches the generated payments to the cent.",
+      "npm test · npm run test:e2e"],
+    ["53 → 68", "independent code review",
+      "An outside review scored the first build 53/100. I fixed every finding with a regression test; the second round found two bugs my fixes introduced, now fixed too.",
+      "docs/review-response.md"],
+    ["33 s → 44 ms", "slowest page query",
+      "Attribution is computed in SQL views, never stored, so a policy change re-derives history. Per-customer index lookups made that affordable.",
+      "docs/testing.md"],
+  ];
+  $("mach").innerHTML = cells.map(([v, t, p, code]) =>
+    `<div class="cell"><span class="v">${v}</span><span class="label">${t}</span><p>${p}</p><code>${code}</code></div>`).join("");
+})();
+
+setView("before");
+</script>

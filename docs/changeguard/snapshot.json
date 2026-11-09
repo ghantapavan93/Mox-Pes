@@ -1,0 +1,1466 @@
+{
+  "generatedBy": "scripts/export-changeguard.ts",
+  "demoNow": "2026-10-31T13:00:00.000Z",
+  "branch": "B09",
+  "gap": {
+    "id": 2455,
+    "summary": "Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then",
+    "evidence": {
+      "channel": "google_lsa",
+      "gapDays": 18,
+      "branchId": "B09",
+      "gapStart": "2026-10-13",
+      "successors": [
+        {
+          "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "platform": "google_ads",
+          "campaignId": 8677,
+          "campaignType": null,
+          "classifiedAs": [
+            "google_search"
+          ],
+          "daysSinceGap": 18,
+          "firstSpendDate": "2026-10-13",
+          "externalCampaignId": "pmax-lsa-B09",
+          "spendSinceGapCents": 212352,
+          "localServicesEnabled": false
+        }
+      ],
+      "channelLabel": "Google Local Services",
+      "predecessors": [
+        {
+          "name": "B09 Coral | Local Services",
+          "platform": "google_lsa",
+          "campaignId": 53,
+          "adAccountId": "LSA-B09",
+          "campaignType": null,
+          "externalCampaignId": "lsa-B09"
+        }
+      ],
+      "lastSpendDate": "2026-10-12",
+      "leadsSinceGap": 45,
+      "sampleLeadIds": [
+        19351,
+        19541,
+        19590,
+        19605,
+        19655,
+        19657,
+        19810,
+        19856,
+        19902,
+        20129
+      ],
+      "feedLatestDate": "2026-10-30",
+      "acquisitionsSinceGap": 17,
+      "avgDailySpendBeforeCents": 12683.142857142857
+    },
+    "amountCents": 212352,
+    "firstDetectedAt": "2026-10-16T08:00:00.000Z"
+  },
+  "samples": [
+    {
+      "id": "153766",
+      "adapter_version": "ads@1.0",
+      "payload": {
+        "date": "2026-10-12",
+        "clicks": 15,
+        "platform": "google_lsa",
+        "accountId": "LSA-B09",
+        "fetchedAt": "2026-10-13T06:00:00.000Z",
+        "campaignId": "lsa-B09",
+        "costMicros": "117910000",
+        "conversions": 1,
+        "campaignName": "B09 Coral | Local Services",
+        "campaignType": "LOCAL_SERVICES"
+      },
+      "classified": "google_lsa"
+    },
+    {
+      "id": "158811",
+      "adapter_version": "ads@1.0",
+      "payload": {
+        "date": "2026-10-13",
+        "clicks": 14,
+        "platform": "google_ads",
+        "accountId": "LSA-B09",
+        "fetchedAt": "2026-10-15T06:00:00.000Z",
+        "campaignId": "pmax-lsa-B09",
+        "costMicros": "108690000",
+        "conversions": 6,
+        "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "campaignType": "PERFORMANCE_MAX",
+        "localServicesEnabled": true
+      },
+      "classified": "google_search"
+    }
+  ],
+  "before": {
+    "signal": {
+      "branchId": "B09",
+      "signal": "shift",
+      "from": {
+        "channelCode": "google_search",
+        "label": "Google Search",
+        "spendCents": 1230039,
+        "acquired": 29,
+        "cacCents": 42415
+      },
+      "to": {
+        "channelCode": "google_lsa",
+        "label": "Google Local Services",
+        "spendCents": 148767,
+        "acquired": 30,
+        "cacCents": 4959
+      },
+      "ratio": 8.553135712845332,
+      "trustworthy": false,
+      "blockers": [
+        {
+          "exceptionId": 2455,
+          "kind": "channel_coverage_gap",
+          "summary": "Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then"
+        }
+      ],
+      "channels": [
+        {
+          "channelCode": "google_lsa",
+          "label": "Google Local Services",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 148767,
+          "prospects": 57,
+          "acquired": 30,
+          "revenueFromAcquiredCents": 290000,
+          "cacCents": 4959
+        },
+        {
+          "channelCode": "google_search",
+          "label": "Google Search",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 1230039,
+          "prospects": 78,
+          "acquired": 29,
+          "revenueFromAcquiredCents": 276300,
+          "cacCents": 42415
+        },
+        {
+          "channelCode": "meta",
+          "label": "Meta",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 150789,
+          "prospects": 28,
+          "acquired": 5,
+          "revenueFromAcquiredCents": 33000,
+          "cacCents": 30158
+        },
+        {
+          "channelCode": "microsoft",
+          "label": "Microsoft Ads",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 135328,
+          "prospects": 14,
+          "acquired": 5,
+          "revenueFromAcquiredCents": 19000,
+          "cacCents": 27066
+        }
+      ]
+    },
+    "daily": [
+      {
+        "date": "2026-09-01",
+        "channel": "google_lsa",
+        "cents": 13863
+      },
+      {
+        "date": "2026-09-01",
+        "channel": "google_search",
+        "cents": 36625
+      },
+      {
+        "date": "2026-09-02",
+        "channel": "google_lsa",
+        "cents": 13512
+      },
+      {
+        "date": "2026-09-02",
+        "channel": "google_search",
+        "cents": 37730
+      },
+      {
+        "date": "2026-09-03",
+        "channel": "google_lsa",
+        "cents": 13646
+      },
+      {
+        "date": "2026-09-03",
+        "channel": "google_search",
+        "cents": 36849
+      },
+      {
+        "date": "2026-09-04",
+        "channel": "google_lsa",
+        "cents": 12340
+      },
+      {
+        "date": "2026-09-04",
+        "channel": "google_search",
+        "cents": 44283
+      },
+      {
+        "date": "2026-09-05",
+        "channel": "google_lsa",
+        "cents": 13258
+      },
+      {
+        "date": "2026-09-05",
+        "channel": "google_search",
+        "cents": 37845
+      },
+      {
+        "date": "2026-09-06",
+        "channel": "google_lsa",
+        "cents": 12568
+      },
+      {
+        "date": "2026-09-06",
+        "channel": "google_search",
+        "cents": 46384
+      },
+      {
+        "date": "2026-09-07",
+        "channel": "google_lsa",
+        "cents": 13585
+      },
+      {
+        "date": "2026-09-07",
+        "channel": "google_search",
+        "cents": 33245
+      },
+      {
+        "date": "2026-09-08",
+        "channel": "google_lsa",
+        "cents": 13442
+      },
+      {
+        "date": "2026-09-08",
+        "channel": "google_search",
+        "cents": 45728
+      },
+      {
+        "date": "2026-09-09",
+        "channel": "google_lsa",
+        "cents": 14428
+      },
+      {
+        "date": "2026-09-09",
+        "channel": "google_search",
+        "cents": 43973
+      },
+      {
+        "date": "2026-09-10",
+        "channel": "google_lsa",
+        "cents": 14558
+      },
+      {
+        "date": "2026-09-10",
+        "channel": "google_search",
+        "cents": 32336
+      },
+      {
+        "date": "2026-09-11",
+        "channel": "google_lsa",
+        "cents": 14902
+      },
+      {
+        "date": "2026-09-11",
+        "channel": "google_search",
+        "cents": 44674
+      },
+      {
+        "date": "2026-09-12",
+        "channel": "google_lsa",
+        "cents": 15777
+      },
+      {
+        "date": "2026-09-12",
+        "channel": "google_search",
+        "cents": 40151
+      },
+      {
+        "date": "2026-09-13",
+        "channel": "google_lsa",
+        "cents": 14929
+      },
+      {
+        "date": "2026-09-13",
+        "channel": "google_search",
+        "cents": 38835
+      },
+      {
+        "date": "2026-09-14",
+        "channel": "google_lsa",
+        "cents": 14129
+      },
+      {
+        "date": "2026-09-14",
+        "channel": "google_search",
+        "cents": 34614
+      },
+      {
+        "date": "2026-09-15",
+        "channel": "google_lsa",
+        "cents": 11067
+      },
+      {
+        "date": "2026-09-15",
+        "channel": "google_search",
+        "cents": 38444
+      },
+      {
+        "date": "2026-09-16",
+        "channel": "google_lsa",
+        "cents": 11594
+      },
+      {
+        "date": "2026-09-16",
+        "channel": "google_search",
+        "cents": 36082
+      },
+      {
+        "date": "2026-09-17",
+        "channel": "google_lsa",
+        "cents": 14082
+      },
+      {
+        "date": "2026-09-17",
+        "channel": "google_search",
+        "cents": 43772
+      },
+      {
+        "date": "2026-09-18",
+        "channel": "google_lsa",
+        "cents": 12948
+      },
+      {
+        "date": "2026-09-18",
+        "channel": "google_search",
+        "cents": 45845
+      },
+      {
+        "date": "2026-09-19",
+        "channel": "google_lsa",
+        "cents": 13657
+      },
+      {
+        "date": "2026-09-19",
+        "channel": "google_search",
+        "cents": 40889
+      },
+      {
+        "date": "2026-09-20",
+        "channel": "google_lsa",
+        "cents": 10578
+      },
+      {
+        "date": "2026-09-20",
+        "channel": "google_search",
+        "cents": 40994
+      },
+      {
+        "date": "2026-09-21",
+        "channel": "google_lsa",
+        "cents": 11867
+      },
+      {
+        "date": "2026-09-21",
+        "channel": "google_search",
+        "cents": 29810
+      },
+      {
+        "date": "2026-09-22",
+        "channel": "google_lsa",
+        "cents": 11117
+      },
+      {
+        "date": "2026-09-22",
+        "channel": "google_search",
+        "cents": 30467
+      },
+      {
+        "date": "2026-09-23",
+        "channel": "google_lsa",
+        "cents": 14716
+      },
+      {
+        "date": "2026-09-23",
+        "channel": "google_search",
+        "cents": 41324
+      },
+      {
+        "date": "2026-09-24",
+        "channel": "google_lsa",
+        "cents": 14072
+      },
+      {
+        "date": "2026-09-24",
+        "channel": "google_search",
+        "cents": 43988
+      },
+      {
+        "date": "2026-09-25",
+        "channel": "google_lsa",
+        "cents": 14312
+      },
+      {
+        "date": "2026-09-25",
+        "channel": "google_search",
+        "cents": 42290
+      },
+      {
+        "date": "2026-09-26",
+        "channel": "google_lsa",
+        "cents": 14473
+      },
+      {
+        "date": "2026-09-26",
+        "channel": "google_search",
+        "cents": 42212
+      },
+      {
+        "date": "2026-09-27",
+        "channel": "google_lsa",
+        "cents": 13663
+      },
+      {
+        "date": "2026-09-27",
+        "channel": "google_search",
+        "cents": 40470
+      },
+      {
+        "date": "2026-09-28",
+        "channel": "google_lsa",
+        "cents": 11749
+      },
+      {
+        "date": "2026-09-28",
+        "channel": "google_search",
+        "cents": 32065
+      },
+      {
+        "date": "2026-09-29",
+        "channel": "google_lsa",
+        "cents": 14463
+      },
+      {
+        "date": "2026-09-29",
+        "channel": "google_search",
+        "cents": 32007
+      },
+      {
+        "date": "2026-09-30",
+        "channel": "google_lsa",
+        "cents": 14334
+      },
+      {
+        "date": "2026-09-30",
+        "channel": "google_search",
+        "cents": 32662
+      },
+      {
+        "date": "2026-10-01",
+        "channel": "google_lsa",
+        "cents": 12970
+      },
+      {
+        "date": "2026-10-01",
+        "channel": "google_search",
+        "cents": 30999
+      },
+      {
+        "date": "2026-10-02",
+        "channel": "google_lsa",
+        "cents": 13239
+      },
+      {
+        "date": "2026-10-02",
+        "channel": "google_search",
+        "cents": 32866
+      },
+      {
+        "date": "2026-10-03",
+        "channel": "google_lsa",
+        "cents": 14012
+      },
+      {
+        "date": "2026-10-03",
+        "channel": "google_search",
+        "cents": 38333
+      },
+      {
+        "date": "2026-10-04",
+        "channel": "google_lsa",
+        "cents": 12521
+      },
+      {
+        "date": "2026-10-04",
+        "channel": "google_search",
+        "cents": 34749
+      },
+      {
+        "date": "2026-10-05",
+        "channel": "google_lsa",
+        "cents": 10952
+      },
+      {
+        "date": "2026-10-05",
+        "channel": "google_search",
+        "cents": 33788
+      },
+      {
+        "date": "2026-10-06",
+        "channel": "google_lsa",
+        "cents": 10050
+      },
+      {
+        "date": "2026-10-06",
+        "channel": "google_search",
+        "cents": 33795
+      },
+      {
+        "date": "2026-10-07",
+        "channel": "google_lsa",
+        "cents": 12829
+      },
+      {
+        "date": "2026-10-07",
+        "channel": "google_search",
+        "cents": 32347
+      },
+      {
+        "date": "2026-10-08",
+        "channel": "google_lsa",
+        "cents": 13898
+      },
+      {
+        "date": "2026-10-08",
+        "channel": "google_search",
+        "cents": 37777
+      },
+      {
+        "date": "2026-10-09",
+        "channel": "google_lsa",
+        "cents": 11844
+      },
+      {
+        "date": "2026-10-09",
+        "channel": "google_search",
+        "cents": 34462
+      },
+      {
+        "date": "2026-10-10",
+        "channel": "google_lsa",
+        "cents": 12117
+      },
+      {
+        "date": "2026-10-10",
+        "channel": "google_search",
+        "cents": 29311
+      },
+      {
+        "date": "2026-10-11",
+        "channel": "google_lsa",
+        "cents": 12544
+      },
+      {
+        "date": "2026-10-11",
+        "channel": "google_search",
+        "cents": 33038
+      },
+      {
+        "date": "2026-10-12",
+        "channel": "google_lsa",
+        "cents": 11791
+      },
+      {
+        "date": "2026-10-12",
+        "channel": "google_search",
+        "cents": 40005
+      },
+      {
+        "date": "2026-10-13",
+        "channel": "google_search",
+        "cents": 48672
+      },
+      {
+        "date": "2026-10-14",
+        "channel": "google_search",
+        "cents": 50596
+      },
+      {
+        "date": "2026-10-15",
+        "channel": "google_search",
+        "cents": 44617
+      },
+      {
+        "date": "2026-10-16",
+        "channel": "google_search",
+        "cents": 43026
+      },
+      {
+        "date": "2026-10-17",
+        "channel": "google_search",
+        "cents": 48844
+      },
+      {
+        "date": "2026-10-18",
+        "channel": "google_search",
+        "cents": 45157
+      },
+      {
+        "date": "2026-10-19",
+        "channel": "google_search",
+        "cents": 51502
+      },
+      {
+        "date": "2026-10-20",
+        "channel": "google_search",
+        "cents": 41713
+      },
+      {
+        "date": "2026-10-21",
+        "channel": "google_search",
+        "cents": 52319
+      },
+      {
+        "date": "2026-10-22",
+        "channel": "google_search",
+        "cents": 44593
+      },
+      {
+        "date": "2026-10-23",
+        "channel": "google_search",
+        "cents": 45332
+      },
+      {
+        "date": "2026-10-24",
+        "channel": "google_search",
+        "cents": 38765
+      },
+      {
+        "date": "2026-10-25",
+        "channel": "google_search",
+        "cents": 48774
+      },
+      {
+        "date": "2026-10-26",
+        "channel": "google_search",
+        "cents": 46481
+      },
+      {
+        "date": "2026-10-27",
+        "channel": "google_search",
+        "cents": 38969
+      },
+      {
+        "date": "2026-10-28",
+        "channel": "google_search",
+        "cents": 41252
+      },
+      {
+        "date": "2026-10-29",
+        "channel": "google_search",
+        "cents": 43857
+      },
+      {
+        "date": "2026-10-30",
+        "channel": "google_search",
+        "cents": 44100
+      }
+    ],
+    "ledger": {
+      "spendRows": 11422,
+      "spendCents": "123431864",
+      "customers": 17111,
+      "invoicedCents": "133508500",
+      "collectedCents": "120387100",
+      "leads": 24891,
+      "rawEvents": 134088
+    }
+  },
+  "remap": {
+    "records": 22,
+    "real": {
+      "claimed": 22,
+      "projected": 22,
+      "errors": 0,
+      "before": {
+        "branchIds": [
+          "B09"
+        ],
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "paidAcquired": 69,
+        "unknownAcquired": 21,
+        "paidCacCents": 24129,
+        "openExceptions": 6,
+        "atRiskCents": 14800,
+        "googleConversionsToUpload": 15,
+        "channels": {
+          "google_lsa": {
+            "spendCents": 148767,
+            "acquired": 30,
+            "cacCents": 4959
+          },
+          "google_search": {
+            "spendCents": 1230039,
+            "acquired": 29,
+            "cacCents": 42415
+          },
+          "meta": {
+            "spendCents": 150789,
+            "acquired": 5,
+            "cacCents": 30158
+          },
+          "microsoft": {
+            "spendCents": 135328,
+            "acquired": 5,
+            "cacCents": 27066
+          }
+        }
+      },
+      "after": {
+        "branchIds": [
+          "B09"
+        ],
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "paidAcquired": 69,
+        "unknownAcquired": 21,
+        "paidCacCents": 24129,
+        "openExceptions": 5,
+        "atRiskCents": 14800,
+        "googleConversionsToUpload": 15,
+        "channels": {
+          "google_lsa": {
+            "spendCents": 361119,
+            "acquired": 30,
+            "cacCents": 12037
+          },
+          "google_search": {
+            "spendCents": 1017687,
+            "acquired": 29,
+            "cacCents": 35093
+          },
+          "meta": {
+            "spendCents": 150789,
+            "acquired": 5,
+            "cacCents": 30158
+          },
+          "microsoft": {
+            "spendCents": 135328,
+            "acquired": 5,
+            "cacCents": 27066
+          }
+        }
+      }
+    },
+    "repeat": {
+      "alreadyProcessed": true,
+      "claimed": 22
+    },
+    "newKey": {
+      "claimed": 0
+    }
+  },
+  "after": {
+    "signal": {
+      "branchId": "B09",
+      "signal": "shift",
+      "from": {
+        "channelCode": "google_search",
+        "label": "Google Search",
+        "spendCents": 1017687,
+        "acquired": 29,
+        "cacCents": 35093
+      },
+      "to": {
+        "channelCode": "google_lsa",
+        "label": "Google Local Services",
+        "spendCents": 361119,
+        "acquired": 30,
+        "cacCents": 12037
+      },
+      "ratio": 2.9154274320844062,
+      "trustworthy": true,
+      "blockers": [],
+      "channels": [
+        {
+          "channelCode": "google_lsa",
+          "label": "Google Local Services",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 361119,
+          "prospects": 57,
+          "acquired": 30,
+          "revenueFromAcquiredCents": 290000,
+          "cacCents": 12037
+        },
+        {
+          "channelCode": "google_search",
+          "label": "Google Search",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 1017687,
+          "prospects": 78,
+          "acquired": 29,
+          "revenueFromAcquiredCents": 276300,
+          "cacCents": 35093
+        },
+        {
+          "channelCode": "meta",
+          "label": "Meta",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 150789,
+          "prospects": 28,
+          "acquired": 5,
+          "revenueFromAcquiredCents": 33000,
+          "cacCents": 30158
+        },
+        {
+          "channelCode": "microsoft",
+          "label": "Microsoft Ads",
+          "isPaid": true,
+          "costBasis": "media",
+          "spendCents": 135328,
+          "prospects": 14,
+          "acquired": 5,
+          "revenueFromAcquiredCents": 19000,
+          "cacCents": 27066
+        }
+      ]
+    },
+    "daily": [
+      {
+        "date": "2026-09-01",
+        "channel": "google_lsa",
+        "cents": 13863
+      },
+      {
+        "date": "2026-09-01",
+        "channel": "google_search",
+        "cents": 36625
+      },
+      {
+        "date": "2026-09-02",
+        "channel": "google_lsa",
+        "cents": 13512
+      },
+      {
+        "date": "2026-09-02",
+        "channel": "google_search",
+        "cents": 37730
+      },
+      {
+        "date": "2026-09-03",
+        "channel": "google_lsa",
+        "cents": 13646
+      },
+      {
+        "date": "2026-09-03",
+        "channel": "google_search",
+        "cents": 36849
+      },
+      {
+        "date": "2026-09-04",
+        "channel": "google_lsa",
+        "cents": 12340
+      },
+      {
+        "date": "2026-09-04",
+        "channel": "google_search",
+        "cents": 44283
+      },
+      {
+        "date": "2026-09-05",
+        "channel": "google_lsa",
+        "cents": 13258
+      },
+      {
+        "date": "2026-09-05",
+        "channel": "google_search",
+        "cents": 37845
+      },
+      {
+        "date": "2026-09-06",
+        "channel": "google_lsa",
+        "cents": 12568
+      },
+      {
+        "date": "2026-09-06",
+        "channel": "google_search",
+        "cents": 46384
+      },
+      {
+        "date": "2026-09-07",
+        "channel": "google_lsa",
+        "cents": 13585
+      },
+      {
+        "date": "2026-09-07",
+        "channel": "google_search",
+        "cents": 33245
+      },
+      {
+        "date": "2026-09-08",
+        "channel": "google_lsa",
+        "cents": 13442
+      },
+      {
+        "date": "2026-09-08",
+        "channel": "google_search",
+        "cents": 45728
+      },
+      {
+        "date": "2026-09-09",
+        "channel": "google_lsa",
+        "cents": 14428
+      },
+      {
+        "date": "2026-09-09",
+        "channel": "google_search",
+        "cents": 43973
+      },
+      {
+        "date": "2026-09-10",
+        "channel": "google_lsa",
+        "cents": 14558
+      },
+      {
+        "date": "2026-09-10",
+        "channel": "google_search",
+        "cents": 32336
+      },
+      {
+        "date": "2026-09-11",
+        "channel": "google_lsa",
+        "cents": 14902
+      },
+      {
+        "date": "2026-09-11",
+        "channel": "google_search",
+        "cents": 44674
+      },
+      {
+        "date": "2026-09-12",
+        "channel": "google_lsa",
+        "cents": 15777
+      },
+      {
+        "date": "2026-09-12",
+        "channel": "google_search",
+        "cents": 40151
+      },
+      {
+        "date": "2026-09-13",
+        "channel": "google_lsa",
+        "cents": 14929
+      },
+      {
+        "date": "2026-09-13",
+        "channel": "google_search",
+        "cents": 38835
+      },
+      {
+        "date": "2026-09-14",
+        "channel": "google_lsa",
+        "cents": 14129
+      },
+      {
+        "date": "2026-09-14",
+        "channel": "google_search",
+        "cents": 34614
+      },
+      {
+        "date": "2026-09-15",
+        "channel": "google_lsa",
+        "cents": 11067
+      },
+      {
+        "date": "2026-09-15",
+        "channel": "google_search",
+        "cents": 38444
+      },
+      {
+        "date": "2026-09-16",
+        "channel": "google_lsa",
+        "cents": 11594
+      },
+      {
+        "date": "2026-09-16",
+        "channel": "google_search",
+        "cents": 36082
+      },
+      {
+        "date": "2026-09-17",
+        "channel": "google_lsa",
+        "cents": 14082
+      },
+      {
+        "date": "2026-09-17",
+        "channel": "google_search",
+        "cents": 43772
+      },
+      {
+        "date": "2026-09-18",
+        "channel": "google_lsa",
+        "cents": 12948
+      },
+      {
+        "date": "2026-09-18",
+        "channel": "google_search",
+        "cents": 45845
+      },
+      {
+        "date": "2026-09-19",
+        "channel": "google_lsa",
+        "cents": 13657
+      },
+      {
+        "date": "2026-09-19",
+        "channel": "google_search",
+        "cents": 40889
+      },
+      {
+        "date": "2026-09-20",
+        "channel": "google_lsa",
+        "cents": 10578
+      },
+      {
+        "date": "2026-09-20",
+        "channel": "google_search",
+        "cents": 40994
+      },
+      {
+        "date": "2026-09-21",
+        "channel": "google_lsa",
+        "cents": 11867
+      },
+      {
+        "date": "2026-09-21",
+        "channel": "google_search",
+        "cents": 29810
+      },
+      {
+        "date": "2026-09-22",
+        "channel": "google_lsa",
+        "cents": 11117
+      },
+      {
+        "date": "2026-09-22",
+        "channel": "google_search",
+        "cents": 30467
+      },
+      {
+        "date": "2026-09-23",
+        "channel": "google_lsa",
+        "cents": 14716
+      },
+      {
+        "date": "2026-09-23",
+        "channel": "google_search",
+        "cents": 41324
+      },
+      {
+        "date": "2026-09-24",
+        "channel": "google_lsa",
+        "cents": 14072
+      },
+      {
+        "date": "2026-09-24",
+        "channel": "google_search",
+        "cents": 43988
+      },
+      {
+        "date": "2026-09-25",
+        "channel": "google_lsa",
+        "cents": 14312
+      },
+      {
+        "date": "2026-09-25",
+        "channel": "google_search",
+        "cents": 42290
+      },
+      {
+        "date": "2026-09-26",
+        "channel": "google_lsa",
+        "cents": 14473
+      },
+      {
+        "date": "2026-09-26",
+        "channel": "google_search",
+        "cents": 42212
+      },
+      {
+        "date": "2026-09-27",
+        "channel": "google_lsa",
+        "cents": 13663
+      },
+      {
+        "date": "2026-09-27",
+        "channel": "google_search",
+        "cents": 40470
+      },
+      {
+        "date": "2026-09-28",
+        "channel": "google_lsa",
+        "cents": 11749
+      },
+      {
+        "date": "2026-09-28",
+        "channel": "google_search",
+        "cents": 32065
+      },
+      {
+        "date": "2026-09-29",
+        "channel": "google_lsa",
+        "cents": 14463
+      },
+      {
+        "date": "2026-09-29",
+        "channel": "google_search",
+        "cents": 32007
+      },
+      {
+        "date": "2026-09-30",
+        "channel": "google_lsa",
+        "cents": 14334
+      },
+      {
+        "date": "2026-09-30",
+        "channel": "google_search",
+        "cents": 32662
+      },
+      {
+        "date": "2026-10-01",
+        "channel": "google_lsa",
+        "cents": 12970
+      },
+      {
+        "date": "2026-10-01",
+        "channel": "google_search",
+        "cents": 30999
+      },
+      {
+        "date": "2026-10-02",
+        "channel": "google_lsa",
+        "cents": 13239
+      },
+      {
+        "date": "2026-10-02",
+        "channel": "google_search",
+        "cents": 32866
+      },
+      {
+        "date": "2026-10-03",
+        "channel": "google_lsa",
+        "cents": 14012
+      },
+      {
+        "date": "2026-10-03",
+        "channel": "google_search",
+        "cents": 38333
+      },
+      {
+        "date": "2026-10-04",
+        "channel": "google_lsa",
+        "cents": 12521
+      },
+      {
+        "date": "2026-10-04",
+        "channel": "google_search",
+        "cents": 34749
+      },
+      {
+        "date": "2026-10-05",
+        "channel": "google_lsa",
+        "cents": 10952
+      },
+      {
+        "date": "2026-10-05",
+        "channel": "google_search",
+        "cents": 33788
+      },
+      {
+        "date": "2026-10-06",
+        "channel": "google_lsa",
+        "cents": 10050
+      },
+      {
+        "date": "2026-10-06",
+        "channel": "google_search",
+        "cents": 33795
+      },
+      {
+        "date": "2026-10-07",
+        "channel": "google_lsa",
+        "cents": 12829
+      },
+      {
+        "date": "2026-10-07",
+        "channel": "google_search",
+        "cents": 32347
+      },
+      {
+        "date": "2026-10-08",
+        "channel": "google_lsa",
+        "cents": 13898
+      },
+      {
+        "date": "2026-10-08",
+        "channel": "google_search",
+        "cents": 37777
+      },
+      {
+        "date": "2026-10-09",
+        "channel": "google_lsa",
+        "cents": 11844
+      },
+      {
+        "date": "2026-10-09",
+        "channel": "google_search",
+        "cents": 34462
+      },
+      {
+        "date": "2026-10-10",
+        "channel": "google_lsa",
+        "cents": 12117
+      },
+      {
+        "date": "2026-10-10",
+        "channel": "google_search",
+        "cents": 29311
+      },
+      {
+        "date": "2026-10-11",
+        "channel": "google_lsa",
+        "cents": 12544
+      },
+      {
+        "date": "2026-10-11",
+        "channel": "google_search",
+        "cents": 33038
+      },
+      {
+        "date": "2026-10-12",
+        "channel": "google_lsa",
+        "cents": 11791
+      },
+      {
+        "date": "2026-10-12",
+        "channel": "google_search",
+        "cents": 40005
+      },
+      {
+        "date": "2026-10-13",
+        "channel": "google_lsa",
+        "cents": 10869
+      },
+      {
+        "date": "2026-10-13",
+        "channel": "google_search",
+        "cents": 37803
+      },
+      {
+        "date": "2026-10-14",
+        "channel": "google_lsa",
+        "cents": 11946
+      },
+      {
+        "date": "2026-10-14",
+        "channel": "google_search",
+        "cents": 38650
+      },
+      {
+        "date": "2026-10-15",
+        "channel": "google_lsa",
+        "cents": 10750
+      },
+      {
+        "date": "2026-10-15",
+        "channel": "google_search",
+        "cents": 33867
+      },
+      {
+        "date": "2026-10-16",
+        "channel": "google_lsa",
+        "cents": 13466
+      },
+      {
+        "date": "2026-10-16",
+        "channel": "google_search",
+        "cents": 29560
+      },
+      {
+        "date": "2026-10-17",
+        "channel": "google_lsa",
+        "cents": 12913
+      },
+      {
+        "date": "2026-10-17",
+        "channel": "google_search",
+        "cents": 35931
+      },
+      {
+        "date": "2026-10-18",
+        "channel": "google_lsa",
+        "cents": 12353
+      },
+      {
+        "date": "2026-10-18",
+        "channel": "google_search",
+        "cents": 32804
+      },
+      {
+        "date": "2026-10-19",
+        "channel": "google_lsa",
+        "cents": 13432
+      },
+      {
+        "date": "2026-10-19",
+        "channel": "google_search",
+        "cents": 38070
+      },
+      {
+        "date": "2026-10-20",
+        "channel": "google_lsa",
+        "cents": 12091
+      },
+      {
+        "date": "2026-10-20",
+        "channel": "google_search",
+        "cents": 29622
+      },
+      {
+        "date": "2026-10-21",
+        "channel": "google_lsa",
+        "cents": 12842
+      },
+      {
+        "date": "2026-10-21",
+        "channel": "google_search",
+        "cents": 39477
+      },
+      {
+        "date": "2026-10-22",
+        "channel": "google_lsa",
+        "cents": 13203
+      },
+      {
+        "date": "2026-10-22",
+        "channel": "google_search",
+        "cents": 31390
+      },
+      {
+        "date": "2026-10-23",
+        "channel": "google_lsa",
+        "cents": 9339
+      },
+      {
+        "date": "2026-10-23",
+        "channel": "google_search",
+        "cents": 35993
+      },
+      {
+        "date": "2026-10-24",
+        "channel": "google_lsa",
+        "cents": 9443
+      },
+      {
+        "date": "2026-10-24",
+        "channel": "google_search",
+        "cents": 29322
+      },
+      {
+        "date": "2026-10-25",
+        "channel": "google_lsa",
+        "cents": 9988
+      },
+      {
+        "date": "2026-10-25",
+        "channel": "google_search",
+        "cents": 38786
+      },
+      {
+        "date": "2026-10-26",
+        "channel": "google_lsa",
+        "cents": 12333
+      },
+      {
+        "date": "2026-10-26",
+        "channel": "google_search",
+        "cents": 34148
+      },
+      {
+        "date": "2026-10-27",
+        "channel": "google_lsa",
+        "cents": 10950
+      },
+      {
+        "date": "2026-10-27",
+        "channel": "google_search",
+        "cents": 28019
+      },
+      {
+        "date": "2026-10-28",
+        "channel": "google_lsa",
+        "cents": 12649
+      },
+      {
+        "date": "2026-10-28",
+        "channel": "google_search",
+        "cents": 28603
+      },
+      {
+        "date": "2026-10-29",
+        "channel": "google_lsa",
+        "cents": 11968
+      },
+      {
+        "date": "2026-10-29",
+        "channel": "google_search",
+        "cents": 31889
+      },
+      {
+        "date": "2026-10-30",
+        "channel": "google_lsa",
+        "cents": 11817
+      },
+      {
+        "date": "2026-10-30",
+        "channel": "google_search",
+        "cents": 32283
+      }
+    ],
+    "ledger": {
+      "spendRows": 11422,
+      "spendCents": "123431864",
+      "customers": 17111,
+      "invoicedCents": "133508500",
+      "collectedCents": "120387100",
+      "leads": 24891,
+      "rawEvents": 134088
+    },
+    "exceptionStatus": "resolved",
+    "lineage": [
+      {
+        "effectiveDate": "2026-10-13",
+        "recordedBy": "export-changeguard"
+      }
+    ]
+  }
+}

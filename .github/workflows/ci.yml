@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: revenue_signal
+        ports: ["54333:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgres://postgres@127.0.0.1:54333/revenue_signal
+      TEST_DATABASE_URL: postgres://postgres@127.0.0.1:54333/revenue_signal_test
+      INGEST_API_KEY: ci-ingest-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create test database
+        run: psql -h 127.0.0.1 -p 54333 -U postgres -c "create database revenue_signal_test"
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Unit + integration tests (real Postgres, includes the full seeded scenario)
+        run: npm test
+      - run: npm run build
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end golden path (seeds the demo database first)
+        run: npm run test:e2e
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/

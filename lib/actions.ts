@@ -1,3 +1,4 @@
+import { recordEvent } from "@/lib/events/outbox";
 import type { Pool } from "pg";
 import { withTransaction, type Queryable } from "@/lib/db";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
@@ -95,6 +96,13 @@ export async function overrideLeadBranchInTransaction(tx: Queryable, args: Overr
     `lead:${args.leadId}`,
     { from: lead.rows[0].branch_id, to: args.branchId, reason: args.reason },
   ]);
+  // Before the reconcile below, so its run covers the event; identity has to catch up later.
+  await recordEvent(tx, {
+    type: "action_center.lead_branch_overridden",
+    subject: `lead:${args.leadId}`,
+    occurredAt: args.now,
+    payload: { from: lead.rows[0].branch_id, to: args.branchId },
+  });
   await reconcile(tx, args.now);
 }
 

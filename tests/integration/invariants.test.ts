@@ -5,6 +5,7 @@ import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { runStream } from "@/lib/ingest/ingest";
 import { branchRows, totals } from "@/lib/metrics/scorecard";
 import { overrideLeadBranch } from "@/lib/actions";
+import { DECISION_LABEL, feedbackRows, toDataManagerEvent } from "@/lib/feedback";
 import { ForbiddenError, VIEWERS, resolveScope } from "@/lib/viewer";
 import { T0, acquisition, call, crm, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
@@ -47,6 +48,47 @@ describe("exactly-once ingestion", () => {
     expect(stats.conflicts).toBe(1);
     expect((await one(pool, "select total_cents from crm_tickets")).total_cents).toBe("14900");
     expect((await one(pool, "select count(*) n from exceptions where kind = 'payload_conflict' and status = 'open'")).n).toBe("1");
+  });
+});
+
+describe("payload conflicts are tied to their branch and customer (audit 2026-11-09, D-4)", () => {
+  it("the exception names the payload's branch and customer, so branch viewers see it and its revenue is untied", async () => {
+    const a = acquisition(3, "B01", "+12125550104", day(0));
+    await ingest(pool, "calls", [a.call]);
+    await ingest(pool, "crm", a.crm);
+    const ticket = a.crm.find((r) => r.entity === "ticket")!;
+    const altered = structuredClone(ticket);
+    for (const [k, v] of Object.entries(altered.payload as Record<string, unknown>)) if (v === "149.00") (altered.payload as Record<string, unknown>)[k] = "199.00";
+    expect((await ingest(pool, "crm", [altered])).conflicts).toBe(1);
+    const ex = await one<{ branch_id: string | null; customer_ids: string[] }>(pool, "select branch_id, customer_ids from exceptions where kind = 'payload_conflict'");
+    expect(ex.branch_id).toBe("B01");
+    expect(ex.customer_ids.map(Number)).toEqual([a.customerId]);
+    // In the branch's own scope, and its collected revenue counts as at risk (untied).
+    const [b01] = await branchRows(pool, { ...OCT, branchIds: ["B01"] });
+    expect(b01.openExceptions).toBeGreaterThanOrEqual(1);
+    expect(b01.atRiskCents).toBe(14_900);
+  });
+});
+
+describe("Google conversion feedback (audit 2026-11-09, F-1/F-2)", () => {
+  it("a cancelled plan is suppressed, never planned as a retraction, and builds no event body", async () => {
+    const a = acquisition(14, "B01", "+12125550114", day(0), { source: "Google Ads" });
+    (a.call.payload as Record<string, unknown>).gclid = "gclid-test-14";
+    await ingest(pool, "calls", [a.call]);
+    await ingest(pool, "crm", a.crm);
+    const sub = a.crm.find((r) => r.entity === "subscription")!;
+    const cancelled = structuredClone(sub);
+    Object.assign(cancelled.payload as Record<string, unknown>, { active: "0", dateCancelled: "2026-10-20 10:00:00", dateUpdated: "2026-10-20 10:00:00" });
+    await ingest(pool, "crm", [cancelled]);
+    const [row] = await feedbackRows(pool, OCT, day(30));
+    expect(row.decision).toBe("suppress_cancelled");
+    expect(toDataManagerEvent(row)).toBeNull();
+    expect(JSON.stringify(DECISION_LABEL)).not.toMatch(/retract/i);
+  });
+
+  it("a row without a gclid is labelled as not built, not as unmatchable", () => {
+    expect(DECISION_LABEL.no_click_id).not.toMatch(/not matchable/i);
+    expect(DECISION_LABEL.click_too_old).toMatch(/lead/i);
   });
 });
 
@@ -117,6 +159,46 @@ describe("attribution rules", () => {
     const acq = await one(pool, "select channel_code, attribution_basis from v_acquisitions");
     expect(acq).toMatchObject({ channel_code: "unknown", attribution_basis: "lead_without_evidence" });
     expect((await totals(pool, OCT)).paidAcquired).toBe(0);
+  });
+
+  it("a paid customer credited to an unmapped campaign is not in a branch's CAC denominator: its cost is unallocated (audit 2026-11-09, D-3)", async () => {
+    const spend = (campaignId: string, date: string) => ({
+      entity: "spend_day",
+      payload: { platform: "google_ads", accountId: "GA-1", campaignId, campaignName: `${campaignId} | Search`, date, costMicros: "200000000", clicks: 10, conversions: 1, fetchedAt: `${date}T23:00:00Z` },
+    });
+    await ingest(pool, "ads", [spend("gs-B01", "2026-10-02"), spend("gs-orphan", "2026-10-02")]);
+    await pool.query("insert into campaign_branch_map select id, 'B01', 'test', now() from ad_campaigns where external_campaign_id = 'gs-B01'");
+    const mapped = acquisition(10, "B01", "+12125550110", day(1));
+    const orphan = acquisition(11, "B01", "+12125550111", day(1));
+    (mapped.call.payload as Record<string, unknown>).campaign = "gs-B01";
+    (orphan.call.payload as Record<string, unknown>).campaign = "gs-orphan";
+    await ingest(pool, "calls", [mapped.call, orphan.call]);
+    await ingest(pool, "crm", [...mapped.crm, ...orphan.crm]);
+    const t = await totals(pool, OCT);
+    expect(t.acquired).toBe(2);
+    expect(t.unallocatedSpendCents).toBe(20_000);
+    // Numerator: mapped spend only ($200). Denominator: the customer that spend bought (1), not 2.
+    expect(t.paidAcquired).toBe(1);
+    expect(t.paidCacCents).toBe(20_000);
+  });
+
+  it("only a PAID first touch followed by a rep signature is a channel conflict (audit 2026-11-09, D-5)", async () => {
+    const sale = (id: string, phone: string) => ({
+      entity: "sale",
+      payload: { saleId: id, repId: "rep-9", branchId: "B01", signedAt: new Date(day(0).getTime() + 30 * 60_000).toISOString(), customer: { phone, email: null, zip: "10001" } },
+    });
+    const organic = acquisition(12, "B01", "+12125550112", day(0), { source: "Google My Business" });
+    const paid = acquisition(13, "B01", "+12125550113", day(0), { source: "Google Ads" });
+    await ingest(pool, "calls", [organic.call, paid.call]);
+    await ingest(pool, "d2d", [sale("S-12", "+12125550112"), sale("S-13", "+12125550113")]);
+    await ingest(pool, "crm", [...organic.crm, ...paid.crm]);
+    const rows = await pool.query<{ crm_customer_id: string; channel_code: string; channel_conflict: boolean }>(
+      "select crm_customer_id, channel_code, channel_conflict from v_acquisitions order by crm_customer_id",
+    );
+    expect(rows.rows.map((r) => [Number(r.crm_customer_id), r.channel_code, r.channel_conflict])).toEqual([
+      [organic.customerId, "organic_gbp", false],
+      [paid.customerId, "google_search", true],
+    ]);
   });
 
   it("an existing customer adding a service is not a new acquisition", async () => {

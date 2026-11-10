@@ -15,5 +15,6 @@ export const PERIODS: Record<PeriodKey, Period> = {
 
 export function parsePeriod(value: string | string[] | undefined): Period {
   const key = Array.isArray(value) ? value[0] : value;
-  return key && key in PERIODS ? PERIODS[key as PeriodKey] : PERIODS.oct;
+  // Own keys only: `in` would accept inherited names such as "toString" or "constructor".
+  return key && Object.hasOwn(PERIODS, key) ? PERIODS[key as PeriodKey] : PERIODS.oct;
 }

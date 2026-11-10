@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { mapperVersions } from "@/lib/adapters/registry";
 import { ActionError } from "@/lib/actions";
-import { afterResponse, errorResponse } from "@/lib/http";
-import { dispatchEvents } from "@/lib/events/consumers";
+import { errorResponse } from "@/lib/http";
 import { replay } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
 import { PERIODS } from "@/lib/period";
@@ -22,13 +21,19 @@ const body = z.object({
  * POST /api/replays — replay the records behind one exception through a mapper version: a
  * quarantine group (held records) or a channel coverage gap (records re-mapped).
  * Integration engineers only; the exception must be in the caller's branch scope.
- * Repeating a request with the same idempotencyKey returns the stored result.
+ *
+ * DRY RUNS ONLY. Changing stored records goes through the Action Center (propose → dry run →
+ * approve, by another role → the application executes once). This route used to commit too,
+ * which let an engineer skip approval (audit 2026-11-09, J1); a commit is now refused with 409.
  */
 export async function POST(request: Request) {
   try {
     const input = body.parse(await request.json());
     const viewer = await getViewer();
     if (!viewer.can.replay) throw new ForbiddenError(`${viewer.label} cannot replay source records`);
+    if (!input.dryRun) {
+      throw new ActionError("Commits go through the Action Center: propose the fix, dry-run it, and an approver in another role approves before the application executes it.", 409);
+    }
     const pool = getPool();
     const exception = await getException(pool, input.exceptionId);
     if (!exception || !canSeeBranch(viewer, exception.branchId)) throw new ActionError("Exception not found", 404);
@@ -43,17 +48,12 @@ export async function POST(request: Request) {
       mapperVersion: input.mapperVersion,
       actor: viewer.role,
       idempotencyKey: input.idempotencyKey,
-      dryRun: input.dryRun,
+      dryRun: true,
       now: await businessNow(),
       exceptionId: exception.id,
       scope: { from: PERIODS.all.from, to: PERIODS.all.to, branchIds: exception.branchId ? [exception.branchId] : null },
     });
     console.log(JSON.stringify({ level: "info", msg: "replay", exceptionId: exception.id, mode: plan.mode, dryRun: input.dryRun, claimed: result.claimed, projected: result.projected, alreadyProcessed: result.alreadyProcessed }));
-    // The replay published intake.records_reprojected; reconciliation already ran inside it,
-    // so only identity has catching up to do.
-    if (!result.dryRun && !result.alreadyProcessed && result.projected > 0) {
-      afterResponse("event dispatch", () => dispatchEvents(pool));
-    }
     return NextResponse.json(result);
   } catch (error) {
     return errorResponse(error);

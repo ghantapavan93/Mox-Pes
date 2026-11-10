@@ -32,14 +32,14 @@ server's zone (regression test F3). Branch-local month boundaries are a known li
 | Paid media spend | Σ cost of media campaigns **mapped** to the branch, by spend date | Budget by branch | Unmapped campaigns are excluded from every branch (shown as unallocated). D2D commission is not media spend. |
 | Unique prospects | distinct prospect keys with a lead record in the period | Demand by branch/channel | See prospect approximation. |
 | New customers serviced | count of acquisitions whose initial service completed in the period | Acquisition volume | Lags sales by days; the last week of a period is always light. |
-| Paid-media CAC | paid media spend ÷ new customers serviced whose credited channel is paid | Channel/branch efficiency | **Period CAC**, not cohort: October spend vs October completions. Young periods look worse. |
+| Paid-media CAC | paid media spend ÷ new customers serviced whose credited channel is paid **media** (cost basis `media`), excluding customers credited to a campaign no branch is mapped to (their cost is unallocated spend) | Channel/branch efficiency | **Period CAC**, not cohort: October spend vs October completions. Young periods look worse. **Branch keys differ:** spend follows the campaign's mapped (marketing) branch, customers follow the CRM office that services them. A customer sold by one branch's campaign and serviced by another moves cost and customer to different rows (9 such customers in the October seed, B06/B07). Known limitation, not yet resolved: which branch owns CAC is a business decision (audit 2026-11-09, D-2). |
 | Unattributed share | serviced new customers with channel `unknown` ÷ all serviced new customers | Measurement health | A jump usually means broken capture or linkage, not changed behaviour — the seeded incident shows exactly this. |
 | Collected revenue | Σ successful payments − refunds (negative rows), by payment date, in the CRM office's branch | Cash by branch | Includes the existing base. Booked contract value and invoice totals are never revenue. |
 | Collected from new customers | Σ successful payments − refunds, to date, from customers serviced in the period | Early payback | Young customers have paid little so far. |
 | Booked annual value | Σ annual contract value of active first subscriptions | Bidding value, pipeline | **Booked, not revenue**; always labelled so. |
 | Revenue in open exceptions | Σ collected revenue of **distinct** customers referenced by open exceptions | How much revenue has unsettled credit: **untied** (held records, payments without a ticket, conflicting payloads) vs **credit disputed** (branch mismatch, D2D / paid conflict — tied, but contested) | It is not lost revenue. Disputed credit is a policy question, not missing data. Unmapped spend is reported separately. |
 | Channel spend | Σ cost of spend records by the channel **each record was classified into** by its mapper version | Channel budget | A platform re-typing a campaign moves spend between channels silently; see the coverage-gap rule |
-| Budget signal (illustrative) | the most expensive paid channel at a branch costs ≥ 1.5× the cheapest per new customer serviced (each ≥ 5 customers) | Whether to shift budget between channels | Shown with its blockers; "not trustworthy yet" while a coverage gap, held records or unmapped spend is open at the branch |
+| Budget signal (illustrative) | the most expensive paid channel at a branch costs ≥ 1.5× the cheapest per new customer serviced (each ≥ 5 customers) | Whether to shift budget between channels | Shown with its blockers; "not trustworthy yet" while a coverage gap or held records are open at the branch, or an unmapped campaign produced customers the branch serviced in a compared channel (unmapped spend has no branch of its own, so it blocks where its customers are) |
 | Decision readiness | per paid channel at a branch: integrity passes, no open decision-blocking incident at the branch (coverage gap, held records, unmapped spend), ≥ 5 serviced customers, spend and CRM feeds fresh (≤ 36 h) | Whether this channel's numbers can carry a budget move | Readiness is not effectiveness: a ready channel can still be ineffective; only a randomized experiment measures that |
 | Budget decisions on hold (Overview) | open decision-blocking exceptions in scope, most severe first | Which branches must not move budget yet | Lists incidents, not their size in the budget decision |
 | Journey collected (Customer 360) | Σ successful payments − refunds for the customer, to date (equals `v_customer_revenue`) | Customer value | Includes add-on services, not only the first subscription |
@@ -49,10 +49,23 @@ server's zone (regression test F3). Branch-local month boundaries are a known li
 
 Serviced Google Search acquisitions with a gclid → candidate conversions.
 `transactionId = sha256(lead_id:initial_service_completed)` (stable: a re-send is an adjustment).
-Excluded with a reason: no click id, click older than 90 days at upload time, D2D conflict (held),
-cancelled plan (retraction). Value = booked annual plan value, labelled as a bidding signal. Shape
-follows the Data Manager API path that replaced `UploadClickConversions` for new uploaders in 2026
-(research/05); field names must be checked against Google's reference before any real use.
+Excluded with a reason: no click id, lead older than 90 days, D2D conflict (held), cancelled plan
+(not sent). Value = booked annual plan value, labelled as a bidding signal. Shape follows the Data
+Manager API path that replaced `UploadClickConversions` for new uploaders in 2026 (research/05);
+field names must be checked against Google's reference before any real use.
+
+Limits, re-checked against Google's documentation on 2026-11-09 (audit area F):
+
+- **Cancelled plans are not retracted.** Data Manager does not support conversion retractions (its
+  upgrade guide); a value can be restated, the count stays. Nothing here records what was sent, so a
+  cancelled plan is simply never sent.
+- **"No click id" is not "unmatchable".** Google can match on hashed email or phone (enhanced
+  conversions for leads) and on gbraid/wbraid. Neither is implemented. The stored hashes use this
+  system's own format (`phone:` + E.164), not Google's normalisation, so they cannot be reused as-is.
+- **Click age is approximated from the lead time**, which is at or after the click. Google's limit is
+  the conversion action's click-through window (90 days by default).
+- **No consent fields are sent.** Google requires them for EEA users only; a real uploader should
+  still pass them explicitly.
 
 ## What attribution is not
 

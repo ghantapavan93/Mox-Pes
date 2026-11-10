@@ -161,6 +161,46 @@ describe("tool scope enforcement", () => {
     expect(open.evidenceIds).toContain(`exception:${gapId}`);
   });
 
+  it("lineage 'versions' never list other branches' records, nor unrelated unidentified ones (audit 2026-11-09, I-4)", async () => {
+    await freshDb(pool);
+    // Two calls without an id: both are kept quarantined under entity_id 'unidentified'. They
+    // are not versions of one record, and the B09 one is outside a B20 partner's scope.
+    const anonymous = (branchId: string, phone: string) => {
+      const record = call("ignored", branchId, phone, at(5));
+      delete (record.payload as Record<string, unknown>).id;
+      return record;
+    };
+    await ingest(pool, "calls", [anonymous("B20", "+12125550301"), anonymous("B09", "+12125550302")], { now: at(6) });
+    const ids = (await pool.query<{ id: string; b: string }>("select id, payload->>'branch_tag' as b from raw_events where entity_id = 'unidentified' order by id")).rows;
+    expect(ids.map((r) => r.b)).toEqual(["B20", "B09"]);
+    const [own, other] = ids.map((r) => Number(r.id));
+    const inv = await pool.query<{ id: string }>(
+      "insert into investigations (question, actor, mode, status, created_at) values ('versions test', 'partner', 'deterministic', 'running', $1) returning id",
+      [NOW],
+    );
+    const recorder = new StepRecorder(pool, Number(inv.rows[0].id), NOW);
+    const r = await executeTool({ db: pool, viewer: partner, now: NOW }, recorder, "getSourceLineage", { rawEventId: own });
+    expect(r.status).toBe("ok");
+    const versions = (r.data as { versions: Array<{ id: number }> }).versions.map((v) => v.id);
+    expect(versions).toEqual([own]);
+    expect(r.evidenceIds).not.toContain(`raw_event:${other}`);
+    expect(recorder.returnedEvidence.has(`raw_event:${other}`)).toBe(false);
+  });
+
+  it("compareMappingVersions refuses an out-of-scope id as not found before checking its source (audit 2026-11-09, I-5)", async () => {
+    await seedB09();
+    const rawId = Number((await one<{ id: string }>(pool, "select min(id) as id from raw_events where source = 'ads'")).id);
+    const inv = await pool.query<{ id: string }>(
+      "insert into investigations (question, actor, mode, status, created_at) values ('source probe', 'partner', 'deterministic', 'running', $1) returning id",
+      [NOW],
+    );
+    const recorder = new StepRecorder(pool, Number(inv.rows[0].id), NOW);
+    // Wrong source on purpose: the old order answered "is from ads, not web", confirming the id.
+    const r = await executeTool({ db: pool, viewer: partner, now: NOW }, recorder, "compareMappingVersions", { source: "web", fromVersion: "1.0", toVersion: "1.0", rawEventIds: [rawId] });
+    expect(r.status).toBe("forbidden");
+    expect(JSON.stringify(r)).not.toMatch(/is from ads/);
+  });
+
   it("a partner's investigation about another branch reads nothing and leaks nothing", async () => {
     await seedB09();
     await expect(runInvestigation(pool, { question: GOLDEN, branchId: B09, viewer: partner, now: NOW })).rejects.toThrow(ForbiddenError);
@@ -462,7 +502,10 @@ describe("model tool loop (mocked client)", () => {
     const out = await runInvestigation(pool, { question: GOLDEN, branchId: B09, viewer: marketing, now: NOW, client, limits: { maxToolCalls: 2, maxTurns: 4 } });
     expect(client.calls).toHaveLength(4);
     expect(out.mode).toBe("deterministic");
-    expect(out.result.modeLabel).toBe("Deterministic investigator — no model configured");
+    // Audit 2026-11-09 (I-2): a model WAS configured and billed; the label must say it failed,
+    // not that none was configured.
+    expect(out.result.modeLabel).toMatch(/^Deterministic fallback — the model run failed \(/);
+    expect(out.result.modeLabel).not.toMatch(/no model configured/);
     expect(out.steps.some((s) => s.kind === "model_turn" && s.status === "error" && /falling back/.test(s.outputSummary))).toBe(true);
     // Budget: of the model's four tool requests only two ran; the rest were refused unrun.
     const fallbackAt = out.steps.findIndex((s) => /falling back/.test(s.outputSummary));

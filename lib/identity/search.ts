@@ -104,8 +104,10 @@ export async function searchCustomers(db: Queryable, filters: CustomerFilters, s
   const prospectRef = /^P-(\d{1,15})$/i.exec(q);
   const prefix = q && !prospectRef ? likePrefix(q) : null;
 
-  const { rows } = await db.query<{
-    kind: IdentityKind;
+  // The total is counted over the whole filtered set, separately from the page: a page past
+  // the end still reports the real total (one row, page columns null).
+  const { rows: result } = await db.query<{
+    kind: IdentityKind | null;
     identity_id: string | null;
     crm_customer_id: string | null;
     branch_id: string | null;
@@ -117,20 +119,30 @@ export async function searchCustomers(db: Queryable, filters: CustomerFilters, s
     pending_conflicts: string;
     total: string;
   }>(
-    `${POPULATION}
-     select s.*, count(*) over () as total
-     from scoped s
-     where ($2::text is null or s.lifecycle = $2)
-       and ($3::bigint is null or s.identity_id = $3)
-       and ($4::text is null
-            or s.crm_customer_id::text like $4
-            or exists (select 1 from identity_links k
-                       where k.identity_id = s.identity_id
-                         and k.source_record_id like any (array[$4, upper($4), lower($4)])))
-     order by s.last_activity_at desc nulls last, s.kind, coalesce(s.crm_customer_id, s.identity_id) desc
-     limit $5 offset $6`,
+    `${POPULATION}, filtered as (
+       select s.* from scoped s
+       where ($2::text is null or s.lifecycle = $2)
+         and ($3::bigint is null or s.identity_id = $3)
+         and ($4::text is null
+              or s.crm_customer_id::text like $4
+              or exists (select 1 from identity_links k
+                         where k.identity_id = s.identity_id
+                           and k.source_record_id like any (array[$4, upper($4), lower($4)])))
+     ), counted as (
+       select count(*) as total from filtered
+     )
+     select p.*, c.total
+     from counted c
+     left join lateral (
+       select f.* from filtered f
+       order by f.last_activity_at desc nulls last, f.kind, coalesce(f.crm_customer_id, f.identity_id) desc
+       limit $5 offset $6) p on true
+     order by p.last_activity_at desc nulls last, p.kind, coalesce(p.crm_customer_id, p.identity_id) desc`,
     [scope, filters.lifecycle ?? null, prospectRef ? Number(prospectRef[1]) : null, prefix, pageSize, (page - 1) * pageSize],
   );
+  const total = result.length ? Number(result[0].total) : 0;
+  // A page past the end comes back as the single counted row with null page columns.
+  const rows = result.filter((r): r is typeof r & { kind: IdentityKind } => r.kind !== null);
 
   // Credited channel for this page only: v_acquisitions per customer is an indexed lookup.
   const customerIds = rows.filter((r) => r.crm_customer_id !== null).map((r) => Number(r.crm_customer_id));
@@ -175,7 +187,7 @@ export async function searchCustomers(db: Queryable, filters: CustomerFilters, s
         attributionBasis: a?.attribution_basis ?? null,
       };
     }),
-    total: rows.length ? Number(rows[0].total) : 0,
+    total,
     page,
     pageSize,
   };

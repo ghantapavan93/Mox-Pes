@@ -3,14 +3,15 @@ import type { Pool } from "pg";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { withTransaction } from "@/lib/db";
-import { dispatchEvents } from "@/lib/events/consumers";
+import { overrideLeadBranch } from "@/lib/actions";
+import { CONSUMERS, consumerBacklog, dispatchEvents } from "@/lib/events/consumers";
 import { ingestRecords } from "@/lib/ingest/ingest";
 import { brandRows } from "@/lib/metrics/brands";
 import { totals } from "@/lib/metrics/scorecard";
 import { reconcile } from "@/lib/reconcile/reconcile";
 import { BRANCHES, BRANDS, branchesOfBrands } from "@/lib/reference";
 import { ForbiddenError, VIEWERS, resolveBrandScope, resolveScope } from "@/lib/viewer";
-import { acquisition, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
+import { acquisition, call, crm, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
 /**
  * The domain model's cross-context invariants (docs/domain-model.md):
@@ -142,6 +143,48 @@ describe("domain events", () => {
     const [retry] = await dispatchEvents(pool, { only: ["reconciliation"] });
     expect(retry).toEqual({ consumer: "reconciliation", status: "ran", delivered: 1 });
   });
+
+  it("a re-observed version that changes live rows (void → successful → void) wakes reconciliation (audit 2026-11-09, A-1)", async () => {
+    const at = (h: number) => new Date(Date.UTC(2026, 9, 5, 15) + h * 3_600_000);
+    const a = acquisition(2, "B01", "+12125550122", at(0));
+    await ingest(pool, "crm", a.crm.slice(0, 5));
+    const pay = (status: "voided" | "successful") => {
+      const r = crm.payment(7001, a.customerId, a.ticketId, "B01", "149.00", at(60));
+      if (status === "voided") (r.payload as Record<string, unknown>).status = "2";
+      return r;
+    };
+    await ingest(pool, "crm", [pay("voided")], { now: at(70) });
+    await ingest(pool, "crm", [pay("successful")], { now: at(71) });
+    await dispatchEvents(pool);
+    const stored = await events("intake.records_stored");
+
+    // Same content as the first delivery: no new raw event, but the live row flips back.
+    await ingest(pool, "crm", [pay("voided")], { now: at(72) });
+    expect((await one(pool, "select status from crm_payments where crm_payment_id = 7001")).status).toBe("voided");
+    expect(await events("intake.records_stored")).toBe(stored + 1);
+    const [r] = await dispatchEvents(pool, { only: ["reconciliation"] });
+    expect(r.status).toBe("ran");
+
+    // An unchanged re-read still publishes nothing: a quiet poll never wakes the consumers.
+    await ingest(pool, "crm", [pay("voided")], { now: at(73) });
+    expect(await events("intake.records_stored")).toBe(stored + 1);
+  });
+
+  it("a direct lead-branch override wakes identity, which moves the prospect (audit 2026-11-09, A-4)", async () => {
+    await ingest(pool, "calls", [call("CAL-A4-1", "B01", "+12125550401", new Date("2026-10-05T15:00:00Z"))]);
+    await dispatchEvents(pool);
+    const lead = await one<{ id: string }>(pool, "select id from leads where source_lead_id = 'CAL-A4-1'");
+    expect((await one(pool, "select branch_id from identities where kind = 'prospect'")).branch_id).toBe("B01");
+
+    await overrideLeadBranch(pool, { leadId: Number(lead.id), branchId: "B02", actor: "marketing", reason: "caller is in B02's territory", now: NOW });
+    expect(await events("action_center.lead_branch_overridden")).toBe(1);
+    expect((await consumerBacklog(pool, CONSUMERS.find((c) => c.name === "identity")!)).uncovered).toBe(1);
+    const results = await dispatchEvents(pool);
+    expect(statusOf(results, "identity")).toBe("ran");
+    // Not a reconciliation trigger: the override reconciled inside its own transaction.
+    expect(statusOf(results, "reconciliation")).toBe("idle");
+    expect((await one(pool, "select branch_id from identities where kind = 'prospect'")).branch_id).toBe("B02");
+  });
 });
 
 // ── Organization: brands ────────────────────────────────────────────────────
@@ -235,6 +278,9 @@ describe("reporting contract", () => {
     expect(Object.fromEntries(rows.map((r) => [r.table_name, r.cols]))).toEqual(CONTRACT);
     const listed = await pool.query<{ view_name: string }>("select view_name from reporting.contract_v1 order by view_name");
     expect(listed.rows.map((r) => r.view_name)).toEqual(Object.keys(CONTRACT).filter((v) => v !== "contract_v1"));
+    // Audit 2026-11-09 (D-7): the acquisitions grain is every NEW customer; "acquired" is a filter on it.
+    const grain = await one<{ grain: string }>(pool, "select grain from reporting.contract_v1 where view_name = 'fact_acquisitions_v1'");
+    expect(grain.grain).toMatch(/new CRM customer \(first subscription\); acquired = initial_status completed/);
   });
 
   it("publishes no contact details", async () => {
@@ -259,7 +305,8 @@ describe("reporting contract", () => {
       pool,
       `select
          (select count(*) from reporting.fact_acquisitions_v1 where initial_status = 'completed' and initial_completed_at >= $1 and initial_completed_at < $2) as acquired,
-         (select coalesce(sum(collected_cents), 0) from reporting.fact_acquisitions_v1) as collected,
+         (select coalesce(sum(collected_cents), 0) from reporting.fact_acquisitions_v1
+            where initial_status = 'completed' and initial_completed_at >= $1 and initial_completed_at < $2) as collected,
          (select coalesce(sum(s.cost_cents), 0) from reporting.fact_ad_spend_daily_v1 s join reporting.dim_channel_v1 c using (channel_code)
             where s.branch_id is not null and c.cost_basis = 'media' and s.spend_date >= '2026-10-01' and s.spend_date < '2026-10-31') as mapped_spend,
          (select coalesce(sum(cost_cents), 0) from reporting.fact_ad_spend_daily_v1 where branch_id is null) as unallocated,

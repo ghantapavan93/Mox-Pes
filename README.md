@@ -56,6 +56,10 @@ API outage recovered). Same seed, same numbers, every time.
 
 Without Docker, point `DATABASE_URL` at any Postgres 17 (see `.env.example`).
 
+A production build (`npm run build`, then `npm run start`) is **not** a demo unless started with
+`DEMO_MODE=1`: without it the role picker and the FieldRoutes mock are off and every visitor is a
+read-only guest (docs/decisions.md, ADR-20). The browser tests set it for you.
+
 ## Demo path (2 minutes)
 
 1. **Overview** — "Where did the conversions go?" The bridge goes from platform-claimed conversions
@@ -66,8 +70,9 @@ Without Docker, point `DATABASE_URL` at any Postgres 17 (see `.env.example`).
    the sold customers they would attach to are listed, each with "no lead record".
 4. Switch **Viewing as → Integration engineer**. **Dry run** (rolled back): CAC, unattributed
    customers and Google-reportable conversions before/after; total customers and spend unchanged.
-5. **Replay**. Exception resolves; the panel keeps the before/after. **Send the same request again**:
-   "Already processed".
+5. **Apply it through the Action Center**: the engineer proposes the replay and dry-runs it, an
+   approver (another role) approves, the application executes it once and verifies the ledger.
+   Executing again returns the stored result. (The replay panel only previews; it cannot commit.)
 6. Back to **Overview**: B20 is no longer flagged for unattributed customers.
 
 Full scripts (30 s / 2 / 5 / 10 min) and likely questions: docs/interview-demo.md.
@@ -84,9 +89,13 @@ Local Services spend as Google Search. Nothing fails validation.
    is marked **Not trustworthy yet**, linking to the incident.
 2. **Channel coverage gap**: Local Services spend stopped after Oct 12 while 45 Local Services leads
    kept arriving; a new campaign started in the same ad account. Lineage and the raw records show it.
-3. As engineer: **Dry run**, then **Re-map 22 records** through `ads@1.1`. Spend moves between
-   channels; company spend, customers, invoices and payments do not change. The signal becomes 2.9×,
-   marked sound.
+3. As engineer: propose **Re-map channel** through `ads@1.1` and dry-run it; as approver, approve
+   and execute. 22 records re-map; spend moves between channels; company spend, customers, invoices
+   and payments do not change. The signal becomes 2.9× with "Data integrity: no blocking incidents".
+
+The whole incident as a timed, guided four-minute path: **/demo** (Overview → Incident → Evidence →
+Dry run → Approval → Verified correction → Decision readiness → Audit), checked end to end by
+`tests/e2e/zz-b09-four-minute-path.spec.ts` against `tests/fixtures/b09-golden.json`.
 
 Evidence and the go/no-go: research/16-changeguard-go-no-go.md (with 16a Google, 16b Moxie signals).
 Case file: `docs/changeguard/index.html` (rebuild: `npm run export:changeguard` on a fresh seed,

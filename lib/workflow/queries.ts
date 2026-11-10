@@ -20,6 +20,8 @@ export interface QueueFilters {
   /** a role, or "unassigned" */
   owner?: string;
   limit?: number;
+  /** rows to skip, for paging (the order is total, so pages never overlap) */
+  offset?: number;
 }
 
 export interface QueueRow {
@@ -46,6 +48,26 @@ function statesFor(filter: StateFilter): readonly string[] | null {
   return [filter];
 }
 
+/** Queue filter over cases c joined to exceptions e; $1–$5 are queueParams(f). */
+const QUEUE_WHERE = `($1::text[] is null or e.branch_id = any($1::text[]))
+       and ($2::text[] is null or c.state = any($2::text[]))
+       and ($3::text is null or e.severity = $3)
+       and ($4::text is null or e.kind = $4)
+       and ($5::text is null or ($5 = 'unassigned' and c.owner is null) or c.owner = $5)`;
+
+function queueParams(f: QueueFilters): unknown[] {
+  return [f.branchIds, statesFor(f.state), f.severity ?? null, f.kind ?? null, f.owner ?? null];
+}
+
+/** Cases matching the queue filters, ignoring limit and offset: the total behind a paged queue. */
+export async function countQueue(db: Queryable, f: QueueFilters): Promise<number> {
+  const { rows } = await db.query<{ n: string }>(
+    `select count(*) as n from cases c join exceptions e on e.id = c.exception_id where ${QUEUE_WHERE}`,
+    queueParams(f),
+  );
+  return Number(rows[0].n);
+}
+
 export async function listQueue(db: Queryable, f: QueueFilters): Promise<QueueRow[]> {
   const { rows } = await db.query(
     `select c.id as case_id, c.state, c.owner, c.reopen_count, c.updated_at,
@@ -57,16 +79,12 @@ export async function listQueue(db: Queryable, f: QueueFilters): Promise<QueueRo
      join exceptions e on e.id = c.exception_id
      left join lateral (
        select * from action_proposals ap where ap.case_id = c.id order by ap.id desc limit 1) p on true
-     where ($1::text[] is null or e.branch_id = any($1::text[]))
-       and ($2::text[] is null or c.state = any($2::text[]))
-       and ($3::text is null or e.severity = $3)
-       and ($4::text is null or e.kind = $4)
-       and ($5::text is null or ($5 = 'unassigned' and c.owner is null) or c.owner = $5)
+     where ${QUEUE_WHERE}
      order by case c.state when 'awaiting_approval' then 0 when 'failed' then 1 when 'proposed' then 2 when 'verified' then 3
                            when 'investigating' then 4 when 'detected' then 5 else 6 end,
               case e.severity when 'high' then 0 when 'medium' then 1 else 2 end, e.amount_cents desc, c.id
-     limit $6`,
-    [f.branchIds, statesFor(f.state), f.severity ?? null, f.kind ?? null, f.owner ?? null, f.limit ?? 200],
+     limit $6 offset $7`,
+    [...queueParams(f), f.limit ?? 200, Math.max(f.offset ?? 0, 0)],
   );
   return rows.map((r) => ({
     caseId: Number(r.case_id),
@@ -226,23 +244,68 @@ export async function caseAudit(db: Queryable, caseId: number, exceptionId: numb
 export interface AuditFilters {
   actor?: string;
   action?: string;
-  /** prefix match, e.g. "case:" or "campaign:12" */
+  /**
+   * A full subject ("case:12", "investigation:7") matches exactly; a bare type ("case" or
+   * "case:") matches every subject of that type by prefix.
+   */
   subject?: string;
   from?: Date;
   to?: Date;
   limit?: number;
+  /** Keyset cursor from AuditPage.next: only rows strictly older than it. */
+  before?: string;
+}
+
+export interface AuditPage {
+  rows: AuditRow[];
+  /** Cursor for the next (older) page, or null when this page reaches the end. */
+  next: string | null;
+}
+
+/** "<at, microsecond UTC>|<id>", e.g. "2026-10-31T09:15:02.123456Z|812". */
+const AUDIT_CURSOR = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z)\|(\d{1,18})$/;
+
+/** Parses an audit keyset cursor; anything malformed is null (the feed then starts at the newest row). */
+export function parseAuditCursor(value: string | undefined): { at: string; id: string } | null {
+  const m = value ? AUDIT_CURSOR.exec(value) : null;
+  return m ? { at: m[1], id: m[2] } : null;
+}
+
+/**
+ * The subject filter as SQL: exact when the value names one subject (a ':' followed by an id),
+ * otherwise a literal prefix with LIKE metacharacters escaped, so "case:1" never matches case:10.
+ */
+export function subjectFilter(subject: string | undefined): { exact: string | null; prefix: string | null } {
+  if (!subject) return { exact: null, prefix: null };
+  if (/:./.test(subject)) return { exact: subject, prefix: null };
+  return { exact: null, prefix: `${subject.replace(/[\\%_]/g, (m) => `\\${m}`)}%` };
+}
+
+/** One page of the audit log, newest first, paged by (at, id) keyset. */
+export async function auditFeedPage(db: Queryable, f: AuditFilters): Promise<AuditPage> {
+  const limit = f.limit ?? 100;
+  const subject = subjectFilter(f.subject);
+  const cursor = parseAuditCursor(f.before);
+  const { rows } = await db.query(
+    `select *, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_at from audit_log
+     where ($1::text is null or actor = $1) and ($2::text is null or action = $2)
+       and ($3::text is null or subject = $3)
+       and ($4::text is null or subject like $4 escape '\\')
+       and ($5::timestamptz is null or at >= $5) and ($6::timestamptz is null or at < $6)
+       and ($7::timestamptz is null or (at, id) < ($7::timestamptz, $8::bigint))
+     order by at desc, id desc limit $9`,
+    [f.actor ?? null, f.action ?? null, subject.exact, subject.prefix, f.from ?? null, f.to ?? null, cursor?.at ?? null, cursor?.id ?? null, limit + 1],
+  );
+  const page = rows.slice(0, limit);
+  const last = page[page.length - 1];
+  return {
+    rows: page.map(toAudit),
+    next: rows.length > limit && last ? `${last.cursor_at as string}|${String(last.id)}` : null,
+  };
 }
 
 export async function auditFeed(db: Queryable, f: AuditFilters): Promise<AuditRow[]> {
-  const { rows } = await db.query(
-    `select * from audit_log
-     where ($1::text is null or actor = $1) and ($2::text is null or action = $2)
-       and ($3::text is null or subject like $3 || '%')
-       and ($4::timestamptz is null or at >= $4) and ($5::timestamptz is null or at < $5)
-     order by at desc, id desc limit $6`,
-    [f.actor ?? null, f.action ?? null, f.subject ?? null, f.from ?? null, f.to ?? null, f.limit ?? 100],
-  );
-  return rows.map(toAudit);
+  return (await auditFeedPage(db, f)).rows;
 }
 
 /** Distinct actors and actions, for the audit filters (from the data, never a fixed list). */

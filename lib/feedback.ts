@@ -11,22 +11,31 @@ import type { Scope } from "@/lib/metrics/scorecard";
  * UploadClickConversions for new uploaders in 2026 (research/05-attribution-model.md).
  * Field names must be re-checked against Google's current reference before any real use.
  *
- * Rules (from research/05):
- *   * only Google Search acquisitions with a click id (gclid) can be matched
- *   * the click must be ≤ 90 days old at upload time
+ * Rules (research/05; re-checked against Google's docs on 2026-11-09, audit area F):
+ *   * this dry run matches on a click id (gclid) only. Google can also match a lead with no
+ *     click id on hashed email/phone (enhanced conversions for leads, Data Manager `userData`)
+ *     and on gbraid/wbraid; neither is implemented, so those rows are "no click id", NOT
+ *     "unmatchable".
+ *   * click age is approximated by the LEAD time (form sent / call started), which is at or
+ *     after the click, so it under-estimates click age. Google's real limit is the conversion
+ *     action's click-through window (90 days by default; older clicks fail EXPIRED_EVENT).
  *   * one stable transactionId per (lead, stage) — re-sends become adjustments, not duplicates
- *   * a cancelled subscription is a retraction, not a conversion
+ *   * a cancelled plan is NOT sent. Data Manager cannot retract a conversion (its upgrade guide:
+ *     it "doesn't support conversion retractions"; a value can be restated, the count stays).
+ *     Nothing here records what was sent, so every cancelled row is "never sent → suppress".
  *   * a D2D/paid conflict is held for review rather than claimed by the ad platform
+ *   * no consent fields are sent: consent is required for EEA users only, and this is a US
+ *     business. A real uploader should still pass `consent` explicitly.
  */
 
-export type FeedbackDecision = "upload" | "retract" | "held_channel_conflict" | "no_click_id" | "click_too_old" | "not_serviced";
+export type FeedbackDecision = "upload" | "suppress_cancelled" | "held_channel_conflict" | "no_click_id" | "click_too_old" | "not_serviced";
 
 export const DECISION_LABEL: Record<FeedbackDecision, string> = {
   upload: "Upload as conversion",
-  retract: "Retract (plan cancelled)",
+  suppress_cancelled: "Don't send: plan cancelled",
   held_channel_conflict: "Hold: D2D rep also signed",
-  no_click_id: "Not matchable: no click id",
-  click_too_old: "Not matchable: click > 90 days",
+  no_click_id: "No click id (hashed-identity matching not built)",
+  click_too_old: "Too old: lead > 90 days ago",
   not_serviced: "Not yet a conversion: not serviced",
 };
 
@@ -36,6 +45,7 @@ export interface FeedbackRow {
   branchId: string;
   decision: FeedbackDecision;
   clickId: string | null;
+  /** When the lead arrived: at or after the click, used as the click-age proxy. */
   clickAt: Date;
   convertedAt: Date | null;
   valueCents: number;
@@ -49,7 +59,7 @@ const DECISION_SQL = `
            when l.click_id is null then 'no_click_id'
            when $4::timestamptz - l.occurred_at > interval '90 days' then 'click_too_old'
            when a.channel_conflict then 'held_channel_conflict'
-           when a.subscription_status = 'cancelled' then 'retract'
+           when a.subscription_status = 'cancelled' then 'suppress_cancelled'
            else 'upload'
          end as decision
   from v_acquisitions a
@@ -60,7 +70,7 @@ const DECISION_SQL = `
 
 export async function feedbackSummary(db: Queryable, scope: Scope, now: Date): Promise<Record<FeedbackDecision, number>> {
   const { rows } = await db.query(`select decision, count(*) as n from (${DECISION_SQL}) d group by decision`, [scope.from, scope.to, scope.branchIds, now]);
-  const out: Record<FeedbackDecision, number> = { upload: 0, retract: 0, held_channel_conflict: 0, no_click_id: 0, click_too_old: 0, not_serviced: 0 };
+  const out: Record<FeedbackDecision, number> = { upload: 0, suppress_cancelled: 0, held_channel_conflict: 0, no_click_id: 0, click_too_old: 0, not_serviced: 0 };
   for (const r of rows) out[r.decision as FeedbackDecision] = Number(r.n);
   return out;
 }
@@ -84,8 +94,12 @@ export function transactionId(leadId: number, stage = "initial_service_completed
   return sha256(`${leadId}:${stage}`).slice(0, 32);
 }
 
-/** The event body that WOULD be sent. Value is booked annual plan value: a bidding signal, not revenue. */
+/**
+ * The event body that WOULD be sent for an "upload" row; null for every other decision (nothing
+ * is sent for them). Value is booked annual plan value: a bidding signal, not revenue.
+ */
 export function toDataManagerEvent(row: FeedbackRow) {
+  if (row.decision !== "upload") return null;
   return {
     transactionId: transactionId(row.leadId),
     eventTimestamp: row.convertedAt?.toISOString(),
@@ -93,6 +107,5 @@ export function toDataManagerEvent(row: FeedbackRow) {
     conversionValue: row.valueCents / 100,
     currency: "USD",
     eventSource: "WEB",
-    ...(row.decision === "retract" ? { note: "send as retraction of the earlier conversion with this transactionId" } : {}),
   };
 }

@@ -83,6 +83,8 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
   });
 
   test("d · Investigate opens the AI investigator scoped to the incident; it cites evidence and proposes a re-map", async ({ page }) => {
+    // The investigation alone may take up to 60 s (waitForURL below); leave room for the rest.
+    test.setTimeout(120_000);
     await setRole(page, "marketing");
     await page.goto(`/exceptions/${gapId}`);
     await page.getByTestId("investigate-link").click();

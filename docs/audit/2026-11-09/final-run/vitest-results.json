@@ -1,0 +1,4091 @@
+{
+  "numTotalTestSuites": 96,
+  "numPassedTestSuites": 96,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 294,
+  "numPassedTests": 294,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1794291104849,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "case state machine"
+          ],
+          "fullName": "case state machine defines every state and refuses moves outside the table",
+          "status": "passed",
+          "title": "defines every state and refuses moves outside the table",
+          "duration": 448.6041,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "case state machine"
+          ],
+          "fullName": "case state machine an illegal transition against the database throws and writes nothing",
+          "status": "passed",
+          "title": "an illegal transition against the database throws and writes nothing",
+          "duration": 972.7125000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "syncCases"
+          ],
+          "fullName": "syncCases creates one case per exception, resolves it with the exception, and re-opens it when the exception returns",
+          "status": "passed",
+          "title": "creates one case per exception, resolves it with the exception, and re-opens it when the exception returns",
+          "duration": 1016.9826000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "syncCases"
+          ],
+          "fullName": "syncCases a case whose exception clears on its own resolves and its live proposal is superseded",
+          "status": "passed",
+          "title": "a case whose exception clears on its own resolves and its live proposal is superseded",
+          "duration": 731.7442999999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "syncCases"
+          ],
+          "fullName": "syncCases owner assignment starts the investigation; a person can close a case with a reason",
+          "status": "passed",
+          "title": "owner assignment starts the investigation; a person can close a case with a reason",
+          "duration": 914.3299999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "proposals"
+          ],
+          "fullName": "proposals validate the kind against the exception and the params against the kind",
+          "status": "passed",
+          "title": "validate the kind against the exception and the params against the kind",
+          "duration": 934.6601999999993,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "proposals"
+          ],
+          "fullName": "proposals separation of duties: dry run before approval, never approved by the proposer's role",
+          "status": "passed",
+          "title": "separation of duties: dry run before approval, never approved by the proposer's role",
+          "duration": 1115.9018999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "proposals"
+          ],
+          "fullName": "proposals an AI-sourced proposal is stored the same way and skips nothing",
+          "status": "passed",
+          "title": "an AI-sourced proposal is stored the same way and skips nothing",
+          "duration": 936.5545999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "proposals"
+          ],
+          "fullName": "proposals a rejected proposal sends the case back to investigating",
+          "status": "passed",
+          "title": "a rejected proposal sends the case back to investigating",
+          "duration": 1098.7158,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "proposals"
+          ],
+          "fullName": "proposals branch scope: a partner cannot see or act on another branch's proposal",
+          "status": "passed",
+          "title": "branch scope: a partner cannot see or act on another branch's proposal",
+          "duration": 921.2399999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "dry run"
+          ],
+          "fullName": "dry run runs the executor, reports before/after and verification, and mutates nothing",
+          "status": "passed",
+          "title": "runs the executor, reports before/after and verification, and mutates nothing",
+          "duration": 1079.5409999999993,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "dry run"
+          ],
+          "fullName": "dry run records a failing dry run without moving the case forward",
+          "status": "passed",
+          "title": "records a failing dry run without moving the case forward",
+          "duration": 1023.3739999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution B20 replay_quarantine end to end: proposal → dry run → approval → execution → verified and resolved",
+          "status": "passed",
+          "title": "B20 replay_quarantine end to end: proposal → dry run → approval → execution → verified and resolved",
+          "duration": 1050.2423999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution is idempotent: executing twice runs once",
+          "status": "passed",
+          "title": "is idempotent: executing twice runs once",
+          "duration": 961.0304000000015,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution two concurrent executions run once",
+          "status": "passed",
+          "title": "two concurrent executions run once",
+          "duration": 985.2466999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution refuses a stale dry run: records changed after approval → nothing runs, a new dry run is required",
+          "status": "passed",
+          "title": "refuses a stale dry run: records changed after approval → nothing runs, a new dry run is required",
+          "duration": 1094.0291000000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution a failure mid-execution rolls everything back, marks the case failed, and is not retried by a repeat request",
+          "status": "passed",
+          "title": "a failure mid-execution rolls everything back, marks the case failed, and is not retried by a repeat request",
+          "duration": 1129.0321000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution B09 remap_channel end to end: spend, customers and payments conserved, gap resolved, budget signal trustworthy",
+          "status": "passed",
+          "title": "B09 remap_channel end to end: spend, customers and payments conserved, gap resolved, budget signal trustworthy",
+          "duration": 1028.3872999999985,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution deferred effects (a queued sync) verify the action, and reconciliation resolves the case later",
+          "status": "passed",
+          "title": "deferred effects (a queued sync) verify the action, and reconciliation resolves the case later",
+          "duration": 798.4853999999978,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution trigger_sync queues one real job through the Connectors module, inside the execution transaction",
+          "status": "passed",
+          "title": "trigger_sync queues one real job through the Connectors module, inside the execution transaction",
+          "duration": 719.3817999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution resolve_identity_conflict decides a real identity conflict through the Identity module",
+          "status": "passed",
+          "title": "resolve_identity_conflict decides a real identity conflict through the Identity module",
+          "duration": 870.7013000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "execution"
+          ],
+          "fullName": "execution acknowledge_exception closes a payload conflict through the existing decision core",
+          "status": "passed",
+          "title": "acknowledge_exception closes a payload conflict through the existing decision core",
+          "duration": 675.7762000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "API routes"
+          ],
+          "fullName": "API routes enforce permissions, validate bodies and map errors to 400 / 403 / 409",
+          "status": "passed",
+          "title": "enforce permissions, validate bodies and map errors to 400 / 403 / 409",
+          "duration": 1227.1239999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "audit completeness"
+          ],
+          "fullName": "audit completeness every case event — transitions included — has exactly one audit row naming it",
+          "status": "passed",
+          "title": "every case event — transitions included — has exactly one audit row naming it",
+          "duration": 1078.8754999999983,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "queue paging (audit 2026-11-09, J5)"
+          ],
+          "fullName": "queue paging (audit 2026-11-09, J5) pages are disjoint, cover every case once, and the total does not depend on the page",
+          "status": "passed",
+          "title": "pages are disjoint, cover every case once, and the total does not depend on the page",
+          "duration": 601.8744999999981,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291106106,
+      "endTime": 1794291129523.8745,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/action-center.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "tool scope enforcement"
+          ],
+          "fullName": "tool scope enforcement a branch partner cannot fetch another branch through any tool",
+          "status": "passed",
+          "title": "a branch partner cannot fetch another branch through any tool",
+          "duration": 926.1872000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "tool scope enforcement"
+          ],
+          "fullName": "tool scope enforcement lineage 'versions' never list other branches' records, nor unrelated unidentified ones (audit 2026-11-09, I-4)",
+          "status": "passed",
+          "title": "lineage 'versions' never list other branches' records, nor unrelated unidentified ones (audit 2026-11-09, I-4)",
+          "duration": 1182.0774000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "tool scope enforcement"
+          ],
+          "fullName": "tool scope enforcement compareMappingVersions refuses an out-of-scope id as not found before checking its source (audit 2026-11-09, I-5)",
+          "status": "passed",
+          "title": "compareMappingVersions refuses an out-of-scope id as not found before checking its source (audit 2026-11-09, I-5)",
+          "duration": 778.4420999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "tool scope enforcement"
+          ],
+          "fullName": "tool scope enforcement a partner's investigation about another branch reads nothing and leaks nothing",
+          "status": "passed",
+          "title": "a partner's investigation about another branch reads nothing and leaks nothing",
+          "duration": 831.2387999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "tool scope enforcement"
+          ],
+          "fullName": "tool scope enforcement investigations are listed and resolved only within the viewer's scope",
+          "status": "passed",
+          "title": "investigations are listed and resolved only within the viewer's scope",
+          "duration": 972.9206000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "deterministic B09 investigation"
+          ],
+          "fullName": "deterministic B09 investigation cites the coverage-gap exception, the successor campaign and raw spend records, and proposes remap_channel",
+          "status": "passed",
+          "title": "cites the coverage-gap exception, the successor campaign and raw spend records, and proposes remap_channel",
+          "duration": 878.5008000000007,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "deterministic B09 investigation"
+          ],
+          "fullName": "deterministic B09 investigation B20: high paid CAC is traced to the quarantined calls and a replay is proposed",
+          "status": "passed",
+          "title": "B20: high paid CAC is traced to the quarantined calls and a replay is proposed",
+          "duration": 839.9188000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "deterministic B09 investigation"
+          ],
+          "fullName": "deterministic B09 investigation an action request is refused and creates nothing",
+          "status": "passed",
+          "title": "an action request is refused and creates nothing",
+          "duration": 813.0370000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "AI proposals"
+          ],
+          "fullName": "AI proposals cannot be approved or executed by the AI path, and need a role other than the proposer's",
+          "status": "passed",
+          "title": "cannot be approved or executed by the AI path, and need a role other than the proposer's",
+          "duration": 1109.508899999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "AI proposals"
+          ],
+          "fullName": "AI proposals an existing live proposal is linked, never replaced; a role that cannot propose only gets a suggestion",
+          "status": "passed",
+          "title": "an existing live proposal is linked, never replaced; a role that cannot propose only gets a suggestion",
+          "duration": 1821.7982999999986,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "prompt injection in a record"
+          ],
+          "fullName": "prompt injection in a record the deterministic investigator reports it as a warning and acts on nothing",
+          "status": "passed",
+          "title": "the deterministic investigator reports it as a warning and acts on nothing",
+          "duration": 776.1906999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "prompt injection in a record"
+          ],
+          "fullName": "prompt injection in a record a model that follows the injection is constrained: no allowed kind, no ungrounded claim survives",
+          "status": "passed",
+          "title": "a model that follows the injection is constrained: no allowed kind, no ungrounded claim survives",
+          "duration": 897.2451000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop (mocked client)"
+          ],
+          "fullName": "model tool loop (mocked client) runs registry tools, validates the submission, grounds it and terminates",
+          "status": "passed",
+          "title": "runs registry tools, validates the submission, grounds it and terminates",
+          "duration": 761.6810000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop (mocked client)"
+          ],
+          "fullName": "model tool loop (mocked client) a model that never submits hits the turn budget and the deterministic investigator answers, labelled as such",
+          "status": "passed",
+          "title": "a model that never submits hits the turn budget and the deterministic investigator answers, labelled as such",
+          "duration": 777.386199999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "investigation API"
+          ],
+          "fullName": "investigation API POST streams NDJSON (started → steps → done); GET returns the result, live proposal state and evidence",
+          "status": "passed",
+          "title": "POST streams NDJSON (started → steps → done); GET returns the result, live proposal state and evidence",
+          "duration": 976.0452999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "investigation API"
+          ],
+          "fullName": "investigation API refuses before streaming: 403 for guests and out-of-scope branches, 400 for a bad body",
+          "status": "passed",
+          "title": "refuses before streaming: 403 for guests and out-of-scope branches, 400 for a bad body",
+          "duration": 549.3940999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291173779,
+      "endTime": 1794291188674.394,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/ai-investigator.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "ads mapper versions"
+          ],
+          "fullName": "ads mapper versions ads@1.0 files a migrated Local Services campaign as Google Search; ads@1.1 as Local Services",
+          "status": "passed",
+          "title": "ads@1.0 files a migrated Local Services campaign as Google Search; ads@1.1 as Local Services",
+          "duration": 900.6831999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "ads mapper versions"
+          ],
+          "fullName": "ads mapper versions ads@1.1 refuses a local-services flag without a campaign type instead of guessing",
+          "status": "passed",
+          "title": "ads@1.1 refuses a local-services flag without a campaign type instead of guessing",
+          "duration": 805.8804,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap is detected with record-level evidence: what stopped, what started, how it was filed",
+          "status": "passed",
+          "title": "is detected with record-level evidence: what stopped, what started, how it was filed",
+          "duration": 840.1836999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap blocks the budget signal while open, and stops blocking once the records are re-mapped",
+          "status": "passed",
+          "title": "blocks the budget signal while open, and stops blocking once the records are re-mapped",
+          "duration": 1165.9081,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap re-mapping moves spend between channels and duplicates nothing",
+          "status": "passed",
+          "title": "re-mapping moves spend between channels and duplicates nothing",
+          "duration": 1195.2504,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap is idempotent: the same key returns the stored result, a new key finds nothing left, a reused key for another request is refused",
+          "status": "passed",
+          "title": "is idempotent: the same key returns the stored result, a new key finds nothing left, a reused key for another request is refused",
+          "duration": 1045.5274,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap concurrent re-maps claim every record exactly once",
+          "status": "passed",
+          "title": "concurrent re-maps claim every record exactly once",
+          "duration": 1335.9039999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap a dry run changes nothing",
+          "status": "passed",
+          "title": "a dry run changes nothing",
+          "duration": 802.0575000000008,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap a failure mid-replay rolls everything back, and the same request then succeeds",
+          "status": "passed",
+          "title": "a failure mid-replay rolls everything back, and the same request then succeeds",
+          "duration": 802.4510000000009,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "channel coverage gap"
+          ],
+          "fullName": "channel coverage gap a record the new mapper cannot read keeps its earlier projection",
+          "status": "passed",
+          "title": "a record the new mapper cannot read keeps its earlier projection",
+          "duration": 751.8276999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "historical continuity"
+          ],
+          "fullName": "historical continuity a post-migration re-pull that no longer returns the old Local Services rows deletes nothing",
+          "status": "passed",
+          "title": "a post-migration re-pull that no longer returns the old Local Services rows deletes nothing",
+          "duration": 686.0537000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "historical continuity"
+          ],
+          "fullName": "historical continuity after the re-map, Local Services spend is continuous across the migration",
+          "status": "passed",
+          "title": "after the re-map, Local Services spend is continuous across the migration",
+          "duration": 750.6552000000011,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "coverage gap amount (audit 2026-11-09)"
+          ],
+          "fullName": "coverage gap amount (audit 2026-11-09) two stopped campaigns in one ad account do not double the successor's spend",
+          "status": "passed",
+          "title": "two stopped campaigns in one ad account do not double the successor's spend",
+          "duration": 737.1376,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291232066,
+      "endTime": 1794291243887.1377,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/changeguard.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "FieldRoutes client and mock contract"
+          ],
+          "fullName": "FieldRoutes client and mock contract pages searches at the cap and batches gets at the limit (boundaries 4, 5, 6, 11)",
+          "status": "passed",
+          "title": "pages searches at the cap and batches gets at the limit (boundaries 4, 5, 6, 11)",
+          "duration": 609.4797000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes client and mock contract"
+          ],
+          "fullName": "FieldRoutes client and mock contract an office's key never reads another office",
+          "status": "passed",
+          "title": "an office's key never reads another office",
+          "duration": 516.8430000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes client and mock contract"
+          ],
+          "fullName": "FieldRoutes client and mock contract asks for every appointment status explicitly; the source hides cancelled ones by default",
+          "status": "passed",
+          "title": "asks for every appointment status explicitly; the source hides cancelled ones by default",
+          "duration": 511.63740000000007,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes client and mock contract"
+          ],
+          "fullName": "FieldRoutes client and mock contract classifies responses: ignored filters, 200 + success:false auth, Retry-After, unauthorised hosts",
+          "status": "passed",
+          "title": "classifies responses: ignored filters, 200 + success:false auth, Retry-After, unauthorised hosts",
+          "duration": 508.4544000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs syncs through HTTP into the projections, then a repeat sync is absorbed as duplicates",
+          "status": "passed",
+          "title": "syncs through HTTP into the projections, then a repeat sync is absorbed as duplicates",
+          "duration": 613.0616999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs re-reading an overlapping window absorbs duplicates: no new raw events, delivery counts rise",
+          "status": "passed",
+          "title": "re-reading an overlapping window absorbs duplicates: no new raw events, delivery counts rise",
+          "duration": 579.5010000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs enqueue is idempotent by key and refuses a reused key for a different request",
+          "status": "passed",
+          "title": "enqueue is idempotent by key and refuses a reused key for a different request",
+          "duration": 533.0337000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a request that only reused queued jobs is still idempotent by its key (audit 2026-11-09, B-5)",
+          "status": "passed",
+          "title": "a request that only reused queued jobs is still idempotent by its key (audit 2026-11-09, B-5)",
+          "duration": 534.7614999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a 429 without Retry-After waits at least a minute, FieldRoutes' shortest limit window (audit 2026-11-09, G-5)",
+          "status": "passed",
+          "title": "a 429 without Retry-After waits at least a minute, FieldRoutes' shortest limit window (audit 2026-11-09, G-5)",
+          "duration": 537.4201000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs rate limit → retry after Retry-After → resumes after the last committed batch",
+          "status": "passed",
+          "title": "rate limit → retry after Retry-After → resumes after the last committed batch",
+          "duration": 605.1211000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs an expired key fails the job at once with an actionable message and leaves the checkpoint alone",
+          "status": "passed",
+          "title": "an expired key fails the job at once with an actionable message and leaves the checkpoint alone",
+          "duration": 589.4839000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a timeout is retried and the next attempt succeeds",
+          "status": "passed",
+          "title": "a timeout is retried and the next attempt succeeds",
+          "duration": 786.4983999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs 503s back off exponentially and the job gives up after max attempts",
+          "status": "passed",
+          "title": "503s back off exponentially and the job gives up after max attempts",
+          "duration": 579.2925999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a malformed amount quarantines that record only; the rest of the batch is ingested",
+          "status": "passed",
+          "title": "a malformed amount quarantines that record only; the rest of the batch is ingested",
+          "duration": 558.0936999999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a record without its timestamp is quarantined as INVALID_TIMESTAMP, not dropped",
+          "status": "passed",
+          "title": "a record without its timestamp is quarantined as INVALID_TIMESTAMP, not dropped",
+          "duration": 560.1080000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs an older version delivered after a newer one never overwrites the projection",
+          "status": "passed",
+          "title": "an older version delivered after a newer one never overwrites the projection",
+          "duration": 603.6822000000011,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs a record that disappears from search results is not deleted downstream",
+          "status": "passed",
+          "title": "a record that disappears from search results is not deleted downstream",
+          "duration": 616.5347000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs concurrent runners claim every job exactly once",
+          "status": "passed",
+          "title": "concurrent runners claim every job exactly once",
+          "duration": 630.652,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs one office failing never blocks the others",
+          "status": "passed",
+          "title": "one office failing never blocks the others",
+          "duration": 585.394400000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs cancellation: a queued job never runs; a running job stops between batches, checkpoint unchanged",
+          "status": "passed",
+          "title": "cancellation: a queued job never runs; a running job stops between batches, checkpoint unchanged",
+          "duration": 554.3271999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync jobs"
+          ],
+          "fullName": "sync jobs the demo connector's credentials come from env names; demo keys only for a local mock",
+          "status": "passed",
+          "title": "the demo connector's credentials come from env names; demo keys only for a local mock",
+          "duration": 511.7440000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "worker takeover"
+          ],
+          "fullName": "worker takeover a worker presumed dead that later finishes its window cannot write to the job another worker re-claimed",
+          "status": "passed",
+          "title": "a worker presumed dead that later finishes its window cannot write to the job another worker re-claimed",
+          "duration": 582.9835999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "worker takeover"
+          ],
+          "fullName": "worker takeover a worker presumed dead that later fails with a retryable error cannot write to the job another worker re-claimed",
+          "status": "passed",
+          "title": "a worker presumed dead that later fails with a retryable error cannot write to the job another worker re-claimed",
+          "duration": 641.7412999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "worker takeover"
+          ],
+          "fullName": "worker takeover a stale job is re-queued while attempts remain and fails at max_attempts instead of looping",
+          "status": "passed",
+          "title": "a stale job is re-queued while attempts remain and fails at max_attempts instead of looping",
+          "duration": 569.3796000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync follow-up"
+          ],
+          "fullName": "sync follow-up trigger_sync end to end: the drained job delivers the missing ticket and the case resolves with no manual reconcile",
+          "status": "passed",
+          "title": "trigger_sync end to end: the drained job delivers the missing ticket and the case resolves with no manual reconcile",
+          "duration": 978.8053,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec customer: the spec lists exactly the fields the mapper reads",
+          "status": "passed",
+          "title": "customer: the spec lists exactly the fields the mapper reads",
+          "duration": 515.5295000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec subscription: the spec lists exactly the fields the mapper reads",
+          "status": "passed",
+          "title": "subscription: the spec lists exactly the fields the mapper reads",
+          "duration": 515.8277999999991,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec appointment: the spec lists exactly the fields the mapper reads",
+          "status": "passed",
+          "title": "appointment: the spec lists exactly the fields the mapper reads",
+          "duration": 498.66200000000026,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec ticket: the spec lists exactly the fields the mapper reads",
+          "status": "passed",
+          "title": "ticket: the spec lists exactly the fields the mapper reads",
+          "duration": 558.9639999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec payment: the spec lists exactly the fields the mapper reads",
+          "status": "passed",
+          "title": "payment: the spec lists exactly the fields the mapper reads",
+          "duration": 498.8878999999979,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec customer: every spec'd field changes the mapper's outcome when it is removed",
+          "status": "passed",
+          "title": "customer: every spec'd field changes the mapper's outcome when it is removed",
+          "duration": 512.7941000000028,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec subscription: every spec'd field changes the mapper's outcome when it is removed",
+          "status": "passed",
+          "title": "subscription: every spec'd field changes the mapper's outcome when it is removed",
+          "duration": 498.15639999999985,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec appointment: every spec'd field changes the mapper's outcome when it is removed",
+          "status": "passed",
+          "title": "appointment: every spec'd field changes the mapper's outcome when it is removed",
+          "duration": 514.6153000000013,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec ticket: every spec'd field changes the mapper's outcome when it is removed",
+          "status": "passed",
+          "title": "ticket: every spec'd field changes the mapper's outcome when it is removed",
+          "duration": 517.6932000000015,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec payment: every spec'd field changes the mapper's outcome when it is removed",
+          "status": "passed",
+          "title": "payment: every spec'd field changes the mapper's outcome when it is removed",
+          "duration": 529.9625999999989,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes mapping spec"
+          ],
+          "fullName": "FieldRoutes mapping spec every spec entry is complete and every deviation is explained",
+          "status": "passed",
+          "title": "every spec entry is complete and every deviation is explained",
+          "duration": 504.6368999999977,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "mock backed by the synthetic world"
+          ],
+          "fullName": "mock backed by the synthetic world serves the latest visible version of each record in the shape the mapper accepts",
+          "status": "passed",
+          "title": "serves the latest visible version of each record in the shape the mapper accepts",
+          "duration": 20551.293999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync drain (audit 2026-11-09)"
+          ],
+          "fullName": "sync drain (audit 2026-11-09) B-2: a kick that arrives while the drain dispatches events is not lost",
+          "status": "passed",
+          "title": "B-2: a kick that arrives while the drain dispatches events is not lost",
+          "duration": 983.2299999999959,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "sync drain (audit 2026-11-09)"
+          ],
+          "fullName": "sync drain (audit 2026-11-09) B-3: a due job whose stream another process is running does not keep the drain spinning",
+          "status": "passed",
+          "title": "B-3: a due job whose stream another process is running does not keep the drain spinning",
+          "duration": 520.285100000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291130048,
+      "endTime": 1794291172669.2852,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/connectors.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated before the re-map, Search and Local Services fail integrity and are not decision-ready, linked to the coverage gap",
+          "status": "passed",
+          "title": "before the re-map, Search and Local Services fail integrity and are not decision-ready, linked to the coverage gap",
+          "duration": 1077.2988,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated after the re-map, integrity and readiness pass while effectiveness stays unknown",
+          "status": "passed",
+          "title": "after the re-map, integrity and readiness pass while effectiveness stays unknown",
+          "duration": 1017.0482999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated channels with too few customers are not ready even with clean data",
+          "status": "passed",
+          "title": "channels with too few customers are not ready even with clean data",
+          "duration": 929.4409,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated a stale feed blocks readiness",
+          "status": "passed",
+          "title": "a stale feed blocks readiness",
+          "duration": 947.873,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated the branch-page budget card states an observation and never contradicts the Decision Lab",
+          "status": "passed",
+          "title": "the branch-page budget card states an observation and never contradicts the Decision Lab",
+          "duration": 971.4996000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "three verdicts, never conflated"
+          ],
+          "fullName": "three verdicts, never conflated only a completed randomized holdout makes effectiveness measured",
+          "status": "passed",
+          "title": "only a completed randomized holdout makes effectiveness measured",
+          "duration": 954.2982999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario math"
+          ],
+          "fullName": "scenario math β = 1 is constant cost per customer: $500 from $300/customer to $100/customer",
+          "status": "passed",
+          "title": "β = 1 is constant cost per customer: $500 from $300/customer to $100/customer",
+          "duration": 5.939099999999598,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario math"
+          ],
+          "fullName": "scenario math β = 0.5 applies diminishing returns",
+          "status": "passed",
+          "title": "β = 0.5 applies diminishing returns",
+          "duration": 5.284099999999853,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario math"
+          ],
+          "fullName": "scenario math the close-rate assumption scales only the customers the new spend buys",
+          "status": "passed",
+          "title": "the close-rate assumption scales only the customers the new spend buys",
+          "duration": 5.535100000000057,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario math"
+          ],
+          "fullName": "scenario math refuses to move more than a channel spends, or into a channel with no cost history",
+          "status": "passed",
+          "title": "refuses to move more than a channel spends, or into a channel with no cost history",
+          "duration": 1.3674999999993815,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario math"
+          ],
+          "fullName": "scenario math is deterministic: the same inputs and seed give the same interval",
+          "status": "passed",
+          "title": "is deterministic: the same inputs and seed give the same interval",
+          "duration": 6.840500000000247,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario from the database"
+          ],
+          "fullName": "scenario from the database uses the historical cost per customer from SQL, and is labelled not decision-ready with the blockers before the re-map",
+          "status": "passed",
+          "title": "uses the historical cost per customer from SQL, and is labelled not decision-ready with the blockers before the re-map",
+          "duration": 865.9970999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario from the database"
+          ],
+          "fullName": "scenario from the database after the re-map: decision-ready, sensitivity ordered and monotone, intervals contain the point",
+          "status": "passed",
+          "title": "after the re-map: decision-ready, sensitivity ordered and monotone, intervals contain the point",
+          "duration": 968.8375999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario from the database"
+          ],
+          "fullName": "scenario from the database saves with params, result, actor and an audit row; history is scoped",
+          "status": "passed",
+          "title": "saves with params, result, actor and an audit row; history is scoped",
+          "duration": 847.6791999999987,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scenario from the database"
+          ],
+          "fullName": "scenario from the database refuses roles without investigate or propose, and branches outside the viewer's scope",
+          "status": "passed",
+          "title": "refuses roles without investigate or propose, and branches outside the viewer's scope",
+          "duration": 792.9703000000009,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment"
+          ],
+          "fullName": "A/A experiment the sample-ratio check flags an injected 60/40 split and voids the comparison",
+          "status": "passed",
+          "title": "the sample-ratio check flags an injected 60/40 split and voids the comparison",
+          "duration": 1.4526999999998225,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment"
+          ],
+          "fullName": "A/A experiment on a balanced fixture the 95% CI contains 0 and the conclusion says so",
+          "status": "passed",
+          "title": "on a balanced fixture the 95% CI contains 0 and the conclusion says so",
+          "duration": 0.5285000000003492,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment"
+          ],
+          "fullName": "A/A experiment a real gap is reported as a detected difference, never as success",
+          "status": "passed",
+          "title": "a real gap is reported as a detected difference, never as success",
+          "duration": 0.40049999999973807,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment"
+          ],
+          "fullName": "A/A experiment assignment is a stable hash of the lead id, close to 50/50",
+          "status": "passed",
+          "title": "assignment is a stable hash of the lead id, close to 50/50",
+          "duration": 12.471800000001167,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment",
+            "over the database"
+          ],
+          "fullName": "A/A experiment over the database randomizes mature web leads, joins outcomes from v_acquisitions, and is reproducible",
+          "status": "passed",
+          "title": "randomizes mature web leads, joins outcomes from v_acquisitions, and is reproducible",
+          "duration": 873.6915000000008,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment",
+            "over the database"
+          ],
+          "fullName": "A/A experiment over the database is labelled a statistics self-check: arms are hashed at analysis time, so it cannot validate assignment or logging",
+          "status": "passed",
+          "title": "is labelled a statistics self-check: arms are hashed at analysis time, so it cannot validate assignment or logging",
+          "duration": 994.2484999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment",
+            "over the database"
+          ],
+          "fullName": "A/A experiment over the database an SRM conclusion blames the hash split or unit definition, not lead-time logging that does not exist",
+          "status": "passed",
+          "title": "an SRM conclusion blames the hash split or unit definition, not lead-time logging that does not exist",
+          "duration": 799.5521000000008,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "A/A experiment",
+            "over the database"
+          ],
+          "fullName": "A/A experiment over the database records config and result with an audit row; scoped viewers cannot see company-wide runs",
+          "status": "passed",
+          "title": "records config and result with an audit row; scoped viewers cannot see company-wide runs",
+          "duration": 831.2747999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "branch scope"
+          ],
+          "fullName": "branch scope a branch partner gets 403 for another branch on every Decision Lab read",
+          "status": "passed",
+          "title": "a branch partner gets 403 for another branch on every Decision Lab read",
+          "duration": 3.2754000000004453,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "branch scope"
+          ],
+          "fullName": "branch scope the partner's own branch works, and its A/A sees only its own leads",
+          "status": "passed",
+          "title": "the partner's own branch works, and its A/A sees only its own leads",
+          "duration": 32.28729999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291189293,
+      "endTime": 1794291203067.2874,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/decision-lab.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events a stored batch publishes intake.records_stored in its own transaction; a rolled-back batch publishes nothing",
+          "status": "passed",
+          "title": "a stored batch publishes intake.records_stored in its own transaction; a rolled-back batch publishes nothing",
+          "duration": 658.4003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events a consumer runs only for changes its last run did not see, and delivers every event once",
+          "status": "passed",
+          "title": "a consumer runs only for changes its last run did not see, and delivers every event once",
+          "duration": 903.6095,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events an event whose transaction commits after a run started is not covered by that run",
+          "status": "passed",
+          "title": "an event whose transaction commits after a run started is not covered by that run",
+          "duration": 647.7277999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events a failing consumer leaves its events pending and records the error",
+          "status": "passed",
+          "title": "a failing consumer leaves its events pending and records the error",
+          "duration": 645.5581999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events a re-observed version that changes live rows (void → successful → void) wakes reconciliation (audit 2026-11-09, A-1)",
+          "status": "passed",
+          "title": "a re-observed version that changes live rows (void → successful → void) wakes reconciliation (audit 2026-11-09, A-1)",
+          "duration": 750.8472000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "domain events"
+          ],
+          "fullName": "domain events a direct lead-branch override wakes identity, which moves the prospect (audit 2026-11-09, A-4)",
+          "status": "passed",
+          "title": "a direct lead-branch override wakes identity, which moves the prospect (audit 2026-11-09, A-4)",
+          "duration": 776.6861000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "brands"
+          ],
+          "fullName": "brands every branch belongs to exactly one known brand, in code and in the database",
+          "status": "passed",
+          "title": "every branch belongs to exactly one known brand, in code and in the database",
+          "duration": 504.9199000000008,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "brands"
+          ],
+          "fullName": "brands brand lines add up to the company line; unmapped spend belongs to no brand",
+          "status": "passed",
+          "title": "brand lines add up to the company line; unmapped spend belongs to no brand",
+          "duration": 706.076,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "brands"
+          ],
+          "fullName": "brands brand scope is branch scope: a brand role sees its brand only; a partial view of a brand is refused",
+          "status": "passed",
+          "title": "brand scope is branch scope: a brand role sees its brand only; a partial view of a brand is refused",
+          "duration": 563.0620999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "brands"
+          ],
+          "fullName": "brands a partial scope over a brand is marked incomplete in the rollup",
+          "status": "passed",
+          "title": "a partial scope over a brand is marked incomplete in the rollup",
+          "duration": 530.8989000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "reporting contract"
+          ],
+          "fullName": "reporting contract publishes exactly the pinned views, columns and types (a breaking change needs a _v2)",
+          "status": "passed",
+          "title": "publishes exactly the pinned views, columns and types (a breaking change needs a _v2)",
+          "duration": 533.3760999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "reporting contract"
+          ],
+          "fullName": "reporting contract publishes no contact details",
+          "status": "passed",
+          "title": "publishes no contact details",
+          "duration": 515.2509,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "reporting contract"
+          ],
+          "fullName": "reporting contract facts agree with the app's own metrics for the same scope",
+          "status": "passed",
+          "title": "facts agree with the app's own metrics for the same scope",
+          "duration": 674.9413000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291211962,
+      "endTime": 1794291220374.9414,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/domain-model.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution one customer in calls + web + D2D + CRM resolves to one identity and one coherent, ordered timeline",
+          "status": "passed",
+          "title": "one customer in calls + web + D2D + CRM resolves to one identity and one coherent, ordered timeline",
+          "duration": 1026.0859,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution links on an exact email hash when no phone matches, and groups unmatched leads into prospects by phone",
+          "status": "passed",
+          "title": "links on an exact email hash when no phone matches, and groups unmatched leads into prospects by phone",
+          "duration": 786.0645999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution a different customer sharing a phone hash is NOT merged: the lead becomes a pending conflict",
+          "status": "passed",
+          "title": "a different customer sharing a phone hash is NOT merged: the lead becomes a pending conflict",
+          "duration": 665.877,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution phone and email pointing at different CRM customers is a conflict, not a link",
+          "status": "passed",
+          "title": "phone and email pointing at different CRM customers is a conflict, not a link",
+          "duration": 617.3696999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution accepting creates a reviewer_accepted link, rejects the lead's other candidates, and is audited",
+          "status": "passed",
+          "title": "accepting creates a reviewer_accepted link, rejects the lead's other candidates, and is audited",
+          "duration": 949.5859,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution a rejected conflict stays rejected after re-runs and after a replay; new evidence re-opens it and references the decision",
+          "status": "passed",
+          "title": "a rejected conflict stays rejected after re-runs and after a replay; new evidence re-opens it and references the decision",
+          "duration": 1115.9769999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution is idempotent: a second run over unchanged data changes nothing",
+          "status": "passed",
+          "title": "is idempotent: a second run over unchanged data changes nothing",
+          "duration": 695.8137999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution refunds appear in the timeline and collected = payments − refunds",
+          "status": "passed",
+          "title": "refunds appear in the timeline and collected = payments − refunds",
+          "duration": 656.8193000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution enforces branch scope: another branch's customer is indistinguishable from a missing one, and its conflicts stay hidden",
+          "status": "passed",
+          "title": "enforces branch scope: another branch's customer is indistinguishable from a missing one, and its conflicts stay hidden",
+          "duration": 746.2316000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity resolution"
+          ],
+          "fullName": "identity resolution every timeline item references a stored projection row and its raw event, and the drill-down returns the redacted payload",
+          "status": "passed",
+          "title": "every timeline item references a stored projection row and its raw event, and the drill-down returns the redacted payload",
+          "duration": 658.7102999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291203626,
+      "endTime": 1794291211545.7102,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/identity.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "exactly-once ingestion"
+          ],
+          "fullName": "exactly-once ingestion delivering the same batch three times changes nothing after the first",
+          "status": "passed",
+          "title": "delivering the same batch three times changes nothing after the first",
+          "duration": 737.0945,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "exactly-once ingestion"
+          ],
+          "fullName": "exactly-once ingestion a retried payment never creates a second financial outcome",
+          "status": "passed",
+          "title": "a retried payment never creates a second financial outcome",
+          "duration": 542.4870999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "exactly-once ingestion"
+          ],
+          "fullName": "exactly-once ingestion same version, different content → payload_conflict exception, first version kept",
+          "status": "passed",
+          "title": "same version, different content → payload_conflict exception, first version kept",
+          "duration": 546.9950999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "payload conflicts are tied to their branch and customer (audit 2026-11-09, D-4)"
+          ],
+          "fullName": "payload conflicts are tied to their branch and customer (audit 2026-11-09, D-4) the exception names the payload's branch and customer, so branch viewers see it and its revenue is untied",
+          "status": "passed",
+          "title": "the exception names the payload's branch and customer, so branch viewers see it and its revenue is untied",
+          "duration": 532.154,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "Google conversion feedback (audit 2026-11-09, F-1/F-2)"
+          ],
+          "fullName": "Google conversion feedback (audit 2026-11-09, F-1/F-2) a cancelled plan is suppressed, never planned as a retraction, and builds no event body",
+          "status": "passed",
+          "title": "a cancelled plan is suppressed, never planned as a retraction, and builds no event body",
+          "duration": 562.8600000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "Google conversion feedback (audit 2026-11-09, F-1/F-2)"
+          ],
+          "fullName": "Google conversion feedback (audit 2026-11-09, F-1/F-2) a row without a gclid is labelled as not built, not as unmatchable",
+          "status": "passed",
+          "title": "a row without a gclid is labelled as not built, not as unmatchable",
+          "duration": 551.2178000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "validation and quarantine"
+          ],
+          "fullName": "validation and quarantine invalid records are quarantined, never projected, and stored without raw PII",
+          "status": "passed",
+          "title": "invalid records are quarantined, never projected, and stored without raw PII",
+          "duration": 519.6483999999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "validation and quarantine"
+          ],
+          "fullName": "validation and quarantine a missing reference is an explicit exception, and it clears itself when the reference arrives (out of order)",
+          "status": "passed",
+          "title": "a missing reference is an explicit exception, and it clears itself when the reference arrives (out of order)",
+          "duration": 634.0977000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "validation and quarantine"
+          ],
+          "fullName": "validation and quarantine an older version delivered late never overwrites a newer one",
+          "status": "passed",
+          "title": "an older version delivered late never overwrites a newer one",
+          "duration": 584.3910999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "validation and quarantine"
+          ],
+          "fullName": "validation and quarantine reconciliation is idempotent: running it twice yields the same exceptions",
+          "status": "passed",
+          "title": "reconciliation is idempotent: running it twice yields the same exceptions",
+          "duration": 658.3402000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "partial failure is recoverable"
+          ],
+          "fullName": "partial failure is recoverable a failed run does not advance the cursor; the next run re-reads the missed window",
+          "status": "passed",
+          "title": "a failed run does not advance the cursor; the next run re-reads the missed window",
+          "duration": 515.8065999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules unknown attribution stays unknown — a Direct call is never credited to paid media",
+          "status": "passed",
+          "title": "unknown attribution stays unknown — a Direct call is never credited to paid media",
+          "duration": 580.9315000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules a paid customer credited to an unmapped campaign is not in a branch's CAC denominator: its cost is unallocated (audit 2026-11-09, D-3)",
+          "status": "passed",
+          "title": "a paid customer credited to an unmapped campaign is not in a branch's CAC denominator: its cost is unallocated (audit 2026-11-09, D-3)",
+          "duration": 654.4116999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules only a PAID first touch followed by a rep signature is a channel conflict (audit 2026-11-09, D-5)",
+          "status": "passed",
+          "title": "only a PAID first touch followed by a rep signature is a channel conflict (audit 2026-11-09, D-5)",
+          "duration": 587.6012999999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules an existing customer adding a service is not a new acquisition",
+          "status": "passed",
+          "title": "an existing customer adding a service is not a new acquisition",
+          "duration": 604.404700000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules revenue = successful payments minus refunds; failed payments never count",
+          "status": "passed",
+          "title": "revenue = successful payments minus refunds; failed payments never count",
+          "duration": 555.6677999999993,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attribution rules"
+          ],
+          "fullName": "attribution rules branch mismatch → exception; a recorded override resolves it and moves lead credit",
+          "status": "passed",
+          "title": "branch mismatch → exception; a recorded override resolves it and moves lead credit",
+          "duration": 619.6506000000008,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "branch scoping"
+          ],
+          "fullName": "branch scoping a scoped query returns only that branch's rows",
+          "status": "passed",
+          "title": "a scoped query returns only that branch's rows",
+          "duration": 669.1203999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "branch scoping"
+          ],
+          "fullName": "branch scoping a branch partner asking for another branch is refused, not silently filtered",
+          "status": "passed",
+          "title": "a branch partner asking for another branch is refused, not silently filtered",
+          "duration": 539.1198000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291244285,
+      "endTime": 1794291255482.1199,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/invariants.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay the incident is visible: customers exist but have no lead record, and an exception says why",
+          "status": "passed",
+          "title": "the incident is visible: customers exist but have no lead record, and an exception says why",
+          "duration": 1083.3028,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay dry run changes nothing",
+          "status": "passed",
+          "title": "dry run changes nothing",
+          "duration": 878.5352,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay replay restores attribution, recomputes metrics, resolves the exception — and leaves spend and revenue untouched",
+          "status": "passed",
+          "title": "replay restores attribution, recomputes metrics, resolves the exception — and leaves spend and revenue untouched",
+          "duration": 954.7892000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay the same idempotency key returns the stored result and runs nothing",
+          "status": "passed",
+          "title": "the same idempotency key returns the stored result and runs nothing",
+          "duration": 964.9333999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay a new request after success claims nothing and changes nothing",
+          "status": "passed",
+          "title": "a new request after success claims nothing and changes nothing",
+          "duration": 942.5906999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay concurrent replays with different keys claim each record exactly once (real Postgres row locks)",
+          "status": "passed",
+          "title": "concurrent replays with different keys claim each record exactly once (real Postgres row locks)",
+          "duration": 1141.4722000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay concurrent replays with the SAME key run once",
+          "status": "passed",
+          "title": "concurrent replays with the SAME key run once",
+          "duration": 794.0963000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "replay"
+          ],
+          "fullName": "replay replaying through the old mapper keeps records quarantined",
+          "status": "passed",
+          "title": "replaying through the old mapper keeps records quarantined",
+          "duration": 785.7158,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291389423,
+      "endTime": 1794291396969.7158,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/replay.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F1: a record naming an unknown branch is quarantined and reconciliation keeps working",
+          "status": "passed",
+          "title": "F1: a record naming an unknown branch is quarantined and reconciliation keeps working",
+          "duration": 738.2186,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F2: payment status void → successful → void ends voided; an amount correction is applied",
+          "status": "passed",
+          "title": "F2: payment status void → successful → void ends voided; an amount correction is applied",
+          "duration": 565.5496,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F3: spend totals do not depend on the database session time zone",
+          "status": "passed",
+          "title": "F3: spend totals do not depend on the database session time zone",
+          "duration": 571.2821000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F4: a 10-digit costMicros is money, not a phone number; free-text contact details are removed",
+          "status": "passed",
+          "title": "F4: a 10-digit costMicros is money, not a phone number; free-text contact details are removed",
+          "duration": 528.5576000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F5: one out-of-range record is quarantined; the rest of its batch is projected",
+          "status": "passed",
+          "title": "F5: one out-of-range record is quarantined; the rest of its batch is projected",
+          "duration": 526.9662000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F6: no role cookie means a read-only guest, not a role that can act",
+          "status": "passed",
+          "title": "F6: no role cookie means a read-only guest, not a role that can act",
+          "duration": 507.0801999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F7: revenue at risk counts a customer once across exception kinds, and company-wide exceptions count",
+          "status": "passed",
+          "title": "F7: revenue at risk counts a customer once across exception kinds, and company-wide exceptions count",
+          "duration": 614.4766,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F8: an idempotency key reused for a different replay request is refused",
+          "status": "passed",
+          "title": "F8: an idempotency key reused for a different replay request is refused",
+          "duration": 601.1800000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F9: a call updated after the fact (attribution added) is a new version, not a conflict",
+          "status": "passed",
+          "title": "F9: a call updated after the fact (attribution added) is a new version, not a conflict",
+          "duration": 534.0576000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F10: two different payloads for one version in the same batch raise a payload_conflict",
+          "status": "passed",
+          "title": "F10: two different payloads for one version in the same batch raise a payload_conflict",
+          "duration": 673.5540999999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions F11: an acknowledged channel conflict stays acknowledged and stops counting as open",
+          "status": "passed",
+          "title": "F11: an acknowledged channel conflict stays acknowledged and stops counting as open",
+          "duration": 775.4717,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-H1: inside one batch, a re-delivered old version never beats the new one",
+          "status": "passed",
+          "title": "R2-H1: inside one batch, a re-delivered old version never beats the new one",
+          "duration": 628.3117000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-H2: replay keeps original receipt order — a later held version wins, an earlier one does not",
+          "status": "passed",
+          "title": "R2-H2: replay keeps original receipt order — a later held version wins, an earlier one does not",
+          "duration": 720.5556000000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-F5: NUL bytes and year-0 timestamps never block a batch",
+          "status": "passed",
+          "title": "R2-F5: NUL bytes and year-0 timestamps never block a batch",
+          "duration": 566.7819999999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-F4: unseparated numbers in notes are removed; id-shaped values are never hashed",
+          "status": "passed",
+          "title": "R2-F4: unseparated numbers in notes are removed; id-shaped values are never hashed",
+          "duration": 564.6378999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-M2: only data errors quarantine a record; transient database errors fail the run",
+          "status": "passed",
+          "title": "R2-M2: only data errors quarantine a record; transient database errors fail the run",
+          "duration": 548.652,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "review regressions"
+          ],
+          "fullName": "review regressions R2-M1: decisions racing reconciliation never deadlock",
+          "status": "passed",
+          "title": "R2-M1: decisions racing reconciliation never deadlock",
+          "duration": 1157.3217000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291220791,
+      "endTime": 1794291231615.3218,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/review-regressions.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario ingests everything once: every delivery beyond the first is absorbed",
+          "status": "passed",
+          "title": "ingests everything once: every delivery beyond the first is absorbed",
+          "duration": 43.67519999999786,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario the CRM outage run failed and the next run recovered the window",
+          "status": "passed",
+          "title": "the CRM outage run failed and the next run recovered the window",
+          "duration": 1.629000000000815,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario quarantines exactly the drifted calls that arrived before the fix shipped",
+          "status": "passed",
+          "title": "quarantines exactly the drifted calls that arrived before the fix shipped",
+          "duration": 10.013699999995879,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario collected revenue equals the generated payment ground truth to the cent",
+          "status": "passed",
+          "title": "collected revenue equals the generated payment ground truth to the cent",
+          "duration": 2079.1201,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario the conversion bridge buckets add up",
+          "status": "passed",
+          "title": "the conversion bridge buckets add up",
+          "duration": 280.9904999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario the incident branch stands out, and replay brings it back in line",
+          "status": "passed",
+          "title": "the incident branch stands out, and replay brings it back in line",
+          "duration": 1565.3246999999974,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario ChangeGuard: the simulated LSA → PMax migration is caught once, gates the budget signal, and re-maps without duplicating anything company-wide",
+          "status": "passed",
+          "title": "ChangeGuard: the simulated LSA → PMax migration is caught once, gates the budget signal, and re-maps without duplicating anything company-wide",
+          "duration": 2024.0072999999975,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "seeded demo scenario"
+          ],
+          "fullName": "seeded demo scenario unmapped spend blocks the budget signal of the branch whose customers it produced (audit 2026-11-09, D-1)",
+          "status": "passed",
+          "title": "unmapped spend blocks the budget signal of the branch whose customers it produced (audit 2026-11-09, D-1)",
+          "duration": 231.70410000000265,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291381221,
+      "endTime": 1794291387457.704,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/scenario.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Overview: revenue in open exceptions"
+          ],
+          "fullName": "Overview: revenue in open exceptions separates disputed credit (branch mismatch, D2D / paid conflict) from revenue that is not tied at all",
+          "status": "passed",
+          "title": "separates disputed credit (branch mismatch, D2D / paid conflict) from revenue that is not tied at all",
+          "duration": 695.8322000000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "Overview: revenue in open exceptions"
+          ],
+          "fullName": "Overview: revenue in open exceptions counts a customer in both a dispute and an untied exception once, as untied",
+          "status": "passed",
+          "title": "counts a customer in both a dispute and an untied exception once, as untied",
+          "duration": 602.5364999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "Overview: revenue in open exceptions"
+          ],
+          "fullName": "Overview: revenue in open exceptions scopes the split to the viewer's branches",
+          "status": "passed",
+          "title": "scopes the split to the viewer's branches",
+          "duration": 608.4450999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291434941,
+      "endTime": 1794291436847.445,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/integration/shell.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "redaction happens before anything else"
+          ],
+          "fullName": "redaction happens before anything else hashes phones and emails wherever they appear, including fields no mapper knows",
+          "status": "passed",
+          "title": "hashes phones and emails wherever they appear, including fields no mapper knows",
+          "duration": 6.7275000000000205,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "redaction happens before anything else"
+          ],
+          "fullName": "redaction happens before anything else is idempotent, so stored payloads can be replayed",
+          "status": "passed",
+          "title": "is idempotent, so stored payloads can be replayed",
+          "duration": 0.7952999999999975,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "call-tracking mapper versions (the seeded incident)"
+          ],
+          "fullName": "call-tracking mapper versions (the seeded incident) calls@1.0 quarantines the new shape with a precise reason",
+          "status": "passed",
+          "title": "calls@1.0 quarantines the new shape with a precise reason",
+          "duration": 4.362199999999973,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "call-tracking mapper versions (the seeded incident)"
+          ],
+          "fullName": "call-tracking mapper versions (the seeded incident) calls@1.1 accepts both shapes and maps them identically",
+          "status": "passed",
+          "title": "calls@1.1 accepts both shapes and maps them identically",
+          "duration": 2.112799999999993,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "call-tracking mapper versions (the seeded incident)"
+          ],
+          "fullName": "call-tracking mapper versions (the seeded incident) a call to the branch main line stays unknown — it is never upgraded to paid",
+          "status": "passed",
+          "title": "a call to the branch main line stays unknown — it is never upgraded to paid",
+          "duration": 0.4200999999999908,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "call-tracking mapper versions (the seeded incident)"
+          ],
+          "fullName": "call-tracking mapper versions (the seeded incident) unknown branch tags are rejected, not defaulted",
+          "status": "passed",
+          "title": "unknown branch tags are rejected, not defaulted",
+          "duration": 0.28429999999997335,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "CRM mapper (FieldRoutes-shaped)"
+          ],
+          "fullName": "CRM mapper (FieldRoutes-shaped) rejects an unknown appointment status code instead of guessing",
+          "status": "passed",
+          "title": "rejects an unknown appointment status code instead of guessing",
+          "duration": 17.68209999999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "CRM mapper (FieldRoutes-shaped)"
+          ],
+          "fullName": "CRM mapper (FieldRoutes-shaped) treats the zero-date as null and requires dateCompleted exactly when completed",
+          "status": "passed",
+          "title": "treats the zero-date as null and requires dateCompleted exactly when completed",
+          "duration": 2.49290000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "CRM mapper (FieldRoutes-shaped)"
+          ],
+          "fullName": "CRM mapper (FieldRoutes-shaped) a refund must reference the original payment",
+          "status": "passed",
+          "title": "a refund must reference the original payment",
+          "duration": 3.054899999999975,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "CRM mapper (FieldRoutes-shaped)"
+          ],
+          "fullName": "CRM mapper (FieldRoutes-shaped) versions records by dateUpdated so a re-read is recognisable as a duplicate",
+          "status": "passed",
+          "title": "versions records by dateUpdated so a re-read is recognisable as a duplicate",
+          "duration": 3.059599999999989,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "CRM mapper (FieldRoutes-shaped)"
+          ],
+          "fullName": "CRM mapper (FieldRoutes-shaped) interprets wall time in the office's zone",
+          "status": "passed",
+          "title": "interprets wall time in the office's zone",
+          "duration": 1.2235000000000014,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291397345,
+      "endTime": 1794291397387.2234,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/adapters.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "output contract"
+          ],
+          "fullName": "output contract accepts a complete result and labels the deterministic mode honestly",
+          "status": "passed",
+          "title": "accepts a complete result and labels the deterministic mode honestly",
+          "duration": 7.844800000000021,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "output contract"
+          ],
+          "fullName": "output contract rejects unknown fields, bad statuses, unknown proposal kinds and malformed evidence ids",
+          "status": "passed",
+          "title": "rejects unknown fields, bad statuses, unknown proposal kinds and malformed evidence ids",
+          "duration": 1.877999999999986,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "output contract"
+          ],
+          "fullName": "output contract the draft a model submits must carry every section",
+          "status": "passed",
+          "title": "the draft a model submits must carry every section",
+          "duration": 1.9846000000000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "evidence ids"
+          ],
+          "fullName": "evidence ids formats and parses stable ids",
+          "status": "passed",
+          "title": "formats and parses stable ids",
+          "duration": 1.1102999999999952,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291398090,
+      "endTime": 1794291398103.1104,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-contract.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "evaluation dataset"
+          ],
+          "fullName": "evaluation dataset has at least 12 cases covering every required category, with unique ids",
+          "status": "passed",
+          "title": "has at least 12 cases covering every required category, with unique ids",
+          "duration": 4.0160000000000196,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scoreCase"
+          ],
+          "fullName": "scoreCase passes an outcome that meets every expectation",
+          "status": "passed",
+          "title": "passes an outcome that meets every expectation",
+          "duration": 11.346099999999979,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scoreCase"
+          ],
+          "fullName": "scoreCase catches missing tools, extra tools, missing evidence and dropped claims",
+          "status": "passed",
+          "title": "catches missing tools, extra tools, missing evidence and dropped claims",
+          "duration": 1.4472999999999843,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scoreCase"
+          ],
+          "fullName": "scoreCase catches forbidden claims, wrong refusals, wrong proposals and an invalid contract",
+          "status": "passed",
+          "title": "catches forbidden claims, wrong refusals, wrong proposals and an invalid contract",
+          "duration": 1.1228999999999587,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scoreCase"
+          ],
+          "fullName": "scoreCase checks no-findings and warning expectations",
+          "status": "passed",
+          "title": "checks no-findings and warning expectations",
+          "duration": 1.8788999999999874,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "summarize"
+          ],
+          "fullName": "summarize averages scored cases, counts skipped ones apart, and reports latency percentiles and cost",
+          "status": "passed",
+          "title": "averages scored cases, counts skipped ones apart, and reports latency percentiles and cost",
+          "duration": 2.3888999999999783,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291388950,
+      "endTime": 1794291388973.389,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-eval.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "groundDraft"
+          ],
+          "fullName": "groundDraft keeps claims whose every evidence id was returned",
+          "status": "passed",
+          "title": "keeps claims whose every evidence id was returned",
+          "duration": 3.8170000000000073,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "groundDraft"
+          ],
+          "fullName": "groundDraft drops a claim citing an id no tool returned, even when its other ids are real",
+          "status": "passed",
+          "title": "drops a claim citing an id no tool returned, even when its other ids are real",
+          "duration": 0.9243999999999915,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "groundDraft"
+          ],
+          "fullName": "groundDraft drops an ungrounded cause and lowers high confidence; drops proposals for exceptions not returned",
+          "status": "passed",
+          "title": "drops an ungrounded cause and lowers high confidence; drops proposals for exceptions not returned",
+          "duration": 0.5853000000000179,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "groundDraft"
+          ],
+          "fullName": "groundDraft a descriptive answer without a cause keeps its confidence; no verified finding means low",
+          "status": "passed",
+          "title": "a descriptive answer without a cause keeps its confidence; no verified finding means low",
+          "duration": 0.5854999999999677,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "groundDraft"
+          ],
+          "fullName": "groundDraft downgrades a 'verified' claim that cites only metric definitions, and defaults hypotheses to weak",
+          "status": "passed",
+          "title": "downgrades a 'verified' claim that cites only metric definitions, and defaults hypotheses to weak",
+          "duration": 0.7536999999999807,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291397668,
+      "endTime": 1794291397674.7537,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-grounding.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "scanForInstructions"
+          ],
+          "fullName": "scanForInstructions finds instructions addressed to the AI anywhere in a tool output",
+          "status": "passed",
+          "title": "finds instructions addressed to the AI anywhere in a tool output",
+          "duration": 4.055000000000007,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "scanForInstructions"
+          ],
+          "fullName": "scanForInstructions does not flag the synthetic world's ordinary free text, campaign names or errors",
+          "status": "passed",
+          "title": "does not flag the synthetic world's ordinary free text, campaign names or errors",
+          "duration": 0.3153999999999826,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "delimitToolOutput"
+          ],
+          "fullName": "delimitToolOutput wraps data so record text cannot close the element or open a new one",
+          "status": "passed",
+          "title": "wraps data so record text cannot close the element or open a new one",
+          "duration": 1.092000000000013,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "delimitToolOutput"
+          ],
+          "fullName": "delimitToolOutput appends a do-not-follow note when the scan found something",
+          "status": "passed",
+          "title": "appends a do-not-follow note when the scan found something",
+          "duration": 0.28539999999998145,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "delimitToolOutput"
+          ],
+          "fullName": "delimitToolOutput escapes warning paths too: a payload KEY cannot close the element (audit 2026-11-09, I-1)",
+          "status": "passed",
+          "title": "escapes warning paths too: a payload KEY cannot close the element (audit 2026-11-09, I-1)",
+          "duration": 0.29879999999999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291437275,
+      "endTime": 1794291437281.2988,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-injection.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Why does Google Local Services at B09 look so much cheaper than Search in October? → coverage_gap",
+          "status": "passed",
+          "title": "Why does Google Local Services at B09 look so much cheaper than Search in October? → coverage_gap",
+          "duration": 2.669999999999959,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Why is B20's paid CAC so high? → high_cac",
+          "status": "passed",
+          "title": "Why is B20's paid CAC so high? → high_cac",
+          "duration": 1.390299999999968,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Where did customer 410325 come from? → customer_lookup",
+          "status": "passed",
+          "title": "Where did customer 410325 come from? → customer_lookup",
+          "duration": 0.24389999999999645,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Which call records are quarantined at B20 and why? → quarantine",
+          "status": "passed",
+          "title": "Which call records are quarantined at B20 and why? → quarantine",
+          "duration": 0.36990000000002965,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Are duplicate call deliveries double counted at B20? → duplicates",
+          "status": "passed",
+          "title": "Are duplicate call deliveries double counted at B20? → duplicates",
+          "duration": 0.22820000000001528,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Which leads were credited to the wrong branch at B07? → branch_mismatch",
+          "status": "passed",
+          "title": "Which leads were credited to the wrong branch at B07? → branch_mismatch",
+          "duration": 0.2400000000000091,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Are customers at B12 credited to both door-to-door and paid channels? → channel_conflict",
+          "status": "passed",
+          "title": "Are customers at B12 credited to both door-to-door and paid channels? → channel_conflict",
+          "duration": 0.26350000000002183,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent How do refunds reconcile with collected revenue at B22? → refunds",
+          "status": "passed",
+          "title": "How do refunds reconcile with collected revenue at B22? → refunds",
+          "duration": 0.27129999999999654,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Is any data feed stale? → stale_sync",
+          "status": "passed",
+          "title": "Is any data feed stale? → stale_sync",
+          "duration": 0.6218999999999824,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent Investigate exception #2455: something → exception",
+          "status": "passed",
+          "title": "Investigate exception #2455: something → exception",
+          "duration": 0.23050000000000637,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent What will TikTok ads do for us next year? → no_evidence",
+          "status": "passed",
+          "title": "What will TikTok ads do for us next year? → no_evidence",
+          "duration": 0.24020000000001573,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent extracts ids, periods and premises",
+          "status": "passed",
+          "title": "extracts ids, periods and premises",
+          "duration": 0.23210000000000264,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent recognises requests to act, however they are phrased",
+          "status": "passed",
+          "title": "recognises requests to act, however they are phrased",
+          "duration": 0.18980000000004793,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "detectIntent"
+          ],
+          "fullName": "detectIntent uses the requested branch, else the viewer's only branch; ignores unknown branch ids",
+          "status": "passed",
+          "title": "uses the requested branch, else the viewer's only branch; ignores unknown branch ids",
+          "duration": 0.154200000000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291437660,
+      "endTime": 1794291437667.2402,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-intent.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop sends the documented request shape, runs a registry tool, validates the submission and stops",
+          "status": "passed",
+          "title": "sends the documented request shape, runs a registry tool, validates the submission and stops",
+          "duration": 20.4366,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop every registry tool and submit_findings is offered with an object JSON schema",
+          "status": "passed",
+          "title": "every registry tool and submit_findings is offered with an object JSON schema",
+          "duration": 3.6958000000000766,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop returns invalid tool input and invalid findings to the model as errors, and gives up after three bad submissions",
+          "status": "passed",
+          "title": "returns invalid tool input and invalid findings to the model as errors, and gives up after three bad submissions",
+          "duration": 5.0113999999999805,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop enforces the tool budget and the turn budget",
+          "status": "passed",
+          "title": "enforces the tool budget and the turn budget",
+          "duration": 3.4411999999999807,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop nudges once when the model stops without submitting, then ends",
+          "status": "passed",
+          "title": "nudges once when the model stops without submitting, then ends",
+          "duration": 2.658900000000017,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop stops on a refusal or max_tokens without running the turn's tools",
+          "status": "passed",
+          "title": "stops on a refusal or max_tokens without running the turn's tools",
+          "duration": 4.291399999999953,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "model tool loop"
+          ],
+          "fullName": "model tool loop times out at the deadline",
+          "status": "passed",
+          "title": "times out at the deadline",
+          "duration": 65.94119999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291388372,
+      "endTime": 1794291388477.9412,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/ai-model-loop.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "audit subject filter"
+          ],
+          "fullName": "audit subject filter an id-bearing subject matches exactly",
+          "status": "passed",
+          "title": "an id-bearing subject matches exactly",
+          "duration": 2.4189999999999827,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "audit subject filter"
+          ],
+          "fullName": "audit subject filter a bare type, with or without the colon, matches every subject of that type",
+          "status": "passed",
+          "title": "a bare type, with or without the colon, matches every subject of that type",
+          "duration": 0.436300000000017,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "audit subject filter"
+          ],
+          "fullName": "audit subject filter LIKE metacharacters in a prefix are escaped, not treated as wildcards",
+          "status": "passed",
+          "title": "LIKE metacharacters in a prefix are escaped, not treated as wildcards",
+          "duration": 0.28879999999998063,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "audit subject filter"
+          ],
+          "fullName": "audit subject filter no subject means no filter",
+          "status": "passed",
+          "title": "no subject means no filter",
+          "duration": 0.3876000000000204,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291439760,
+      "endTime": 1794291439763.4363,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/audit-subject.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "connector config"
+          ],
+          "fullName": "connector config accepts the seeded demo config",
+          "status": "passed",
+          "title": "accepts the seeded demo config",
+          "duration": 5.5709999999999695,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "connector config"
+          ],
+          "fullName": "connector config refuses a wire time zone the mapper does not use, naming why",
+          "status": "passed",
+          "title": "refuses a wire time zone the mapper does not use, naming why",
+          "duration": 20.427900000000022,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "connector config"
+          ],
+          "fullName": "connector config still refuses a zone that is not a time zone at all",
+          "status": "passed",
+          "title": "still refuses a zone that is not a time zone at all",
+          "duration": 0.809599999999989,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291439080,
+      "endTime": 1794291439106.8096,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/connector-config.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "demo mode"
+          ],
+          "fullName": "demo mode is on in development and tests, off in production unless DEMO_MODE=1",
+          "status": "passed",
+          "title": "is on in development and tests, off in production unless DEMO_MODE=1",
+          "duration": 2.368599999999958,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "demo mode"
+          ],
+          "fullName": "demo mode POST /api/role refuses in a production build without the flag, and sets no cookie",
+          "status": "passed",
+          "title": "POST /api/role refuses in a production build without the flag, and sets no cookie",
+          "duration": 4.588599999999985,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "demo mode"
+          ],
+          "fullName": "demo mode POST /api/role works in a production build started with DEMO_MODE=1",
+          "status": "passed",
+          "title": "POST /api/role works in a production build started with DEMO_MODE=1",
+          "duration": 4.72320000000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "demo mode"
+          ],
+          "fullName": "demo mode the FieldRoutes mock is not served by a production build without the flag",
+          "status": "passed",
+          "title": "the FieldRoutes mock is not served by a production build without the flag",
+          "duration": 1.477299999999957,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291438194,
+      "endTime": 1794291438206.4773,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/demo-mode.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "FieldRoutes wall-time windows"
+          ],
+          "fullName": "FieldRoutes wall-time windows a record in the repeated hour is read by one of two overlapping windows (Chicago, 2026-11-01)",
+          "status": "passed",
+          "title": "a record in the repeated hour is read by one of two overlapping windows (Chicago, 2026-11-01)",
+          "duration": 24.31239999999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes wall-time windows"
+          ],
+          "fullName": "FieldRoutes wall-time windows every minute of the transition day is inside some window of an hourly sync with a 30-minute overlap",
+          "status": "passed",
+          "title": "every minute of the transition day is inside some window of an hourly sync with a 30-minute overlap",
+          "duration": 94.21650000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "FieldRoutes wall-time windows"
+          ],
+          "fullName": "FieldRoutes wall-time windows a window with no clock change is unchanged",
+          "status": "passed",
+          "title": "a window with no clock change is unchanged",
+          "duration": 1.8162000000000376,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291438622,
+      "endTime": 1794291438742.8162,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/fieldroutes-window.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod returns the named period for a known key",
+          "status": "passed",
+          "title": "returns the named period for a known key",
+          "duration": 1.9954000000000178,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod takes the first value of a repeated parameter",
+          "status": "passed",
+          "title": "takes the first value of a repeated parameter",
+          "duration": 0.2599999999999909,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod falls back to October when the parameter is missing or unknown",
+          "status": "passed",
+          "title": "falls back to October when the parameter is missing or unknown",
+          "duration": 0.22050000000001546,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod treats the inherited name toString as unknown, not as a period",
+          "status": "passed",
+          "title": "treats the inherited name toString as unknown, not as a period",
+          "duration": 0.4823000000000093,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod treats the inherited name constructor as unknown, not as a period",
+          "status": "passed",
+          "title": "treats the inherited name constructor as unknown, not as a period",
+          "duration": 0.15670000000000073,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod treats the inherited name __proto__ as unknown, not as a period",
+          "status": "passed",
+          "title": "treats the inherited name __proto__ as unknown, not as a period",
+          "duration": 0.18319999999999936,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod treats the inherited name hasOwnProperty as unknown, not as a period",
+          "status": "passed",
+          "title": "treats the inherited name hasOwnProperty as unknown, not as a period",
+          "duration": 0.18949999999998113,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "parsePeriod"
+          ],
+          "fullName": "parsePeriod treats the inherited name valueOf as unknown, not as a period",
+          "status": "passed",
+          "title": "treats the inherited name valueOf as unknown, not as a period",
+          "duration": 0.16830000000001633,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291439314,
+      "endTime": 1794291439318.1895,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/period.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats 149.00 → 14900 cents",
+          "status": "passed",
+          "title": "149.00 → 14900 cents",
+          "duration": 1.81189999999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats 149.1 → 14910 cents",
+          "status": "passed",
+          "title": "149.1 → 14910 cents",
+          "duration": 0.30340000000001055,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats 0.07 → 7 cents",
+          "status": "passed",
+          "title": "0.07 → 7 cents",
+          "duration": 0.15379999999998972,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats -25.50 → -2550 cents",
+          "status": "passed",
+          "title": "-25.50 → -2550 cents",
+          "duration": 0.25849999999999795,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats 1000000 → 100000000 cents",
+          "status": "passed",
+          "title": "1000000 → 100000000 cents",
+          "duration": 0.13459999999997763,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats rejects ambiguous amounts",
+          "status": "passed",
+          "title": "rejects ambiguous amounts",
+          "duration": 1.092000000000013,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats sums of parsed amounts have no float drift",
+          "status": "passed",
+          "title": "sums of parsed amounts have no float drift",
+          "duration": 0.8008000000000095,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "money is parsed exactly, never through floats"
+          ],
+          "fullName": "money is parsed exactly, never through floats converts Google Ads micros half-up",
+          "status": "passed",
+          "title": "converts Google Ads micros half-up",
+          "duration": 0.27089999999998327,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity normalisation: one person, one hash, whatever the source format"
+          ],
+          "fullName": "identity normalisation: one person, one hash, whatever the source format normalises every US phone format to E.164",
+          "status": "passed",
+          "title": "normalises every US phone format to E.164",
+          "duration": 0.7118000000000109,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity normalisation: one person, one hash, whatever the source format"
+          ],
+          "fullName": "identity normalisation: one person, one hash, whatever the source format hashes every format to the same key",
+          "status": "passed",
+          "title": "hashes every format to the same key",
+          "duration": 0.6530999999999949,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity normalisation: one person, one hash, whatever the source format"
+          ],
+          "fullName": "identity normalisation: one person, one hash, whatever the source format refuses non-dialable numbers instead of guessing",
+          "status": "passed",
+          "title": "refuses non-dialable numbers instead of guessing",
+          "duration": 0.24609999999998422,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "identity normalisation: one person, one hash, whatever the source format"
+          ],
+          "fullName": "identity normalisation: one person, one hash, whatever the source format normalises email case and whitespace",
+          "status": "passed",
+          "title": "normalises email case and whitespace",
+          "duration": 0.24519999999998277,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "zone-less CRM timestamps are interpreted at the branch"
+          ],
+          "fullName": "zone-less CRM timestamps are interpreted at the branch Phoenix has no DST: 10:00 local is 17:00Z in summer and winter",
+          "status": "passed",
+          "title": "Phoenix has no DST: 10:00 local is 17:00Z in summer and winter",
+          "duration": 16.843800000000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "zone-less CRM timestamps are interpreted at the branch"
+          ],
+          "fullName": "zone-less CRM timestamps are interpreted at the branch Chicago shifts with DST",
+          "status": "passed",
+          "title": "Chicago shifts with DST",
+          "duration": 0.7327999999999975,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "zone-less CRM timestamps are interpreted at the branch"
+          ],
+          "fullName": "zone-less CRM timestamps are interpreted at the branch round-trips outside the repeated hour",
+          "status": "passed",
+          "title": "round-trips outside the repeated hour",
+          "duration": 1.7942000000000178,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "zone-less CRM timestamps are interpreted at the branch"
+          ],
+          "fullName": "zone-less CRM timestamps are interpreted at the branch the fall-back hour is ambiguous in a zone-less format; it resolves to the earlier instant, deterministically",
+          "status": "passed",
+          "title": "the fall-back hour is ambiguous in a zone-less format; it resolves to the earlier instant, deterministically",
+          "duration": 0.6136000000000195,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "zone-less CRM timestamps are interpreted at the branch"
+          ],
+          "fullName": "zone-less CRM timestamps are interpreted at the branch rejects ISO strings where the CRM format is required",
+          "status": "passed",
+          "title": "rejects ISO strings where the CRM format is required",
+          "duration": 0.26019999999999754,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "payload hashing ignores key order"
+          ],
+          "fullName": "payload hashing ignores key order equal payloads hash equally",
+          "status": "passed",
+          "title": "equal payloads hash equally",
+          "duration": 0.5097000000000094,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "payload hashing ignores key order"
+          ],
+          "fullName": "payload hashing ignores key order different payloads hash differently",
+          "status": "passed",
+          "title": "different payloads hash differently",
+          "duration": 0.7587000000000046,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291437055,
+      "endTime": 1794291437083.7588,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/primitives.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "the synthetic world"
+          ],
+          "fullName": "the synthetic world is deterministic: same seed, same records",
+          "status": "passed",
+          "title": "is deterministic: same seed, same records",
+          "duration": 18094.510100000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "the synthetic world"
+          ],
+          "fullName": "the synthetic world has 44 fictional branches and no real-company identifiers",
+          "status": "passed",
+          "title": "has 44 fictional branches and no real-company identifiers",
+          "duration": 34.80890000000363,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "the synthetic world"
+          ],
+          "fullName": "the synthetic world contains the seeded incident: B20 calls change shape from the drift date",
+          "status": "passed",
+          "title": "contains the seeded incident: B20 calls change shape from the drift date",
+          "duration": 15.889999999999418,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "the synthetic world"
+          ],
+          "fullName": "the synthetic world cost per lead lands inside the researched benchmark ranges (research/07 §2.3)",
+          "status": "passed",
+          "title": "cost per lead lands inside the researched benchmark ranges (research/07 §2.3)",
+          "duration": 28.07839999999851,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "attention flags are relative and explainable"
+          ],
+          "fullName": "attention flags are relative and explainable flags only the outlier",
+          "status": "passed",
+          "title": "flags only the outlier",
+          "duration": 1.0009999999965657,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1794291416388,
+      "endTime": 1794291434563.001,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Temp/rso-final/tests/unit/simulation.test.ts"
+    }
+  ]
+}

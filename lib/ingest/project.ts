@@ -171,13 +171,16 @@ export async function projectAll(db: Queryable, items: ProjectionItem[]): Promis
     byTable.set(table, bucket);
   }
   const order: Table[] = ["ad_spend_daily", "crm_customers", "crm_subscriptions", "crm_appointments", "crm_tickets", "crm_payments", "leads"];
-  let projected = 0;
+  // Rows actually written: each upsert skips rows that already point at this raw event or hold
+  // a newer version, so an unchanged re-read counts 0. Ingest uses this to tell a re-observed
+  // version that changed live rows (an A -> B -> A flip) from a quiet poll.
+  let changed = 0;
   for (const table of order) {
     const bucket = byTable.get(table);
     if (!bucket || bucket.size === 0) continue;
     const rows = [...bucket.values()].map(({ projection, rawEventId }) => ({ ...projection.row, rawEventId }));
-    await db.query(SQL[table], [JSON.stringify(rows)]);
-    projected += rows.length;
+    const result = await db.query(SQL[table], [JSON.stringify(rows)]);
+    changed += result.rowCount ?? 0;
   }
-  return projected;
+  return changed;
 }

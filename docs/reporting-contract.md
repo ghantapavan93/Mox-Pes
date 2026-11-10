@@ -22,7 +22,7 @@ VERIFIED BI stack), or a pipeline that copies the views into the lake. SQL:
 | `dim_channel_v1` | channel | `measurement`: what evidence can show the channel's effect |
 | `fact_ad_spend_daily_v1` | campaign × spend date | `classified_by` = mapper version behind `channel_code` (lineage); `branch_id` null = unallocated |
 | `fact_leads_v1` | lead record | effective branch (after overrides), attribution evidence |
-| `fact_acquisitions_v1` | acquired CRM customer | attribution basis, collected revenue to date |
+| `fact_acquisitions_v1` | new CRM customer (first subscription) | acquired = `initial_status = 'completed'`; attribution basis, collected revenue to date |
 | `fact_exceptions_v1` | exception (any status) | `decision_blocking` = puts a budget signal on hold |
 | `contract_v1` | view | the contract listing itself |
 

@@ -123,3 +123,9 @@ Two harness mistakes on the way, both mine and both fixed by re-running correctl
 also disables the per-spec reseed, so an earlier spec's fixes leaked into the golden path; and a
 server on port 3200 left the mock FieldRoutes host (`localhost:3000`, stored in the connector
 config) unreachable.
+
+## Audit pass (2026-11-09)
+
+- **Audit:** `docs/audit/2026-11-09/report.md` (findings, numbers that changed, safe claims) and
+  `final-run/verification.json` (machine-checked in a fresh clone: vitest 294/294, Playwright 35
+  passed + 1 skipped, 0 ledger violations). Re-run with `npm run audit:report`.

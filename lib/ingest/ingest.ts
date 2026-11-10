@@ -163,7 +163,7 @@ export async function ingestRecords(
     if (p.result.ok) items.push({ projection: p.result.projection, rawEventId });
     else stats.quarantined += 1;
   }
-  const failed = await projectIsolated(tx, [...items, ...reobserved]);
+  const { failed, changed } = await projectIsolated(tx, [...items, ...reobserved]);
   for (const f of failed) {
     await tx.query(
       "update raw_events set status = 'quarantined', error_code = 'PROJECTION_FAILED', error_detail = $2, projected_at = null where id = $1",
@@ -175,13 +175,15 @@ export async function ingestRecords(
   stats.quarantined += items.length - projected;
   stats.projected = projected;
   // Published with the batch, in its transaction. An unchanged re-read publishes nothing, so
-  // a quiet poll never wakes the consumers.
-  if (stats.inserted > 0 || stats.conflicts > 0) {
+  // a quiet poll never wakes the consumers; a re-observed version that changed live rows (an
+  // A -> B -> A flip of a received-clock record) does, or reconciliation never sees the flip
+  // back (audit 2026-11-09, A-1).
+  if (stats.inserted > 0 || stats.conflicts > 0 || changed > 0) {
     await recordEvent(tx, {
       type: "intake.records_stored",
       subject: `source:${source}`,
       occurredAt: now,
-      payload: { source, mapperVersion: `${source}@${mapper.version}`, runId, inserted: stats.inserted, projected: stats.projected, quarantined: stats.quarantined, conflicts: stats.conflicts },
+      payload: { source, mapperVersion: `${source}@${mapper.version}`, runId, inserted: stats.inserted, projected: stats.projected, quarantined: stats.quarantined, conflicts: stats.conflicts, rowsChanged: changed },
     });
   }
   return stats;
@@ -256,22 +258,23 @@ async function rawEventId(tx: Queryable, source: string, externalId: string): Pr
  * savepoints so one bad record is isolated instead of aborting the whole batch (and, for
  * polling, stalling the stream's cursor forever).
  */
-async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<Array<{ rawEventId: number; message: string }>> {
-  if (items.length === 0) return [];
+async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<{ failed: Array<{ rawEventId: number; message: string }>; changed: number }> {
+  if (items.length === 0) return { failed: [], changed: 0 };
   await tx.query("savepoint project_batch");
   try {
-    await projectAll(tx, items);
+    const changed = await projectAll(tx, items);
     await tx.query("release savepoint project_batch");
-    return [];
+    return { failed: [], changed };
   } catch (error) {
     await tx.query("rollback to savepoint project_batch");
     if (!isRecordLevelError(error)) throw error;
   }
   const failed: Array<{ rawEventId: number; message: string }> = [];
+  let changed = 0;
   for (const item of items) {
     await tx.query("savepoint project_one");
     try {
-      await projectAll(tx, [item]);
+      changed += await projectAll(tx, [item]);
       await tx.query("release savepoint project_one");
     } catch (error) {
       await tx.query("rollback to savepoint project_one");
@@ -280,7 +283,7 @@ async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<
       console.warn(JSON.stringify({ level: "warn", msg: "projection failed; record quarantined", rawEventId: item.rawEventId }));
     }
   }
-  return failed;
+  return { failed, changed };
 }
 
 async function recordPayloadConflict(
@@ -289,9 +292,14 @@ async function recordPayloadConflict(
 ): Promise<void> {
   const { source, rawEventId, externalId, incoming, now } = args;
   await tx.query(
+    // The branch and the customer come from the stored payload, as for every other exception, so
+    // the conflict is visible to that branch's viewers and its revenue counts as untied (audit
+    // 2026-11-09, D-4). Unknown branch or no customer id: null / empty, as before.
     `insert into exceptions (kind, severity, fingerprint, branch_id, subject_type, subject_id, summary, evidence,
-       first_detected_at, last_detected_at)
-     values ('payload_conflict', 'medium', $1, null, 'raw_event', $2, $3, $4, $5, $5)
+       first_detected_at, last_detected_at, customer_ids)
+     select 'payload_conflict', 'medium', $1, payload_branch(re.payload), 'raw_event', $2, $3, $4, $5, $5,
+       case when re.payload ->> 'customerID' ~ '^[0-9]{1,18}$' then array[(re.payload ->> 'customerID')::bigint] else '{}'::bigint[] end
+     from raw_events re where re.id = $6
      on conflict (fingerprint) do update set last_detected_at = excluded.last_detected_at,
        evidence = exceptions.evidence || jsonb_build_object('deliveries', coalesce((exceptions.evidence->>'deliveries')::int, 1) + 1)`,
     [
@@ -300,6 +308,7 @@ async function recordPayloadConflict(
       `${source} sent two different payloads for the same record version ${externalId}`,
       JSON.stringify({ externalId, storedRawEventId: rawEventId, incomingPayload: incoming.payload, incomingHash: incoming.hash, deliveries: 1 }),
       now,
+      rawEventId,
     ],
   );
 }

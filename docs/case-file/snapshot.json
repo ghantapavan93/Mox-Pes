@@ -21,17 +21,19 @@
       "paidProspects": 4694,
       "sold": 3835,
       "acquired": 3687,
-      "paidAcquired": 1726,
+      "paidAcquired": 1724,
       "unknownAcquired": 605,
       "channelConflicts": 44,
       "newCustomerCollectedCents": 22474400,
       "newCustomerAcvCents": 202590200,
       "collectedCents": 51692900,
       "refundsCents": 1282100,
-      "openExceptions": 186,
-      "atRiskCents": 1009300,
+      "openExceptions": 187,
+      "atRiskCents": 1036200,
+      "untiedCents": 313000,
+      "creditDisputedCents": 723200,
       "unallocatedSpendCents": 453934,
-      "paidCacCents": 26685,
+      "paidCacCents": 26716,
       "unknownShare": 0.16409004610794684
     },
     "rowsBefore": [
@@ -221,7 +223,7 @@
         "newCustomerAcvCents": 7275200,
         "collectedCents": 1823900,
         "refundsCents": 31200,
-        "openExceptions": 5,
+        "openExceptions": 6,
         "atRiskCents": 14800
       },
       {
@@ -326,8 +328,8 @@
         "newCustomerAcvCents": 4595600,
         "collectedCents": 1292100,
         "refundsCents": 35700,
-        "openExceptions": 3,
-        "atRiskCents": 29700
+        "openExceptions": 4,
+        "atRiskCents": 42500
       },
       {
         "branchId": "B15",
@@ -473,8 +475,8 @@
         "newCustomerAcvCents": 2600400,
         "collectedCents": 519500,
         "refundsCents": 6000,
-        "openExceptions": 1,
-        "atRiskCents": 9900
+        "openExceptions": 2,
+        "atRiskCents": 24000
       },
       {
         "branchId": "B22",
@@ -683,7 +685,7 @@
         "newCustomerAcvCents": 7955400,
         "collectedCents": 2135200,
         "refundsCents": 28900,
-        "openExceptions": 3,
+        "openExceptions": 4,
         "atRiskCents": 9800
       },
       {
@@ -949,7 +951,7 @@
         "paidProspects": 103,
         "sold": 90,
         "acquired": 87,
-        "paidAcquired": 42,
+        "paidAcquired": 40,
         "unknownAcquired": 12,
         "channelConflicts": 1,
         "newCustomerCollectedCents": 619000,
@@ -1147,7 +1149,7 @@
         "newCustomerAcvCents": 7275200,
         "collectedCents": 1823900,
         "refundsCents": 31200,
-        "openExceptions": 5,
+        "openExceptions": 6,
         "atRiskCents": 14800
       },
       {
@@ -1252,8 +1254,8 @@
         "newCustomerAcvCents": 4595600,
         "collectedCents": 1292100,
         "refundsCents": 35700,
-        "openExceptions": 3,
-        "atRiskCents": 29700
+        "openExceptions": 4,
+        "atRiskCents": 42500
       },
       {
         "branchId": "B15",
@@ -1399,8 +1401,8 @@
         "newCustomerAcvCents": 2600400,
         "collectedCents": 519500,
         "refundsCents": 6000,
-        "openExceptions": 1,
-        "atRiskCents": 9900
+        "openExceptions": 2,
+        "atRiskCents": 24000
       },
       {
         "branchId": "B22",
@@ -1609,7 +1611,7 @@
         "newCustomerAcvCents": 7955400,
         "collectedCents": 2135200,
         "refundsCents": 28900,
-        "openExceptions": 3,
+        "openExceptions": 4,
         "atRiskCents": 9800
       },
       {
@@ -1875,7 +1877,7 @@
         "paidProspects": 103,
         "sold": 90,
         "acquired": 87,
-        "paidAcquired": 42,
+        "paidAcquired": 40,
         "unknownAcquired": 12,
         "channelConflicts": 1,
         "newCustomerCollectedCents": 619000,
@@ -2227,7 +2229,29 @@
         "paidCacCents": 36475,
         "openExceptions": 3,
         "atRiskCents": 286100,
-        "googleConversionsToUpload": 45
+        "googleConversionsToUpload": 45,
+        "channels": {
+          "google_search": {
+            "spendCents": 2144999,
+            "acquired": 53,
+            "cacCents": 40472
+          },
+          "google_lsa": {
+            "spendCents": 748140,
+            "acquired": 26,
+            "cacCents": 28775
+          },
+          "meta": {
+            "spendCents": 316688,
+            "acquired": 9,
+            "cacCents": 35188
+          },
+          "microsoft": {
+            "spendCents": 0,
+            "acquired": 0,
+            "cacCents": null
+          }
+        }
       },
       "after": {
         "branchIds": [
@@ -2240,7 +2264,29 @@
         "paidCacCents": 28406,
         "openExceptions": 5,
         "atRiskCents": 14800,
-        "googleConversionsToUpload": 51
+        "googleConversionsToUpload": 51,
+        "channels": {
+          "google_search": {
+            "spendCents": 2144999,
+            "acquired": 66,
+            "cacCents": 32500
+          },
+          "google_lsa": {
+            "spendCents": 748140,
+            "acquired": 37,
+            "cacCents": 20220
+          },
+          "meta": {
+            "spendCents": 316688,
+            "acquired": 10,
+            "cacCents": 31669
+          },
+          "microsoft": {
+            "spendCents": 0,
+            "acquired": 0,
+            "cacCents": null
+          }
+        }
       },
       "claimed": 119,
       "projected": 119
@@ -2259,7 +2305,7 @@
   "feedback": {
     "before": {
       "upload": 45,
-      "retract": 0,
+      "suppress_cancelled": 0,
       "held_channel_conflict": 0,
       "no_click_id": 5,
       "click_too_old": 0,
@@ -2267,7 +2313,7 @@
     },
     "after": {
       "upload": 51,
-      "retract": 0,
+      "suppress_cancelled": 0,
       "held_channel_conflict": 2,
       "no_click_id": 10,
       "click_too_old": 0,

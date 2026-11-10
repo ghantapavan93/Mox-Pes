@@ -1,0 +1,103 @@
+{
+  "comment": "Interview claims after the 2026-11-09 audit. A 'safe' claim is backed by tests that must pass (checked by scripts/audit-report.ts); 'unsafe' claims say why not. Synthetic data throughout: never present a number as Moxie's.",
+  "claims": [
+    {
+      "claim": "Ingestion is exactly-once: a record version is stored once however often it is delivered, and a re-observed version that changes live rows still wakes reconciliation.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/integration/invariants.test.ts", "name": "delivering the same batch three times changes nothing after the first" },
+        { "runner": "vitest", "file": "tests/integration/domain-model.test.ts", "name": "audit 2026-11-09, A-1" }
+      ]
+    },
+    {
+      "claim": "Sync workers are fenced: a worker that lost its claim cannot overwrite another's results, a request key is idempotent, and a kick is never lost.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/integration/connectors.test.ts", "name": "audit 2026-11-09, B-5" },
+        { "runner": "vitest", "file": "tests/integration/connectors.test.ts", "name": "B-2: a kick that arrives while the drain dispatches events is not lost" },
+        { "runner": "vitest", "file": "tests/integration/connectors.test.ts", "name": "enqueue is idempotent by key" }
+      ]
+    },
+    {
+      "claim": "Domain events use a transactional outbox with snapshot coverage: a late-committing change is never lost, and a burst of batches costs one recomputation.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/integration/domain-model.test.ts", "name": "an event whose transaction commits after a run started is not covered by that run" },
+        { "runner": "vitest", "file": "tests/integration/domain-model.test.ts", "name": "a consumer runs only for changes its last run did not see" }
+      ]
+    },
+    {
+      "claim": "No stored record changes without propose → rolled-back dry run → approval by another role → one verified execution; the legacy replay API refuses commits.",
+      "safe": true,
+      "evidence": [
+        { "runner": "playwright", "file": "tests/e2e/golden-path.spec.ts", "name": "the panel cannot commit" },
+        { "runner": "playwright", "file": "tests/e2e/zz-b09-four-minute-path.spec.ts", "name": "B09 golden path" }
+      ]
+    },
+    {
+      "claim": "A fix is verified against the ledger: ad spend, raw events, CRM customers, invoiced and collected are conserved, and re-executing returns the stored result.",
+      "safe": true,
+      "evidence": [{ "runner": "playwright", "file": "tests/e2e/zz-b09-four-minute-path.spec.ts", "name": "B09 golden path" }]
+    },
+    {
+      "claim": "Budget signals refuse to rank channels on broken data, including unmapped spend that produced a branch's customers.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/integration/scenario.test.ts", "name": "audit 2026-11-09, D-1" },
+        { "runner": "vitest", "file": "tests/integration/changeguard.test.ts", "name": "blocks the budget signal while open" }
+      ]
+    },
+    {
+      "claim": "Collected revenue in the seeded scenario equals the generated payment ground truth to the cent.",
+      "safe": true,
+      "evidence": [{ "runner": "vitest", "file": "tests/integration/scenario.test.ts", "name": "collected revenue equals the generated payment ground truth to the cent" }]
+    },
+    {
+      "claim": "Branch and brand scope is enforced on the server for every read and write, and an out-of-scope id reads as missing.",
+      "safe": true,
+      "evidence": [
+        { "runner": "playwright", "file": "tests/e2e/golden-path.spec.ts", "name": "a branch partner cannot read another branch" },
+        { "runner": "playwright", "file": "tests/e2e/golden-path.spec.ts", "name": "an out-of-scope incident reads as missing" },
+        { "runner": "vitest", "file": "tests/integration/ai-investigator.test.ts", "name": "a branch partner cannot fetch another branch through any tool" }
+      ]
+    },
+    {
+      "claim": "The AI investigator cannot write SQL or act: fixed tools with strict schemas, every citation must come from this run's tool output, record text is delimited as data, and it can only create proposals that still need a dry run and approval.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/unit/ai-injection.test.ts", "name": "" },
+        { "runner": "vitest", "file": "tests/unit/ai-grounding.test.ts", "name": "" },
+        { "runner": "vitest", "file": "tests/integration/ai-investigator.test.ts", "name": "" }
+      ]
+    },
+    {
+      "claim": "A production build is not a demo: without DEMO_MODE=1 the role cookie is ignored and the role picker and CRM mock are off.",
+      "safe": true,
+      "evidence": [{ "runner": "vitest", "file": "tests/unit/demo-mode.test.ts", "name": "" }]
+    },
+    {
+      "claim": "The FieldRoutes client follows the documented search → get pattern: 50k search paging, ≤1,000-record gets, office-scoped, fails loudly on ignored filters, and survives the autumn clock change.",
+      "safe": true,
+      "evidence": [
+        { "runner": "vitest", "file": "tests/integration/connectors.test.ts", "name": "pages searches at the cap and batches gets at the limit" },
+        { "runner": "vitest", "file": "tests/unit/fieldroutes-window.test.ts", "name": "" }
+      ]
+    },
+    {
+      "claim": "The four-minute B09 path reproduces on every fresh seed, and every number it quotes is asserted in the browser.",
+      "safe": true,
+      "evidence": [
+        { "runner": "playwright", "file": "tests/e2e/zz-b09-four-minute-path.spec.ts", "name": "" }
+      ]
+    },
+    { "claim": "It has been run against a real FieldRoutes tenant, CallRail account or Google Ads account.", "safe": false, "why": "Never. Only the in-repo mock and synthetic world; no credentials were used." },
+    { "claim": "The FieldRoutes connector is production-ready.", "safe": false, "why": "Mapper deviations G1–G10 are open (Pacific-time datetimes, isInitial, templateType, payment applications); deletes/merges (G-7) and late payment changes (G-8) are not detected; the repeated-hour stale-version case is open." },
+    { "claim": "It sends conversions to Google, or retracts cancelled ones.", "safe": false, "why": "Dry run only; no network code. Data Manager cannot retract; cancelled plans are simply not sent. Enhanced conversions for leads, gbraid/wbraid and consent are not implemented." },
+    { "claim": "It respects Google's click window.", "safe": false, "why": "Approximated from the lead time with a fixed 90 days (F-3)." },
+    { "claim": "The AI investigator was evaluated with a real model.", "safe": false, "why": "The model path is tested with a scripted client; the deterministic investigator is what ran. No API key was used." },
+    { "claim": "It has authentication.", "safe": false, "why": "Demo roles without passwords, server-enforced; production needs SSO claims (ADR-11, ADR-20)." },
+    { "claim": "CI passes on GitHub.", "safe": false, "why": "No GitHub Actions run has been observed for the repository; the CI workflow has only been reproduced locally." },
+    { "claim": "Branch CAC is unambiguous.", "safe": false, "why": "Spend follows the marketing branch, customers the servicing office (D-2, documented, not resolved)." },
+    { "claim": "Moxie has this problem / uses Local Services Ads / any number here is Moxie's.", "safe": false, "why": "All data is synthetic; the problem is a hypothesis from public signals." }
+  ]
+}

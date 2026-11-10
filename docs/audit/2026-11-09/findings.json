@@ -1,0 +1,829 @@
+{
+  "audit": "Revenue Signal OS principal-engineer audit",
+  "date": "2026-11-09",
+  "baseline": "61ac95f05979f27ea43e6bdde1010271743746f5",
+  "lineRefsAt": "file:line references are to the baseline commit unless marked (now)",
+  "statusMeaning": {
+    "fixed": "code changed; every listed regression test must exist and pass (checked by scripts/audit-report.ts)",
+    "fixed_untested": "code changed; no automated test (stated, not hidden)",
+    "documented": "not changed in code; the limitation is now stated where a reader meets it",
+    "open": "known, not fixed, not hidden",
+    "refuted": "reported by a reviewer, disproved on inspection; no change"
+  },
+  "findings": [
+    {
+      "id": "A-1",
+      "area": "A",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "A re-observed version that changes live rows published no event",
+      "refs": [
+        "lib/ingest/ingest.ts:136-139",
+        "lib/ingest/ingest.ts:166",
+        "lib/ingest/ingest.ts:179",
+        "lib/ingest/project.ts:174-182"
+      ],
+      "rootCause": "intake.records_stored was gated on inserted > 0 || conflicts > 0; a duplicate of a received-clock record re-projected (A → B → A) is neither, so reconciliation never learned the payment flipped back.",
+      "fix": "projectAll returns rows actually written (upsert rowCount); ingest also publishes when re-observed projections changed a row. An unchanged re-read still publishes nothing.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/domain-model.test.ts",
+          "name": "audit 2026-11-09, A-1"
+        }
+      ],
+      "redGreen": "fails on baseline (no event, consumer idle), passes after"
+    },
+    {
+      "id": "A-4",
+      "area": "A",
+      "severity": "low",
+      "status": "fixed",
+      "title": "A direct lead-branch override never woke the identity consumer",
+      "refs": [
+        "lib/actions.ts:75-99",
+        "lib/events/consumers.ts:47"
+      ],
+      "rootCause": "overrideLeadBranchInTransaction reconciled inline but published nothing; identity reads v_leads.effective_branch_id, so prospects kept the old branch.",
+      "fix": "Publish action_center.lead_branch_overridden before the inline reconcile; identity triggers on it.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/domain-model.test.ts",
+          "name": "audit 2026-11-09, A-4"
+        }
+      ],
+      "redGreen": "fails on baseline (0 events), passes after"
+    },
+    {
+      "id": "B-2",
+      "area": "B",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "drainJobs dropped a kick that arrived during its final dispatch",
+      "refs": [
+        "lib/jobs/kick.ts:34-45"
+      ],
+      "rootCause": "state.again was only re-read inside the job loop; a kick during the min(next_attempt_at) query or the end-of-drain dispatchEvents returned at once and was never followed up.",
+      "fix": "The whole round, dispatch included, repeats while a kick is pending (bounded by MAX_DRAIN_MS).",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/connectors.test.ts",
+          "name": "B-2: a kick that arrives while the drain dispatches events is not lost"
+        }
+      ],
+      "redGreen": "fails on baseline (job stays queued), passes after"
+    },
+    {
+      "id": "B-3",
+      "area": "B",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "The drain spun every 50 ms for up to 10 minutes on a job another process's stream blocked",
+      "refs": [
+        "lib/jobs/kick.ts:38-43",
+        "lib/jobs/sync.ts:428-430"
+      ],
+      "rootCause": "min(next_attempt_at) counted queued jobs that claimNext refuses while their stream is running elsewhere; wait was negative so neither break fired.",
+      "fix": "The wait query excludes jobs whose stream has a running job, matching the claim predicate.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/connectors.test.ts",
+          "name": "B-3: a due job whose stream another process is running does not keep the drain spinning"
+        }
+      ],
+      "redGreen": "fails on baseline (still spinning after 5 s), passes after"
+    },
+    {
+      "id": "B-5",
+      "area": "B",
+      "severity": "low",
+      "status": "fixed",
+      "title": "A sync request that only reused queued jobs was not idempotent by its key",
+      "refs": [
+        "lib/jobs/sync.ts:216-237"
+      ],
+      "rootCause": "Idempotency was looked up through sync_jobs.request_key; a request that created no row recorded no key.",
+      "fix": "Migration 0011 adds sync_requests (key, fingerprint, job ids); replays are answered from it, a different request under the key is 409.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/connectors.test.ts",
+          "name": "audit 2026-11-09, B-5"
+        }
+      ],
+      "redGreen": "fails on baseline (alreadyRequested false), passes after"
+    },
+    {
+      "id": "D-1",
+      "area": "D",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Unmapped spend could never block a budget signal",
+      "refs": [
+        "lib/metrics/decision.ts:15",
+        "lib/metrics/decision.ts:47-52",
+        "lib/metrics/decision.ts:84",
+        "lib/reconcile/reconcile.ts:116"
+      ],
+      "rootCause": "unmapped_spend exceptions always have branch_id null; budgetSignal filtered branch_id = $1 and decisionHolds branch_id is not null, so the kind listed as blocking matched nothing. B44 read trustworthy while its Local Services cost was understated by $4,539 of unallocated spend.",
+      "fix": "An open unmapped-spend exception blocks each branch whose completed acquisitions its campaign produced, in the compared channel and period; the Overview holds list includes it per affected branch.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/scenario.test.ts",
+          "name": "audit 2026-11-09, D-1"
+        }
+      ],
+      "numbersChanged": "B44's October budget signal becomes not trustworthy; B44 appears in decision holds. No number in docs/interview-demo.md changes; B09 is not affected (asserted).",
+      "redGreen": "fails on baseline (B44 trustworthy), passes after"
+    },
+    {
+      "id": "D-2",
+      "area": "D",
+      "severity": "medium",
+      "status": "documented",
+      "title": "Branch paid CAC: spend and customers use different branch keys",
+      "refs": [
+        "lib/metrics/scorecard.ts:72-78",
+        "lib/metrics/scorecard.ts:88-97"
+      ],
+      "rootCause": "Spend follows the campaign's mapped (marketing) branch; customers follow the CRM office that services them. 9 October customers differ (B06/B07).",
+      "fix": "Not changed: which branch owns CAC is a business decision, and re-keying paid customers would split them from the branch's other customer counts. Stated in docs/metric-definitions.md (Paid-media CAC).",
+      "tests": []
+    },
+    {
+      "id": "D-3",
+      "area": "D",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Paid CAC denominator included customers whose spend the numerator excludes",
+      "refs": [
+        "lib/metrics/scorecard.ts:76",
+        "lib/metrics/scorecard.ts:90",
+        "lib/reference.ts:133"
+      ],
+      "rootCause": "Numerator: media spend on mapped campaigns. Denominator: every is_paid channel, including sponsorship (not media) and customers credited to unmapped campaigns.",
+      "fix": "paid_acquired counts paid media customers not credited to an unmapped campaign.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "audit 2026-11-09, D-3"
+        }
+      ],
+      "numbersChanged": "October company paid customers 1,727 → 1,725 (two B44 customers of the unmapped campaign); company paid CAC still displays $267; B20/B09 unchanged. Golden snapshot regenerated.",
+      "redGreen": "fails on baseline (2 vs 1), passes after"
+    },
+    {
+      "id": "D-4",
+      "area": "D",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Payload conflicts had no branch and no customer",
+      "refs": [
+        "lib/ingest/ingest.ts:290-296"
+      ],
+      "rootCause": "The conflict exception was inserted with branch_id null and no customer_ids, contradicting the definition that untied revenue includes conflicting payloads; branch viewers could not see them.",
+      "fix": "Branch from payload_branch(stored payload), customer from its customerID.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "audit 2026-11-09, D-4"
+        }
+      ],
+      "numbersChanged": "Company revenue in open exceptions (untied) rises by the collected revenue of the 3 seeded conflict customers (reviewer measured $269). Not quoted in the demo script.",
+      "redGreen": "fails on baseline (branch null), passes after"
+    },
+    {
+      "id": "D-5",
+      "area": "D",
+      "severity": "low",
+      "status": "fixed",
+      "title": "channel_conflict fired for any non-D2D first touch, not only a paid one",
+      "refs": [
+        "database/migrations/0002_attribution_views.sql:43"
+      ],
+      "rootCause": "The view checked channel_code <> 'd2d'; the definition says a paid touch.",
+      "fix": "Migration 0012 replaces v_acquisitions with an is_paid check (same columns).",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "audit 2026-11-09, D-5"
+        }
+      ],
+      "numbersChanged": "None in the seed (0 such rows).",
+      "redGreen": "fails without migration 0012, passes with it"
+    },
+    {
+      "id": "D-6",
+      "area": "D",
+      "severity": "low",
+      "status": "refuted",
+      "title": "Coverage-gap reference date is global, not per feed",
+      "refs": [
+        "lib/reconcile/reconcile.ts:150-156"
+      ],
+      "rootCause": "Reviewer assumed one feed per ad platform. Every platform arrives through the single 'ads' stream (ingestion_runs: one stream), so the global latest spend date IS the feed's own date.",
+      "fix": "None. Revisit if platforms move to separate streams.",
+      "tests": []
+    },
+    {
+      "id": "D-7",
+      "area": "D",
+      "severity": "low",
+      "status": "fixed",
+      "title": "reporting.fact_acquisitions_v1 grain mislabelled as acquired customers",
+      "refs": [
+        "database/migrations/0010_reporting_contract.sql:50-58",
+        "database/migrations/0010_reporting_contract.sql:77",
+        "docs/reporting-contract.md:25"
+      ],
+      "rootCause": "The view is one row per new customer (first subscription); acquired is a filter on it. The contract test summed it unfiltered and passed only because fixtures were all serviced.",
+      "fix": "Migration 0012 replaces contract_v1 with the true grain; doc corrected; the contract test now filters to completed-in-period.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/domain-model.test.ts",
+          "name": "publishes exactly the pinned views"
+        },
+        {
+          "runner": "vitest",
+          "file": "tests/integration/domain-model.test.ts",
+          "name": "facts agree with the app's own metrics"
+        }
+      ],
+      "redGreen": "grain assertion fails without migration 0012"
+    },
+    {
+      "id": "D-8",
+      "area": "D",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Two stopped campaigns in one ad account doubled the coverage-gap amount",
+      "refs": [
+        "lib/reconcile/reconcile.ts:184-194"
+      ],
+      "rootCause": "Successors were joined per predecessor and grouped without the predecessor id, so a successor's spend was summed once per predecessor in the account.",
+      "fix": "Successors are joined per (branch, channel, gap, ad account) with the predecessor ids excluded.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/changeguard.test.ts",
+          "name": "two stopped campaigns in one ad account do not double the successor's spend"
+        }
+      ],
+      "numbersChanged": "None in the seed (one campaign per branch, channel and account).",
+      "redGreen": "fails on baseline (360000 vs 180000), passes after"
+    },
+    {
+      "id": "E-3",
+      "area": "E",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "POST /api/role worked in any production build",
+      "refs": [
+        "app/api/role/route.ts:10-15",
+        "lib/server.ts:8-11"
+      ],
+      "rootCause": "The 'production removes /api/role' promise in lib/viewer.ts was not enforced; anyone could become approver on a deployed copy.",
+      "fix": "lib/demo-mode.ts: outside development/tests a build needs DEMO_MODE=1; otherwise the role cookie is ignored (guest) and /api/role is 404. Playwright sets the flag.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/demo-mode.test.ts",
+          "name": "POST /api/role refuses in a production build"
+        },
+        {
+          "runner": "vitest",
+          "file": "tests/unit/demo-mode.test.ts",
+          "name": "is on in development and tests"
+        }
+      ],
+      "redGreen": "fails on baseline (200 + cookie), passes after"
+    },
+    {
+      "id": "E-6",
+      "area": "E",
+      "severity": "low",
+      "status": "fixed",
+      "title": "The incident page named the branch of an out-of-scope exception",
+      "refs": [
+        "app/exceptions/[id]/page.tsx:53-54"
+      ],
+      "rootCause": "It rendered 'cannot view exceptions for B07' while the API, customer and investigation pages treat out of scope as missing.",
+      "fix": "notFound() for out-of-scope exceptions.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/golden-path.spec.ts",
+          "name": "an out-of-scope incident reads as missing"
+        }
+      ]
+    },
+    {
+      "id": "E-7",
+      "area": "E",
+      "severity": "low",
+      "status": "fixed",
+      "title": "The FieldRoutes mock served every office unscoped in any build",
+      "refs": [
+        "app/api/mock/fieldroutes/[...path]/route.ts:28-37",
+        "lib/connectors/demo-keys.ts:11-21"
+      ],
+      "rootCause": "No production guard; demo keys are published in the source.",
+      "fix": "Served only in demo mode (lib/demo-mode.ts).",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/demo-mode.test.ts",
+          "name": "the FieldRoutes mock is not served by a production build"
+        }
+      ],
+      "redGreen": "fails on baseline, passes after"
+    },
+    {
+      "id": "F-1",
+      "area": "F",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Cancelled plans were planned as Data Manager retractions, which Data Manager does not support",
+      "refs": [
+        "lib/feedback.ts:19",
+        "lib/feedback.ts:26",
+        "lib/feedback.ts:52",
+        "lib/feedback.ts:96",
+        "docs/metric-definitions.md:53",
+        "docs/decisions.md:66"
+      ],
+      "rootCause": "Retraction semantics of the legacy Google Ads API were carried to Data Manager (its upgrade guide: no conversion retractions). No ledger records what was sent.",
+      "fix": "Decision renamed suppress_cancelled ('Don't send: plan cancelled'); no event body is built for non-upload rows; docs corrected.",
+      "sources": [
+        "https://developers.google.com/data-manager/api/devguides/events/google-ads/offline/upgrade (retrieved 2026-11-09 by the reviewer)"
+      ],
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "a cancelled plan is suppressed"
+        }
+      ],
+      "numbersChanged": "Snapshot key 'retract' renamed 'suppress_cancelled' (value 0 in the seed).",
+      "redGreen": "fails on baseline ('retract'), passes after"
+    },
+    {
+      "id": "F-2",
+      "area": "F",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "'Not matchable: no click id' was false",
+      "refs": [
+        "lib/feedback.ts:15",
+        "lib/feedback.ts:28",
+        "lib/feedback.ts:49",
+        "app/feedback/page.tsx:167"
+      ],
+      "rootCause": "Google matches on hashed email/phone (enhanced conversions for leads) and gbraid/wbraid; neither is implemented here.",
+      "fix": "Label says 'No click id (hashed-identity matching not built)'; page and docs explain, including that stored hashes are not in Google's format.",
+      "sources": [
+        "https://developers.google.com/data-manager/api/devguides/events/google-ads/offline/send-events",
+        "https://support.google.com/google-ads/answer/15081888"
+      ],
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "a row without a gclid is labelled as not built"
+        }
+      ]
+    },
+    {
+      "id": "F-3",
+      "area": "F",
+      "severity": "low",
+      "status": "documented",
+      "title": "Click age measured from the lead time with a hard-coded 90 days",
+      "refs": [
+        "lib/feedback.ts:50",
+        "app/feedback/page.tsx:167"
+      ],
+      "rootCause": "leads.occurred_at is at or after the click; Google's limit is the conversion action's click-through window.",
+      "fix": "Kept the rule (changing it would move the demo's reportable counts); relabelled 'Too old: lead > 90 days ago', column renamed Lead, limitation stated on the page and in the definitions.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/invariants.test.ts",
+          "name": "a row without a gclid is labelled as not built"
+        }
+      ]
+    },
+    {
+      "id": "G-4",
+      "area": "G",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "A 30-minute overlap lost records across the autumn clock change",
+      "refs": [
+        "lib/connectors/fieldroutes-client.ts:43",
+        "lib/connectors/fieldroutes-client.ts:166"
+      ],
+      "rootCause": "FieldRoutes filters on zone-less wall time; in the repeated hour a record (06:40Z Chicago = 01:40) fell after window 1's wall end (01:20) and before window 2's wall start (01:50).",
+      "fix": "wallWindow() widens a window that crosses an offset change by the size of the shift on both sides.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/fieldroutes-window.test.ts",
+          "name": "a record in the repeated hour is read by one of two overlapping windows"
+        },
+        {
+          "runner": "vitest",
+          "file": "tests/unit/fieldroutes-window.test.ts",
+          "name": "every minute of the transition day is inside some window"
+        }
+      ],
+      "redGreen": "both fail with the shift forced to 0 (baseline behaviour), pass after"
+    },
+    {
+      "id": "G-5",
+      "area": "G",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Rate-limit retries gave up inside the same minute when no Retry-After was sent",
+      "refs": [
+        "lib/jobs/sync.ts:595-601",
+        "lib/jobs/sync.ts:610",
+        "lib/connectors/fieldroutes-client.ts:310"
+      ],
+      "rootCause": "FieldRoutes documents no Retry-After; exponential backoff alone spent five attempts in ~30 s, inside a 60/min window. The mock always sent the header, hiding it.",
+      "fix": "A 429 without Retry-After waits at least 60 s.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/connectors.test.ts",
+          "name": "audit 2026-11-09, G-5"
+        }
+      ],
+      "redGreen": "fails on baseline (750 ms), passes after"
+    },
+    {
+      "id": "G-6",
+      "area": "G",
+      "severity": "high",
+      "status": "fixed",
+      "title": "A non-office wire time zone changed the search windows but not the mapper",
+      "refs": [
+        "lib/connectors/config.ts:40",
+        "lib/adapters/crm-fieldroutes.ts:132",
+        "lib/adapters/crm-fieldroutes.ts:153"
+      ],
+      "rootCause": "Setting wireTimeZone=America/Los_Angeles (as the README advised for a real tenant) would make windows right and stored instants wrong, silently.",
+      "fix": "The config refuses any wireTimeZone but 'office' until the mapper converts with the connector zone. Mapper deviations G1–G10 remain open and documented.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/connector-config.test.ts",
+          "name": "refuses a wire time zone the mapper does not use"
+        }
+      ],
+      "redGreen": "fails on baseline (accepted), passes after"
+    },
+    {
+      "id": "G-7",
+      "area": "G",
+      "severity": "medium",
+      "status": "open",
+      "title": "Deletes and merges are never detected",
+      "refs": [
+        "lib/connectors/fieldroutes-client.ts:204-208",
+        "lib/connectors/mock-fieldroutes.ts:349",
+        "lib/connectors/README.md (Not built)"
+      ],
+      "rootCause": "Soft-deleted customers drop out of office-scoped searches; hard-deleted records stay in projections. No periodic id-set diff.",
+      "fix": "Not built: needs a full id-set diff and tombstones. Stated in lib/connectors/README.md.",
+      "tests": []
+    },
+    {
+      "id": "G-8",
+      "area": "G",
+      "severity": "low",
+      "status": "open",
+      "title": "Late payment status changes older than the 35-day sweep are missed",
+      "refs": [
+        "lib/connectors/fieldroutes-client.ts:52"
+      ],
+      "rootCause": "Payments are re-read by date over 35 days; a void/dispute/ACH return on an older payment is never seen. A payment dateUpdated is unconfirmed (research/17 §3).",
+      "fix": "Not built; needs confirmation on an authorized tenant. Stated in lib/connectors/README.md.",
+      "tests": []
+    },
+    {
+      "id": "I-1",
+      "area": "I",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Record keys could close the <tool_output> delimiter",
+      "refs": [
+        "lib/ai/injection.ts:73-82",
+        "lib/ai/tools.ts:377"
+      ],
+      "rootCause": "Tag characters were escaped in the JSON body only; the warning note after the element was built from object keys, which a source chooses (redaction rewrites values, not keys).",
+      "fix": "Warning paths get the same escaping.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/ai-injection.test.ts",
+          "name": "escapes warning paths too"
+        }
+      ],
+      "redGreen": "fails on baseline (two </tool_output>), passes after"
+    },
+    {
+      "id": "I-2",
+      "area": "I",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "A failed model run was labelled 'no model configured'",
+      "refs": [
+        "lib/ai/investigate.ts:101-104",
+        "lib/ai/investigate.ts:133",
+        "lib/ai/contract.ts:137"
+      ],
+      "rootCause": "No fallback label existed; a configured, billed model that failed was reported as absent. The existing test asserted the misleading label.",
+      "fix": "fallbackModeLabel(reason): 'Deterministic fallback — the model run failed (…)'. The existing assertion was strengthened to require it (not weakened).",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/ai-investigator.test.ts",
+          "name": "a model that never submits hits the turn budget"
+        }
+      ]
+    },
+    {
+      "id": "I-4",
+      "area": "I",
+      "severity": "low",
+      "status": "fixed",
+      "title": "getSourceLineage 'versions' leaked other branches' raw-event ids into grounding",
+      "refs": [
+        "lib/ai/tools.ts:336-340",
+        "lib/ai/tools.ts:353"
+      ],
+      "rootCause": "Versions were looked up by (source, entity, entity_id) with no scope check, and every unidentifiable record shares entity_id 'unidentified'.",
+      "fix": "No versions for 'unidentified'; every version is scope-checked.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/ai-investigator.test.ts",
+          "name": "audit 2026-11-09, I-4"
+        }
+      ],
+      "redGreen": "fails on baseline, passes after"
+    },
+    {
+      "id": "I-5",
+      "area": "I",
+      "severity": "low",
+      "status": "fixed",
+      "title": "compareMappingVersions confirmed an out-of-scope raw event's existence and source",
+      "refs": [
+        "lib/ai/tools.ts:773-777"
+      ],
+      "rootCause": "The source check ran before the scope check.",
+      "fix": "Scope first.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/ai-investigator.test.ts",
+          "name": "audit 2026-11-09, I-5"
+        }
+      ],
+      "redGreen": "fails on baseline, passes after"
+    },
+    {
+      "id": "J-1",
+      "area": "J",
+      "severity": "high",
+      "status": "fixed",
+      "title": "An engineer could re-map or replay with no approval, from the incident page",
+      "refs": [
+        "app/exceptions/[id]/page.tsx:160-198",
+        "app/api/replays/route.ts:31",
+        "components/ReplayPanel.tsx:121-126"
+      ],
+      "rootCause": "The legacy direct-replay path was never retired when propose → approve → execute was added.",
+      "fix": "POST /api/replays is dry-run only (409 on a commit); the panel previews and points to the Action Center. The legacy browser tests that committed through the panel now assert the refusal and apply the same fix through approval.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/golden-path.spec.ts",
+          "name": "the panel cannot commit"
+        },
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/golden-path.spec.ts",
+          "name": "it applies only through approval"
+        }
+      ]
+    },
+    {
+      "id": "J-2",
+      "area": "J",
+      "severity": "high",
+      "status": "fixed",
+      "title": "The ChangeGuard demo script walked the bypass path and quoted unasserted numbers",
+      "refs": [
+        "docs/interview-demo.md:66-67",
+        "README.md:87-89"
+      ],
+      "rootCause": "Script predated the Action Center; 'sound' is not UI copy; 8.6×, 2.9×, $2,124 and 45 were asserted nowhere.",
+      "fix": "Script rewritten as the four-minute path; every quoted number is in tests/fixtures/b09-golden.json and asserted in the browser.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/zz-b09-four-minute-path.spec.ts",
+          "name": "B09 golden path"
+        }
+      ]
+    },
+    {
+      "id": "J-3",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed_untested",
+      "title": "scripts/screenshots.ts targeted a removed test id and never closed the browser",
+      "refs": [
+        "scripts/screenshots.ts:22-29"
+      ],
+      "rootCause": "/exceptions renders case-queue now; main() was not awaited or caught.",
+      "fix": "case-queue / replay-panel selectors; browser closed in finally; exit 1 on error. Not executed in this audit.",
+      "tests": []
+    },
+    {
+      "id": "J-4",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "A customers page past the end reported zero customers",
+      "refs": [
+        "lib/identity/search.ts:178",
+        "app/customers/page.tsx:146-158"
+      ],
+      "rootCause": "total was read from the returned rows.",
+      "fix": "Total counted independently; a past-the-end page says so and links to the last page.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/z-a11y-regressions.spec.ts",
+          "name": "a customers page past the end says so"
+        }
+      ]
+    },
+    {
+      "id": "J-5",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "The Action Center queue silently stopped at 200 rows",
+      "refs": [
+        "app/exceptions/page.tsx:56",
+        "lib/workflow/queries.ts:69"
+      ],
+      "rootCause": "listQueue's default limit with no paging; the title showed rows.length.",
+      "fix": "50 per page with offset, countQueue total, 'Showing x–y of N'.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/integration/action-center.test.ts",
+          "name": "audit 2026-11-09, J5"
+        }
+      ]
+    },
+    {
+      "id": "J-6",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Audit subject links matched by prefix; the log had no paging",
+      "refs": [
+        "lib/workflow/queries.ts:240",
+        "app/audit/page.tsx:57",
+        "app/audit/page.tsx:399"
+      ],
+      "rootCause": "subject like $3 || '%' with no escaping; fixed 100-row cap.",
+      "fix": "Exact match for id-bearing subjects, escaped prefix for bare types; keyset paging on (at, id).",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/audit-subject.test.ts",
+          "name": "an id-bearing subject matches exactly"
+        },
+        {
+          "runner": "vitest",
+          "file": "tests/unit/audit-subject.test.ts",
+          "name": "LIKE metacharacters"
+        }
+      ]
+    },
+    {
+      "id": "J-7",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Query parameters accepted built-in object keys (?period=toString crashed the page)",
+      "refs": [
+        "lib/period.ts:18",
+        "app/exceptions/page.tsx:41"
+      ],
+      "rootCause": "`key in OBJECT` walks the prototype.",
+      "fix": "Object.hasOwn.",
+      "tests": [
+        {
+          "runner": "vitest",
+          "file": "tests/unit/period.test.ts",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "id": "J-8..J-13",
+      "area": "J",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Accessibility: status/focus lost after Execute, focus dropped by disabled busy controls, command menu not a combobox, chart data hidden, diff tables without row headers, skeletons not announced",
+      "refs": [
+        "components/actions/WorkflowPanel.tsx:236",
+        "components/actions/ProposalControls.tsx",
+        "components/RoleSwitcher.tsx:27",
+        "components/CommandMenu.tsx:100-142",
+        "components/WeeklyBars.tsx:23",
+        "components/actions/SnapshotDiff.tsx",
+        "components/ui.tsx:104"
+      ],
+      "rootCause": "See the per-item notes in docs/audit/2026-11-09/report.md.",
+      "fix": "Always-mounted polite status region and focus to the result; aria-disabled while busy; combobox wiring and focus return; sr-only data table; th scope=row with sr-only changed/unchanged; role=status skeleton.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/z-a11y-regressions.spec.ts",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "id": "J-14",
+      "area": "J",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Three e2e reliability risks (60 s wait = test timeout, positional selector, search-cap order dependence)",
+      "refs": [
+        "tests/e2e/os-golden-path.spec.ts:94",
+        "tests/e2e/os-modules.spec.ts:89",
+        "tests/e2e/os-modules.spec.ts:167-186"
+      ],
+      "rootCause": "Timing and order assumptions in the specs.",
+      "fix": "120 s test timeout for that test only; header-based locator; a specific search term. No assertion weakened.",
+      "tests": [
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/os-golden-path.spec.ts",
+          "name": "Investigate opens the AI investigator"
+        },
+        {
+          "runner": "playwright",
+          "file": "tests/e2e/os-modules.spec.ts",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "id": "O-1",
+      "area": "A",
+      "severity": "info",
+      "status": "open",
+      "title": "Reseeding while the server dispatches events logs 'relation domain_events does not exist'",
+      "refs": [
+        "tests/e2e/db.ts:reseedDemo",
+        "lib/events/consumers.ts:135-147"
+      ],
+      "rootCause": "The browser tests drop and rebuild the demo schema while the running server's after() dispatch is in flight; the consumer records the failure and retries on the next dispatch. Test-harness only; the seed never runs against a serving production database.",
+      "fix": "None needed for correctness (the failure is recorded and retried). Observed in the baseline e2e log.",
+      "tests": []
+    },
+    {
+      "id": "O-2",
+      "area": "H",
+      "severity": "low",
+      "status": "fixed_untested",
+      "title": "Channel rows tied on customer count came back in a different order between runs",
+      "refs": [
+        "lib/metrics/scorecard.ts:273 (now)"
+      ],
+      "rootCause": "order by is_paid, acquired had no tie-breaker; Postgres may return ties in any order. Found while regenerating the ChangeGuard golden snapshot: Meta and Microsoft (5 customers each) swapped.",
+      "fix": "channel code as the last sort key. Verified by regenerating docs/changeguard/snapshot.json: identical to the pre-audit file apart from generatedBy/demoNow. No automated test.",
+      "tests": []
+    }
+  ]
+}

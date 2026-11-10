@@ -133,4 +133,18 @@ describe("seeded demo scenario", () => {
     expect((await budgetSignal(pool, branch, OCT)).trustworthy).toBe(true);
     expect((await replay(pool, request)).alreadyProcessed).toBe(true);
   });
+
+  it("unmapped spend blocks the budget signal of the branch whose customers it produced (audit 2026-11-09, D-1)", async () => {
+    // The seed's one unmapped campaign is Local Services spend whose customers are serviced at
+    // B44. Its exception has no branch (no branch owns the campaign), and before the fix that
+    // meant it blocked nothing: B44 read "trustworthy" while LSA's cost there was understated.
+    const unmapped = await one<{ id: string; external: string }>(pool, "select id, evidence->>'externalCampaignId' as external from exceptions where kind = 'unmapped_spend' and status = 'open'");
+    const hit = await one<{ n: string }>(pool, "select count(*) n from v_acquisitions where campaign_external_id = $1 and branch_id = 'B44' and initial_status = 'completed'", [unmapped.external]);
+    expect(Number(hit.n)).toBeGreaterThan(0);
+    const signal = await budgetSignal(pool, "B44", OCT);
+    expect(signal.trustworthy).toBe(false);
+    expect(signal.blockers.map((b) => b.exceptionId)).toContain(Number(unmapped.id));
+    // It blocks only where its customers are: the ChangeGuard branch is not held by it.
+    expect((await budgetSignal(pool, "B09", OCT)).blockers.map((b) => b.exceptionId)).not.toContain(Number(unmapped.id));
+  });
 });

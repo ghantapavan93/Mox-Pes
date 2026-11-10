@@ -7,24 +7,45 @@ type Fmt = (v: number | null) => string;
 const cents: Fmt = (v) => money(v);
 const n: Fmt = (v) => count(v);
 
+/** The row's label as a row header, so each value is announced with what it measures. */
+function RowHeader({ label }: { label: string }) {
+  return (
+    <th scope="row" className="py-1 pr-4 text-left font-normal text-muted">
+      {label}
+    </th>
+  );
+}
+
+/** Change is shown by weight and colour; this says it in words for screen readers. */
+function ChangeText({ changed }: { changed: boolean }) {
+  return <span className="sr-only">{changed ? " (changed)" : " (unchanged)"}</span>;
+}
+
 function Row({ label, before, after, fmt, note }: { label: string; before: number | null; after: number | null; fmt: Fmt; note?: ReactNode }) {
   const changed = before !== after;
   return (
     <tr>
-      <td className="py-1 pr-4 text-muted">{label}</td>
+      <RowHeader label={label} />
       <td className="py-1 pr-4 text-right tabular-nums">{fmt(before)}</td>
-      <td className={`py-1 pr-4 text-right tabular-nums ${changed ? "font-semibold text-text" : "text-faint"}`}>{fmt(after)}</td>
+      <td className={`py-1 pr-4 text-right tabular-nums ${changed ? "font-semibold text-text" : "text-faint"}`}>
+        {fmt(after)}
+        <ChangeText changed={changed} />
+      </td>
       <td className="py-1 text-right">{note}</td>
     </tr>
   );
 }
 
 function TextRow({ label, before, after }: { label: string; before: string; after: string }) {
+  const changed = before !== after;
   return (
     <tr>
-      <td className="py-1 pr-4 text-muted">{label}</td>
+      <RowHeader label={label} />
       <td className="py-1 pr-4 text-right">{before}</td>
-      <td className={`py-1 pr-4 text-right ${before !== after ? "font-semibold text-text" : "text-faint"}`}>{after}</td>
+      <td className={`py-1 pr-4 text-right ${changed ? "font-semibold text-text" : "text-faint"}`}>
+        {after}
+        <ChangeText changed={changed} />
+      </td>
       <td />
     </tr>
   );
@@ -49,10 +70,10 @@ export function SnapshotDiff({ before, after, verification }: { before: StateSna
         <table className="w-full min-w-[420px] text-xs">
           <thead>
             <tr className="text-[10px] uppercase tracking-wide text-faint">
-              <th className="pr-4 text-left font-medium">{b0 ? `${b0.branchId} · whole period` : "Company-wide"}</th>
-              <th className="pr-4 text-right font-medium">Before</th>
-              <th className="pr-4 text-right font-medium">{after ? "After" : "After (not reached)"}</th>
-              <th className="text-right font-medium">Check</th>
+              <th scope="col" className="pr-4 text-left font-medium">{b0 ? `${b0.branchId} · whole period` : "Company-wide"}</th>
+              <th scope="col" className="pr-4 text-right font-medium">Before</th>
+              <th scope="col" className="pr-4 text-right font-medium">{after ? "After" : "After (not reached)"}</th>
+              <th scope="col" className="text-right font-medium">Check</th>
             </tr>
           </thead>
           <tbody>

@@ -9,7 +9,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const TONE: Record<FeedbackDecision, "good" | "bad" | "warn" | "neutral"> = {
   upload: "good",
-  retract: "bad",
+  suppress_cancelled: "bad",
   held_channel_conflict: "warn",
   no_click_id: "neutral",
   click_too_old: "neutral",
@@ -59,7 +59,7 @@ async function Feedback({ searchParams }: { searchParams: SearchParams }) {
         <Card className="lg:col-span-2" title="Latest decisions" subtitle={`Google Search acquisitions sold in ${period.label}`}>
           <TableWrap>
             <thead>
-              <tr><Th>Customer</Th><Th>Branch</Th><Th>Click</Th><Th>Serviced</Th><Th align="right">Plan value</Th><Th>Decision</Th></tr>
+              <tr><Th>Customer</Th><Th>Branch</Th><Th>Lead</Th><Th>Serviced</Th><Th align="right">Plan value</Th><Th>Decision</Th></tr>
             </thead>
             <tbody>
               {rows.map((r) => (
@@ -84,7 +84,10 @@ async function Feedback({ searchParams }: { searchParams: SearchParams }) {
           <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-muted">
             <li>transactionId is derived from the lead and stage, so re-sending is an adjustment, never a second conversion.</li>
             <li>Value is booked annual plan value: a bidding signal, not revenue.</li>
-            <li>Consent signals must come from the site&apos;s consent platform before anything is sent.</li>
+            <li>A cancelled plan is never sent: Google&apos;s Data Manager API cannot retract a conversion, only restate its value.</li>
+            <li>Rows without a gclid could still match on hashed email or phone (enhanced conversions for leads); that path is not built.</li>
+            <li>Click age is measured from the lead time, which is at or after the click; the real limit is the conversion action&apos;s click-through window.</li>
+            <li>No consent fields are sent. Google requires them for EEA users only; a real uploader should pass them explicitly.</li>
           </ul>
         </Card>
       </div>

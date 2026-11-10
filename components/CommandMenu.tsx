@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { NAV } from "@/lib/nav";
 
 interface Hit {
@@ -15,6 +15,10 @@ interface Hit {
  * ⌘K / Ctrl+K command menu: pages from the shared nav list, plus branches, incidents and
  * customers from /api/search (branch-scoped on the server). Arrow keys move, Enter opens,
  * Escape closes.
+ *
+ * The input is an ARIA combobox over the results listbox (aria-activedescendant follows the
+ * arrow keys). The dialog keeps Tab inside itself, and closing returns focus to whatever
+ * opened it (the sidebar button, or the element that had focus when Ctrl/⌘K was pressed).
  */
 export function CommandMenu() {
   const router = useRouter();
@@ -23,17 +27,39 @@ export function CommandMenu() {
   const [remote, setRemote] = useState<Hit[]>([]);
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
+  const dialog = useRef<HTMLDivElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const baseId = useId();
+  const listId = `${baseId}-results`;
+  const optionId = (i: number) => `${baseId}-option-${i}`;
+
+  /** Opens the menu, remembering where focus was so closing can put it back. */
+  const show = useCallback(() => {
+    opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOpen(true);
+  }, []);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    const target = opener.current;
+    opener.current = null;
+    // After the dialog unmounts; skip if the opener left the page meanwhile.
+    setTimeout(() => {
+      if (target?.isConnected) target.focus();
+    }, 0);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setOpen((v) => !v);
+        if (open) close();
+        else show();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [open, show, close]);
 
   useEffect(() => {
     if (open) setTimeout(() => input.current?.focus(), 0);
@@ -70,6 +96,8 @@ export function CommandMenu() {
   const go = useCallback(
     (hit: Hit | undefined) => {
       if (!hit) return;
+      // Navigating: focus goes to the new page, not back to the opener.
+      opener.current = null;
       setOpen(false);
       setQ("");
       router.push(hit.href);
@@ -77,11 +105,32 @@ export function CommandMenu() {
     [router],
   );
 
+  /** A simple focus trap: Tab and Shift+Tab cycle through the dialog's focusable elements. */
+  const trapTab = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab" || !dialog.current) return;
+    const focusable = [...dialog.current.querySelectorAll<HTMLElement>('input, button, [href], select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+      (el) => !el.hasAttribute("disabled"),
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const current = document.activeElement;
+    if (e.shiftKey && (current === first || !dialog.current.contains(current))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (current === last || !dialog.current.contains(current))) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  const activeHit = hits.length > 0 ? Math.min(active, hits.length - 1) : -1;
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={show}
         className="flex w-full items-center justify-between rounded border border-white/15 bg-white/5 px-2.5 py-1.5 text-left text-xs text-white/70 hover:bg-white/10"
         aria-label="Open command menu"
       >
@@ -89,16 +138,23 @@ export function CommandMenu() {
         <kbd className="rounded bg-white/10 px-1 font-mono text-[10px]">Ctrl K</kbd>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[12vh]" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[12vh]" onClick={close}>
           <div
+            ref={dialog}
             role="dialog"
             aria-modal="true"
             aria-label="Command menu"
             className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-surface text-text shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={trapTab}
           >
             <input
               ref={input}
+              role="combobox"
+              aria-expanded={hits.length > 0}
+              aria-controls={listId}
+              aria-autocomplete="list"
+              aria-activedescendant={activeHit >= 0 ? optionId(activeHit) : undefined}
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
@@ -106,7 +162,10 @@ export function CommandMenu() {
                 if (!e.target.value.trim()) setRemote([]);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Escape") setOpen(false);
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  close();
+                }
                 if (e.key === "ArrowDown") {
                   e.preventDefault();
                   setActive((a) => Math.min(a + 1, hits.length - 1));
@@ -115,23 +174,28 @@ export function CommandMenu() {
                   e.preventDefault();
                   setActive((a) => Math.max(a - 1, 0));
                 }
-                if (e.key === "Enter") go(hits[active]);
+                if (e.key === "Enter") go(hits[activeHit]);
               }}
               placeholder="Pages, branches (B09), incidents (#1063), customers (415347)…"
               className="w-full border-b border-border bg-surface px-4 py-3 text-sm outline-none"
               aria-label="Search"
               data-testid="command-input"
             />
-            <ul role="listbox" className="max-h-[50vh] overflow-y-auto py-1" data-testid="command-results">
-              {hits.length === 0 && <li className="px-4 py-3 text-sm text-faint">No matches.</li>}
+            {hits.length === 0 && (
+              <p role="status" className="px-4 py-3 text-sm text-faint">
+                No matches.
+              </p>
+            )}
+            <ul id={listId} role="listbox" aria-label="Results" className="max-h-[50vh] overflow-y-auto py-1 empty:hidden" data-testid="command-results">
               {hits.map((h, i) => (
                 <li
                   key={`${h.kind}:${h.href}`}
+                  id={optionId(i)}
                   role="option"
-                  aria-selected={i === active}
+                  aria-selected={i === activeHit}
                   onMouseEnter={() => setActive(i)}
                   onClick={() => go(h)}
-                  className={`flex cursor-pointer items-baseline justify-between gap-3 px-4 py-2 text-sm ${i === active ? "bg-accent-soft" : ""}`}
+                  className={`flex cursor-pointer items-baseline justify-between gap-3 px-4 py-2 text-sm ${i === activeHit ? "bg-accent-soft" : ""}`}
                 >
                   <span className="truncate">
                     <span className="mr-2 font-mono text-[10px] uppercase text-faint">{h.kind}</span>

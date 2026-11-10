@@ -5,7 +5,7 @@ import { CoverageGapRecords } from "@/components/CoverageGap";
 import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
-import { Badge, Card, Forbidden, KV, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, Card, KV, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
 import { quarantineGroupIds } from "@/lib/ingest/replay";
@@ -50,9 +50,9 @@ async function ExceptionDetail({ params }: Props) {
   if (!Number.isInteger(exceptionId)) notFound();
   const [viewer, exception] = await Promise.all([getViewer(), getException(getPool(), exceptionId)]);
   if (!exception) notFound();
-  if (!canSeeBranch(viewer, exception.branchId)) {
-    return <Forbidden message={`${viewer.label} cannot view exceptions for ${exception.branchId ?? "company-wide records"}.`} />;
-  }
+  // Out of scope reads as missing, as for customers and investigations: naming the branch would
+  // confirm the id exists and where (audit 2026-11-09, E6).
+  if (!canSeeBranch(viewer, exception.branchId)) notFound();
   const ev = exception.evidence;
 
   return (
@@ -99,7 +99,7 @@ async function ExceptionDetail({ params }: Props) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2" title="Evidence" subtitle="Structured facts the classification rests on">
+        <Card id="evidence" className="lg:col-span-2" title="Evidence" subtitle="Structured facts the classification rests on">
           <KV
             items={[
               [exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake", money(exception.amountCents)],
@@ -120,9 +120,11 @@ async function ExceptionDetail({ params }: Props) {
         </Card>
       </div>
 
-      <Suspense fallback={<Skeleton lines={6} />}>
-        <WorkflowPanel exception={exception} viewer={viewer} />
-      </Suspense>
+      <div id="action-center" className="scroll-mt-16">
+        <Suspense fallback={<Skeleton lines={6} />}>
+          <WorkflowPanel exception={exception} viewer={viewer} />
+        </Suspense>
+      </div>
 
       <Suspense fallback={<Skeleton lines={6} />}>
         <Records exception={exception} />

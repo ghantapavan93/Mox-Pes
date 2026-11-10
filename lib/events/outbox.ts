@@ -27,6 +27,8 @@ export type DomainEventType =
   | "identity.resolution_completed"
   /** CRM Sync finished a job: its window is stored and its checkpoint moved. */
   | "crm_sync.job_succeeded"
+  /** A person overrode a lead's branch directly (an exception action): attribution reads it. */
+  | "action_center.lead_branch_overridden"
   /** Action Center applied and verified a proposal. */
   | "action_center.proposal_executed";
 

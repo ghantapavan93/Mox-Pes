@@ -37,7 +37,14 @@ export const connectorConfigSchema = z.object({
    * for every datetime (research/17 §6.1) — a real tenant would set "America/Los_Angeles",
    * and the mapper would need the same change (README, deviation G1).
    */
-  wireTimeZone: z.union([z.literal("office"), ianaZone]),
+  //
+  // Only "office" is accepted for now. A zone here changed the search window's clock but NOT the
+  // mapper's, which still converts stored datetimes with the office zone: windows right, stored
+  // instants wrong, no warning (audit 2026-11-09, G-6). Accept a zone again once the mapper
+  // reads it from the connector context (README, deviation G1).
+  wireTimeZone: z.union([z.literal("office"), ianaZone]).refine((zone) => zone === "office", {
+    message: 'wireTimeZone must be "office" until the FieldRoutes mapper converts datetimes with the connector zone (deviation G1)',
+  }),
   /** First window for an office+entity with no checkpoint: this far behind the business clock. */
   initialLookbackHours: z.number().int().min(1).max(24 * 3650),
   /** Offices this connector syncs; null = every branch's office. */

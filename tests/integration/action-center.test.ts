@@ -709,3 +709,29 @@ function fakeConnectors() {
 beforeAll(() => {
   bindWorkflowPorts({ identity: null, connectors: null });
 });
+
+// ── Audit 2026-11-09 (J5): the queue pages instead of stopping at a fixed cap ─────────
+
+describe("queue paging (audit 2026-11-09, J5)", () => {
+  it("pages are disjoint, cover every case once, and the total does not depend on the page", async () => {
+    const held = (branch: string, n: number) => {
+      const c = call(`CAL-J5-${branch}-${n}`, branch, `+1212555${String(7000 + n)}`, new Date("2026-10-05T15:00:00Z"));
+      delete (c.payload as Record<string, unknown>).customer_phone_number;
+      return c;
+    };
+    let n = 0;
+    for (const branch of ["B01", "B02", "B03", "B04", "B05"]) await ingest(pool, "calls", [held(branch, ++n)], { mapper: mapperFor("calls", "1.0") });
+    await runReconcile(pool, NOW);
+    const { countQueue, listQueue } = await import("@/lib/workflow/queries");
+    const filters = { branchIds: null, state: "all" as const };
+    const total = await countQueue(pool, filters);
+    expect(total).toBe(5);
+    const pages = [];
+    for (let offset = 0; offset < total; offset += 2) pages.push(await listQueue(pool, { ...filters, limit: 2, offset }));
+    const ids = pages.flat().map((r) => r.caseId);
+    expect(pages.map((p) => p.length)).toEqual([2, 2, 1]);
+    expect(new Set(ids).size).toBe(total);
+    expect(await listQueue(pool, { ...filters, limit: 2, offset: 10 })).toEqual([]);
+    expect(await countQueue(pool, filters)).toBe(total);
+  });
+});

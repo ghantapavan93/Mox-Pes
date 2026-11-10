@@ -333,11 +333,19 @@ async function rawEventLineage(ctx: ToolContext, rawEventId: number): Promise<To
   );
   const r = rows[0];
   if (!r || !canSeeBranch(ctx.viewer, r.branch_id ?? null)) throw notInScope(ctx.viewer, `Raw event ${rawEventId}`);
-  const versions = await ctx.db.query(
-    `select id, adapter_version, status, received_at from raw_events
-     where source = $1 and entity = $2 and entity_id = $3 order by received_at, id limit 10`,
-    [r.source, r.entity, r.entity_id],
-  );
+  // Other stored versions of the same source record. Records the mapper could not identify all
+  // share entity_id 'unidentified', so they are not versions of each other; and every version is
+  // checked against the viewer's scope like the record itself (audit 2026-11-09, I-4).
+  const versions =
+    r.entity_id === "unidentified"
+      ? { rows: [{ id: r.id, adapter_version: r.adapter_version, status: r.status, received_at: r.received_at }] }
+      : await ctx.db
+          .query(
+            `select re.id, re.adapter_version, re.status, re.received_at, ${RAW_EVENT_BRANCH} as branch_id from raw_events re
+             where re.source = $1 and re.entity = $2 and re.entity_id = $3 order by re.received_at, re.id limit 10`,
+            [r.source, r.entity, r.entity_id],
+          )
+          .then((res) => ({ rows: res.rows.filter((v) => canSeeBranch(ctx.viewer, v.branch_id ?? null)) }));
   const projection = await ctx.db.query<{ t: string; id: string }>(
     `select 'leads' as t, id::text from leads where raw_event_id = $1
      union all select 'crm_customers', crm_customer_id::text from crm_customers where raw_event_id = $1
@@ -771,9 +779,10 @@ export const compareMappingVersions = defineTool({
       [rawIds.slice(0, COMPARE_LIMIT)],
     );
     for (const r of rows) {
-      if (r.source !== input.source) throw new ActionError(`Raw event ${r.id} is from ${r.source}, not ${input.source}`, 400);
+      // Scope first: an out-of-scope id must read as missing, not reveal its source (I-5).
       // Explicit id lists are checked record by record; exception/campaign sets were checked above.
       if (input.rawEventIds && !canSeeBranch(ctx.viewer, r.branch_id ?? null)) throw notInScope(ctx.viewer, `Raw event ${r.id}`);
+      if (r.source !== input.source) throw new ActionError(`Raw event ${r.id} is from ${r.source}, not ${input.source}`, 400);
     }
     if (input.rawEventIds && rows.length !== input.rawEventIds.length) throw notInScope(ctx.viewer, "Some raw events");
 
@@ -981,7 +990,7 @@ export interface AuditHistory {
 export const getAuditHistory = defineTool({
   name: "getAuditHistory",
   description:
-    "Audit log rows: for one exceptionId (its case's events, decisions and the writes its executions made), or — for viewers with company-wide scope only — by subject prefix (e.g. 'campaign:12', 'case:', 'investigation:'). Newest first, limit ≤ 50.",
+    "Audit log rows: for one exceptionId (its case's events, decisions and the writes its executions made), or — for viewers with company-wide scope only — by subject: an exact subject ('campaign:12', 'case:40') or every subject of one type ('case:', 'investigation:'). Newest first, limit ≤ 50.",
   input: z
     .strictObject({ exceptionId: id.optional(), subject: z.string().min(2).max(60).regex(/^[a-z_]+:[A-Za-z0-9_:-]*$/).optional(), limit: z.number().int().min(1).max(50).default(20) })
     .refine((v) => (v.exceptionId === undefined) !== (v.subject === undefined), "give exactly one of exceptionId, subject"),

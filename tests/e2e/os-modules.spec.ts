@@ -85,8 +85,11 @@ test.describe.serial("Integration Studio · rate limit → retry → success", (
     await expect(row.getByText("succeeded")).toBeVisible({ timeout: 120_000 });
     const link = row.getByRole("link", { name: /^#\d+$/ });
     jobId = Number((await link.textContent())!.slice(1));
-    // Attempt column: it succeeded on a later attempt than the first.
-    await expect(row.locator("td").nth(4)).toHaveText(/^[2-9]\/\d+$/);
+    // Attempt column (found by its header, not its position): it succeeded on a later attempt than the first.
+    const headers = (await jobs.locator("thead th").allTextContents()).map((h) => h.trim().toLowerCase());
+    const attemptColumn = headers.indexOf("attempt");
+    expect(attemptColumn).toBeGreaterThanOrEqual(0);
+    await expect(row.locator("td").nth(attemptColumn)).toHaveText(/^[2-9]\/\d+$/);
 
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/integrations/jobs/${jobId}$`));
@@ -173,7 +176,10 @@ test.describe("command menu", () => {
     await input.fill("B09");
     const results = page.getByTestId("command-results");
     await expect(results.getByRole("option", { name: /branch\s*B09/ })).toBeVisible();
-    const incident = results.getByRole("option", { name: /incident\s*#\d+ Channel coverage gap/ });
+    // The incident: query its summary text, so the match does not depend on how many other
+    // B09 incidents fit under the search's per-kind cap.
+    await input.fill("spend at B09 stopped");
+    const incident = results.getByRole("option", { name: /incident\s*#\d+ Channel coverage gap/ }).first();
     await expect(incident).toBeVisible();
     await incident.click();
     await expect(page).toHaveURL(/\/exceptions\/\d+$/);

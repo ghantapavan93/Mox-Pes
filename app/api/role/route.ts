@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { demoModeEnabled } from "@/lib/demo-mode";
 import { errorResponse } from "@/lib/http";
 import { ROLES, ROLE_COOKIE } from "@/lib/viewer";
 
 // One list of roles, from lib/viewer.ts: a role added there is selectable here.
 const body = z.object({ role: z.enum(ROLES) });
 
-/** Demo-only role picker. Production derives the viewer from SSO; see lib/viewer.ts. */
+/** Demo-only role picker (lib/demo-mode.ts). Production derives the viewer from SSO; see lib/viewer.ts. */
 export async function POST(request: Request) {
+  if (!demoModeEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
   try {
     const { role } = body.parse(await request.json());
     const res = NextResponse.json({ role });

@@ -63,8 +63,8 @@ resolves scope server-side and refuses out-of-scope requests. Missing role = rea
 Production replaces the picker with SSO claims.
 
 ## ADR-12 Google conversion feedback stays a dry run
-It shows the decision logic (what to report, retract or hold, and why) without credentials, spend or
-network calls. Field names follow the 2026 Data Manager API path and must be verified before use.
+It shows the decision logic (what to report, suppress or hold, and why) without credentials, spend or
+network calls. Cancelled plans are suppressed, never "retracted": Data Manager cannot retract. Field names follow the 2026 Data Manager API path and must be verified before use.
 
 ## ADR-13 Channel classification belongs to each mapped record (ChangeGuard)
 **Chosen:** `ad_spend_daily.channel_code` is written by the mapper version that projected the record;
@@ -79,7 +79,9 @@ cross-system rule (leads without spend) sees it.
 ## ADR-14 Budget signals carry their blockers
 **Chosen:** a channel budget signal is returned together with the open exceptions that change what a
 channel cost or produced (coverage gap, held source records, unmapped spend), and is marked "not
-trustworthy yet" while any is open. The signal rule (≥ 1.5× cost per customer) is deliberately naive
+trustworthy yet" while any is open. Unmapped spend has no branch, so it blocks each branch whose
+serviced customers its campaign produced, in that channel (before the 2026-11-09 audit it blocked
+nothing: its null branch never matched). The signal rule (≥ 1.5× cost per customer) is deliberately naive
 and labelled illustrative.
 **Rejected:** suppressing the signal (people then act on the raw dashboard instead) and blocking on
 every exception kind (D2D/paid conflicts are long-lived and would block forever).
@@ -135,3 +137,15 @@ also checks the facts add up to the app's own metrics. A breaking change ships a
 copy them into the lake.
 **Rejected:** pointing BI at the public schema (every internal refactor would break a dashboard
 someone else owns), and exporting files (no contract, no freshness).
+
+## ADR-20 Writes to stored records go through approval only; demo mode is explicit (audit 2026-11-09)
+**Chosen:** every change to stored records goes through the Action Center: propose → dry run
+(rolled back) → approval by another role → one execution by the application, verified. The older
+replay panel and `POST /api/replays` are now dry-run only; a commit is refused with 409. The role
+picker and the FieldRoutes mock exist only in development, in tests, or in a production build started
+with `DEMO_MODE=1`; without it a production build ignores the role cookie (everyone is a read-only
+guest), refuses `POST /api/role` and does not serve the mock.
+**Rejected:** keeping the direct replay for engineers (it let one role change data with no approval,
+next to the workflow that forbids exactly that), and trusting the cookie in any production build
+(anyone who found `/api/role` could become an approver).
+**Would change if:** SSO arrives: the viewer comes from claims, `/api/role` and the mock are removed.

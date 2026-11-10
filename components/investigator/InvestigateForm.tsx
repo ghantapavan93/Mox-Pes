@@ -101,12 +101,17 @@ export function InvestigateForm({
             id={ids.question}
             name="question"
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onChange={(e) => {
+              if (!busy) setQuestion(e.target.value);
+            }}
             rows={3}
             maxLength={2000}
-            disabled={!canInvestigate || busy}
+            // While running the box stays focusable (aria-disabled + read-only), so focus is not lost.
+            disabled={!canInvestigate}
+            readOnly={busy}
+            aria-disabled={busy || undefined}
             placeholder="Ask about a branch, a channel, a customer id or an exception"
-            className="mt-1 w-full rounded border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+            className="mt-1 w-full rounded border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60 aria-disabled:opacity-60"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submit(e);
             }}
@@ -120,9 +125,12 @@ export function InvestigateForm({
             <select
               id={ids.branch}
               value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              disabled={!canInvestigate || busy}
-              className="mt-1 rounded border border-border bg-surface px-2 py-1.5 text-sm"
+              onChange={(e) => {
+                if (!busy) setBranch(e.target.value);
+              }}
+              disabled={!canInvestigate}
+              aria-disabled={busy || undefined}
+              className="mt-1 rounded border border-border bg-surface px-2 py-1.5 text-sm aria-disabled:opacity-60"
             >
               <option value="">Branch named in the question (or my whole scope)</option>
               {branches.map((b) => (
@@ -134,8 +142,10 @@ export function InvestigateForm({
           </div>
           <button
             type="submit"
-            disabled={!canInvestigate || busy || question.trim().length < 3}
-            className="rounded bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            // Busy: aria-disabled keeps focus on the button; submit() ignores presses while running.
+            disabled={!canInvestigate || (!busy && question.trim().length < 3)}
+            aria-disabled={busy || undefined}
+            className="rounded bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           >
             {busy ? "Investigating…" : "Investigate"}
           </button>
@@ -156,12 +166,14 @@ export function InvestigateForm({
               <li key={s.question}>
                 <button
                   type="button"
-                  disabled={!canInvestigate || busy}
+                  disabled={!canInvestigate}
+                  aria-disabled={busy || undefined}
                   onClick={() => {
+                    if (busy) return;
                     setQuestion(s.question);
                     setBranch(s.branchId ?? "");
                   }}
-                  className="w-full rounded border border-border px-3 py-2 text-left text-sm hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
+                  className="w-full rounded border border-border px-3 py-2 text-left text-sm hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 aria-disabled:opacity-50"
                 >
                   <span className="font-medium">{s.question}</span>
                   <span className="block text-[11px] text-faint">{s.basis}</span>

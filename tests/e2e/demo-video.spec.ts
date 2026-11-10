@@ -1,3 +1,4 @@
+import { fixThroughActionCenter } from "./action-center";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -38,12 +39,13 @@ test("demo walkthrough", async ({ page }) => {
   await expect(page.getByTestId("replay-result")).toContainText("Dry run");
   await pause(8000);
 
-  await page.getByRole("button", { name: /^Replay \d+ records$/ }).click();
-  await expect(page.getByTestId("replay-result")).toContainText(/Replay committed|Committed replay/);
+  // The panel only previews; the fix applies through the Action Center (audit 2026-11-09, J1).
+  await fixThroughActionCenter(page, {
+    kind: "replay_quarantine", mapper: "1.1",
+    rationale: "calls@1.1 reads the renamed caller field; replay the held records",
+    approval: "Dry run projects every held record and conserves the ledger",
+  });
   await pause(6000);
-  await page.getByRole("button", { name: "Send the same request again" }).click();
-  await expect(page.getByTestId("replay-result")).toContainText("Already processed");
-  await pause(5000);
 
   await page.goto("/feedback?period=oct");
   await pause(5000);

@@ -1,0 +1,2043 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Temp\\rso-final\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Temp\\rso-final\\playwright.config.ts",
+    "rootDir": "C:/Temp/rso-final/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "C:\\Temp\\rso-final\\tests\\e2e\\global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Temp/rso-final/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Temp/rso-final/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Temp\\rso-final\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "C:\\Temp\\rso-final\\tests\\e2e",
+        "snapshotDir": "C:\\Temp\\rso-final\\tests\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://localhost:3000",
+          "trace": "retain-on-failure",
+          "video": "off",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run start -- -p 3000",
+      "port": 3000,
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "env": {
+        "DEMO_MODE": "1"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "demo-video.spec.ts",
+      "file": "demo-video.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "demo walkthrough",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "set RECORD_DEMO=1 to record the demo video",
+                  "location": {
+                    "file": "C:\\Temp\\rso-final\\tests\\e2e\\demo-video.spec.ts",
+                    "line": 8,
+                    "column": 6
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T06:19:52.481Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "set RECORD_DEMO=1 to record the demo video",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\demo-video.spec.ts",
+                        "line": 8,
+                        "column": 6
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "276876c40f2c366ce8fd-0116a76eee3ec2aa7ecd",
+          "file": "demo-video.spec.ts",
+          "line": 13,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "golden-path.spec.ts",
+      "file": "golden-path.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "investigate → replay → verify",
+          "file": "golden-path.spec.ts",
+          "line": 11,
+          "column": 15,
+          "specs": [
+            {
+              "title": "the overview points at the incident branch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1917,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:19:53.041Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-c7073e4c350803346534",
+              "file": "golden-path.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "the branch page shows why, and links to the exception",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1256,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:19:55.136Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-5a5ac897bbb73fa34cb5",
+              "file": "golden-path.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "an engineer dry-runs; the panel cannot commit; the fix applies through approval, once",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9526,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:19:56.402Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-2b9694b278aa7cbebed6",
+              "file": "golden-path.spec.ts",
+              "line": 31,
+              "column": 7
+            },
+            {
+              "title": "after replay the branch is no longer flagged for unattributed customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1281,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:05.937Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-a86bd7267d22b2100892",
+              "file": "golden-path.spec.ts",
+              "line": 62,
+              "column": 7
+            },
+            {
+              "title": "a branch partner cannot read another branch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 686,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:07.228Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-c4a61bbb60ce68cd374a",
+              "file": "golden-path.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "an out-of-scope incident reads as missing and does not name its branch (audit 2026-11-09, E-6)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 346,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:07.922Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-9805e13e152a0365e2ee",
+              "file": "golden-path.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "the replay API refuses non-engineers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 11,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 82,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:08.278Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 11,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-d81fd0008a5bd4955795",
+              "file": "golden-path.spec.ts",
+              "line": 92,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "ChangeGuard: a reclassified channel blocks a budget decision until re-mapped",
+          "file": "golden-path.spec.ts",
+          "line": 99,
+          "column": 15,
+          "specs": [
+            {
+              "title": "the B09 budget signal is marked untrustworthy and links to the coverage gap",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 99,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1108,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:08.368Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 99,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-eeed6c5b403619ac41b0",
+              "file": "golden-path.spec.ts",
+              "line": 100,
+              "column": 7
+            },
+            {
+              "title": "an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                        "line": 99,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10885,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:09.485Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\golden-path.spec.ts",
+                            "line": 99,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d6dd496e245cb9874cb8-dabd89044d3095c034e8",
+              "file": "golden-path.spec.ts",
+              "line": 111,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "os-golden-path.spec.ts",
+      "file": "os-golden-path.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "golden path · B09 LSA → PMax incident, from signal to verified fix",
+          "file": "os-golden-path.spec.ts",
+          "line": 34,
+          "column": 15,
+          "specs": [
+            {
+              "title": "a · the overview and the branch show the channel imbalance and a blocked budget signal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2291,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[seed] applied 0001_init.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0002_attribution_views.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0003_channel_classification.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0004_identity.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0005_connectors.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0006_action_center.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0007_decision_lab.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0008_investigations.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0009_organization_and_events.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0010_reporting_contract.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0011_sync_requests.sql\n"
+                        },
+                        {
+                          "text": "[seed] applied 0012_audit_corrections.sql\n"
+                        },
+                        {
+                          "text": "[seed] world: 134337 source record versions, 156 campaigns\n"
+                        },
+                        {
+                          "text": "[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search\n"
+                        },
+                        {
+                          "text": "[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2053 ms\n"
+                        },
+                        {
+                          "text": "[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 111620 ms\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:20:20.620Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-9029e0f89daa18b08532",
+              "file": "os-golden-path.spec.ts",
+              "line": 39,
+              "column": 7
+            },
+            {
+              "title": "b · the Decision Lab says not ready and links the blocking incident",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 609,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:14.552Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-0c28fbefc2dccb6f3ff6",
+              "file": "os-golden-path.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "c · the incident shows campaign, spend, leads and CRM outcomes evidence",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 587,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:15.169Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-fccaa18aebcd1c125087",
+              "file": "os-golden-path.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "d · Investigate opens the AI investigator scoped to the incident; it cites evidence and proposes a re-map",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1826,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:15.763Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-cbdce556ba63c7b9b7b3",
+              "file": "os-golden-path.spec.ts",
+              "line": 85,
+              "column": 7
+            },
+            {
+              "title": "e · an integration engineer dry-runs it on the server: before/after, rolled back",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3442,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:17.597Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-6d60d9915d914007715a",
+              "file": "os-golden-path.spec.ts",
+              "line": 126,
+              "column": 7
+            },
+            {
+              "title": "f · an approver, a different role, approves",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 721,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:21.047Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-84ed88c13e829cfbf6d2",
+              "file": "os-golden-path.spec.ts",
+              "line": 145,
+              "column": 7
+            },
+            {
+              "title": "g · h · the application executes the re-projection; metrics recompute and the ledger is verified unchanged",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3677,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:21.775Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-32586d378f99041c35ef",
+              "file": "os-golden-path.spec.ts",
+              "line": 156,
+              "column": 7
+            },
+            {
+              "title": "i · the audit trail shows proposer, dry run, approver, executed records and verification",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 816,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:25.459Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-e65289cb3046f72387a2",
+              "file": "os-golden-path.spec.ts",
+              "line": 178,
+              "column": 7
+            },
+            {
+              "title": "j · overview, branch and Decision Lab reflect the new state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 34,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1987,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:26.285Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 34,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-02be18bfca7758680046",
+              "file": "os-golden-path.spec.ts",
+              "line": 201,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "second scenario · B20 call-feed incident through the Action Center",
+          "file": "os-golden-path.spec.ts",
+          "line": 216,
+          "column": 15,
+          "specs": [
+            {
+              "title": "an engineer proposes a replay; the dry run verifies; an approver approves; the app executes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 216,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7457,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:28.282Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 216,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-94bc9e0c4bc81001be35",
+              "file": "os-golden-path.spec.ts",
+              "line": 219,
+              "column": 7
+            },
+            {
+              "title": "after the replay B20 is no longer flagged for unattributed customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                        "line": 216,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1347,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:35.749Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-golden-path.spec.ts",
+                            "line": 216,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "77937ceab6ccff6002ff-3714b4355f8b1b12cff1",
+              "file": "os-golden-path.spec.ts",
+              "line": 250,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "os-modules.spec.ts",
+      "file": "os-modules.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Customer 360",
+          "file": "os-modules.spec.ts",
+          "line": 21,
+          "column": 6,
+          "specs": [
+            {
+              "title": "search by lead id → journey timeline → stored payload drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1829,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:37.114Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-4efa5fb84d161c6a702a",
+              "file": "os-modules.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "a branch partner cannot open another branch's customer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 76,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:38.952Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-4a295331c06e28ff6f70",
+              "file": "os-modules.spec.ts",
+              "line": 46,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Integration Studio · rate limit → retry → success",
+          "file": "os-modules.spec.ts",
+          "line": 53,
+          "column": 15,
+          "specs": [
+            {
+              "title": "an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                        "line": 53,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 28399,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:22:39.036Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                            "line": 53,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-e4af15ed9b5c018f2fe9",
+              "file": "os-modules.spec.ts",
+              "line": 57,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "identity review permissions",
+          "file": "os-modules.spec.ts",
+          "line": 112,
+          "column": 15,
+          "specs": [
+            {
+              "title": "guests, approvers and branch partners can read the conflict but not decide it",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                        "line": 112,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1398,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:07.443Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                            "line": 112,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-cc8475f51824165155f6",
+              "file": "os-modules.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "a marketing analyst accepts one match; its sibling is rejected automatically",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                        "line": 112,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 833,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:09.893Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                            "line": 112,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-e79ccf1a844440435c3f",
+              "file": "os-modules.spec.ts",
+              "line": 144,
+              "column": 7
+            },
+            {
+              "title": "an integration engineer rejects a match",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "serial",
+                      "location": {
+                        "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                        "line": 112,
+                        "column": 15
+                      }
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 757,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:10.733Z",
+                      "annotations": [
+                        {
+                          "type": "serial",
+                          "location": {
+                            "file": "C:\\Temp\\rso-final\\tests\\e2e\\os-modules.spec.ts",
+                            "line": 112,
+                            "column": 15
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-c2d165b60183aaf8367f",
+              "file": "os-modules.spec.ts",
+              "line": 158,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "command menu",
+          "file": "os-modules.spec.ts",
+          "line": 169,
+          "column": 6,
+          "specs": [
+            {
+              "title": "⌘K finds branch B09 and its incident",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1669,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:11.497Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6437ece837561005844c-967392b2ddba1e33f467",
+              "file": "os-modules.spec.ts",
+              "line": 170,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "z-a11y-regressions.spec.ts",
+      "file": "z-a11y-regressions.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "command menu · combobox semantics (J10)",
+          "file": "z-a11y-regressions.spec.ts",
+          "line": 28,
+          "column": 6,
+          "specs": [
+            {
+              "title": "the input is a combobox that controls the results listbox and tracks the active option",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1981,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:13.190Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-b0f440aa43f9a6e34860",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 29,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "proposal card · status region and diff row headers (J8, J12)",
+          "file": "z-a11y-regressions.spec.ts",
+          "line": 74,
+          "column": 6,
+          "specs": [
+            {
+              "title": "an executed proposal keeps a status region, and its before/after rows are row headers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 579,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:15.179Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-e842aeb23703c745fef2",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 75,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "weekly bars · data table (J11)",
+          "file": "z-a11y-regressions.spec.ts",
+          "line": 100,
+          "column": 6,
+          "specs": [
+            {
+              "title": "each chart references a visually hidden table of its weekly values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 606,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:15.766Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-9d7fccb10e301bd0fa7c",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 101,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "paging and parameter validation (J4, J6, J7)",
+          "file": "z-a11y-regressions.spec.ts",
+          "line": 117,
+          "column": 6,
+          "specs": [
+            {
+              "title": "a customers page past the end says so and links to the last page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 799,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:16.379Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-3829a64c4c6ae5911326",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 118,
+              "column": 7
+            },
+            {
+              "title": "an inherited property name as ?period= falls back to the default period",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3331,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:17.185Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-a8d2b54b8df732791196",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 129,
+              "column": 7
+            },
+            {
+              "title": "an exact audit subject does not match longer ids with the same prefix",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 337,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-10T06:23:20.525Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4d6610cb2c3a1be3e975-35a6f80919e7b7fc29f5",
+              "file": "z-a11y-regressions.spec.ts",
+              "line": 138,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "zz-b09-four-minute-path.spec.ts",
+      "file": "zz-b09-four-minute-path.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the eight steps add up to four minutes, matching the golden fixture",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "[seed] applied 0001_init.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0002_attribution_views.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0003_channel_classification.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0004_identity.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0005_connectors.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0006_action_center.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0007_decision_lab.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0008_investigations.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0009_organization_and_events.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0010_reporting_contract.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0011_sync_requests.sql\n"
+                    },
+                    {
+                      "text": "[seed] applied 0012_audit_corrections.sql\n"
+                    },
+                    {
+                      "text": "[seed] world: 134337 source record versions, 156 campaigns\n"
+                    },
+                    {
+                      "text": "[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search\n"
+                    },
+                    {
+                      "text": "[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2021 ms\n"
+                    },
+                    {
+                      "text": "[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 109538 ms\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T06:23:20.880Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "09afed1f11ca8257ba39-4dc4f1a092738bd2b823",
+          "file": "zz-b09-four-minute-path.spec.ts",
+          "line": 46,
+          "column": 5
+        },
+        {
+          "title": "B09 golden path: overview → incident → evidence → dry run → approval → verified correction → readiness → audit",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11737,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-10T06:25:10.439Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "09afed1f11ca8257ba39-f96a14cb221f04b64add",
+          "file": "zz-b09-four-minute-path.spec.ts",
+          "line": 52,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-10T06:17:46.897Z",
+    "duration": 457224.337,
+    "expected": 35,
+    "skipped": 1,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

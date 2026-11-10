@@ -158,9 +158,22 @@ async function Results({ scope, q, lifecycle, page, href }: { scope: string[] | 
       </div>
     );
   }
+  const pages = Math.ceil(result.total / result.pageSize);
+  if (result.rows.length === 0) {
+    // There are matches, just not this many pages of them.
+    return (
+      <div className="rounded border border-dashed border-border p-6 text-center text-sm text-muted" data-testid="customers-past-end">
+        Page {count(result.page)} is past the last page: {count(result.total)} match{result.total === 1 ? "" : "es"} fit on {count(pages)} page
+        {pages === 1 ? "" : "s"}.{" "}
+        <Link href={href({ page: pages > 1 ? String(pages) : undefined })} className="text-accent hover:underline">
+          Go to the last page
+        </Link>
+        .
+      </div>
+    );
+  }
   const first = (result.page - 1) * result.pageSize + 1;
   const last = first + result.rows.length - 1;
-  const pages = Math.ceil(result.total / result.pageSize);
   return (
     <div className="space-y-3">
       <TableWrap>

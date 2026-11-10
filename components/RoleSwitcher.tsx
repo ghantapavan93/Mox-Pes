@@ -22,10 +22,12 @@ export function RoleSwitcher({ current }: { current: string }) {
       <select
         aria-label="Viewing as"
         data-testid="role-switcher"
-        className="rounded border border-border bg-surface px-2 py-1 text-xs text-text"
+        className="rounded border border-border bg-surface px-2 py-1 text-xs text-text aria-disabled:opacity-50"
         value={current}
-        disabled={pending}
+        // aria-disabled, not disabled: a disabled select drops keyboard focus mid-switch.
+        aria-disabled={pending || undefined}
         onChange={(e) => {
+          if (pending) return;
           const role = e.target.value;
           start(async () => {
             await fetch("/api/role", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ role }) });

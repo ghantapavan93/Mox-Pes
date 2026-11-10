@@ -181,16 +181,22 @@ const COVERAGE_GAP = `insert into detected
     from gaps g
     join spend s on s.branch_id = g.branch_id and s.channel_code = g.channel_code and s.spend_date = g.last_spend
     join ad_campaigns c on c.id = s.campaign_id),
+  -- One row per ad account that held a stopped campaign. Joining successors to each predecessor
+  -- instead counted a successor's spend once per predecessor in the same account (audit
+  -- 2026-11-09: two stopped campaigns in one account doubled the exception amount).
+  pred_account as (
+    select branch_id, channel_code, last_spend, ad_account_id, array_agg(id) as pred_ids
+    from pred group by 1, 2, 3, 4),
   succ as (
     select p.branch_id, p.channel_code, c.id, c.external_campaign_id, c.name, c.platform, c.campaign_type,
            c.local_services_enabled, min(s.spend_date) as first_spend,
            coalesce(sum(s.cost_cents) filter (where s.spend_date > p.last_spend), 0) as spend_since,
            count(*) filter (where s.spend_date > p.last_spend) as days_since,
            array_agg(distinct s.channel_code) filter (where s.spend_date > p.last_spend) as classified_as
-    from pred p
-    join ad_campaigns c on c.ad_account_id = p.ad_account_id and c.id <> p.id
+    from pred_account p
+    join ad_campaigns c on c.ad_account_id = p.ad_account_id and c.id <> all(p.pred_ids)
     join ad_spend_daily s on s.campaign_id = c.id
-    group by p.branch_id, p.channel_code, p.last_spend, c.id
+    group by p.branch_id, p.channel_code, p.last_spend, p.ad_account_id, c.id
     having min(s.spend_date) between p.last_spend - 3 and p.last_spend + 7),
   acq_gap as (
     select g.branch_id, g.channel_code, count(*) as acquisitions

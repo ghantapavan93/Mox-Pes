@@ -44,7 +44,9 @@ export const CONSUMERS: Consumer[] = [
     // After reconciliation: a run there can change nothing identity reads, but ordering the
     // cheap, decision-critical consumer first gets exceptions current soonest.
     name: "identity",
-    triggers: ["intake.records_stored", "intake.records_reprojected", "action_center.proposal_executed"],
+    // A lead-branch override changes v_leads.effective_branch_id, which prospects take their
+    // branch from (audit 2026-11-09, A-4).
+    triggers: ["intake.records_stored", "intake.records_reprojected", "action_center.proposal_executed", "action_center.lead_branch_overridden"],
     covers: "identity.resolution_completed",
     run: async (pool) => void (await resolveIdentities(pool, await getNow(pool))),
   },

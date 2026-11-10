@@ -9,7 +9,7 @@ import { count, date, dateTime } from "@/lib/format";
 import { freshness } from "@/lib/metrics/scorecard";
 import { failedRunsWithRecovery } from "@/lib/queries";
 import { businessNow, getPool, getViewer } from "@/lib/server";
-import { auditFacets, auditFeed, ingestionHealth, throughput, type AuditFilters } from "@/lib/workflow/queries";
+import { auditFacets, auditFeedPage, ingestionHealth, parseAuditCursor, throughput, type AuditFilters } from "@/lib/workflow/queries";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.trim() || undefined;
@@ -55,12 +55,14 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
     // inclusive "to" day: everything before the next day's start
     to: to instanceof Date ? new Date(to.getTime() + 86_400_000) : undefined,
     limit: 100,
+    // Keyset cursor "<at>|<id>" from the previous page; a malformed one starts at the newest row.
+    before: parseAuditCursor(one(sp.before)) ? one(sp.before) : undefined,
   };
   const pool = getPool();
   const now = await businessNow();
-  const [facets, feed, flow, streams, runs, failures, connectors, consumers, events] = await Promise.all([
+  const [facets, { rows: feed, next }, flow, streams, runs, failures, connectors, consumers, events] = await Promise.all([
     auditFacets(pool),
-    auditFeed(pool, filters),
+    auditFeedPage(pool, filters),
     throughput(pool, now),
     freshness(pool),
     ingestionHealth(pool),
@@ -71,11 +73,22 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
     recentEvents(pool),
   ]);
   const filtered = Boolean(filters.actor || filters.action || filters.subject || filters.from || filters.to);
+  /** The current filters as a query string, with the cursor patched in or out. */
+  const feedHref = (before: string | undefined) => {
+    const q = new URLSearchParams();
+    for (const key of ["actor", "action", "subject", "from", "to"] as const) {
+      const v = one(sp[key]);
+      if (v) q.set(key, v);
+    }
+    if (before) q.set("before", before);
+    const qs = q.toString();
+    return qs ? `/audit?${qs}` : "/audit";
+  };
 
   return (
     <div className="space-y-6">
       <Card
-        title={`Audit log (${count(feed.length)}${feed.length === filters.limit ? "+" : ""} shown of ${count(facets.total)})`}
+        title={`Audit log (${count(feed.length)}${next ? "+" : ""} shown of ${count(facets.total)}${filters.before ? ", older entries" : ""})`}
         subtitle="Newest first. Every case transition, proposal decision, execution and legacy decision writes one row."
       >
         <form method="get" action="/audit" className="mb-3 flex flex-wrap items-end gap-2 text-xs" aria-label="Filter the audit log">
@@ -99,7 +112,7 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
               ))}
             </select>
           </Field>
-          <Field label="Subject starts with">
+          <Field label="Subject (exact, or type: for all)">
             <input name="subject" defaultValue={filters.subject ?? ""} placeholder="case:12, campaign:" className="w-36 rounded border border-border bg-surface px-1.5 py-1" />
           </Field>
           <Field label="From (UTC day)">
@@ -153,6 +166,24 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
               ))}
             </tbody>
           </TableWrap>
+        )}
+        {(next || filters.before) && (
+          <nav aria-label="Audit log pages" className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs" data-testid="audit-pagination">
+            {filters.before ? (
+              <Link href={feedHref(undefined)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
+                ← Newest entries
+              </Link>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <Link href={feedHref(next)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
+                Older entries →
+              </Link>
+            ) : (
+              <span className="text-faint">End of the audit log for these filters.</span>
+            )}
+          </nav>
         )}
       </Card>
 

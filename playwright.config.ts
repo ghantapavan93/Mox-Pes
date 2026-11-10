@@ -22,5 +22,9 @@ export default defineConfig({
     port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // `next start` is a production build: the role picker and the CRM mock need demo mode.
+    // Added to the runner's own environment. Never spread process.env here: the JSON reporter
+    // serialises this object into committed results.
+    env: { DEMO_MODE: "1" },
   },
 });

@@ -120,7 +120,7 @@ export async function WorkflowPanel({ exception, viewer }: { exception: Exceptio
               </h3>
               <Timeline events={timeline} />
             </section>
-            <section aria-labelledby="case-audit-heading">
+            <section id="case-audit" className="scroll-mt-16" aria-labelledby="case-audit-heading">
               <h3 id="case-audit-heading" className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
                 Audit history ({audit.length})
               </h3>
@@ -173,6 +173,7 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
     if (p.status === "approved" && viewer.can.dryRun) blocked.push("A new dry run withdraws the approval: it covers one dry run only.");
   }
   const approval = [...p.approvals].reverse().find((a) => a.decision === "approved");
+  const executionTargetId = `proposal-${p.id}-execution`;
 
   return (
     <article className={`rounded border p-3 ${live ? "border-accent/40" : "border-border"}`} data-testid="proposal">
@@ -222,7 +223,12 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
       )}
 
       {p.execution && (
-        <div className={`mt-2 rounded p-2 ${p.execution.status === "succeeded" ? "bg-good-soft" : "bg-bad-soft"}`} data-testid="execution-result">
+        <div
+          id={executionTargetId}
+          tabIndex={-1}
+          className={`mt-2 rounded p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${p.execution.status === "succeeded" ? "bg-good-soft" : "bg-bad-soft"}`}
+          data-testid="execution-result"
+        >
           <p className="text-xs font-medium">
             Execution {p.execution.status === "succeeded" ? "succeeded and verified" : "failed and was rolled back"} · {p.execution.actor} · {dateTime(p.execution.finishedAt)}
           </p>
@@ -233,18 +239,18 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
         </div>
       )}
 
-      {live && (
-        <div className="mt-3">
-          <ProposalControls
-            proposalId={p.id}
-            canDryRun={canDryRun}
-            canDecide={canDecide}
-            canExecute={canExecute}
-            dryRunLabel={p.dryRun ? "Run the dry run again" : "Run dry run (rolled back)"}
-            blocked={blocked}
-          />
-        </div>
-      )}
+      {/* Mounted for every proposal so its status message survives the refresh after an action. */}
+      <ProposalControls
+        proposalId={p.id}
+        live={live}
+        canDryRun={canDryRun}
+        canDecide={canDecide}
+        canExecute={canExecute}
+        dryRunLabel={p.dryRun ? "Run the dry run again" : "Run dry run (rolled back)"}
+        blocked={blocked}
+        executionTargetId={executionTargetId}
+        executionId={p.execution?.id ?? null}
+      />
     </article>
   );
 }

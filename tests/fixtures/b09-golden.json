@@ -1,0 +1,12 @@
+{
+  "comment": "Golden numbers for the B09 four-minute path on a fresh `npm run db:seed` (synthetic data). Source: docs/changeguard/snapshot.json (npm run export:changeguard) and the os-golden-path assertions. Asserted in the browser by tests/e2e/zz-b09-four-minute-path.spec.ts.",
+  "branch": "B09",
+  "summaryContains": "Google Local Services spend at B09 stopped",
+  "spendAffected": "$2,124",
+  "leadsSinceGap": 45,
+  "signalBefore": { "ratio": "8.6×", "status": "Not trustworthy yet" },
+  "signalAfter": { "ratio": "2.9×", "status": "Data integrity: no blocking incidents" },
+  "remap": { "claimed": 22, "projected": 22 },
+  "conservedRows": ["Total ad spend", "Raw events stored", "CRM customers", "Invoiced", "Collected"],
+  "pathSeconds": 240
+}

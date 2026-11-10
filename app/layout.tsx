@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { CommandMenu } from "@/components/CommandMenu";
+import { GuideBar } from "@/components/GuideBar";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { SidebarDisclosure } from "@/components/SidebarDisclosure";
 import { SidebarNav, SidebarNavFallback } from "@/components/SidebarNav";
@@ -67,6 +68,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <ViewerControls />
               </Suspense>
             </header>
+            <Suspense fallback={null}>
+              <GuideBar />
+            </Suspense>
             <main id="main" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 focus-visible:outline-none lg:px-6">
               {children}
             </main>

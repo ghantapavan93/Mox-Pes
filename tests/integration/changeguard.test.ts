@@ -260,3 +260,19 @@ describe("historical continuity", () => {
     expect(new Set(days.rows.map((r) => r.c))).toEqual(new Set(["10000"]));
   });
 });
+
+describe("coverage gap amount (audit 2026-11-09)", () => {
+  it("two stopped campaigns in one ad account do not double the successor's spend", async () => {
+    const single = Number(gap.amountCents);
+    expect(single).toBe(18 * 100 * 100); // the PMax successor's spend from day 13 to day 30
+    // A second Local Services campaign in the same account, stopping the same day.
+    const second: RawRecord[] = [];
+    for (let d = 1; d < MIGRATION_DAY; d++) second.push(spend("lsa", d, 50, { campaignId: `lsa2-${BRANCH}`, campaignName: `${BRANCH} | Local Services 2` }));
+    await ingest(pool, "ads", second, { mapper: mapperFor("ads", "1.0"), now: NOW });
+    await mapAllCampaigns(pool);
+    await runReconcile(pool, NOW);
+    const after = (await getException(pool, gap.id))!;
+    expect((after.evidence.predecessors as unknown[]).length).toBe(2);
+    expect(Number(after.amountCents)).toBe(single);
+  });
+});

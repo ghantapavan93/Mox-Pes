@@ -213,6 +213,16 @@ export async function enqueueSync(
     const fingerprint = sha256(canonicalJson({ connectorId: connector.id, officeIds: offices.map((o) => o.officeId), entities }));
     // Serialise requests that share a key so two clicks cannot both create jobs.
     await tx.query("select pg_advisory_xact_lock(hashtext($1))", [`sync-request:${args.idempotencyKey}`]);
+    // The request record answers a replay, including one whose jobs were all reused (B-5).
+    const recorded = await tx.query<{ fingerprint: string; job_ids: string[] }>("select fingerprint, job_ids from sync_requests where request_key = $1", [args.idempotencyKey]);
+    if (recorded.rows[0]) {
+      if (recorded.rows[0].fingerprint !== fingerprint) throw new ActionError("This idempotency key was already used for a different sync request", 409);
+      const ids = recorded.rows[0].job_ids.map(Number);
+      const current = await tx.query<JobDbRow>("select * from sync_jobs where id = any($1::bigint[])", [ids]);
+      const byId = new Map(current.rows.map((r) => [Number(r.id), r]));
+      return { requestKey: args.idempotencyKey, alreadyRequested: true, created: [], reusedQueued: [], jobs: ids.filter((id) => byId.has(id)).map((id) => toJob(byId.get(id)!)) };
+    }
+    // Requests recorded before sync_requests existed are still answered from their jobs.
     const prior = await tx.query<JobDbRow & { request_fingerprint: string }>("select * from sync_jobs where request_key = $1 order by id", [args.idempotencyKey]);
     if (prior.rows.length > 0) {
       if (prior.rows.some((r) => r.request_fingerprint !== fingerprint)) {
@@ -246,6 +256,10 @@ export async function enqueueSync(
         jobs.push(toJob(inserted.rows[0]));
       }
     }
+    await tx.query(
+      "insert into sync_requests (request_key, fingerprint, job_ids, requested_by, created_at) values ($1, $2, $3, $4, $5)",
+      [args.idempotencyKey, fingerprint, jobs.map((j) => j.id), args.actor, args.now],
+    );
     await audit(tx, args.auditAt, args.actor, "sync.requested", `connector:${connector.id}`, {
       idempotencyKey: args.idempotencyKey,
       offices: offices.length,
@@ -591,6 +605,9 @@ async function finishCancelled(rt: SyncRuntime, job: SyncJob, stats: JobStats, a
   return { jobId: job.id, state: "cancelled", attempt: job.attempts };
 }
 
+/** A 429 without Retry-After waits at least this long: FieldRoutes' shortest limit window. */
+export const RATE_LIMIT_MIN_WAIT_MS = 60_000;
+
 /** Exponential backoff with jitter; a server's Retry-After wins when it sent one. */
 export function backoffMs(attempt: number, retryAfterMs: number | null, rt: Pick<SyncRuntime, "random" | "backoffBaseMs" | "backoffCapMs">): number {
   if (retryAfterMs !== null) return retryAfterMs;
@@ -608,7 +625,14 @@ async function handleFailure(rt: SyncRuntime, job: SyncJob, connector: Connector
   const message = (error as Error).message;
 
   if (retryable && job.attempts < job.maxAttempts) {
-    const delay = backoffMs(job.attempts, error instanceof RateLimitError ? error.retryAfterMs : null, rt);
+    // FieldRoutes documents no Retry-After header: its limits are per minute and per day, and the
+    // advice is to wait for the next window. Without the header a rate-limited attempt waits at
+    // least a minute; exponential backoff alone spent all five attempts in 30 s, inside the same
+    // minute (audit 2026-11-09, G-5).
+    const delay =
+      error instanceof RateLimitError
+        ? error.retryAfterMs ?? Math.max(RATE_LIMIT_MIN_WAIT_MS, backoffMs(job.attempts, null, rt))
+        : backoffMs(job.attempts, null, rt);
     const next = new Date(rt.now().getTime() + delay);
     const queued = await rt.pool.query(
       `update sync_jobs set state = 'queued', next_attempt_at = $2, stats = $3, last_error = $4, last_error_kind = $5

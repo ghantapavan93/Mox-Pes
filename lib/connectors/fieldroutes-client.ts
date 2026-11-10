@@ -163,7 +163,7 @@ export class FieldRoutesHttpClient implements CrmConnector {
   async search(entity: CrmEntity, filter: SearchFilter): Promise<number[]> {
     const tracking = FIELDROUTES_CHANGE_TRACKING[entity];
     const zone = this.zoneFor(filter.officeId);
-    const window = [instantToWallTime(filter.updatedFrom, zone), instantToWallTime(filter.updatedTo, zone)];
+    const window = wallWindow(filter.updatedFrom, filter.updatedTo, zone);
     const idParam = `${entity}IDs`;
     const all: number[] = [];
     let after = filter.idsAfter ?? null;
@@ -346,4 +346,22 @@ export function parseRetryAfter(value: string | null, now: Date): number | null 
   if (/^\d+$/.test(value.trim())) return Number(value.trim()) * 1000;
   const at = Date.parse(value);
   return Number.isNaN(at) ? null : Math.max(0, at - now.getTime());
+}
+
+/** The zone's UTC offset at an instant, in minutes (wall time read back as if it were UTC). */
+function offsetMinutes(instant: Date, zone: string): number {
+  return Math.round((Date.parse(`${instantToWallTime(instant, zone).replace(" ", "T")}Z`) - instant.getTime()) / MINUTE);
+}
+
+/**
+ * The zone-less wall-time bounds FieldRoutes filters on (BETWEEN, inclusive). When the window
+ * crosses a clock change, wall time is not monotonic: in the repeated autumn hour a record can
+ * sit between two windows' wall bounds and be read by neither (with a 30-minute overlap,
+ * 06:40Z in Chicago reads "01:40", after window 1's "01:20" end and before window 2's "01:50"
+ * start). Such a window is widened by the size of the shift on both sides; reading a little
+ * more is harmless, records are versioned and deduplicated on ingest (audit 2026-11-09, G-4).
+ */
+export function wallWindow(from: Date, to: Date, zone: string): [string, string] {
+  const shift = Math.abs(offsetMinutes(to, zone) - offsetMinutes(from, zone)) * MINUTE;
+  return [instantToWallTime(new Date(from.getTime() - shift), zone), instantToWallTime(new Date(to.getTime() + shift), zone)];
 }

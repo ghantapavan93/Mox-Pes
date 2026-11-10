@@ -4,7 +4,7 @@ import { getNow } from "@/lib/db";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
 import { groundDraft } from "./analyst";
-import { InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
+import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
 import { ACTION_REFUSAL, detectIntent, runDeterministic, type PlanContext } from "./deterministic";
 import { MODEL_ID, anthropicModelClient, costMicros, runModelInvestigator, type ModelClient, type TokenUsage } from "./model";
 import { planProposals } from "./planner";
@@ -67,6 +67,7 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
   const now = input.now ?? (await getNow(pool));
   const client = input.mode === "deterministic" ? null : input.client !== undefined ? input.client : anthropicModelClient();
   let mode: "deterministic" | "model" = client ? "model" : "deterministic";
+  let fallbackReason: string | null = null;
   const actor = input.viewer.role;
 
   const { rows } = await pool.query<{ id: string }>(
@@ -102,6 +103,7 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
           output: null, evidenceIds: [], status: "error", error: run.error, ms: 0,
         });
         mode = "deterministic";
+        fallbackReason = run.error ?? "no findings";
       } else {
         refusal = detected.actionRequest ? ACTION_REFUSAL : null;
       }
@@ -130,7 +132,7 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
     const g = grounded.draft;
     const result = InvestigationResultSchema.parse({
       mode,
-      modeLabel: MODE_LABEL[mode],
+      modeLabel: fallbackReason ? fallbackModeLabel(fallbackReason) : MODE_LABEL[mode],
       intent,
       summary: refusal ? `${refusal} ${g.summary}` : g.summary,
       observations: g.observations,

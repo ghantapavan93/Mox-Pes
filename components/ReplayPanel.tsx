@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { MetricSnapshot, ReplayResult } from "@/lib/ingest/replay";
 
@@ -10,9 +9,14 @@ function Delta({ label, before, after, fmt }: { label: string; before: number | 
   const changed = before !== after;
   return (
     <tr>
-      <td className="py-1 pr-4 text-muted">{label}</td>
+      <th scope="row" className="py-1 pr-4 text-left font-normal text-muted">
+        {label}
+      </th>
       <td className="py-1 pr-4 text-right tabular-nums">{fmt(before)}</td>
-      <td className={`py-1 text-right tabular-nums ${changed ? "font-semibold text-text" : "text-faint"}`}>{fmt(after)}</td>
+      <td className={`py-1 text-right tabular-nums ${changed ? "font-semibold text-text" : "text-faint"}`}>
+        {fmt(after)}
+        <span className="sr-only">{changed ? " (changed)" : " (unchanged)"}</span>
+      </td>
     </tr>
   );
 }
@@ -23,9 +27,9 @@ function Snapshot({ before, after }: { before: MetricSnapshot; after: MetricSnap
     <table className="mt-2 text-sm">
       <thead>
         <tr className="text-[11px] uppercase text-faint">
-          <th className="pr-4 text-left font-medium">{before.branchIds.join(", ") || "scope"} · whole period</th>
-          <th className="pr-4 text-right font-medium">Before</th>
-          <th className="text-right font-medium">After</th>
+          <th scope="col" className="pr-4 text-left font-medium">{before.branchIds.join(", ") || "scope"} · whole period</th>
+          <th scope="col" className="pr-4 text-right font-medium">Before</th>
+          <th scope="col" className="text-right font-medium">After</th>
         </tr>
       </thead>
       <tbody>
@@ -47,12 +51,16 @@ function Snapshot({ before, after }: { before: MetricSnapshot; after: MetricSnap
   );
 }
 
+/**
+ * A preview of the legacy replay / re-map for one exception: a dry run in a transaction that
+ * is rolled back. Nothing is committed from here; the fix itself goes through the Action
+ * Center (propose → dry run → approve → execute).
+ */
 export function ReplayPanel({
   exceptionId,
   source,
   versions,
   defaultVersion,
-  records,
   lastReplay,
   verb = "Replay",
 }: {
@@ -60,44 +68,36 @@ export function ReplayPanel({
   source: string;
   versions: string[];
   defaultVersion: string;
+  /** Records the fix would touch (shown by the page; the panel no longer commits). */
   records: number;
   /** The committed replay that resolved this group, if any — survives page reloads. */
   lastReplay?: ReplayResult | null;
   /** "Replay" retries held records; "Re-map" re-classifies stored ones. */
   verb?: "Replay" | "Re-map";
 }) {
-  const router = useRouter();
   const [version, setVersion] = useState(defaultVersion);
-  // Re-sending the committed request reuses its key (and is a no-op). Any new work gets a new
-  // key, created in the browser on first send: a key minted during server rendering would
-  // differ from the one the browser hydrates with.
-  const [key, setKey] = useState<string | null>(() => (lastReplay && records === 0 ? lastReplay.idempotencyKey : null));
-  const send = () => {
-    const k = key ?? crypto.randomUUID();
-    setKey(k);
-    void call(false, k);
-  };
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ReplayResult | null>(lastReplay ?? null);
   const [error, setError] = useState<string | null>(null);
 
-  async function call(dryRun: boolean, idempotencyKey: string) {
-    setBusy(dryRun ? "dry" : "real");
+  async function dryRun() {
+    // aria-disabled keeps the button focusable while busy, so a second activation is ignored here.
+    if (busy) return;
+    setBusy(true);
     setError(null);
     try {
       const res = await fetch("/api/replays", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ exceptionId, mapperVersion: version, dryRun, idempotencyKey }),
+        body: JSON.stringify({ exceptionId, mapperVersion: version, dryRun: true, idempotencyKey: crypto.randomUUID() }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
       setResult(body as ReplayResult);
-      if (!dryRun) router.refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   }
 
@@ -115,17 +115,18 @@ export function ReplayPanel({
             ))}
           </select>
         </label>
-        <button type="button" disabled={!!busy} onClick={() => call(true, crypto.randomUUID())} className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 disabled:opacity-50">
-          {busy === "dry" ? "Running…" : "Dry run (rolled back)"}
-        </button>
-        <button type="button" disabled={!!busy} onClick={send} className="rounded bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90 disabled:opacity-50">
-          {busy === "real" ? "Working…" : lastReplay && records === 0 ? "Send the same request again" : `${verb} ${records} record${records === 1 ? "" : "s"}`}
-        </button>
-        <button type="button" disabled={!!busy} onClick={() => setKey(crypto.randomUUID())} className="text-xs text-accent hover:underline disabled:opacity-50">
-          new request key
+        <button
+          type="button"
+          aria-disabled={busy || undefined}
+          onClick={() => void dryRun()}
+          className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+        >
+          {busy ? "Running…" : "Dry run (rolled back)"}
         </button>
       </div>
-      <p className="font-mono text-[11px] text-faint">Idempotency-Key: {key ?? "assigned on first send"}</p>
+      <p className="text-xs text-muted" data-testid="replay-preview-note">
+        Preview only. To apply it, propose the fix in the Action Center below — an approver in another role must approve it before the application executes it.
+      </p>
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
       {result && (
         <div className="rounded border border-border bg-surface-2 p-3 text-sm" data-testid="replay-result" aria-live="polite">

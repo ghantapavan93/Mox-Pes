@@ -2,9 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { METRICS } from "@/lib/metrics/definitions";
 
-export function Card({ title, subtitle, action, children, className = "" }: { title?: ReactNode; subtitle?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({ title, subtitle, action, children, className = "", id }: { title?: ReactNode; subtitle?: ReactNode; action?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
-    <section className={`rounded-lg border border-border bg-surface ${className}`}>
+    <section id={id} className={`scroll-mt-16 rounded-lg border border-border bg-surface ${className}`}>
       {(title || action) && (
         <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
           <div>
@@ -102,10 +102,12 @@ export function PeriodTabs({ current, base, extra = "" }: { current: string; bas
 
 export function Skeleton({ lines = 6 }: { lines?: number }) {
   return (
-    <div className="animate-pulse space-y-3" aria-busy="true" aria-label="Loading">
+    <div className="animate-pulse space-y-3" role="status" aria-busy="true">
       {Array.from({ length: lines }, (_, i) => (
-        <div key={i} className="h-10 rounded bg-surface-2" />
+        <div key={i} aria-hidden className="h-10 rounded bg-surface-2" />
       ))}
+      {/* Last child: space-y margins then leave the placeholder bars where they were. */}
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }

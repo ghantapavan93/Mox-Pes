@@ -20,7 +20,8 @@
     "export:changeguard": "tsx scripts/export-changeguard.ts",
     "worker": "tsx scripts/worker.ts",
     "eval:ai": "tsx scripts/eval-ai.ts",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "audit:report": "tsx scripts/audit-report.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

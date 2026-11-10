@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { getNow } from "@/lib/db";
+import { demoModeEnabled } from "@/lib/demo-mode";
 import { createMockFieldRoutes, dbFaultStore } from "@/lib/connectors/mock-fieldroutes";
 import { generateWorld, type SourceRecordVersion } from "@/lib/sim/world";
 import { getPool } from "@/lib/server";
@@ -27,6 +28,8 @@ function handler(): (request: Request) => Promise<Response> {
 
 async function serve(request: Request): Promise<Response> {
   await connection();
+  // The mock serves every office's synthetic records unscoped: demo mode only (lib/demo-mode.ts).
+  if (!demoModeEnabled()) return new Response("Not found", { status: 404 });
   return handler()(request);
 }
 

@@ -1,6 +1,11 @@
+import { useId } from "react";
 import type { WeekPoint } from "@/lib/queries";
 
-/** Small-multiple weekly bars. Values are computed from WeekPoint; nothing is stored. */
+/**
+ * Small-multiple weekly bars. Values are computed from WeekPoint; nothing is stored.
+ * The chart is one image to assistive tech; its per-week values are in a visually hidden
+ * table that the image references with aria-describedby.
+ */
 export function WeeklyBars({
   points,
   value,
@@ -17,10 +22,11 @@ export function WeeklyBars({
   const values = points.map(value);
   const max = Math.max(...values.map((v) => v ?? 0), reference?.value ?? 0, 1);
   const w = 100 / points.length;
+  const tableId = `${useId()}-data`;
   return (
     <figure>
       <figcaption className="mb-2 text-xs font-medium text-muted">{label}</figcaption>
-      <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-32 w-full" role="img" aria-label={label}>
+      <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-32 w-full" role="img" aria-label={label} aria-describedby={tableId}>
         {values.map((v, i) =>
           v === null ? null : (
             <rect key={points[i].weekStart} x={i * w + w * 0.15} width={w * 0.7} y={40 - (v / max) * 38} height={(v / max) * 38} className="fill-accent/70">
@@ -37,6 +43,27 @@ export function WeeklyBars({
         {reference && <span className="text-bad">– – {reference.label}</span>}
         <span>{points[points.length - 1]?.weekStart}</span>
       </div>
+      <table id={tableId} className="sr-only" data-testid="weekly-bars-data">
+        <caption>{label}, by week</caption>
+        <thead>
+          <tr>
+            <th scope="col">Week of</th>
+            <th scope="col">{label}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {points.map((p, i) => {
+            const v = values[i];
+            return (
+              <tr key={p.weekStart}>
+                <th scope="row">{p.weekStart}</th>
+                <td>{v === null ? "no data" : format(v)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {reference && <p className="sr-only">{`Reference line: ${reference.label}, ${format(reference.value)}.`}</p>}
     </figure>
   );
 }

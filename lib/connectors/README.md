@@ -57,10 +57,10 @@ world. Nothing here has called, or is authorized to call, a real FieldRoutes ten
 | A standard key's `officeIDs` filter is forced to its office | documented; omitting other offices' records from `get` is inferred |
 | Records for another office in a response are rejected, never stored | our policy |
 | 60 reads/min and 3,000/day per key; 429 over the limit | documented |
-| `Retry-After` on 429 | **mock only** — not documented; the client falls back to backoff without it |
+| `Retry-After` on 429 | **mock only** — not documented; without it a rate-limited job waits at least 60 s (the shortest documented window), never just the exponential backoff (audit 2026-11-09, G-5) |
 | Rolling-minute and calendar-day windows in the mock | inferred |
 | Payments swept by `date` over 35 days | inferred (current docs add a payment `dateUpdated`; legacy spec has none) |
-| Window bounds sent as wall time in `wireTimeZone` (`office` for the mock) | documented: real datetimes are Pacific time — see G1 |
+| Window bounds sent as wall time in `wireTimeZone` (`office` for the mock) | documented: real datetimes are Pacific time — see G1. Only `office` is accepted until the mapper uses the same zone (G-6). A window that crosses a clock change is widened by the shift on both sides, so no record falls between two windows in the repeated hour (G-4). |
 | Lexical comparison of `YYYY-MM-DD HH:MM:SS` filters, date-only bound compares the date part | inferred |
 | Expired key fault answers 403 (the task brief said 401; the docs say 403 for expired) | documented |
 | Fault injection, demo keys, the world-backed snapshot | mock only |
@@ -71,8 +71,8 @@ The mapper (lib/adapters/crm-fieldroutes.ts, not owned by this module) and the s
 agree with each other, so the demo is consistent. Against the October 2026 docs they differ; each
 is labelled `deviation` in the mapping inspector. Before a real tenant:
 
-- G1 datetimes are Pacific time, not office-local (set `wireTimeZone: "America/Los_Angeles"` and
-  convert in the mapper with the same zone);
+- G1 datetimes are Pacific time, not office-local (the mapper must convert with the connector's
+  zone; until then the config refuses any `wireTimeZone` but `office`);
 - G2 negative `officeID` (soft-deleted customer) and `subscriptionID = -1` (stand-alone visit);
 - G3 appointment response field is `isInitial` (`salesAnchor` is the filter name);
 - G4 regular invoices are `templateType = NA`;
@@ -83,9 +83,15 @@ is labelled `deviation` in the mapping inspector. Before a real tenant:
 ## Not built (yet)
 
 - Tombstones: a record missing from search is not deleted downstream (by design); periodic
-  full-id-set diffs to detect hard deletes and merges are not implemented.
-- Reconciliation does not run after a sync; exceptions for newly quarantined records appear on the
-  next reconcile run.
+  full-id-set diffs to detect hard deletes and merges are not implemented. Soft-deleted customers
+  (negative `officeID`) drop out of office-scoped searches, so the client's negative-office check
+  never sees them (audit 2026-11-09, G-7: open).
+- Late payment status changes (void, dispute, ACH return) on payments older than the 35-day `date`
+  sweep are missed (G-8: open; needs the payment `dateUpdated` confirmed on a real tenant).
+- In the repeated autumn hour a wall time maps to the earlier instant, so a genuinely newer version
+  can look older and be refused as stale (open; FieldRoutes sends no offset to disambiguate).
+- Reconciliation runs after a sync through the domain-event dispatch at the end of the drain
+  (lib/jobs/kick.ts), not inside the sync job.
 - The mock world is generated on first use (~15–20 s, blocking the dev server once); the first
   attempts of the first sync typically time out and recover on retry, which the trace shows.
 - Global keys and key groups are described but not modelled in the mock.

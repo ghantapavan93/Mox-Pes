@@ -1,0 +1,1064 @@
+{
+  "generatedAt": "2026-11-10T06:25:24.205Z",
+  "commit": "208c98ad65ace20058c1d190528d1b56bbb7282b",
+  "workingTreeDirty": true,
+  "node": "v22.14.0",
+  "commands": [
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "rc": 0,
+      "seconds": 10
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "rc": 0,
+      "seconds": 18
+    },
+    {
+      "name": "vitest",
+      "command": "npx vitest run --reporter=default --reporter=json --outputFile.json=\"C:\\Temp\\rso-final\\docs\\audit\\2026-11-09\\vitest-results.json\"",
+      "rc": 0,
+      "seconds": 338
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "rc": 0,
+      "seconds": 24
+    },
+    {
+      "name": "playwright",
+      "command": "npx playwright test --reporter=list,json",
+      "rc": 0,
+      "seconds": 460
+    }
+  ],
+  "tests": {
+    "vitest": {
+      "total": 294,
+      "passed": 294,
+      "failed": 0,
+      "skipped": 0
+    },
+    "playwright": {
+      "total": 36,
+      "passed": 35,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "findings": {
+    "total": 39,
+    "byStatus": {
+      "fixed": 31,
+      "documented": 2,
+      "refuted": 1,
+      "open": 3,
+      "fixed_untested": 2
+    },
+    "items": [
+      {
+        "id": "A-1",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "A re-observed version that changes live rows published no event",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "audit 2026-11-09, A-1",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "A-4",
+        "severity": "low",
+        "status": "fixed",
+        "title": "A direct lead-branch override never woke the identity consumer",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "audit 2026-11-09, A-4",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "B-2",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "drainJobs dropped a kick that arrived during its final dispatch",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "B-2: a kick that arrives while the drain dispatches events is not lost",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "B-3",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "The drain spun every 50 ms for up to 10 minutes on a job another process's stream blocked",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "B-3: a due job whose stream another process is running does not keep the drain spinning",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "B-5",
+        "severity": "low",
+        "status": "fixed",
+        "title": "A sync request that only reused queued jobs was not idempotent by its key",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "audit 2026-11-09, B-5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-1",
+        "severity": "high",
+        "status": "fixed",
+        "title": "Unmapped spend could never block a budget signal",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/scenario.test.ts",
+            "name": "audit 2026-11-09, D-1",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-2",
+        "severity": "medium",
+        "status": "documented",
+        "title": "Branch paid CAC: spend and customers use different branch keys",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "D-3",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Paid CAC denominator included customers whose spend the numerator excludes",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "audit 2026-11-09, D-3",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-4",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Payload conflicts had no branch and no customer",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "audit 2026-11-09, D-4",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-5",
+        "severity": "low",
+        "status": "fixed",
+        "title": "channel_conflict fired for any non-D2D first touch, not only a paid one",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "audit 2026-11-09, D-5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-6",
+        "severity": "low",
+        "status": "refuted",
+        "title": "Coverage-gap reference date is global, not per feed",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "D-7",
+        "severity": "low",
+        "status": "fixed",
+        "title": "reporting.fact_acquisitions_v1 grain mislabelled as acquired customers",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "publishes exactly the pinned views",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "facts agree with the app's own metrics",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "D-8",
+        "severity": "low",
+        "status": "fixed",
+        "title": "Two stopped campaigns in one ad account doubled the coverage-gap amount",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/changeguard.test.ts",
+            "name": "two stopped campaigns in one ad account do not double the successor's spend",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "E-3",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "POST /api/role worked in any production build",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/demo-mode.test.ts",
+            "name": "POST /api/role refuses in a production build",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/unit/demo-mode.test.ts",
+            "name": "is on in development and tests",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "E-6",
+        "severity": "low",
+        "status": "fixed",
+        "title": "The incident page named the branch of an out-of-scope exception",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "an out-of-scope incident reads as missing",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "E-7",
+        "severity": "low",
+        "status": "fixed",
+        "title": "The FieldRoutes mock served every office unscoped in any build",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/demo-mode.test.ts",
+            "name": "the FieldRoutes mock is not served by a production build",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "F-1",
+        "severity": "high",
+        "status": "fixed",
+        "title": "Cancelled plans were planned as Data Manager retractions, which Data Manager does not support",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "a cancelled plan is suppressed",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "F-2",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "'Not matchable: no click id' was false",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "a row without a gclid is labelled as not built",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "F-3",
+        "severity": "low",
+        "status": "documented",
+        "title": "Click age measured from the lead time with a hard-coded 90 days",
+        "verified": null,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "a row without a gclid is labelled as not built",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "G-4",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "A 30-minute overlap lost records across the autumn clock change",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/fieldroutes-window.test.ts",
+            "name": "a record in the repeated hour is read by one of two overlapping windows",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/unit/fieldroutes-window.test.ts",
+            "name": "every minute of the transition day is inside some window",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "G-5",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Rate-limit retries gave up inside the same minute when no Retry-After was sent",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "audit 2026-11-09, G-5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "G-6",
+        "severity": "high",
+        "status": "fixed",
+        "title": "A non-office wire time zone changed the search windows but not the mapper",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/connector-config.test.ts",
+            "name": "refuses a wire time zone the mapper does not use",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "G-7",
+        "severity": "medium",
+        "status": "open",
+        "title": "Deletes and merges are never detected",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "G-8",
+        "severity": "low",
+        "status": "open",
+        "title": "Late payment status changes older than the 35-day sweep are missed",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "I-1",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Record keys could close the <tool_output> delimiter",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/ai-injection.test.ts",
+            "name": "escapes warning paths too",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "I-2",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "A failed model run was labelled 'no model configured'",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/ai-investigator.test.ts",
+            "name": "a model that never submits hits the turn budget",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "I-4",
+        "severity": "low",
+        "status": "fixed",
+        "title": "getSourceLineage 'versions' leaked other branches' raw-event ids into grounding",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/ai-investigator.test.ts",
+            "name": "audit 2026-11-09, I-4",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "I-5",
+        "severity": "low",
+        "status": "fixed",
+        "title": "compareMappingVersions confirmed an out-of-scope raw event's existence and source",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/ai-investigator.test.ts",
+            "name": "audit 2026-11-09, I-5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-1",
+        "severity": "high",
+        "status": "fixed",
+        "title": "An engineer could re-map or replay with no approval, from the incident page",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "the panel cannot commit",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "it applies only through approval",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-2",
+        "severity": "high",
+        "status": "fixed",
+        "title": "The ChangeGuard demo script walked the bypass path and quoted unasserted numbers",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/zz-b09-four-minute-path.spec.ts",
+            "name": "B09 golden path",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-3",
+        "severity": "medium",
+        "status": "fixed_untested",
+        "title": "scripts/screenshots.ts targeted a removed test id and never closed the browser",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "J-4",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "A customers page past the end reported zero customers",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/z-a11y-regressions.spec.ts",
+            "name": "a customers page past the end says so",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-5",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "The Action Center queue silently stopped at 200 rows",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/action-center.test.ts",
+            "name": "audit 2026-11-09, J5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-6",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Audit subject links matched by prefix; the log had no paging",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/audit-subject.test.ts",
+            "name": "an id-bearing subject matches exactly",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/unit/audit-subject.test.ts",
+            "name": "LIKE metacharacters",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-7",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Query parameters accepted built-in object keys (?period=toString crashed the page)",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/period.test.ts",
+            "name": "",
+            "matched": 8,
+            "passed": 8,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-8..J-13",
+        "severity": "medium",
+        "status": "fixed",
+        "title": "Accessibility: status/focus lost after Execute, focus dropped by disabled busy controls, command menu not a combobox, chart data hidden, diff tables without row headers, skeletons not announced",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/z-a11y-regressions.spec.ts",
+            "name": "",
+            "matched": 6,
+            "passed": 6,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "J-14",
+        "severity": "low",
+        "status": "fixed",
+        "title": "Three e2e reliability risks (60 s wait = test timeout, positional selector, search-cap order dependence)",
+        "verified": true,
+        "tests": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/os-golden-path.spec.ts",
+            "name": "Investigate opens the AI investigator",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/os-modules.spec.ts",
+            "name": "",
+            "matched": 7,
+            "passed": 7,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "id": "O-1",
+        "severity": "info",
+        "status": "open",
+        "title": "Reseeding while the server dispatches events logs 'relation domain_events does not exist'",
+        "verified": null,
+        "tests": []
+      },
+      {
+        "id": "O-2",
+        "severity": "low",
+        "status": "fixed_untested",
+        "title": "Channel rows tied on customer count came back in a different order between runs",
+        "verified": null,
+        "tests": []
+      }
+    ]
+  },
+  "claims": {
+    "safe": 12,
+    "unsafe": 9,
+    "items": [
+      {
+        "claim": "Ingestion is exactly-once: a record version is stored once however often it is delivered, and a re-observed version that changes live rows still wakes reconciliation.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/invariants.test.ts",
+            "name": "delivering the same batch three times changes nothing after the first",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "audit 2026-11-09, A-1",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "Sync workers are fenced: a worker that lost its claim cannot overwrite another's results, a request key is idempotent, and a kick is never lost.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "audit 2026-11-09, B-5",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "B-2: a kick that arrives while the drain dispatches events is not lost",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "enqueue is idempotent by key",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "Domain events use a transactional outbox with snapshot coverage: a late-committing change is never lost, and a burst of batches costs one recomputation.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "an event whose transaction commits after a run started is not covered by that run",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/domain-model.test.ts",
+            "name": "a consumer runs only for changes its last run did not see",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "No stored record changes without propose → rolled-back dry run → approval by another role → one verified execution; the legacy replay API refuses commits.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "the panel cannot commit",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/zz-b09-four-minute-path.spec.ts",
+            "name": "B09 golden path",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "A fix is verified against the ledger: ad spend, raw events, CRM customers, invoiced and collected are conserved, and re-executing returns the stored result.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/zz-b09-four-minute-path.spec.ts",
+            "name": "B09 golden path",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "Budget signals refuse to rank channels on broken data, including unmapped spend that produced a branch's customers.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/scenario.test.ts",
+            "name": "audit 2026-11-09, D-1",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/changeguard.test.ts",
+            "name": "blocks the budget signal while open",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "Collected revenue in the seeded scenario equals the generated payment ground truth to the cent.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/scenario.test.ts",
+            "name": "collected revenue equals the generated payment ground truth to the cent",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "Branch and brand scope is enforced on the server for every read and write, and an out-of-scope id reads as missing.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "a branch partner cannot read another branch",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/golden-path.spec.ts",
+            "name": "an out-of-scope incident reads as missing",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/ai-investigator.test.ts",
+            "name": "a branch partner cannot fetch another branch through any tool",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "The AI investigator cannot write SQL or act: fixed tools with strict schemas, every citation must come from this run's tool output, record text is delimited as data, and it can only create proposals that still need a dry run and approval.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/ai-injection.test.ts",
+            "name": "",
+            "matched": 5,
+            "passed": 5,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/unit/ai-grounding.test.ts",
+            "name": "",
+            "matched": 5,
+            "passed": 5,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/integration/ai-investigator.test.ts",
+            "name": "",
+            "matched": 16,
+            "passed": 16,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "A production build is not a demo: without DEMO_MODE=1 the role cookie is ignored and the role picker and CRM mock are off.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/unit/demo-mode.test.ts",
+            "name": "",
+            "matched": 4,
+            "passed": 4,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "The FieldRoutes client follows the documented search → get pattern: 50k search paging, ≤1,000-record gets, office-scoped, fails loudly on ignored filters, and survives the autumn clock change.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "vitest",
+            "file": "tests/integration/connectors.test.ts",
+            "name": "pages searches at the cap and batches gets at the limit",
+            "matched": 1,
+            "passed": 1,
+            "ok": true
+          },
+          {
+            "runner": "vitest",
+            "file": "tests/unit/fieldroutes-window.test.ts",
+            "name": "",
+            "matched": 3,
+            "passed": 3,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "The four-minute B09 path reproduces on every fresh seed, and every number it quotes is asserted in the browser.",
+        "safe": true,
+        "supported": true,
+        "why": null,
+        "evidence": [
+          {
+            "runner": "playwright",
+            "file": "tests/e2e/zz-b09-four-minute-path.spec.ts",
+            "name": "",
+            "matched": 2,
+            "passed": 2,
+            "ok": true
+          }
+        ]
+      },
+      {
+        "claim": "It has been run against a real FieldRoutes tenant, CallRail account or Google Ads account.",
+        "safe": false,
+        "supported": null,
+        "why": "Never. Only the in-repo mock and synthetic world; no credentials were used.",
+        "evidence": []
+      },
+      {
+        "claim": "The FieldRoutes connector is production-ready.",
+        "safe": false,
+        "supported": null,
+        "why": "Mapper deviations G1–G10 are open (Pacific-time datetimes, isInitial, templateType, payment applications); deletes/merges (G-7) and late payment changes (G-8) are not detected; the repeated-hour stale-version case is open.",
+        "evidence": []
+      },
+      {
+        "claim": "It sends conversions to Google, or retracts cancelled ones.",
+        "safe": false,
+        "supported": null,
+        "why": "Dry run only; no network code. Data Manager cannot retract; cancelled plans are simply not sent. Enhanced conversions for leads, gbraid/wbraid and consent are not implemented.",
+        "evidence": []
+      },
+      {
+        "claim": "It respects Google's click window.",
+        "safe": false,
+        "supported": null,
+        "why": "Approximated from the lead time with a fixed 90 days (F-3).",
+        "evidence": []
+      },
+      {
+        "claim": "The AI investigator was evaluated with a real model.",
+        "safe": false,
+        "supported": null,
+        "why": "The model path is tested with a scripted client; the deterministic investigator is what ran. No API key was used.",
+        "evidence": []
+      },
+      {
+        "claim": "It has authentication.",
+        "safe": false,
+        "supported": null,
+        "why": "Demo roles without passwords, server-enforced; production needs SSO claims (ADR-11, ADR-20).",
+        "evidence": []
+      },
+      {
+        "claim": "CI passes on GitHub.",
+        "safe": false,
+        "supported": null,
+        "why": "No GitHub Actions run has been observed for the repository; the CI workflow has only been reproduced locally.",
+        "evidence": []
+      },
+      {
+        "claim": "Branch CAC is unambiguous.",
+        "safe": false,
+        "supported": null,
+        "why": "Spend follows the marketing branch, customers the servicing office (D-2, documented, not resolved).",
+        "evidence": []
+      },
+      {
+        "claim": "Moxie has this problem / uses Local Services Ads / any number here is Moxie's.",
+        "safe": false,
+        "supported": null,
+        "why": "All data is synthetic; the problem is a hypothesis from public signals.",
+        "evidence": []
+      }
+    ]
+  },
+  "failedTests": [],
+  "violations": [],
+  "ok": true
+}

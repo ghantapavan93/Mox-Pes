@@ -27,9 +27,11 @@ and proves the number changed — on synthetic data shaped like FieldRoutes and 
 5. **Engineer → Dry run.** Whole-period for B20: paid CAC **$365 → $284**, paid customers **88 → 113**,
    unknown **64 → 34**, total customers **246 → 246**, spend unchanged, Google-reportable conversions
    **45 → 51**. "Nothing saved — it ran in a transaction that rolled back."
-6. **Replay.** Resolves. Open exceptions for B20 go **up**, 3 → 5: "Three customers were signed by a
-   door-to-door rep after a paid call. While the calls were held, that conflict was invisible. The fix
-   surfaced it." **Send the same request again** → "Already processed".
+6. **Approve and execute.** Propose the replay in the Action Center (the replay panel only
+   previews), switch to approver, approve with a reason, execute. Resolves. Open exceptions for B20
+   go **up**, 3 → 5: "Three customers were signed by a door-to-door rep after a paid call. While the
+   calls were held, that conflict was invisible. The fix surfaced it." **Execute again** → the stored
+   result; nothing runs twice.
 7. Close: "Spend didn't change. Revenue didn't change. What changed is that we now know where it came
    from — and Google gets the right conversions back."
 
@@ -53,21 +55,26 @@ and proves the number changed — on synthetic data shaped like FieldRoutes and 
 - Performance: the 33-second query and the fix (docs/testing.md).
 - What production would change: read the lake instead of ingesting; incremental detection; SSO.
 
-## ChangeGuard, 90 seconds (only if the conversation turns to marketing data or Google changes)
+## The four-minute B09 path (ChangeGuard)
 
-Say first: "Google's change is real. The failure is one I engineered. I don't know that you run Local
-Services Ads."
+Open **/demo** on a fresh seed and press **Start the path**. A bar at the top of every step names the
+step, its time slot, the role to use (with a button that switches to it), what to show and the one
+sentence to say. Say first: "Google's change is real. The failure is one I engineered. I don't know
+that you run Local Services Ads."
 
-1. **B09 branch page.** Budget signal: Search costs **8.6×** Local Services per customer. Marked
-   **not trustworthy yet**. "The branch total looks normal. The money moved between channels."
-2. **Incident.** Local Services spend stopped after Oct 12; **45** Local Services leads kept arriving;
-   a new campaign appeared in the same ad account, typed `PERFORMANCE_MAX` with local services on.
-   `ads@1.0` filed **$2,124** of it as Search. "Nothing failed. The meaning was wrong."
-3. **Engineer → Dry run → Re-map 22 records.** Search spend down, Local Services up, by the same
-   amount. Company spend, customers, invoices, payments unchanged. Signal now **2.9×**, sound.
-   Send again → stored result.
-4. Close: "When Google re-typed Local Services campaigns, did your channel reports notice, and who
-   would have?"
+| # | Step | Time | Role | Show (numbers asserted by the browser test) |
+|---|---|---|---|---|
+| 1 | Overview | 0:00–0:30 | marketing | Decision holds: B09, Channel imbalance |
+| 2 | Incident | 0:30–0:55 | marketing | "Google Local Services spend at B09 stopped…": nothing failed validation |
+| 3 | Evidence | 0:55–1:30 | marketing | Spend affected **$2,124**; **45** Local Services leads after the gap; lineage LSA → `PERFORMANCE_MAX`; signal **8.6×**, not trustworthy yet |
+| 4 | Dry run | 1:30–2:15 | engineer | Propose Re-map channel (`ads@1.1`), dry run: 5 ledger rows conserved, signal still blocked |
+| 5 | Approval | 2:15–2:40 | approver | Another role approves this exact dry run; self-approval is refused (403) |
+| 6 | Verified correction | 2:40–3:10 | approver | Execute once: claimed **22** · projected **22**; ledger conserved; exception resolved; execute again = stored result |
+| 7 | Decision readiness | 3:10–3:40 | marketing | Signal **2.9×**, "Data integrity: no blocking incidents"; Decision Lab no longer blocked |
+| 8 | Audit | 3:40–4:00 | approver | proposal_create / dry_run by engineer, approve by approver, execute by the application on behalf of approver |
+
+Close: "When Google re-typed Local Services campaigns, did your channel reports notice, and who
+would have?" The path runs once per seed (step 6 changes data); `/demo` says when to reseed.
 
 ## Likely questions
 

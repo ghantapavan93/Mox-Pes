@@ -10,13 +10,20 @@ import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, VIEWERS, resolveScope } from "@/lib/viewer";
 import { KIND_TITLE } from "@/lib/workflow/kinds";
 import { OWNER_ROLES } from "@/lib/workflow/proposals";
-import { caseStateCounts, exceptionsWithoutCase, listQueue, type StateFilter } from "@/lib/workflow/queries";
+import { caseStateCounts, countQueue, exceptionsWithoutCase, listQueue, type StateFilter } from "@/lib/workflow/queries";
 import { ACTIVE_STATES, CASE_STATES, CLOSED_STATES, STATE_LABEL, STATE_TONE, isCaseState } from "@/lib/workflow/states";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
 
 const SEVERITIES = ["high", "medium", "low"] as const;
+const PAGE_SIZE = 50;
+
+/** `?page=` as a positive integer; anything else is page 1. */
+function parsePage(value: string | undefined): number {
+  if (!value || !/^\d{1,6}$/.test(value)) return 1;
+  return Math.max(1, Number(value));
+}
 
 export default function ActionCenterPage({ searchParams }: { searchParams: SearchParams }) {
   return (
@@ -38,10 +45,13 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
   const rawState = one(sp.state);
   const state: StateFilter = rawState && (isCaseState(rawState) || ["active", "closed", "all"].includes(rawState)) ? (rawState as StateFilter) : "active";
   const severity = SEVERITIES.find((s) => s === one(sp.severity));
-  const kind = one(sp.kind) && one(sp.kind)! in KIND_LABEL ? one(sp.kind) : undefined;
+  const rawKind = one(sp.kind);
+  // Own keys only: `in` would accept inherited names such as "toString".
+  const kind = rawKind && Object.hasOwn(KIND_LABEL, rawKind) ? rawKind : undefined;
   const ownerParam = one(sp.owner);
   const owner = ownerParam === "unassigned" || OWNER_ROLES.some((r) => r === ownerParam) ? ownerParam : undefined;
   const branch = one(sp.branch);
+  const page = parsePage(one(sp.page));
   let branchIds: string[] | null;
   try {
     branchIds = resolveScope(viewer, branch ?? null);
@@ -51,9 +61,11 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
   }
 
   const pool = getPool();
-  const [counts, rows, lane, summary, uncased] = await Promise.all([
+  const queueFilters = { branchIds, state, severity, kind, owner };
+  const [counts, rows, queueTotal, lane, summary, uncased] = await Promise.all([
     caseStateCounts(pool, branchIds),
-    listQueue(pool, { branchIds, state, severity, kind, owner }),
+    listQueue(pool, { ...queueFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    countQueue(pool, queueFilters),
     listQueue(pool, { branchIds, state: "awaiting_approval", limit: 12 }),
     exceptionSummary(pool, branchIds),
     exceptionsWithoutCase(pool, branchIds),
@@ -67,6 +79,10 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
   };
   const total = (states: readonly string[]) => states.reduce((n, s) => n + (counts[s as keyof typeof counts] ?? 0), 0);
   const branchOptions = viewer.branchIds ? BRANCHES.filter((b) => viewer.branchIds!.includes(b.id)) : BRANCHES;
+  const lastPage = Math.max(1, Math.ceil(queueTotal / PAGE_SIZE));
+  const firstShown = (page - 1) * PAGE_SIZE + 1;
+  const lastShown = firstShown + rows.length - 1;
+  const pageHref = (n: number) => href({ page: n > 1 ? String(n) : undefined });
   const stateTitle = state === "active" ? "Active cases" : state === "closed" ? "Closed cases" : state === "all" ? "All cases" : STATE_LABEL[state];
 
   return (
@@ -139,7 +155,7 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
       </div>
 
       <Card
-        title={`${stateTitle}${kind ? ` · ${KIND_LABEL[kind]}` : ""}${branchIds ? ` · ${branchIds.join(", ")}` : ""} (${count(rows.length)})`}
+        title={`${stateTitle}${kind ? ` · ${KIND_LABEL[kind]}` : ""}${branchIds ? ` · ${branchIds.join(", ")}` : ""} (${count(queueTotal)})`}
         action={
           <form method="get" action="/exceptions" className="flex flex-wrap items-end gap-2 text-xs" aria-label="Filter cases">
             <Select name="state" label="State" value={state} options={[["active", "Active"], ...CASE_STATES.map((s) => [s, STATE_LABEL[s]] as [string, string]), ["closed", "All closed"], ["all", "All"]]} />
@@ -156,7 +172,47 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
           </form>
         }
       >
-        <CaseQueue rows={rows} empty="No cases match these filters in your scope." />
+        {rows.length === 0 && queueTotal > 0 ? (
+          <p className="text-sm text-muted" data-testid="queue-past-end">
+            Page {count(page)} is past the last page of these cases.{" "}
+            <Link href={pageHref(lastPage)} className="text-accent hover:underline">
+              Go to page {count(lastPage)}
+            </Link>
+            .
+          </p>
+        ) : (
+          <CaseQueue rows={rows} empty="No cases match these filters in your scope." />
+        )}
+        {queueTotal > 0 && rows.length > 0 && (
+          <nav aria-label="Case queue pages" className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted" data-testid="queue-pagination">
+            <span>
+              Showing {count(firstShown)}–{count(lastShown)} of {count(queueTotal)}
+            </span>
+            <span className="flex gap-2">
+              {page > 1 ? (
+                <Link href={pageHref(page - 1)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
+                  ← Previous
+                </Link>
+              ) : (
+                <span className="rounded border border-border px-2 py-1 text-faint" aria-disabled="true">
+                  ← Previous
+                </span>
+              )}
+              <span className="px-1 py-1">
+                page {count(page)} of {count(lastPage)}
+              </span>
+              {page < lastPage ? (
+                <Link href={pageHref(page + 1)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
+                  Next →
+                </Link>
+              ) : (
+                <span className="rounded border border-border px-2 py-1 text-faint" aria-disabled="true">
+                  Next →
+                </span>
+              )}
+            </span>
+          </nav>
+        )}
       </Card>
     </div>
   );

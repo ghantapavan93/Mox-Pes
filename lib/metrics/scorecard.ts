@@ -87,7 +87,12 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
        where a.sold_at >= p.t0 and a.sold_at < p.t1 group by 1),
      acq as (
        select a.branch_id, count(*) as acquired,
-              count(*) filter (where ch.is_paid) as paid_acquired,
+              -- Paid MEDIA customers whose spend the numerator can see: the CAC denominator.
+              -- Sponsorship is paid but not media spend; a customer credited to a campaign no branch
+              -- is mapped to has its cost in unallocated spend, not here (audit 2026-11-09, D-3).
+              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
+                and not exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
+                                  and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id))) as paid_acquired,
               count(*) filter (where a.channel_code = 'unknown') as unknown_acquired,
               count(*) filter (where a.channel_conflict) as conflicts,
               coalesce(sum(r.collected_cents), 0) as new_collected,
@@ -266,7 +271,8 @@ export async function channelRows(db: Queryable, scope: Scope): Promise<ChannelR
      left join spend on spend.channel_code = ch.code
      left join pros on pros.channel_code = ch.code
      left join acq on acq.channel_code = ch.code
-     order by ch.is_paid desc, coalesce(acq.acquired, 0) desc`,
+     -- ch.code last: ties sort the same on every run (audit 2026-11-09)
+     order by ch.is_paid desc, coalesce(acq.acquired, 0) desc, ch.code`,
     scopeParams(scope),
   );
   return rows.map((r) => {

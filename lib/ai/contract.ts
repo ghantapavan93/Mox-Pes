@@ -137,3 +137,8 @@ export const MODE_LABEL = {
   deterministic: "Deterministic investigator — no model configured",
   model: "Model investigator (Anthropic Messages API)",
 } as const;
+
+/** The deterministic investigator answered because a configured model's run failed: not "no model". */
+export function fallbackModeLabel(reason: string): string {
+  return `Deterministic fallback — the model run failed (${reason.slice(0, 120)})`;
+}

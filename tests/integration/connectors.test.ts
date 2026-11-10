@@ -276,6 +276,39 @@ describe("sync jobs", () => {
       .rejects.toMatchObject({ status: 403 });
   });
 
+  it("a request that only reused queued jobs is still idempotent by its key (audit 2026-11-09, B-5)", async () => {
+    const a = await sync([OFFICE_A]);
+    const req = { connectorId, officeIds: [OFFICE_A], entities: ["customer" as CrmEntity], idempotencyKey: "reuse-only-key-1", actor: "engineer", scope: null, now: wall, auditAt: wall };
+    const b = await enqueueSync(pool, req);
+    expect(b).toMatchObject({ alreadyRequested: false, created: [], reusedQueued: a.created });
+    // The reused job starts; a retry of the same request must not plan it again.
+    await pool.query("update sync_jobs set state = 'running', claimed_by = 'w', attempts = 1, heartbeat_at = $2 where id = $1", [a.created[0], wall]);
+    const retry = await enqueueSync(pool, req);
+    expect(retry.alreadyRequested).toBe(true);
+    expect(retry.created).toEqual([]);
+    expect(retry.jobs.map((j) => j.id)).toEqual(a.created);
+    expect(await count("select count(*) n from sync_jobs")).toBe(1);
+    // And the key cannot be reused for a different request.
+    await expect(enqueueSync(pool, { ...req, officeIds: [OFFICE_B] })).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("a 429 without Retry-After waits at least a minute, FieldRoutes' shortest limit window (audit 2026-11-09, G-5)", async () => {
+    addCustomers(OFFICE_A, 2, 400_300);
+    await fault({ kind: "rate_limit", officeId: OFFICE_A, entity: "customer", action: "search", skip: 0, remaining: 1, retryAfterSeconds: 1 });
+    // The real API documents no Retry-After header; strip the mock's.
+    const withHeader = mock;
+    mock = async (request) => {
+      const r = await withHeader(request);
+      const headers = new Headers(r.headers);
+      headers.delete("retry-after");
+      return new Response(r.body, { status: r.status, headers });
+    };
+    const { created: [id] } = await sync([OFFICE_A]);
+    const [first] = await runPendingJobs(runtime());
+    expect(first).toMatchObject({ state: "queued", errorKind: "rate_limit" });
+    expect((await job(id)).next_attempt_at.getTime() - wall.getTime()).toBeGreaterThanOrEqual(60_000);
+  });
+
   it("rate limit → retry after Retry-After → resumes after the last committed batch", async () => {
     addCustomers(OFFICE_A, 7, 400_000);
     await fault({ kind: "rate_limit", officeId: OFFICE_A, entity: "customer", action: "get", skip: 1, remaining: 1, retryAfterSeconds: 30 });
@@ -713,4 +746,51 @@ describe("mock backed by the synthetic world", () => {
       expect(p.dateUpdated <= instantToWallTime(now, BRANCH_BY_OFFICE.get(officeId)!.timezone)).toBe(true);
     }
   }, 120_000);
+});
+
+// ── The in-process drain (lib/jobs/kick.ts) ─────────────────────────────────
+
+describe("sync drain (audit 2026-11-09)", () => {
+  it("B-2: a kick that arrives while the drain dispatches events is not lost", async () => {
+    addCustomers(OFFICE_A, 2, 400_100);
+    // Something for the end-of-drain dispatch to do, and a way to hold it there: reconciliation
+    // blocks on a lock another session holds on the exceptions table.
+    await ingest(pool, "crm", [crm.customer(400_090, "B01", "+12125550190", RECENT)]);
+    const holder = await pool.connect();
+    await holder.query("begin");
+    await holder.query("lock table exceptions in access exclusive mode");
+    let first: Promise<void> | null = null;
+    try {
+      first = drainJobs(pool, runtime());
+      // Wait until the drain is parked in its dispatch, behind the lock.
+      for (let i = 0; i < 100; i++) {
+        const waiting = await count("select count(*) n from pg_stat_activity where wait_event_type = 'Lock' and query ilike '%exceptions%'");
+        if (waiting > 0) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const { jobs } = await sync([OFFICE_A]);
+      await drainJobs(pool, runtime()); // the kick: returns at once, the running drain owns it
+      expect((await job(jobs[0].id)).state).toBe("queued");
+    } finally {
+      await holder.query("rollback");
+      holder.release();
+    }
+    await first;
+    const latest = await one<{ id: string }>(pool, "select max(id) as id from sync_jobs");
+    expect((await job(Number(latest.id))).state).toBe("succeeded");
+  });
+
+  it("B-3: a due job whose stream another process is running does not keep the drain spinning", async () => {
+    addCustomers(OFFICE_A, 1, 400_200);
+    const { jobs } = await sync([OFFICE_A]);
+    // Another worker holds the stream (fresh heartbeat), so this process cannot claim the next job.
+    await pool.query("update sync_jobs set state = 'running', claimed_by = 'other-worker', attempts = 1, started_at = $2, heartbeat_at = $2 where id = $1", [jobs[0].id, wall]);
+    const { jobs: blocked } = await sync([OFFICE_A]);
+    expect(blocked).toHaveLength(1);
+    const startedAt = Date.now();
+    const outcome = await Promise.race([drainJobs(pool, runtime()).then(() => "returned"), new Promise((r) => setTimeout(() => r("still spinning"), 5_000))]);
+    expect(outcome).toBe("returned");
+    expect(Date.now() - startedAt).toBeLessThan(5_000);
+    expect((await job(blocked[0].id)).state).toBe("queued"); // left for the process that holds the stream
+  });
 });

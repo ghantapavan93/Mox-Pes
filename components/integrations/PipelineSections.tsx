@@ -144,7 +144,8 @@ export async function PipelineSections({ db }: { db: Queryable }) {
               {audit.map((a) => (
                 <li key={a.id} className="border-b border-dashed border-border pb-2">
                   <span className="font-medium">{a.actor}</span> · <span className="font-mono text-xs">{a.action}</span> · {a.subject}
-                  <div className="text-xs text-muted">{dateTime(a.at)} · {JSON.stringify(a.detail)}</div>
+                  {/* Raw detail can be one long unbroken JSON string: wrap anywhere, show two lines (full row on Audit & Health). */}
+                  <div className="line-clamp-2 text-xs text-muted [overflow-wrap:anywhere]" title={JSON.stringify(a.detail)}>{dateTime(a.at)} · {JSON.stringify(a.detail)}</div>
                 </li>
               ))}
             </ul>

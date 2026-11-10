@@ -51,3 +51,7 @@ next-env.d.ts
 # private interview research: notes on real people and outreach drafts stay off the public repo
 /research/
 /docs/outreach.md
+
+# full screenshot sets from scripts/capture-screens.ts (about 25 MB each); the committed
+# screenshots are the pixel baselines in tests/e2e/__screenshots__/
+/docs/redesign/

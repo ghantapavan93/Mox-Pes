@@ -118,7 +118,7 @@ export function InvestigateForm({
           />
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <div>
+          <div className="min-w-0 max-w-full">
             <label htmlFor={ids.branch} className="block text-xs font-medium text-muted">
               Scope
             </label>
@@ -130,7 +130,7 @@ export function InvestigateForm({
               }}
               disabled={!canInvestigate}
               aria-disabled={busy || undefined}
-              className="mt-1 rounded border border-border bg-surface px-2 py-1.5 text-sm aria-disabled:opacity-60"
+              className="mt-1 max-w-full rounded border border-border bg-surface px-2 py-1.5 text-sm aria-disabled:opacity-60"
             >
               <option value="">Branch named in the question (or my whole scope)</option>
               {branches.map((b) => (

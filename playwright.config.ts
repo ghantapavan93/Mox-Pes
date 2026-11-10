@@ -4,6 +4,8 @@ const PORT = Number(process.env.PORT ?? 3000);
 
 export default defineConfig({
   testDir: "tests/e2e",
+  // Pixel baselines (z-layout.spec.ts, VISUAL=1 only): one file per page, width and platform.
+  snapshotPathTemplate: "{testDir}/__screenshots__/{arg}-{platform}{ext}",
   // The golden path mutates the database (it replays records), so it reseeds first.
   globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: false,

@@ -119,7 +119,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
         ))}
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 2xl:grid-cols-2">
         <Card title="Stored spend records around the gap" subtitle="Raw log rows, as the platform sent them, with the mapper version that classified each">
           <TableWrap>
             <thead><tr><Th>Raw event</Th><Th>Date · campaign</Th><Th>Type</Th><Th align="right">Cost</Th><Th>Classified</Th></tr></thead>
@@ -157,8 +157,9 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
         title={`CRM outcomes since ${date(String(ev.gapStart))}`}
         subtitle={`Customers the CRM shows as acquired at ${branchId} and credited to ${String(ev.channelLabel)} by first evidenced touch. They keep arriving while the channel's recorded spend is zero, which is what makes its cost per customer look cheap.`}
       >
-        <div className="grid gap-4 lg:grid-cols-3" data-testid="crm-outcomes">
+        <div className="grid gap-4 2xl:grid-cols-3" data-testid="crm-outcomes">
           <KV
+            columns={1}
             items={[
               ["New customers", count(crm.length)],
               ["Initial service completed", count(serviced)],
@@ -166,7 +167,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
               ["Collected (payments − refunds)", money(collectedCents)],
             ]}
           />
-          <div className="lg:col-span-2">
+          <div className="min-w-0 2xl:col-span-2">
             {crm.length === 0 ? (
               <p className="text-sm text-muted">No customers credited to this channel since the gap.</p>
             ) : (

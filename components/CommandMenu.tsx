@@ -1,5 +1,6 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { NAV } from "@/lib/nav";
@@ -131,11 +132,13 @@ export function CommandMenu() {
       <button
         type="button"
         onClick={show}
-        className="flex w-full items-center justify-between rounded border border-white/15 bg-white/5 px-2.5 py-1.5 text-left text-xs text-white/70 hover:bg-white/10"
+        className="flex w-full items-center gap-2 rounded-md border border-shell-border bg-shell-raised px-2.5 py-1.5 text-left text-xs text-shell-text hover:border-shell-muted hover:text-white"
         aria-label="Open command menu"
+        title="Search or jump to… (Ctrl K)"
       >
-        <span>Search or jump to…</span>
-        <kbd className="rounded bg-white/10 px-1 font-mono text-[10px]">Ctrl K</kbd>
+        <Search aria-hidden className="size-3.5 shrink-0" />
+        <span data-sidebar-label className="flex-1">Search or jump to…</span>
+        <kbd data-sidebar-label className="rounded bg-white/10 px-1 font-mono text-[10px]">Ctrl K</kbd>
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[12vh]" onClick={close}>

@@ -113,14 +113,14 @@ export async function WorkflowPanel({ exception, viewer }: { exception: Exceptio
         </section>
 
         {kase && (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-6 [&>*]:min-w-0">
             <section aria-labelledby="timeline-heading">
               <h3 id="timeline-heading" className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
                 Case timeline
               </h3>
               <Timeline events={timeline} />
             </section>
-            <section id="case-audit" className="scroll-mt-16" aria-labelledby="case-audit-heading">
+            <section id="case-audit" className="scroll-mt-28" aria-labelledby="case-audit-heading">
               <h3 id="case-audit-heading" className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">
                 Audit history ({audit.length})
               </h3>

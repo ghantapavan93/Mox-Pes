@@ -2,9 +2,38 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
+import {
+  BookOpen,
+  Bot,
+  FlaskConical,
+  LayoutDashboard,
+  type LucideIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PlayCircle,
+  Plug,
+  ScrollText,
+  Send,
+  Siren,
+  Users,
+} from "lucide-react";
 import { NAV, type NavItem } from "@/lib/nav";
 
 const GROUPS: NavItem["group"][] = ["Operate", "Understand", "Systems"];
+
+const ICON: Record<string, LucideIcon> = {
+  "/": LayoutDashboard,
+  "/exceptions": Siren,
+  "/investigator": Bot,
+  "/customers": Users,
+  "/decisions": FlaskConical,
+  "/feedback": Send,
+  "/definitions": BookOpen,
+  "/integrations": Plug,
+  "/audit": ScrollText,
+  "/demo": PlayCircle,
+};
 
 function isActive(pathname: string | null, href: string): boolean {
   if (pathname === null) return false;
@@ -15,21 +44,26 @@ function isActive(pathname: string | null, href: string): boolean {
 /** The links themselves. `pathname` null = not known yet (prerender fallback): nothing is marked active. */
 function NavLinks({ pathname }: { pathname: string | null }) {
   return (
-    <nav aria-label="Main" className="space-y-4">
+    <nav aria-label="Main" className="space-y-5">
       {GROUPS.map((group) => (
         <div key={group}>
-          <p className="px-2 pb-1 font-mono text-[10px] uppercase tracking-wider text-white/60">{group}</p>
+          <p data-sidebar-label className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-shell-muted">{group}</p>
           <ul className="space-y-0.5">
             {NAV.filter((n) => n.group === group).map((n) => {
               const active = isActive(pathname, n.href);
+              const Icon = ICON[n.href] ?? LayoutDashboard;
               return (
                 <li key={n.href}>
                   <Link
                     href={n.href}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded px-2 py-1.5 text-sm ${active ? "bg-white/12 font-medium text-white" : "text-white/70 hover:bg-white/6 hover:text-white"}`}
+                    title={n.label}
+                    className={`relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] ${
+                      active ? "bg-shell-raised font-medium text-white before:absolute before:inset-y-1 before:-left-3 before:w-0.5 before:rounded before:bg-accent" : "text-shell-text hover:bg-shell-raised/60 hover:text-white"
+                    }`}
                   >
-                    {n.label}
+                    <Icon aria-hidden className="size-4 shrink-0" />
+                    <span data-sidebar-label>{n.label}</span>
                   </Link>
                 </li>
               );
@@ -53,3 +87,50 @@ export function SidebarNav() {
 export function SidebarNavFallback() {
   return <NavLinks pathname={null} />;
 }
+
+const STORAGE_KEY = "rs-sidebar";
+
+/**
+ * Collapses the desktop sidebar to an icon rail. The state lives on <html data-sidebar>, set
+ * before first paint by the inline script in app/layout.tsx so there is no flash, and is kept in
+ * localStorage (a per-browser convenience; nothing depends on it).
+ */
+const CHANGE_EVENT = "rs-sidebar-change";
+const subscribe = (onChange: () => void) => {
+  window.addEventListener(CHANGE_EVENT, onChange);
+  return () => window.removeEventListener(CHANGE_EVENT, onChange);
+};
+const isCollapsed = () => document.documentElement.dataset.sidebar === "collapsed";
+
+export function SidebarCollapseButton() {
+  // The DOM attribute is the source of truth (set before paint); the server renders "expanded".
+  const collapsed = useSyncExternalStore(subscribe, isCollapsed, () => false);
+  const toggle = () => {
+    const next = !collapsed;
+    document.documentElement.dataset.sidebar = next ? "collapsed" : "expanded";
+    try {
+      localStorage.setItem(STORAGE_KEY, next ? "collapsed" : "expanded");
+    } catch {
+      // storage blocked: the toggle still works for this page view
+    }
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+  };
+  const Icon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={collapsed}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      className="hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-shell-muted hover:bg-shell-raised/60 hover:text-white lg:flex"
+      data-testid="sidebar-collapse"
+    >
+      <Icon aria-hidden className="size-4 shrink-0" />
+      <span data-sidebar-label>Collapse</span>
+    </button>
+  );
+}
+
+/** Runs before paint: restores the collapsed state without a flash of the wide sidebar. */
+export const SIDEBAR_BOOT_SCRIPT = `try{var s=localStorage.getItem("${STORAGE_KEY}");if(s)document.documentElement.dataset.sidebar=s}catch(e){}`;

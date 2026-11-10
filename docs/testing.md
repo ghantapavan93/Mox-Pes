@@ -129,3 +129,18 @@ config) unreachable.
 - **Audit:** `docs/audit/2026-11-09/report.md` (findings, numbers that changed, safe claims) and
   `final-run/verification.json` (machine-checked in a fresh clone: vitest 294/294, Playwright 35
   passed + 1 skipped, 0 ledger violations). Re-run with `npm run audit:report`.
+
+## Redesign pass (2026-11-10)
+
+- **Design tokens:** `tests/unit/design-tokens.test.ts`, 29 WCAG contrast checks on the tokens in
+  `app/globals.css`.
+- **Layout:** `tests/e2e/z-layout.spec.ts`: no horizontal page scroll on any of 12 pages at 1440,
+  1280, 768 and 390 px; shell scope/freshness; sidebar collapse keeps link names and persists.
+- **Pixel baselines:** Overview and B09 incident at 1440 and 390 px,
+  `tests/e2e/__screenshots__/*-win32.png`. They run only with `VISUAL=1` (Playwright keeps one
+  baseline per platform; these were taken on Windows), reseed first, and allow 1% of pixels to
+  differ. Taken against a production build and re-checked twice after fresh reseeds: identical
+  within tolerance. Refresh: `CI=1 PORT=3100 VISUAL=1 npx playwright test z-layout -g visual --update-snapshots`.
+- **Screenshots:** `npx tsx scripts/capture-screens.ts docs/redesign/<dir> <base-url>` captures
+  12 pages × 4 widths. `docs/redesign/` is git-ignored (about 25 MB per set); the full before and
+  after sets are archived outside the repository.

@@ -1,35 +1,69 @@
 @import "tailwindcss";
 
+/*
+ * Revenue Signal OS design tokens (docs/design-system.md).
+ *
+ * Colour has jobs, not moods: blue is interaction, red/amber/green are states the data is in,
+ * neutrals carry everything else. Contrast (WCAG 2.2 AA, 4.5:1 for small text) is pinned by
+ * tests/unit/design-tokens.test.ts for every text token on every surface it is used on.
+ */
 :root {
-  --bg: #f6f7f9;
+  /* Surfaces, lightest to deepest */
+  --bg: #f4f5f7;
   --surface: #ffffff;
   --surface-2: #f1f3f6;
+  --surface-sunken: #eceff3;
   --border: #e2e6ec;
+  --border-strong: #c9d0da;
+
+  /* Text */
   --text: #121826;
-  --muted: #5b6474;
-  /* Contrast floor (WCAG AA, 4.5:1 for small text) is pinned by tests/unit/shell.test.ts:
-     --faint and --accent on every light surface and soft tint they are used on. */
-  --faint: #646d7d;
+  --muted: #535c6c;
+  --faint: #626b7b;
+
+  /* Interaction */
   --accent: #1d58f0;
+  --accent-hover: #1647c7;
   --accent-soft: #e8efff;
+
+  /* States */
   --bad: #c2312b;
   --bad-soft: #fdecea;
-  --warn: #a35d00;
+  --warn: #9a5800;
   --warn-soft: #fff4e0;
   --good: #137a4b;
   --good-soft: #e6f5ed;
+
+  /* Navigation shell */
   --shell: #0f1b2d;
+  --shell-raised: #18263c;
+  --shell-border: #24344d;
+  --shell-text: #c3cddb;
+  --shell-muted: #8e9bb0;
+
+  /* Charts: categorical, distinguishable without colour vision (paired with labels/patterns) */
+  --chart-paid: #1d58f0;
+  --chart-unknown: #c27a00;
+  --chart-other: #94a0b2;
+  --chart-good: #179157;
+
+  --radius: 8px;
+  --shadow-raised: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-overlay: 0 12px 32px rgb(16 24 40 / 0.18);
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-sunken: var(--surface-sunken);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-bad: var(--bad);
   --color-bad-soft: var(--bad-soft);
@@ -38,6 +72,16 @@
   --color-good: var(--good);
   --color-good-soft: var(--good-soft);
   --color-shell: var(--shell);
+  --color-shell-raised: var(--shell-raised);
+  --color-shell-border: var(--shell-border);
+  --color-shell-text: var(--shell-text);
+  --color-shell-muted: var(--shell-muted);
+  --color-chart-paid: var(--chart-paid);
+  --color-chart-unknown: var(--chart-unknown);
+  --color-chart-other: var(--chart-other);
+  --color-chart-good: var(--chart-good);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -47,11 +91,36 @@ body {
   color: var(--text);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Collapsed sidebar (set before first paint by the inline script in app/layout.tsx). */
+@media (min-width: 1024px) {
+  html[data-sidebar="collapsed"] [data-sidebar-label] {
+    display: none;
+  }
+  html[data-sidebar="collapsed"] [data-sidebar-root] {
+    width: 4rem;
+  }
+}
+
+/* A grid cell may shrink below its widest table, which then scrolls inside its panel instead of
+   widening the page (pinned by tests/e2e/z-layout.spec.ts at 1440/1280/768/390 px). */
+.grid > * {
+  min-width: 0;
+}
+
+/* A scroll container is the containing block of what it holds. Without this, an absolutely
+   positioned descendant (every sr-only label in a scrolling table) escapes the container's
+   clipping and widens the page. */
+.overflow-x-auto,
+.overflow-auto {
+  position: relative;
 }
 
 details > summary {
@@ -60,4 +129,13 @@ details > summary {
 }
 details > summary::-webkit-details-marker {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

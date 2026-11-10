@@ -35,7 +35,7 @@ export function GuideBar() {
   }
 
   return (
-    <nav aria-label="Guided path" data-testid="guide-bar" className="sticky top-0 z-40 border-b border-accent/30 bg-accent-soft px-4 py-2 text-sm lg:px-6">
+    <nav aria-label="Guided path" data-testid="guide-bar" className="border-b border-accent/30 bg-accent-soft px-4 py-2 text-sm lg:px-6">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="font-medium text-text" data-testid="guide-step">
           Step {step.n} of {B09_STEPS.length} · {step.title}

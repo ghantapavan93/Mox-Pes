@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { Bot, MapPin } from "lucide-react";
 import { CoverageGapRecords } from "@/components/CoverageGap";
 import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
-import { Badge, Card, KV, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
 import { quarantineGroupIds } from "@/lib/ingest/replay";
@@ -55,80 +56,139 @@ async function ExceptionDetail({ params }: Props) {
   if (!canSeeBranch(viewer, exception.branchId)) notFound();
   const ev = exception.evidence;
 
+  const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake";
+  const branch = exception.branchId ? BRANCH_BY_ID.get(exception.branchId) : null;
+
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs text-faint">
-          <Link href="/exceptions" className="hover:underline">Action Center</Link> / #{exception.id}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{KIND_LABEL[exception.kind] ?? exception.kind}</h1>
-          <SeverityBadge severity={exception.severity} />
-          <StatusBadge status={exception.status} />
-          {exception.branchId && (
-            <Link href={`/branches/${exception.branchId}`} className="text-sm text-accent hover:underline">
-              {exception.branchId} {BRANCH_BY_ID.get(exception.branchId)?.name}
-            </Link>
-          )}
+      <PageHeader
+        crumbs={[{ href: "/exceptions", label: "Incidents" }, { label: `#${exception.id}` }]}
+        title={KIND_LABEL[exception.kind] ?? exception.kind}
+        badges={
+          <>
+            <SeverityBadge severity={exception.severity} />
+            <StatusBadge status={exception.status} />
+            {exception.branchId && (
+              <Link href={`/branches/${exception.branchId}`} className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[11px] font-medium text-accent hover:bg-accent-soft">
+                <MapPin aria-hidden className="size-3" />
+                {exception.branchId} {branch?.name}
+              </Link>
+            )}
+          </>
+        }
+        description={
+          <>
+            <p className="font-medium text-text" data-testid="exception-summary">{exception.summary}</p>
+            <p className="mt-1 max-w-3xl">{WHY[exception.kind]}</p>
+          </>
+        }
+        actions={
+          <>
+            {viewer.can.investigate ? (
+              <ButtonLink href={`/investigator?exception=${exception.id}`} variant="primary" testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
+                Investigate with AI
+              </ButtonLink>
+            ) : (
+              <span className="text-xs text-muted">Investigations need any role except guest.</span>
+            )}
+            {exception.branchId && DECISION_KINDS.has(exception.kind) && (
+              <ButtonLink href={`/decisions?branch=${exception.branchId}`}>Decision readiness for {exception.branchId}</ButtonLink>
+            )}
+            {exception.branchId && <ButtonLink href={`/branches/${exception.branchId}`}>Branch {exception.branchId}</ButtonLink>}
+          </>
+        }
+      />
+
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border shadow-raised md:grid-cols-4" data-testid="incident-impact">
+        {(
+          [
+            [amountLabel, money(exception.amountCents)],
+            ["First detected", dateTime(exception.firstDetectedAt)],
+            [exception.resolvedAt ? "Resolved" : "Last detected", dateTime(exception.resolvedAt ?? exception.lastDetectedAt)],
+            ["Budget decisions", DECISION_KINDS.has(exception.kind) ? (exception.status === "open" ? "On hold while open" : "No longer held") : "Not gated by this kind"],
+          ] as Array<[string, ReactNode]>
+        ).map(([k, v]) => (
+          <div key={k} className="bg-surface px-4 py-3">
+            <dt className="text-xs text-muted">{k}</dt>
+            <dd className="mt-0.5 text-[15px] font-semibold tabular-nums text-text">{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <nav aria-label="Incident sections" className="sticky top-[49px] z-20 -mx-4 border-b border-border bg-bg/95 px-4 backdrop-blur lg:-mx-6 lg:px-6" data-testid="incident-sections">
+        <ul className="flex gap-1 overflow-x-auto text-sm">
+          {[
+            ["#evidence", "Evidence"],
+            ["#action-center", "Fix & approval"],
+            ["#records", "Records"],
+            ["#case-audit", "Audit"],
+          ].map(([href, label]) => (
+            <li key={href}>
+              <a href={href} className="inline-block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 font-medium text-muted hover:border-border-strong hover:text-text">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0 space-y-6">
+          <Card id="evidence" title="Evidence" subtitle="Structured facts the classification rests on">
+            <KV
+              items={[
+                ...Object.entries(ev)
+                  .filter(([, v]) => v === null || typeof v !== "object")
+                  .map(([k, v]) => [labelFor(k), formatEvidence(k, v)] as [string, ReactNode]),
+              ]}
+            />
+            {/* The amount is repeated here so the evidence card stands alone when printed or linked. */}
+            <p className="mt-3 text-xs text-muted">
+              {amountLabel}: <span className="font-medium text-text">{money(exception.amountCents)}</span>
+            </p>
+            {exception.resolution && <Callout tone="good" title="Resolution">{exception.resolution}</Callout>}
+          </Card>
+
+          <div id="action-center" className="scroll-mt-28">
+            <Suspense fallback={<Skeleton lines={6} />}>
+              <WorkflowPanel exception={exception} viewer={viewer} />
+            </Suspense>
+          </div>
+
+          <div id="records" className="scroll-mt-28 space-y-6">
+            <Suspense fallback={<Skeleton lines={6} />}>
+              <Records exception={exception} />
+            </Suspense>
+          </div>
         </div>
-        <p className="mt-2 text-sm text-text" data-testid="exception-summary">{exception.summary}</p>
-        <p className="mt-1 max-w-3xl text-sm text-muted">{WHY[exception.kind]}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          {viewer.can.investigate ? (
-            <Link
-              href={`/investigator?exception=${exception.id}`}
-              className="rounded bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90"
-              data-testid="investigate-link"
-            >
-              Investigate with AI
-            </Link>
-          ) : (
-            <span className="text-xs text-muted">Investigations need any role except guest.</span>
-          )}
-          {exception.branchId && DECISION_KINDS.has(exception.kind) && (
-            <Link href={`/decisions?branch=${exception.branchId}`} className="rounded border border-border px-3 py-1.5 hover:bg-surface-2">
-              Decision readiness for {exception.branchId}
-            </Link>
-          )}
-          {exception.branchId && (
-            <Link href={`/branches/${exception.branchId}`} className="rounded border border-border px-3 py-1.5 hover:bg-surface-2">
-              Branch {exception.branchId}
-            </Link>
-          )}
-        </div>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card id="evidence" className="lg:col-span-2" title="Evidence" subtitle="Structured facts the classification rests on">
-          <KV
-            items={[
-              [exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake", money(exception.amountCents)],
-              ["First detected", dateTime(exception.firstDetectedAt)],
-              ["Last detected", dateTime(exception.lastDetectedAt)],
-              ...(exception.resolvedAt ? ([["Resolved", dateTime(exception.resolvedAt)]] as Array<[string, ReactNode]>) : []),
-              ...Object.entries(ev)
-                .filter(([, v]) => v === null || typeof v !== "object")
-                .map(([k, v]) => [labelFor(k), formatEvidence(k, v)] as [string, ReactNode]),
-            ]}
-          />
-          {exception.resolution && <p className="mt-3 rounded bg-good-soft p-2 text-sm text-good">Resolution: {exception.resolution}</p>}
-        </Card>
-        <Card title="Decision" subtitle={actionSubtitle(exception, viewer)}>
-          <Suspense fallback={<Skeleton lines={2} />}>
-            <Actions exception={exception} viewer={viewer} />
-          </Suspense>
-        </Card>
+        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Decision and role">
+          <Card title="Decision" subtitle={actionSubtitle(exception, viewer)}>
+            <Suspense fallback={<Skeleton lines={2} />}>
+              <Actions exception={exception} viewer={viewer} />
+            </Suspense>
+          </Card>
+          <Card title="How a fix is applied">
+            <ol className="space-y-2 text-xs leading-5 text-muted">
+              {[
+                ["Propose", "an analyst or engineer names the fix", viewer.can.propose],
+                ["Dry run", "an engineer runs it in a transaction that rolls back", viewer.can.dryRun],
+                ["Approve", "a different role approves that exact dry run", viewer.can.approve],
+                ["Execute", "the application applies it once and verifies the ledger", viewer.can.approve],
+              ].map(([step, what, can], i) => (
+                <li key={String(step)} className="flex gap-2">
+                  <span aria-hidden className="grid size-5 shrink-0 place-items-center rounded-full bg-surface-2 text-[10px] font-semibold text-text">{i + 1}</span>
+                  <span>
+                    <span className="font-medium text-text">{step}</span>: {what}.{" "}
+                    <span className={can ? "text-good" : "text-faint"}>{can ? "You can." : "Not your role."}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-3 border-t border-border pt-2 text-[11px] text-faint">Viewing as {viewer.label}. Permissions are checked on the server; these labels only explain them.</p>
+          </Card>
+        </aside>
       </div>
-
-      <div id="action-center" className="scroll-mt-16">
-        <Suspense fallback={<Skeleton lines={6} />}>
-          <WorkflowPanel exception={exception} viewer={viewer} />
-        </Suspense>
-      </div>
-
-      <Suspense fallback={<Skeleton lines={6} />}>
-        <Records exception={exception} />
-      </Suspense>
     </div>
   );
 }

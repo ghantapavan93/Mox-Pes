@@ -138,7 +138,7 @@ async function SyncJob({ params }: Props) {
             {audit.map((a) => (
               <li key={a.id} className="border-b border-dashed border-border pb-2">
                 <span className="font-medium">{a.actor}</span> · <span className="font-mono text-xs">{a.action}</span>
-                <div className="text-xs text-muted">{dateTime(a.at)} · {JSON.stringify(a.detail)}</div>
+                <div className="text-xs text-muted [overflow-wrap:anywhere]">{dateTime(a.at)} · {JSON.stringify(a.detail)}</div>
               </li>
             ))}
           </ul>

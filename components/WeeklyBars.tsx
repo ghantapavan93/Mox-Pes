@@ -43,7 +43,9 @@ export function WeeklyBars({
         {reference && <span className="text-bad">– – {reference.label}</span>}
         <span>{points[points.length - 1]?.weekStart}</span>
       </div>
-      <table id={tableId} className="sr-only" data-testid="weekly-bars-data">
+      {/* sr-only on a wrapper: a <table> ignores the 1px width and would widen the page. */}
+      <div className="sr-only">
+        <table id={tableId} data-testid="weekly-bars-data">
         <caption>{label}, by week</caption>
         <thead>
           <tr>
@@ -63,6 +65,7 @@ export function WeeklyBars({
           })}
         </tbody>
       </table>
+      </div>
       {reference && <p className="sr-only">{`Reference line: ${reference.label}, ${format(reference.value)}.`}</p>}
     </figure>
   );

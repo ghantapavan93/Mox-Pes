@@ -5,10 +5,23 @@ import type { Pool } from "pg";
 
 const MIGRATIONS_DIR = path.join(process.cwd(), "database", "migrations");
 
+const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
+
+/**
+ * The checksums under which an applied migration still counts as unchanged. The recorded
+ * checksum is over LF line endings, so a checkout that converts LF to CRLF (git core.autocrlf
+ * on Windows) is not an edit. The raw-bytes checksum is also accepted, because databases
+ * migrated before this rule recorded it (with whichever line endings the checkout had).
+ */
+export function migrationChecksums(sql: string): { record: string; accepted: Set<string> } {
+  const record = sha256(sql.replace(/\r\n/g, "\n"));
+  return { record, accepted: new Set([record, sha256(sql), sha256(sql.replace(/\r?\n/g, "\r\n"))]) };
+}
+
 /**
  * Applies database/migrations/*.sql in order, each in its own transaction, recording a
  * checksum. An applied migration whose file has since changed is an error: migrations
- * are append-only.
+ * are append-only. Line endings alone are not a change (see migrationChecksums).
  */
 export async function migrate(pool: Pool, log: (line: string) => void = () => {}): Promise<string[]> {
   await pool.query(`
@@ -26,10 +39,10 @@ export async function migrate(pool: Pool, log: (line: string) => void = () => {}
   const ran: string[] = [];
   for (const file of files) {
     const sql = readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
-    const checksum = createHash("sha256").update(sql).digest("hex");
+    const { record: checksum, accepted } = migrationChecksums(sql);
     const previous = applied.get(file);
     if (previous) {
-      if (previous !== checksum) throw new Error(`Migration ${file} was edited after it was applied`);
+      if (!accepted.has(previous)) throw new Error(`Migration ${file} was edited after it was applied`);
       continue;
     }
     const client = await pool.connect();

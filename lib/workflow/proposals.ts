@@ -68,6 +68,8 @@ export interface ProposalRow {
   source: "human" | "ai";
   proposedBy: string;
   proposedRole: string;
+  /** The person who proposed (identity provider subject; demo: one per role). */
+  proposedSubject: string;
   status: ProposalStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -87,6 +89,7 @@ export const toProposal = (r: Record<string, unknown>): ProposalRow => ({
   source: r.source as "human" | "ai",
   proposedBy: r.proposed_by as string,
   proposedRole: r.proposed_role as string,
+  proposedSubject: r.proposed_subject as string,
   status: r.status as ProposalStatus,
   createdAt: r.created_at as Date,
   updatedAt: r.updated_at as Date,
@@ -199,9 +202,9 @@ export async function createProposal(pool: Pool, input: CreateProposalInput): Pr
     const actor = input.actor.role;
     await supersedeLiveProposals(tx, [kase.id], actor, now, "Replaced by a newer proposal");
     const { rows } = await tx.query(
-      `insert into action_proposals (case_id, exception_id, kind, params, rationale, source, proposed_by, proposed_role, status, created_at, updated_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9, $9) returning *`,
-      [kase.id, exception.id, bound.kind, bound.params, rationale, input.source, actor, input.actor.role, now],
+      `insert into action_proposals (case_id, exception_id, kind, params, rationale, source, proposed_by, proposed_role, proposed_subject, status, created_at, updated_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $10, 'draft', $9, $9) returning *`,
+      [kase.id, exception.id, bound.kind, bound.params, rationale, input.source, actor, input.actor.role, now, input.actor.subject],
     );
     const proposal = toProposal(rows[0]);
     await recordCaseEvent(tx, {
@@ -332,6 +335,11 @@ function failedMeasure(error: unknown, fingerprint: string | null, before: State
 // ── approve / reject ─────────────────────────────────────────────────────────
 
 function assertSeparateRole(viewer: Viewer, proposal: ProposalRow, verb: string) {
+  // A different person, not only a different role: one person may hold two roles. The database
+  // refuses an approval by the proposing subject as well (migration 0014).
+  if (viewer.subject === proposal.proposedSubject) {
+    throw new ForbiddenError(`Separation of duties: you proposed this, so someone else must ${verb} it`);
+  }
   if (viewer.role === proposal.proposedRole) {
     throw new ForbiddenError(
       `Separation of duties: this proposal was made by the ${proposal.proposedRole} role, so a different role must ${verb} it`,
@@ -354,9 +362,9 @@ export async function approveProposal(pool: Pool, input: { proposalId: number; a
     const kase = (await lockCase(tx, proposal.caseId))!;
     if (kase.state !== "awaiting_approval") throw new ActionError(`The case is ${kase.state}, not awaiting approval`, 409);
     await tx.query(
-      `insert into action_approvals (proposal_id, decision, actor, role, reason, precondition_fingerprint, decided_at)
-       values ($1, 'approved', $2, $3, $4, $5, $6)`,
-      [proposal.id, input.actor.role, input.actor.role, reason, proposal.preconditionFingerprint, now],
+      `insert into action_approvals (proposal_id, decision, actor, role, reason, precondition_fingerprint, decided_at, subject)
+       values ($1, 'approved', $2, $3, $4, $5, $6, $7)`,
+      [proposal.id, input.actor.role, input.actor.role, reason, proposal.preconditionFingerprint, now, input.actor.subject],
     );
     await setProposalStatus(tx, proposal.id, "approved", now);
     await recordCaseEvent(tx, {
@@ -386,9 +394,9 @@ export async function rejectProposal(pool: Pool, input: { proposalId: number; ac
     const now = input.now ?? (await getNow(tx));
     const kase = (await lockCase(tx, proposal.caseId))!;
     await tx.query(
-      `insert into action_approvals (proposal_id, decision, actor, role, reason, precondition_fingerprint, decided_at)
-       values ($1, 'rejected', $2, $3, $4, $5, $6)`,
-      [proposal.id, input.actor.role, input.actor.role, reason, proposal.preconditionFingerprint, now],
+      `insert into action_approvals (proposal_id, decision, actor, role, reason, precondition_fingerprint, decided_at, subject)
+       values ($1, 'rejected', $2, $3, $4, $5, $6, $7)`,
+      [proposal.id, input.actor.role, input.actor.role, reason, proposal.preconditionFingerprint, now, input.actor.subject],
     );
     await setProposalStatus(tx, proposal.id, "rejected", now);
     await recordCaseEvent(tx, {

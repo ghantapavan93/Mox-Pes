@@ -2,7 +2,7 @@ import type { Pool } from "pg";
 import { ActionError } from "@/lib/actions";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { withTransaction, type Queryable } from "@/lib/db";
-import { ingestRecords } from "@/lib/ingest/ingest";
+import { LEAD_WRITE_LOCK, ingestRecords } from "@/lib/ingest/ingest";
 import { sha256 } from "@/lib/primitives";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import { suggestMappings, type ApprovedMappingHint, type AssistantResult } from "./assistant";
@@ -275,9 +275,9 @@ export async function proposeMapping(pool: Pool, args: { viewer: Viewer; uploadI
     await tx.query("select pg_advisory_xact_lock(hashtext($1))", [`onboarding:${spec.dataset}:${upload.layoutFingerprint}`]);
     const version = (await tx.query<{ v: number }>("select coalesce(max(version), 0) + 1 as v from onboarding_mappings where dataset = $1 and layout_fingerprint = $2", [spec.dataset, upload.layoutFingerprint])).rows[0].v;
     const inserted = await tx.query<{ id: string }>(
-      `insert into onboarding_mappings (dataset, layout_fingerprint, version, spec, spec_hash, status, drafted_on_upload, proposed_by, proposed_role, proposed_at)
-       values ($1, $2, $3, $4, $5, 'proposed', $6, $7, $8, $9) returning id`,
-      [spec.dataset, upload.layoutFingerprint, version, spec, hash, args.uploadId, args.viewer.label, args.viewer.role, args.now],
+      `insert into onboarding_mappings (dataset, layout_fingerprint, version, spec, spec_hash, status, drafted_on_upload, proposed_by, proposed_role, proposed_at, proposed_subject)
+       values ($1, $2, $3, $4, $5, 'proposed', $6, $7, $8, $9, $10) returning id`,
+      [spec.dataset, upload.layoutFingerprint, version, spec, hash, args.uploadId, args.viewer.label, args.viewer.role, args.now, args.viewer.subject],
     );
     const mappingId = Number(inserted.rows[0].id);
     await audit(tx, args.now, args.viewer, "onboarding_mapping_proposed", `onboarding_mapping:${mappingId}`, { uploadId: args.uploadId, dataset: spec.dataset, version, specHash: hash, problems: problems.map((p) => p.code) });
@@ -404,15 +404,17 @@ export async function rowResults(pool: Pool, viewer: Viewer, args: { uploadId: n
 export async function decideMapping(pool: Pool, args: { viewer: Viewer; mappingId: number; decision: "approve" | "reject"; reason: string; now: Date }): Promise<{ status: string }> {
   requireOnboardingAccess(args.viewer, "approve a mapping", "approve");
   return withTransaction(pool, async (tx) => {
-    const m = (await tx.query<{ status: string; proposed_role: string; dataset: string; layout_fingerprint: string }>("select status, proposed_role, dataset, layout_fingerprint from onboarding_mappings where id = $1 for update", [args.mappingId])).rows[0];
+    const m = (await tx.query<{ status: string; proposed_role: string; proposed_subject: string; dataset: string; layout_fingerprint: string }>("select status, proposed_role, proposed_subject, dataset, layout_fingerprint from onboarding_mappings where id = $1 for update", [args.mappingId])).rows[0];
     if (!m) throw new ActionError("Mapping not found", 404);
     if (m.status !== "proposed") throw new ActionError(`Mapping is already ${m.status}`, 409);
+    // A different person and a different role (the database refuses the same subject: 0014).
+    if (m.proposed_subject === args.viewer.subject) throw new ForbiddenError("You proposed this mapping, so someone else must decide it");
     if (m.proposed_role === args.viewer.role) throw new ForbiddenError("The role that proposed a mapping cannot decide it");
     if (args.decision === "approve") {
       await tx.query("update onboarding_mappings set status = 'superseded', decided_at = coalesce(decided_at, $3) where dataset = $1 and layout_fingerprint = $2 and status = 'approved'", [m.dataset, m.layout_fingerprint, args.now]);
     }
     const status = args.decision === "approve" ? "approved" : "rejected";
-    await tx.query("update onboarding_mappings set status = $2, decided_by = $3, decided_role = $4, decided_at = $5, decision_reason = $6 where id = $1", [args.mappingId, status, args.viewer.label, args.viewer.role, args.now, args.reason]);
+    await tx.query("update onboarding_mappings set status = $2, decided_by = $3, decided_role = $4, decided_at = $5, decision_reason = $6, decided_subject = $7 where id = $1", [args.mappingId, status, args.viewer.label, args.viewer.role, args.now, args.reason, args.viewer.subject]);
     await audit(tx, args.now, args.viewer, `onboarding_mapping_${status}`, `onboarding_mapping:${args.mappingId}`, { reason: args.reason });
     return { status };
   });
@@ -431,7 +433,20 @@ export interface PublishResult {
  * The rows are compiled again and compared with the ledger again: a row the ledger gained
  * since the dry run is skipped, not overwritten.
  */
-export async function publishUpload(pool: Pool, args: { viewer: Viewer; uploadId: number; dryRunId: number; now: Date }): Promise<PublishResult> {
+/**
+ * Points inside the publication transaction where a test can pause or fail it, to reproduce an
+ * interleaving deterministically (tests/integration/concurrency.test.ts). Never set in the app.
+ */
+export interface PublishHooks {
+  /** The lead-write lock is held; nothing has been compared or written yet. */
+  afterLock?: () => Promise<void>;
+  /** The ledger has been compared again; nothing has been written yet. */
+  afterCompare?: () => Promise<void>;
+  /** Rows are written but the transaction has not committed. Throwing here simulates a crash. */
+  afterWrite?: () => Promise<void>;
+}
+
+export async function publishUpload(pool: Pool, args: { viewer: Viewer; uploadId: number; dryRunId: number; now: Date; hooks?: PublishHooks }): Promise<PublishResult> {
   requireOnboardingAccess(args.viewer, "publish an import", "approve");
   await enforceRetention(pool, args.now);
   return withTransaction(pool, async (tx) => {
@@ -445,20 +460,25 @@ export async function publishUpload(pool: Pool, args: { viewer: Viewer; uploadId
     // The approver publishes what they reviewed: a newer dry run (another dataset, other rules)
     // since the page was opened is a different decision (security review #5).
     if (dry.id !== args.dryRunId) throw new ActionError("A newer dry run replaced the one you reviewed; review it before publishing", 409);
-    const m = (await tx.query<{ spec: MappingSpec; spec_hash: string; status: string; proposed_role: string }>("select spec, spec_hash, status, proposed_role from onboarding_mappings where id = $1", [dry.mappingId])).rows[0];
+    // FOR SHARE: an approval that would supersede this mapping waits until the publication commits,
+    // so a publication never completes under a mapping that changed during it.
+    const m = (await tx.query<{ spec: MappingSpec; spec_hash: string; status: string; proposed_role: string; proposed_subject: string }>("select spec, spec_hash, status, proposed_role, proposed_subject from onboarding_mappings where id = $1 for share", [dry.mappingId])).rows[0];
     if (m.status !== "approved") throw new ActionError("The dry run's mapping is not approved", 409);
     if (m.spec_hash !== dry.specHash) throw new ActionError("The dry run used different rules than the approved mapping; run it again", 409);
-    if (m.proposed_role === args.viewer.role) throw new ForbiddenError("The role that proposed the mapping cannot publish with it");
+    if (m.proposed_subject === args.viewer.subject || m.proposed_role === args.viewer.role) throw new ForbiddenError("Whoever proposed the mapping cannot publish with it");
     const target = DATASETS[m.spec.dataset];
     if (target.authority !== "publish") throw new ActionError(`${target.label} are reconcile-only: ${target.systemOfRecord} is the system of record, so an export can be compared but never published`, 409);
 
     // Hold off concurrent lead writers (live webhooks, another publication) until this commits:
     // otherwise a call the live feed delivers between the comparison and the insert would be
-    // overwritten by the file's copy (data review #7). Live intake waits a few seconds at most;
-    // whatever it delivers afterwards is newer and wins, as it should.
-    await tx.query("lock table leads in share row exclusive mode");
+    // overwritten by the file's copy (data review #7). Exclusive here, shared in live intake, and
+    // taken before either side touches a row, so the two can never deadlock. Live intake waits
+    // seconds at most; whatever it delivers afterwards is newer and wins, as it should.
+    await tx.query("select pg_advisory_xact_lock($1)", [LEAD_WRITE_LOCK]);
+    await args.hooks?.afterLock?.();
     const outcomes = scoped(args.viewer, m.spec.dataset, compileRows(table, m.spec, args.now));
     const ledger = await compareWithLedger(tx, m.spec.dataset, outcomes);
+    await args.hooks?.afterCompare?.();
     const stillNew = new Set(ledger.rows.filter((r) => r.disposition === "eligible").map((r) => r.row));
     const dryEligible = new Set(
       (await tx.query<{ row_ref: number }>("select row_ref from onboarding_row_results where dry_run_id = $1 and disposition = 'eligible'", [dry.id])).rows.map((r) => r.row_ref),
@@ -480,12 +500,13 @@ export async function publishUpload(pool: Pool, args: { viewer: Viewer; uploadId
       stats: { inserted: stats.inserted, duplicates: stats.duplicates, conflicts: stats.conflicts, projected: stats.projected, quarantined: stats.quarantined },
     };
     await tx.query(
-      "insert into onboarding_publications (upload_id, mapping_id, dry_run_id, published_by, published_role, published_at, stats) values ($1, $2, $3, $4, $5, $6, $7)",
-      [args.uploadId, dry.mappingId, dry.id, args.viewer.label, args.viewer.role, args.now, result],
+      "insert into onboarding_publications (upload_id, mapping_id, dry_run_id, published_by, published_role, published_at, stats, published_subject) values ($1, $2, $3, $4, $5, $6, $7, $8)",
+      [args.uploadId, dry.mappingId, dry.id, args.viewer.label, args.viewer.role, args.now, result, args.viewer.subject],
     );
     await tx.query("update onboarding_uploads set status = 'published' where id = $1", [args.uploadId]);
     await purgeRows(tx, args.uploadId, args.now);
     await audit(tx, args.now, args.viewer, "onboarding_published", `onboarding:${args.uploadId}`, { mappingId: dry.mappingId, dryRunId: dry.id, ...result });
+    await args.hooks?.afterWrite?.();
     return result;
   });
 }

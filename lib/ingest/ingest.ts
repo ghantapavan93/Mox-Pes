@@ -23,7 +23,17 @@ interface Prepared {
   result: MapResult;
   /** Our clock for this delivery; within a batch it preserves delivery order. */
   receivedAt: Date;
+  /**
+   * When this exact version was LAST observed (a repeat later in the same batch moves it).
+   * Stored as raw_events.last_delivered_at, so the ledger alone orders every observation and a
+   * rebuild from it reproduces the projection exactly (tests/integration/ledger-model.test.ts).
+   */
+  lastSeenAt?: Date;
 }
+
+/** Advisory lock key serialising file publication against live lead intake (see ingestRecords). */
+export const LEAD_WRITE_LOCK = 742_002;
+const LEAD_SOURCES = new Set<SourceName>(["calls", "web", "d2d"]);
 
 const MIN_INSTANT = Date.parse("1970-01-01T00:00:00Z");
 const MAX_INSTANT = Date.parse("2100-01-01T00:00:00Z");
@@ -94,6 +104,11 @@ export async function ingestRecords(
 ): Promise<IngestStats> {
   const { source, records, mapper, runId, now } = args;
   const stats: IngestStats = { fetched: records.length, inserted: 0, duplicates: 0, conflicts: 0, projected: 0, quarantined: 0 };
+  // Lead writers take the lead-write lock FIRST, before any row lock: shared here (deliveries run
+  // side by side), exclusive for a file publication (lib/onboarding/service.ts). One lock in one
+  // order cannot deadlock; the table lock it replaced was taken in the opposite order to these
+  // inserts and deadlocked on an identical payload (tests/integration/concurrency.test.ts).
+  if (LEAD_SOURCES.has(source)) await tx.query("select pg_advisory_xact_lock_shared($1)", [LEAD_WRITE_LOCK]);
 
   const prepared = new Map<string, Prepared>();
   const repeatsInBatch = new Map<string, number>();
@@ -102,9 +117,14 @@ export async function ingestRecords(
     // Delivery order inside a batch is receipt order: record i is received i ms after record 0.
     const p = prepare(record, mapper, { ...args.ctx, receivedAt: new Date(now.getTime() + index) }, now);
     const existing = prepared.get(p.identity.externalId);
-    if (!existing) prepared.set(p.identity.externalId, p);
-    else if (existing.hash === p.hash) repeatsInBatch.set(p.identity.externalId, (repeatsInBatch.get(p.identity.externalId) ?? 0) + 1);
-    else inBatchConflicts.push(p); // same version, different content in one batch: keep the first, record the second
+    if (!existing) prepared.set(p.identity.externalId, { ...p, lastSeenAt: p.receivedAt });
+    else if (existing.hash === p.hash) {
+      repeatsInBatch.set(p.identity.externalId, (repeatsInBatch.get(p.identity.externalId) ?? 0) + 1);
+      existing.lastSeenAt = p.receivedAt;
+      // A receipt-ordered version seen again later in the batch is the latest observation:
+      // an in-batch A, B, A must end on A, as it does across batches.
+      if (p.identity.versionClock === "received") existing.result = p.result;
+    } else inBatchConflicts.push(p); // same version, different content in one batch: keep the first, record the second
   }
   if (prepared.size === 0) return stats;
 
@@ -120,6 +140,7 @@ export async function ingestRecords(
     errorDetail: p.result.ok ? null : p.result.detail,
     deliveryCount: 1 + (repeatsInBatch.get(p.identity.externalId) ?? 0),
     receivedAt: p.receivedAt.toISOString(),
+    lastSeenAt: (p.lastSeenAt ?? p.receivedAt).toISOString(),
   }));
 
   const inserted = await insertRaw(tx, { source, now, runId, adapterVersion: `${source}@${mapper.version}`, rows });
@@ -139,11 +160,11 @@ export async function ingestRecords(
       "select id, external_id, payload_hash, status from raw_events where source = $1 and external_id = any($2::text[])",
       [source, seen],
     );
-    const duplicateIds: number[] = [];
+    const duplicates: Array<{ id: number; at: string; n: number }> = [];
     for (const row of existing.rows) {
       const incoming = prepared.get(row.external_id)!;
       if (incoming.hash === row.payload_hash) {
-        duplicateIds.push(Number(row.id));
+        duplicates.push({ id: Number(row.id), at: (incoming.lastSeenAt ?? incoming.receivedAt).toISOString(), n: 1 + (repeatsInBatch.get(row.external_id) ?? 0) });
         stats.duplicates += 1 + (repeatsInBatch.get(row.external_id) ?? 0);
         if (incoming.identity.versionClock === "received" && incoming.result.ok && row.status === "projected") {
           // Upserts skip rows already pointing at this raw event, so an unchanged re-read
@@ -155,10 +176,12 @@ export async function ingestRecords(
         await recordPayloadConflict(tx, { source, rawEventId: Number(row.id), externalId: row.external_id, incoming, now });
       }
     }
-    if (duplicateIds.length > 0) {
+    if (duplicates.length > 0) {
+      // Each version's own latest observation (never moved backwards), and every delivery counted.
       await tx.query(
-        "update raw_events set delivery_count = delivery_count + 1, last_delivered_at = $2 where id = any($1::bigint[])",
-        [duplicateIds, now],
+        `update raw_events r set delivery_count = r.delivery_count + d."n", last_delivered_at = greatest(r.last_delivered_at, d."at")
+         from jsonb_to_recordset($1::jsonb) as d("id" bigint, "at" timestamptz, "n" int) where r.id = d."id"`,
+        [JSON.stringify(duplicates)],
       );
     }
   }
@@ -207,11 +230,11 @@ const INSERT_RAW = `
   insert into raw_events (source, entity, entity_id, external_id, payload, payload_hash, occurred_at, received_at,
     ingestion_run_id, adapter_version, status, error_code, error_detail, delivery_count, last_delivered_at, projected_at)
   select $1, r."entity", r."entityId", r."externalId", r."payload", r."payloadHash", r."occurredAt", r."receivedAt",
-    $3, $4, r."status", r."errorCode", r."errorDetail", r."deliveryCount", $2,
+    $3, $4, r."status", r."errorCode", r."errorDetail", r."deliveryCount", coalesce(r."lastSeenAt", $2::timestamptz),
     case when r."status" = 'projected' then $2::timestamptz end
   from jsonb_to_recordset($5::jsonb) as r("entity" text, "entityId" text, "externalId" text, "payload" jsonb,
     "payloadHash" text, "occurredAt" timestamptz, "receivedAt" timestamptz, "status" text, "errorCode" text,
-    "errorDetail" text, "deliveryCount" int)
+    "errorDetail" text, "deliveryCount" int, "lastSeenAt" timestamptz)
   on conflict (source, external_id) do nothing
   returning id, external_id`;
 

@@ -13,7 +13,9 @@ export async function POST(request: Request) {
   try {
     const { role } = body.parse(await request.json());
     const res = NextResponse.json({ role });
-    res.cookies.set(ROLE_COOKIE, role, { httpOnly: true, sameSite: "lax", path: "/" });
+    // Secure whenever the request arrived over TLS (directly or via a proxy); plain http only on a laptop.
+    const tls = new URL(request.url).protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
+    res.cookies.set(ROLE_COOKIE, role, { httpOnly: true, sameSite: "lax", path: "/", secure: tls });
     return res;
   } catch (error) {
     return errorResponse(error);

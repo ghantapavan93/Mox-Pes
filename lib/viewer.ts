@@ -45,6 +45,12 @@ export interface Permissions {
 
 export interface Viewer {
   role: Role;
+  /**
+   * Who is acting: the identity provider's stable user id in production. Separation of duties
+   * compares subjects, so one person holding two roles still cannot approve their own work.
+   * Demo mode has no people, only roles: one synthetic subject per role ("demo:engineer").
+   */
+  subject: string;
   label: string;
   /** null = all branches */
   branchIds: string[] | null;
@@ -64,9 +70,10 @@ const NONE: Permissions = {
 };
 
 export const VIEWERS: Record<Role, Viewer> = {
-  guest: { role: "guest", label: "Guest · read-only", branchIds: null, brandIds: null, can: NONE },
+  guest: { role: "guest", subject: "demo:guest", label: "Guest · read-only", branchIds: null, brandIds: null, can: NONE },
   marketing: {
     role: "marketing",
+    subject: "demo:marketing",
     label: "Marketing analyst · all branches",
     branchIds: null,
     brandIds: null,
@@ -74,6 +81,7 @@ export const VIEWERS: Record<Role, Viewer> = {
   },
   engineer: {
     role: "engineer",
+    subject: "demo:engineer",
     label: "Integration engineer · all branches",
     branchIds: null,
     brandIds: null,
@@ -81,6 +89,7 @@ export const VIEWERS: Record<Role, Viewer> = {
   },
   approver: {
     role: "approver",
+    subject: "demo:approver",
     label: "Revenue ops approver · all branches",
     branchIds: null,
     brandIds: null,
@@ -88,6 +97,7 @@ export const VIEWERS: Record<Role, Viewer> = {
   },
   partner: {
     role: "partner",
+    subject: "demo:partner",
     label: `Branch partner · ${SCENARIO.callFeedDriftBranch} only`,
     branchIds: [SCENARIO.callFeedDriftBranch],
     brandIds: null,
@@ -95,6 +105,7 @@ export const VIEWERS: Record<Role, Viewer> = {
   },
   brand: {
     role: "brand",
+    subject: "demo:brand",
     label: `Brand marketing lead · ${BRAND_BY_ID.get(SISTER_BRAND)!.name} only`,
     branchIds: branchesOfBrands([SISTER_BRAND]),
     brandIds: [SISTER_BRAND],

@@ -1,0 +1,61 @@
+{
+  "machine": "AMD Ryzen 9 5900HX with Radeon Graphics x16, 15791 MB RAM, win32 10.0.26300, Node v22.14.0",
+  "postgres": "PostgreSQL 17.8 on x86_64-windows",
+  "durability": {
+    "fsync": "on",
+    "full_page_writes": "on",
+    "shared_buffers": "16384",
+    "synchronous_commit": "on",
+    "wal_level": "replica"
+  },
+  "file": {
+    "path": "C:/Temp/backfill-1000000.csv",
+    "mb": 82,
+    "rows": 1000000,
+    "generateMs": 3745
+  },
+  "batch": 2000,
+  "batches": 500,
+  "rowsRead": 1000000,
+  "loadSeconds": 178.4,
+  "rowsPerSecond": 5604,
+  "batchLatencyMs": {
+    "p50": 339,
+    "p95": 439,
+    "p99": 627,
+    "max": 1311
+  },
+  "peakRssMb": 199,
+  "cpuSeconds": {
+    "user": 76.4,
+    "system": 3.1
+  },
+  "walMb": 1981,
+  "databaseGrowthMb": 1173,
+  "totals": {
+    "inserted": 980000,
+    "duplicates": 0,
+    "projected": 980000,
+    "quarantined": 0,
+    "duplicateInFile": 20000,
+    "otherNotEligible": 0
+  },
+  "correctness": {
+    "leads": 980000,
+    "distinctIds": 980000,
+    "expectedUniqueCalls": 980000,
+    "rawEvents": 980000,
+    "leadsEqualUnique": true
+  },
+  "reconcileSeconds": 0.1,
+  "reconcileExceptions": {
+    "detected": 0,
+    "opened": 0,
+    "resolved": 0
+  },
+  "queries": {
+    "leadsByBranchChannelMs": 165.3,
+    "leadLookupByIdMs": 1.8,
+    "rawByExternalIdMs": 2.2
+  }
+}

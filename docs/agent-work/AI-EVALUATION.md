@@ -73,6 +73,69 @@ easy fields by always answering, and loses where answering is unsafe.
 These are numbers on sets the rules were fixed against. They show the fixes worked on the cases
 that motivated them, nothing more.
 
+## Severity-aware view (added 2026-11-11, no rule changed)
+
+A wrong suggestion is weighted by what it would damage, not counted flat
+(`riskMetrics` in `lib/onboarding/eval.ts`):
+
+| Severity | What is wrong | Why |
+|---|---|---|
+| critical | a money field (amount, cost) in the wrong meaning; a file put under the wrong dataset | wrong revenue, or the wrong source authority for every row |
+| high | an identifier, phone, email or branch | records merge or split, or land in another branch |
+| medium | an event time or an enum | wrong period or wrong status |
+| low | a descriptive field (campaign, clicks, notes) | display only |
+
+The severity scoring was added after v3's first contact, and v3 was **not** used to tune
+anything: the six v3 wrong suggestions are the same six as on first contact.
+
+| Measure | v1 (dev) assistant / baseline | v2 (dev) assistant / baseline | **v3 (held out) assistant / baseline** |
+|---|---|---|---|
+| Precision (correct / suggested) | 100.0% / 96.5% | 99.7% / 93.3% | **97.8% / 93.0%** |
+| Coverage (mappable fields given a suggestion) | 100.0% / 99.2% | 93.4% / 95.4% | **85.7% / 89.6%** |
+| Abstention recall (should-ask fields left empty) | 100.0% / 76.8% | 98.4% / 72.3% | **89.4% / 68.1%** |
+| Abstention precision (empty fields that should be empty) | 100.0% / 93.5% | 75.0% / 75.8% | **48.8% / 49.2%** |
+| Wrong: critical / high / medium / low | 0/0/0/0 / 7/5/4/0 | 0/0/1/0 / 7/8/8/3 | **1/1/2/2 / 6/6/9/4** |
+| Critical unsafe rate (critical wrong / suggestions) | 0.0% / 1.9% | 0.0% / 2.1% | **0.4% / 2.0%** |
+| Correction burden (field decisions a person must make or undo) | 0 / 19 | 23 / 41 | **52 / 58** |
+
+Evidence: `docs/agent-work/evidence/mapping-eval-v{1,2,3}-risk.json`. The baseline's critical
+errors on v3 are two money fields and four files put under the wrong dataset.
+
+### The six held-out wrong suggestions, reviewed
+
+| Severity | Case | Suggested | Label | Caught downstream? |
+|---|---|---|---|---|
+| critical | ServiceTitan invoice export, `amount` | `Amount Paid` | ambiguous | **Partly.** The file is one row per invoice; `Amount Paid` sums every payment applied. The assistant abstained on the required `payment_id`, so the mapping cannot be saved as suggested: a person must choose, and the compiler refuses an unconfirmed money column (`MONEY_MEANING_UNCONFIRMED`). If they pick `Invoice #` as the payment id, the error goes through. Labeler flagged it as debatable. |
+| high | Gravity Forms, `lead_id` | `Form ID` | `Entry Id` | **Yes, if ids repeat.** `Form ID` repeats across entries (3, 5, 3) with different content. Compiling the case with `Form ID` gives eligible, eligible, `conflict_in_file`; with `Entry Id`, three eligible rows (checked). A file where every form appears once would not be caught. |
+| medium | Payments export, `paid_at` | `Created (UTC)` | ambiguous (`Payment Date` is back-dated, `Created` is UTC) | No. Wrong period possible. |
+| medium | Square, `paid_at` | `Date` | ambiguous | No. Wrong period possible. |
+| low | Meta Ads, `clicks` | `Link clicks` | ambiguous | Display only. |
+| low | Five9, `campaign` | `CAMPAIGN` (dialer campaign) | nothing | Display only. |
+
+### What this view adds, honestly
+
+- **The safety gain is concentrated where it matters.** On v3 the assistant makes one critical
+  error against the baseline's six (0.4% vs 2.0% of suggestions).
+- **The human workload is barely smaller.** Correction burden on v3 is 52 against 58. The
+  assistant converts most of the baseline's silent errors into questions; it does not remove
+  the person. A question is visible; a wrong suggestion has to be noticed.
+- **Abstention precision is low (48.8% on v3).** About half of the assistant's empty fields are
+  fields a person could have mapped (vendor jargon). That is the over-abstention cost, stated as
+  a precision.
+- **Calibration is not established.** On v3: high confidence 239/245 correct (97.6%), medium
+  19/19, low 5/5. All six errors were stated as high confidence, and the medium/low buckets are
+  too small to show anything. Confidence labels must not be used to skip review.
+
+`tests/unit/onboarding-eval.test.ts` gates it: critical wrong suggestions at or under 0 / 0 / 1
+on v1 / v2 / v3, a critical rate below the baseline's, and a correction burden no larger than
+the baseline's. Setting the v3 ceiling to 0 fails on the ServiceTitan case (checked).
+
+### Model-backed candidate
+
+Not evaluated. No authorised model access exists for this work, and sending column profiles to a
+provider needs data-handling approval. A candidate must implement `FieldSuggestion`, run against
+v3 without seeing it during development, and beat 1 critical / 0.4% before it ships.
+
 ## Failure categories (v3, held out)
 
 | Category | Wrong | Notes |

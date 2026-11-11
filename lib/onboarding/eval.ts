@@ -66,11 +66,118 @@ export interface EngineReport {
   latencyMs: { p50: number; p95: number; max: number };
 }
 
+/**
+ * What a wrong suggestion would do if a person accepted it. Money in the wrong meaning moves
+ * cash; a wrong identity or branch merges or misplaces customers; a wrong dataset puts a file
+ * under the wrong source authority. These are the errors that matter, so they are counted apart.
+ */
+export type Severity = "critical" | "high" | "medium" | "low";
+
+export interface RiskMetrics {
+  /** Correct suggestions / suggestions made: how often a suggestion can be trusted. */
+  precision: number;
+  /** Mappable labels that received any suggestion / mappable labels. */
+  coverage: number;
+  /** Abstentions that were right (nothing should map, or a person must decide) / all abstentions. */
+  abstentionPrecision: number;
+  abstentionRecall: number;
+  /** Wrong suggestions by consequence, with each one listed. */
+  wrongBySeverity: Record<Severity, number>;
+  wrongDetail: Array<{ caseId: string; field: string; severity: Severity; why: string; suggested: string | null; label: string | null }>;
+  /** Critical wrong suggestions (money meaning, wrong dataset) / suggestions made. */
+  criticalUnsafeRate: number;
+  /** Accuracy within each stated confidence (empty for engines that state none). */
+  calibration: Record<string, { suggestions: number; correct: number; accuracy: number }>;
+  /** Field decisions a person must make or undo: wrong suggestions + mappable fields left empty. */
+  correctionBurden: { total: number; perCase: number };
+}
+
+function severityOf(dataset: DatasetId, fieldKey: string): { severity: Severity; why: string } {
+  const field = DATASETS[dataset].fields.find((f) => f.key === fieldKey);
+  switch (field?.kind) {
+    case "money":
+      return { severity: "critical", why: "money in the wrong meaning" };
+    case "identifier":
+    case "phone":
+    case "email":
+      return { severity: "high", why: "wrong identity" };
+    case "branch":
+      return { severity: "high", why: "wrong branch" };
+    case "datetime":
+    case "date":
+      return { severity: "medium", why: "wrong event time" };
+    case "enum":
+      return { severity: "medium", why: "wrong classification" };
+    default:
+      return { severity: "low", why: "wrong descriptive field" };
+  }
+}
+
+export function riskMetrics(data: EvalDataset, engine: Engine): RiskMetrics {
+  let suggestions = 0, correctSuggestions = 0, mappable = 0, mappableSuggested = 0, abstentions = 0, rightAbstentions = 0, shouldAbstain = 0, burden = 0;
+  const wrongBySeverity: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
+  const wrongDetail: RiskMetrics["wrongDetail"] = [];
+  const calibration: RiskMetrics["calibration"] = {};
+  for (const c of data.cases) {
+    const result = engine(c);
+    const labeled = c.dataset ?? (c.expect.dataset !== "abstain" ? c.expect.dataset : undefined);
+    if (c.dataset === null && c.expect.dataset && result.dataset.chosen !== null && result.dataset.chosen !== c.expect.dataset) {
+      // A file put under the wrong dataset is under the wrong source authority.
+      wrongBySeverity.critical++;
+      wrongDetail.push({ caseId: c.id, field: "(dataset)", severity: "critical", why: "wrong dataset (source authority)", suggested: result.dataset.chosen, label: c.expect.dataset });
+      burden++; // a person must notice the wrong dataset and choose again
+    } else if (c.dataset === null && c.expect.dataset && c.expect.dataset !== "abstain" && result.dataset.chosen === null) {
+      burden++; // a person must choose the dataset
+    }
+    if (labeled === undefined || result.dataset.chosen !== labeled) continue;
+    for (const [field, label] of Object.entries(c.expect.fields)) {
+      const s = result.fields.find((x) => x.field === field);
+      const suggested = s && s.status === "suggested" ? s.column : null;
+      const isMappable = label !== null && label !== "ambiguous";
+      if (isMappable) mappable++;
+      else shouldAbstain++;
+      if (suggested === null) {
+        abstentions++;
+        if (!isMappable) rightAbstentions++;
+        else burden++; // a person must choose the column
+        continue;
+      }
+      suggestions++;
+      if (isMappable) mappableSuggested++;
+      const right = isMappable && suggested === label;
+      const bucket = (calibration[s?.confidence ?? "none"] ??= { suggestions: 0, correct: 0, accuracy: 0 });
+      bucket.suggestions++;
+      if (right) {
+        correctSuggestions++;
+        bucket.correct++;
+      } else {
+        burden++; // a person must notice and undo it
+        const { severity, why } = severityOf(labeled, field);
+        wrongBySeverity[severity]++;
+        wrongDetail.push({ caseId: c.id, field, severity, why, suggested, label });
+      }
+    }
+  }
+  for (const b of Object.values(calibration)) b.accuracy = b.suggestions ? b.correct / b.suggestions : 0;
+  return {
+    precision: suggestions ? correctSuggestions / suggestions : 0,
+    coverage: mappable ? mappableSuggested / mappable : 0,
+    abstentionPrecision: abstentions ? rightAbstentions / abstentions : 0,
+    abstentionRecall: shouldAbstain ? rightAbstentions / shouldAbstain : 0,
+    wrongBySeverity,
+    wrongDetail,
+    criticalUnsafeRate: suggestions ? wrongBySeverity.critical / suggestions : 0,
+    calibration,
+    correctionBurden: { total: burden, perCase: data.cases.length ? burden / data.cases.length : 0 },
+  };
+}
+
 export interface EvalReport {
   datasetVersion: string;
   cases: number;
   assistant: EngineReport;
   baseline: EngineReport;
+  risk: { assistant: RiskMetrics; baseline: RiskMetrics };
   /** The assistant is deterministic and local: no tokens, no provider, no per-case cost. */
   cost: { tokens: 0; dollars: 0; provider: "none" };
 }
@@ -198,6 +305,7 @@ export function runMappingEval(data: EvalDataset): EvalReport {
     cases: data.cases.length,
     assistant: evaluate(data, assistantEngine, ASSISTANT_VERSION),
     baseline: evaluate(data, naiveEngine, "naive-header-match"),
+    risk: { assistant: riskMetrics(data, assistantEngine), baseline: riskMetrics(data, naiveEngine) },
     cost: { tokens: 0, dollars: 0, provider: "none" },
   };
 }

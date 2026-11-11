@@ -33,6 +33,20 @@ describe("schema assistant evaluation gate", () => {
     });
   }
 
+  // Severity gate: wrong suggestions are weighted by what they would damage. The critical
+  // counts are the values measured when severity scoring was added (no rule was changed to
+  // reach them); v3 is held out and keeps its one debatable invoice-grain case.
+  const CRITICAL_CEILING: Record<string, number> = { v1: 0, v2: 0, v3: 1 };
+  for (const [set, ceiling] of Object.entries(CRITICAL_CEILING)) {
+    it.runIf(existsSync(path.join(__dirname, "..", "fixtures", "onboarding", `mapping-eval.${set}.json`)))(`${set}: critical wrong suggestions stay at or under ${ceiling}, and below the baseline's rate`, () => {
+      const { assistant, baseline } = runMappingEval(load(set)).risk;
+      const critical = assistant.wrongDetail.filter((w) => w.severity === "critical").map((w) => `${w.caseId}:${w.field}`);
+      expect(assistant.wrongBySeverity.critical, critical.join(", ")).toBeLessThanOrEqual(ceiling);
+      expect(assistant.criticalUnsafeRate).toBeLessThan(baseline.criticalUnsafeRate);
+      expect(assistant.correctionBurden.total).toBeLessThanOrEqual(baseline.correctionBurden.total);
+    });
+  }
+
   it("every suggestion is deterministic: the same dataset gives the same report", () => {
     const data = load("v1");
     const strip = (r: ReturnType<typeof runMappingEval>) => JSON.stringify({ ...r.assistant, latencyMs: null });

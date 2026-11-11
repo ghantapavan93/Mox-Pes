@@ -1,0 +1,65 @@
+## crash after 20 batches
+CRASH: exiting hard after 20 committed batches (40000 rows read)
+## resume, hard-killed (Stop-Process -Force) mid-run; leads afterwards = 58800 (30 whole batches of 1960)
+## resume over the full file
+{
+  "machine": "AMD Ryzen 9 5900HX with Radeon Graphics x16, 15791 MB RAM, win32 10.0.26300, Node v22.14.0",
+  "postgres": "PostgreSQL 17.8 on x86_64-windows",
+  "durability": {
+    "fsync": "on",
+    "full_page_writes": "on",
+    "shared_buffers": "16384",
+    "synchronous_commit": "on",
+    "wal_level": "replica"
+  },
+  "file": {
+    "path": "C:/Temp/backfill-100000.csv",
+    "mb": 8,
+    "rows": 100000,
+    "generateMs": 0
+  },
+  "batch": 2000,
+  "batches": 50,
+  "rowsRead": 100000,
+  "loadSeconds": 14.2,
+  "rowsPerSecond": 7048,
+  "batchLatencyMs": {
+    "p50": 284,
+    "p95": 320,
+    "p99": 374,
+    "max": 374
+  },
+  "peakRssMb": 188,
+  "cpuSeconds": {
+    "user": 7.7,
+    "system": 0.3
+  },
+  "walMb": 138,
+  "databaseGrowthMb": 58,
+  "totals": {
+    "inserted": 39200,
+    "duplicates": 58800,
+    "projected": 39200,
+    "quarantined": 0,
+    "duplicateInFile": 2000,
+    "otherNotEligible": 0
+  },
+  "correctness": {
+    "leads": 98000,
+    "distinctIds": 98000,
+    "expectedUniqueCalls": 98000,
+    "rawEvents": 98000,
+    "leadsEqualUnique": true
+  },
+  "reconcileSeconds": 0.1,
+  "reconcileExceptions": {
+    "detected": 0,
+    "opened": 0,
+    "resolved": 0
+  },
+  "queries": {
+    "leadsByBranchChannelMs": 37.1,
+    "leadLookupByIdMs": 1.2,
+    "rawByExternalIdMs": 2.1
+  }
+}

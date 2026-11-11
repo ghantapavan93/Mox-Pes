@@ -20,6 +20,7 @@ export const NAV: NavItem[] = [
   { href: "/definitions", label: "Definitions", keywords: "metrics glossary formulas lineage", group: "Understand" },
   { href: "/onboarding", label: "Data onboarding", keywords: "upload import csv xlsx json file export mapping profile quarantine dry run byod", group: "Systems" },
   { href: "/integrations", label: "Integrations", keywords: "crm fieldroutes connectors sync studio mapping", group: "Systems" },
+  { href: "/changes", label: "ChangeGuard", keywords: "change preflight release campaign mapping approve verify configuration", group: "Systems" },
   { href: "/audit", label: "Audit & Health", keywords: "audit log system health jobs freshness", group: "Systems" },
   { href: "/demo", label: "Guided demo", keywords: "tour walkthrough golden path four minutes presenter", group: "Systems" },
 ];

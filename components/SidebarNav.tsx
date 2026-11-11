@@ -13,6 +13,7 @@ import {
   PanelLeftOpen,
   PlayCircle,
   FileUp,
+  GitPullRequestArrow,
   Plug,
   ScrollText,
   Send,
@@ -33,6 +34,7 @@ const ICON: Record<string, LucideIcon> = {
   "/definitions": BookOpen,
   "/onboarding": FileUp,
   "/integrations": Plug,
+  "/changes": GitPullRequestArrow,
   "/audit": ScrollText,
   "/demo": PlayCircle,
 };

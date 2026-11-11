@@ -27,12 +27,36 @@ function unsupportedIds(ids: string[], returned: ReadonlySet<string>): string[] 
   return ids.filter((id) => !returned.has(id));
 }
 
+/**
+ * A claim that something CAUSED a business improvement (revenue, sales, bookings, conversions,
+ * customers, profit, ROI). Only a measured experiment can support that, and no tool returns
+ * experiment evidence, so such a claim is always dropped, whatever records it cites. Stating it
+ * as a hypothesis ("may have") is allowed and stays a hypothesis.
+ */
+const IMPACT = String.raw`(revenue|sales|bookings?|conversions?|customers|profit|roi|cac)`;
+// Improvement claims only: "caused 53 customers to lose their lead" is a data-integrity
+// finding about a defect, not a business-impact claim, and must stay.
+const CAUSAL_IMPACT = [
+  new RegExp(String.raw`\b(increas|rais|boost|improv|lift|grew|grow|drove|generat)\w*\b[^.]{0,80}\b${IMPACT}\b`, "i"),
+  new RegExp(String.raw`\b${IMPACT}\b[^.]{0,60}\b(rose|increased|grew|improved|went up|jumped)\b[^.]{0,60}\b(because|due to|after|thanks to|as a result)\b`, "i"),
+  new RegExp(String.raw`\b(led to|resulted in|responsible for)\b[^.]{0,30}\b(more|higher|additional|extra|increased?)\b[^.]{0,40}\b${IMPACT}\b`, "i"),
+];
+const HEDGED = /\b(may|might|could|possibly|hypothes|unproven|not (yet )?measured|cannot (yet )?say)\b/i;
+
+export function isCausalImpactClaim(text: string): boolean {
+  return CAUSAL_IMPACT.some((re) => re.test(text)) && !HEDGED.test(text);
+}
+
 export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>): GroundedDraft {
   const dropped: DroppedClaim[] = [];
   let downgraded = 0;
 
   const observations: Observation[] = [];
   for (const o of draft.observations) {
+    if (o.status === "verified" && isCausalImpactClaim(o.text)) {
+      dropped.push({ where: "observation", text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: "claims a business improvement was caused; only a measured experiment can show that, and none exists" });
+      continue;
+    }
     const unsupported = unsupportedIds(o.evidenceIds, returned);
     if (o.evidenceIds.length === 0 || unsupported.length > 0) {
       dropped.push({
@@ -54,6 +78,10 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>)
   }
 
   let suspectedCause = draft.suspectedCause;
+  if (suspectedCause && isCausalImpactClaim(suspectedCause.text)) {
+    dropped.push({ where: "suspectedCause", text: suspectedCause.text, evidenceIds: suspectedCause.evidenceIds, unsupported: [], reason: "claims a business improvement was caused; only a measured experiment can show that, and none exists" });
+    suspectedCause = null;
+  }
   if (suspectedCause) {
     const unsupported = unsupportedIds(suspectedCause.evidenceIds, returned);
     if (suspectedCause.evidenceIds.length === 0 || unsupported.length > 0) {

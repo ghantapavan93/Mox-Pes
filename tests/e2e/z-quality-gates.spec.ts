@@ -36,6 +36,12 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
   const incident = await incidentHref(page);
   const customer = await customerHref(page);
   const upload = await stageSample(page, "demo-crm-payments.csv", { dryRun: true, answers: { moneyMeaning: { amount: "collected_payment" } } });
+  // A preflight-only change (a source contract check), so no campaign mapping is held in review.
+  await page.request.post("/api/role", { data: { role: "engineer" } });
+  const sample = { id: "AXE-1", branch_tag: "B01", start_time: "2026-10-14T15:00:00.000Z", tracking_phone_number: "+12025550199", source: "Google Ads", gclid: null, campaign: null, agent_note: null, customer_phone_number: "+12125550123", call_score: 80 };
+  const changeRes = await page.request.post("/api/changes", { data: { kind: "source_contract", payload: { source: "calls", entity: "call", samples: [sample] }, reason: "Accessibility gate fixture" } });
+  expect(changeRes.status()).toBe(201);
+  const change = `/changes/${(await changeRes.json()).change.id}`;
   return [
     ["overview", "/?period=oct", "marketing"],
     ["incidents", "/exceptions", "marketing"],
@@ -54,6 +60,8 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["onboarding-upload", upload, "approver"],
     ["branch", "/branches/B09?period=oct", "marketing"],
     ["demo", "/demo", "marketing"],
+    ["changes", "/changes", "marketing"],
+    ["change", change, "approver"],
   ];
 }
 

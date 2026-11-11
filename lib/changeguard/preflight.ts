@@ -1,0 +1,439 @@
+import type { PoolClient } from "pg";
+import { mapCampaignToBranchInTransaction } from "@/lib/actions";
+import type { RawRecord, SourceName } from "@/lib/adapters/contract";
+import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/registry";
+import type { Queryable } from "@/lib/db";
+import { branchRows, paidCac } from "@/lib/metrics/scorecard";
+import { canonicalJson, sha256 } from "@/lib/primitives";
+import { PERIODS } from "@/lib/period";
+import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
+import { BRANCH_BY_ID } from "@/lib/reference";
+import type { Viewer } from "@/lib/viewer";
+import {
+  CHECK_IDS,
+  dependenciesOf,
+  verdictOf,
+  type BranchImpact,
+  type CampaignMappingPayload,
+  type CheckId,
+  type PreflightCheck,
+  type PreflightResult,
+  type SourceContractPayload,
+} from "./model";
+
+/**
+ * The preflight engine. Deterministic, and it never mutates authoritative state:
+ *
+ *   campaign_mapping  runs the PRODUCTION write path (the same function the Action Center uses,
+ *                     then reconciliation) inside the caller's transaction, measures the
+ *                     reporting before and after, and the caller rolls the transaction back.
+ *   source_contract   runs sample payloads through the DEPLOYED mapper (pure functions) and
+ *                     compares their shape with the latest stored payload. Reads only.
+ *
+ * Every one of the fourteen checks is answered; one that does not apply says why.
+ */
+
+export interface CampaignBase {
+  campaignId: number;
+  externalCampaignId: string;
+  name: string;
+  platform: string;
+  channelCode: string;
+  /** The branch the campaign maps to now (null = unmapped). */
+  currentBranchId: string | null;
+  /** Where this campaign's leads actually arrive, by branch. */
+  leadEvidence: Array<{ branchId: string; leads: number }>;
+  /** Campaigns this one replaced or was replaced by, and where those map. */
+  lineage: Array<{ campaignId: number; relation: "predecessor" | "successor"; branchId: string | null }>;
+  spendCents: number;
+  spendDays: { first: string | null; last: string | null; days: number };
+}
+
+export async function readCampaignBase(db: Queryable, campaignId: number): Promise<CampaignBase | null> {
+  const c = await db.query<{ id: string; external_campaign_id: string; name: string; platform: string; channel_code: string; branch_id: string | null }>(
+    `select c.id, c.external_campaign_id, c.name, c.platform, c.channel_code, m.branch_id
+     from ad_campaigns c left join campaign_branch_map m on m.campaign_id = c.id where c.id = $1`,
+    [campaignId],
+  );
+  if (c.rowCount === 0) return null;
+  const row = c.rows[0];
+  const [evidence, lineage, spend] = await Promise.all([
+    db.query<{ branch_id: string; n: string }>(
+      "select branch_id, count(*) as n from leads where campaign_external_id = $1 group by branch_id order by count(*) desc, branch_id",
+      [row.external_campaign_id],
+    ),
+    db.query<{ campaign_id: string; relation: "predecessor" | "successor"; branch_id: string | null }>(
+      `select l.predecessor_campaign_id as campaign_id, 'predecessor' as relation, m.branch_id
+         from campaign_lineage l left join campaign_branch_map m on m.campaign_id = l.predecessor_campaign_id
+        where l.successor_campaign_id = $1
+       union all
+       select l.successor_campaign_id, 'successor', m.branch_id
+         from campaign_lineage l left join campaign_branch_map m on m.campaign_id = l.successor_campaign_id
+        where l.predecessor_campaign_id = $1`,
+      [campaignId],
+    ),
+    db.query<{ cents: string | null; first: string | null; last: string | null; days: string }>(
+      "select sum(cost_cents) as cents, min(spend_date)::text as first, max(spend_date)::text as last, count(distinct spend_date) as days from ad_spend_daily where campaign_id = $1",
+      [campaignId],
+    ),
+  ]);
+  return {
+    campaignId: Number(row.id),
+    externalCampaignId: row.external_campaign_id,
+    name: row.name,
+    platform: row.platform,
+    channelCode: row.channel_code,
+    currentBranchId: row.branch_id,
+    leadEvidence: evidence.rows.map((r) => ({ branchId: r.branch_id, leads: Number(r.n) })),
+    lineage: lineage.rows.map((r) => ({ campaignId: Number(r.campaign_id), relation: r.relation, branchId: r.branch_id })),
+    spendCents: Number(spend.rows[0].cents ?? 0),
+    spendDays: { first: spend.rows[0].first, last: spend.rows[0].last, days: Number(spend.rows[0].days) },
+  };
+}
+
+/**
+ * What an approval depends on, besides the configuration itself: the mapping it replaces and
+ * where the evidence points. If either moves between preflight and release, the approval is
+ * stale. Lead counts are deliberately not hashed (they grow every day); the branches they point
+ * to are.
+ */
+export function baseHashOf(base: CampaignBase): string {
+  return sha256(
+    canonicalJson({
+      currentBranchId: base.currentBranchId,
+      evidenceBranches: base.leadEvidence.map((e) => e.branchId).sort(),
+      majority: base.leadEvidence[0]?.branchId ?? null,
+      lineage: base.lineage,
+    }),
+  );
+}
+
+interface Snapshot {
+  rows: Map<string, { paidSpendCents: number; paidAcquired: number; paidCacCents: number | null; canonical: string }>;
+  open: Map<string, { kind: string; summary: string }>;
+  totalSpendCents: number;
+}
+
+async function snapshot(tx: Queryable): Promise<Snapshot> {
+  const period = PERIODS.all;
+  const [rows, open, total] = await Promise.all([
+    branchRows(tx, { from: period.from, to: period.to, branchIds: null }),
+    tx.query<{ fingerprint: string; kind: string; summary: string }>("select fingerprint, kind, summary from exceptions where status = 'open'"),
+    tx.query<{ cents: string | null }>("select sum(cost_cents) as cents from ad_spend_daily"),
+  ]);
+  return {
+    rows: new Map(rows.map((r) => [r.branchId, { paidSpendCents: r.paidSpendCents, paidAcquired: r.paidAcquired, paidCacCents: paidCac(r.paidSpendCents, r.paidAcquired), canonical: canonicalJson(r) }])),
+    open: new Map(open.rows.map((r) => [r.fingerprint, { kind: r.kind, summary: r.summary }])),
+    totalSpendCents: Number(total.rows[0].cents ?? 0),
+  };
+}
+
+/** The production write: the Action Center's mapping core for a new mapping, the same rule for a remap. */
+export async function applyCampaignMapping(tx: PoolClient, args: { campaignId: number; branchId: string; actor: string; reason: string; now: Date }): Promise<void> {
+  const current = await tx.query<{ branch_id: string }>("select branch_id from campaign_branch_map where campaign_id = $1", [args.campaignId]);
+  if (current.rowCount === 0) {
+    await mapCampaignToBranchInTransaction(tx, args);
+    return;
+  }
+  await lockReconcile(tx);
+  await tx.query("update campaign_branch_map set branch_id = $2, mapped_by = $3, mapped_at = $4 where campaign_id = $1", [args.campaignId, args.branchId, args.actor, args.now]);
+  await tx.query("insert into audit_log (at, actor, action, subject, detail) values ($1, $2, 'remap_campaign', $3, $4)", [
+    args.now,
+    args.actor,
+    `campaign:${args.campaignId}`,
+    { from: current.rows[0].branch_id, to: args.branchId, reason: args.reason },
+  ]);
+  await reconcile(tx, args.now);
+}
+
+const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const na = (id: CheckId, detail: string): PreflightCheck => ({ id, status: "not_applicable", detail });
+
+function inScope(viewer: Viewer, branchId: string | null): boolean {
+  return branchId === null || viewer.branchIds === null || viewer.branchIds.includes(branchId);
+}
+
+/** Orders checks as CHECK_IDS so every preflight reads the same way. */
+function ordered(checks: PreflightCheck[]): PreflightCheck[] {
+  const missing = CHECK_IDS.filter((id) => !checks.some((c) => c.id === id));
+  if (missing.length > 0) throw new Error(`preflight left checks unanswered: ${missing.join(", ")}`);
+  return CHECK_IDS.map((id) => checks.find((c) => c.id === id)!);
+}
+
+/**
+ * Preflight of a campaign → branch mapping. Runs inside `tx`; the CALLER must roll it back
+ * (lib/changeguard/service.ts uses withRollback). Returns the result and the base hash.
+ */
+export async function preflightCampaignMapping(
+  tx: PoolClient,
+  args: { payload: CampaignMappingPayload; viewer: Viewer; now: Date; changeId: number | null },
+): Promise<{ result: PreflightResult; baseHash: string; base: CampaignBase | null }> {
+  const { payload, viewer, now } = args;
+  const base = await readCampaignBase(tx, payload.campaignId);
+  const target = BRANCH_BY_ID.get(payload.branchId);
+  const checks: PreflightCheck[] = [];
+  const limitations = [
+    "A mapping applies to the campaign's whole history (mappings are not effective-dated); the preview shows that retroactive effect.",
+    "Lead evidence is the campaign id carried on call and web leads. Campaigns whose leads carry no campaign id cannot be checked this way.",
+  ];
+
+  if (!base || !target) {
+    checks.push({
+      id: "identifier_presence",
+      status: "fail",
+      code: !base ? "UNKNOWN_CAMPAIGN" : "UNKNOWN_BRANCH",
+      detail: !base ? `Campaign ${payload.campaignId} does not exist` : `Branch ${payload.branchId} does not exist`,
+    });
+    for (const id of CHECK_IDS) if (id !== "identifier_presence") checks.push(na(id, "Not evaluated: the change names something that does not exist."));
+    const result: PreflightResult = { kind: "campaign_mapping", verdict: "fail", checks: ordered(checks), impact: [], exceptionsOpened: [], exceptionsCleared: [], unrelatedBranchesChanged: [], dependentMetrics: dependenciesOf("campaign_branch_map"), limitations };
+    return { result, baseHash: sha256("missing"), base };
+  }
+
+  const previous = base.currentBranchId;
+  checks.push({ id: "identifier_presence", status: "pass", detail: `Campaign ${base.externalCampaignId} (${base.platform}) and branch ${target.id} ${target.name} exist.` });
+  checks.push(na("schema_compatibility", "A mapping changes no source payload or mapper."));
+  checks.push({ id: "identity_stability", status: "pass", detail: `The campaign keeps its identity (${base.platform} + ${base.externalCampaignId}); only its branch changes.` });
+  checks.push(na("time_and_dates", "A mapping moves whole spend days between branches; no time is reinterpreted."));
+  checks.push(na("quarantine_behaviour", "No source record is re-mapped, so nothing is newly quarantined."));
+  checks.push({ id: "source_authority", status: "pass", detail: "Spend is owned by the ad platform and is not changed; the mapping is a person-owned configuration, changed only through approval." });
+
+  // ── Coverage: does the evidence agree with the proposed branch? ──
+  const totalLeads = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
+  const atTarget = base.leadEvidence.find((e) => e.branchId === target.id)?.leads ?? 0;
+  const majority = base.leadEvidence[0] ?? null;
+  const evidenceBrands = new Set(base.leadEvidence.map((e) => BRANCH_BY_ID.get(e.branchId)?.brandId).filter(Boolean));
+  const nameBranch = /^(B\d{2})\b/.exec(base.name)?.[1] ?? null;
+  if (previous === target.id) {
+    checks.push({ id: "mapping_coverage", status: "fail", code: "NO_CHANGE", detail: `The campaign already maps to ${target.id}; this change would do nothing.` });
+  } else if (totalLeads === 0) {
+    checks.push({
+      id: "mapping_coverage",
+      status: "warn",
+      code: "NO_LEAD_EVIDENCE",
+      detail: "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it.",
+    });
+  } else if (atTarget / totalLeads < 0.5) {
+    checks.push({
+      id: "mapping_coverage",
+      status: "fail",
+      code: "LEAD_EVIDENCE_DISAGREES",
+      detail: `${totalLeads} lead(s) carry this campaign's id; ${atTarget} arrived at ${target.id} and ${majority!.leads} at ${majority!.branchId}. The mapping contradicts the campaign's own leads.`,
+      evidence: { leadEvidence: base.leadEvidence },
+    });
+  } else if (atTarget < totalLeads) {
+    checks.push({
+      id: "mapping_coverage",
+      status: "warn",
+      code: "LEAD_EVIDENCE_SPLIT",
+      detail: `${atTarget} of ${totalLeads} lead(s) for this campaign arrived at ${target.id}; the rest at ${base.leadEvidence.filter((e) => e.branchId !== target.id).map((e) => e.branchId).join(", ")}.`,
+      evidence: { leadEvidence: base.leadEvidence },
+    });
+  } else {
+    checks.push({ id: "mapping_coverage", status: "pass", detail: `All ${totalLeads} lead(s) carrying this campaign's id arrived at ${target.id}.`, evidence: { leadEvidence: base.leadEvidence } });
+  }
+
+  // ── Collisions: brand, lineage, name, competing changes ──
+  const collisions: string[] = [];
+  let collisionStatus: PreflightCheck["status"] = "pass";
+  let collisionCode: string | undefined;
+  if (evidenceBrands.size > 0 && !evidenceBrands.has(target.brandId)) {
+    collisionStatus = "fail";
+    collisionCode = "CROSS_BRAND";
+    collisions.push(`${target.id} belongs to brand "${target.brandId}", but this campaign's leads arrive at brand "${[...evidenceBrands].join(", ")}" branches.`);
+  }
+  const lineageElsewhere = base.lineage.filter((l) => l.branchId !== null && l.branchId !== target.id);
+  if (lineageElsewhere.length > 0) {
+    if (collisionStatus === "pass") collisionStatus = "warn";
+    collisionCode ??= "LINEAGE_ELSEWHERE";
+    collisions.push(`Its ${lineageElsewhere.map((l) => `${l.relation} campaign ${l.campaignId} maps to ${l.branchId}`).join("; ")}.`);
+  }
+  if (nameBranch && nameBranch !== target.id) {
+    if (collisionStatus === "pass") collisionStatus = "warn";
+    collisionCode ??= "NAME_SUGGESTS_OTHER_BRANCH";
+    collisions.push(`The campaign's name starts with ${nameBranch} (a naming convention, not authoritative).`);
+  }
+  const competing = await tx.query<{ id: string }>(
+    `select id from config_changes where kind = 'campaign_mapping' and status in ('ready_for_review', 'approved')
+       and (payload ->> 'campaignId')::bigint = $1 and ($2::bigint is null or id <> $2)`,
+    [payload.campaignId, args.changeId],
+  );
+  if (competing.rowCount! > 0) {
+    collisionStatus = "fail";
+    collisionCode = "COMPETING_CHANGE";
+    collisions.push(`Change ${competing.rows.map((r) => r.id).join(", ")} for this campaign is already in review or approved.`);
+  }
+  checks.push({
+    id: "mapping_collision",
+    status: collisionStatus,
+    code: collisionStatus === "pass" ? undefined : collisionCode,
+    detail: collisions.length > 0 ? collisions.join(" ") : previous ? `Remaps the campaign from ${previous} to ${target.id}; no other mapping or change competes.` : "A new mapping; no other mapping or change competes.",
+  });
+
+  // ── Permissions ──
+  const scopeOk = inScope(viewer, target.id) && inScope(viewer, previous);
+  checks.push({
+    id: "permissions",
+    status: viewer.can.propose && scopeOk ? "pass" : "fail",
+    code: viewer.can.propose && scopeOk ? undefined : "NOT_PERMITTED",
+    detail:
+      viewer.can.propose && scopeOk
+        ? "The author may propose this change. Release needs approval by a different person with the approve permission and both branches in scope."
+        : `${viewer.label} cannot propose a change touching ${[previous, target.id].filter(Boolean).join(" and ")}.`,
+  });
+
+  // ── Run the production write, then measure, then the caller rolls back ──
+  const before = await snapshot(tx);
+  await applyCampaignMapping(tx, { campaignId: payload.campaignId, branchId: target.id, actor: `preflight:${viewer.subject}`, reason: "preflight (rolled back)", now });
+  const after = await snapshot(tx);
+
+  // Branches the change legitimately moves: the spend's old and new home, and the branches where
+  // the campaign's leads land (their paid-customer count depends on the campaign being mapped).
+  const spendBranches = [previous, target.id].filter((b): b is string => b !== null);
+  const evidenceBranches = base.leadEvidence.map((e) => e.branchId).filter((b) => !spendBranches.includes(b));
+  const affected = [...spendBranches, ...evidenceBranches];
+  const unrelated = [...before.rows.keys()].filter((b) => !affected.includes(b) && before.rows.get(b)!.canonical !== after.rows.get(b)?.canonical);
+  const impact: BranchImpact[] = affected
+    .map((b): BranchImpact => {
+      const pick = (s: Snapshot) => {
+        const r = s.rows.get(b);
+        return { paidSpendCents: r?.paidSpendCents ?? 0, paidAcquired: r?.paidAcquired ?? 0, paidCacCents: r?.paidCacCents ?? null };
+      };
+      return { branchId: b, role: b === target.id ? "proposed" : b === previous ? "previous" : "lead_evidence", before: pick(before), after: pick(after) };
+    })
+    // An evidence branch whose numbers did not move is not news.
+    .filter((i) => i.role !== "lead_evidence" || i.before.paidAcquired !== i.after.paidAcquired || i.before.paidSpendCents !== i.after.paidSpendCents);
+  const opened = [...after.open].filter(([f]) => !before.open.has(f)).map(([fingerprint, v]) => ({ fingerprint, ...v }));
+  const cleared = [...before.open].filter(([f]) => !after.open.has(f)).map(([fingerprint, v]) => ({ fingerprint, ...v }));
+
+  checks.push(
+    before.totalSpendCents === after.totalSpendCents
+      ? { id: "financial_precision", status: "pass", detail: `Company spend is unchanged to the cent (${dollars(before.totalSpendCents)}); the change only moves ${dollars(base.spendCents)} between branches.` }
+      : { id: "financial_precision", status: "fail", code: "SPEND_NOT_CONSERVED", detail: `Company spend changed from ${dollars(before.totalSpendCents)} to ${dollars(after.totalSpendCents)} in the preview.` },
+  );
+  const fmtCac = (c: number | null) => (c === null ? "n/a" : dollars(c));
+  checks.push({
+    id: "reporting_impact",
+    status: unrelated.length > 0 ? "fail" : "pass",
+    code: unrelated.length > 0 ? "UNRELATED_BRANCHES_CHANGED" : undefined,
+    detail:
+      unrelated.length > 0
+        ? `Branches outside the change moved in the preview: ${unrelated.join(", ")}.`
+        : `${impact.map((i) => `${i.branchId} (${i.role.replace("_", " ")}): paid spend ${dollars(i.before.paidSpendCents)} → ${dollars(i.after.paidSpendCents)}, paid customers ${i.before.paidAcquired} → ${i.after.paidAcquired}, paid CAC ${fmtCac(i.before.paidCacCents)} → ${fmtCac(i.after.paidCacCents)}`).join("; ")}. Every other branch is unchanged. Applies to ${base.spendDays.days} spend day(s)${base.spendDays.first ? ` from ${base.spendDays.first} to ${base.spendDays.last}` : ""}.`,
+  });
+  checks.push({
+    id: "downstream_completeness",
+    status: opened.length > 0 ? "warn" : "pass",
+    code: opened.length > 0 ? "OPENS_EXCEPTIONS" : undefined,
+    detail: `Reconciliation after the change: ${cleared.length} exception(s) would clear${cleared.length ? ` (${cleared.map((c) => c.kind).join(", ")})` : ""}, ${opened.length} would open${opened.length ? ` (${opened.map((o) => o.kind).join(", ")})` : ""}.`,
+  });
+  checks.push({
+    id: "replay_safety",
+    status: "pass",
+    detail: "Releasing is idempotent: the approval binds one configuration hash, the release locks the change row, and a change can be released once.",
+  });
+  checks.push({
+    id: "recovery",
+    status: "pass",
+    detail: previous
+      ? `Reversible by a compensating change back to ${previous}, with its own preflight and approval. No external system is touched.`
+      : "Reversible by unmapping through a compensating change; no external system is touched. Spend returns to unallocated.",
+  });
+
+  const ordering = ordered(checks);
+  const result: PreflightResult = {
+    kind: "campaign_mapping",
+    verdict: verdictOf(ordering),
+    checks: ordering,
+    impact,
+    exceptionsOpened: opened,
+    exceptionsCleared: cleared,
+    unrelatedBranchesChanged: unrelated,
+    dependentMetrics: dependenciesOf("campaign_branch_map"),
+    limitations,
+  };
+  return { result, baseHash: baseHashOf(base), base };
+}
+
+function shapeOf(value: unknown, prefix = ""): string[] {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([k, v]) => {
+    const path = prefix ? `${prefix}.${k}` : k;
+    return v !== null && typeof v === "object" && !Array.isArray(v) ? [path, ...shapeOf(v, path)] : [path];
+  });
+}
+
+/**
+ * Preflight of an upstream shape change: sample payloads through the deployed mapper. Pure
+ * mapper calls plus one read of the latest stored payload; nothing is written.
+ */
+export async function preflightSourceContract(db: Queryable, args: { payload: SourceContractPayload; viewer: Viewer }): Promise<{ result: PreflightResult; baseHash: string }> {
+  const { payload } = args;
+  const source = payload.source as SourceName;
+  const mapper = mapperFor(source);
+  const latest = await db.query<{ payload: unknown }>("select payload from raw_events where source = $1 and entity = $2 and status = 'projected' order by id desc limit 1", [source, payload.entity]);
+  const knownShape = new Set(latest.rowCount ? shapeOf(latest.rows[0].payload) : []);
+  const seen = new Set<string>();
+  const samples = payload.samples.map((sample, index) => {
+    const record: RawRecord = { entity: payload.entity, payload: sample };
+    const shape = shapeOf(sample);
+    const added = knownShape.size ? shape.filter((p) => !knownShape.has(p)) : [];
+    const removed = knownShape.size ? [...knownShape].filter((p) => !shape.includes(p)) : [];
+    const identity = mapper.identify(record, referenceContext);
+    if (!("entityId" in identity)) return { index, outcome: `refused:${identity.code}`, detail: identity.detail, addedFields: added, removedFields: removed };
+    if (seen.has(identity.externalId)) return { index, outcome: "duplicate", detail: "same record version as an earlier sample", addedFields: added, removedFields: removed };
+    seen.add(identity.externalId);
+    const mapped = mapper.map(record, { ...referenceContext, receivedAt: new Date(0) });
+    return mapped.ok
+      ? { index, outcome: `projected:${mapped.projection.table}`, detail: "", addedFields: added, removedFields: removed }
+      : { index, outcome: `refused:${mapped.code}`, detail: mapped.detail, addedFields: added, removedFields: removed };
+  });
+  const refused = samples.filter((s) => s.outcome.startsWith("refused:"));
+  const duplicates = samples.filter((s) => s.outcome === "duplicate");
+  const codes = [...new Set(refused.map((s) => s.outcome.slice(8)))];
+  const added = [...new Set(samples.flatMap((s) => s.addedFields))];
+  const removed = [...new Set(samples.flatMap((s) => s.removedFields))];
+  const deps = dependenciesOf(source, source === "crm" ? payload.entity : undefined);
+  const version = `${source}@${ACTIVE_VERSION[source]}`;
+  const structural = added.length || removed.length ? ` Shape differs from the latest stored ${payload.entity}: added ${added.join(", ") || "none"}; missing ${removed.join(", ") || "none"}.` : "";
+
+  const checks: PreflightCheck[] = [
+    refused.length > 0
+      ? { id: "schema_compatibility", status: "fail", code: "INCOMPATIBLE_SHAPE", detail: `${refused.length} of ${samples.length} sample(s) are refused by the deployed mapper ${version} (${codes.join(", ")}).${structural}` }
+      : { id: "schema_compatibility", status: "pass", detail: `Every sample maps under the deployed ${version}.${structural}${added.length && !removed.length ? " Added fields are ignored by the mapper: a structural difference, not a contract violation." : ""}` },
+    refused.some((s) => /MISSING_IDENTITY|MISSING_FIELD/.test(s.outcome))
+      ? { id: "identifier_presence", status: "fail", code: "MISSING_IDENTIFIER", detail: "Some samples lack a required identifier or field." }
+      : { id: "identifier_presence", status: "pass", detail: "Every sample carries the identifiers the mapper requires." },
+    na("mapping_coverage", "A shape change does not touch branch or brand mappings; branch codes are still validated by the mapper."),
+    na("mapping_collision", "No mapping is changed."),
+    { id: "identity_stability", status: "pass", detail: "Record identity is computed by the deployed mapper's identify(), unchanged by this preflight." },
+    refused.some((s) => /TIMESTAMP|TIME_ZONE/.test(s.outcome))
+      ? { id: "time_and_dates", status: "fail", code: "INVALID_TIME", detail: "Some samples carry times the mapper cannot place." }
+      : { id: "time_and_dates", status: "pass", detail: "Every sample's times parse under the mapper's rules." },
+    { id: "financial_precision", status: "pass", detail: "Money is validated by the mapper itself (exact cents, at most 13 whole digits); a sample that breaks it is refused, never rounded." },
+    { id: "replay_safety", status: "pass", detail: duplicates.length ? `${duplicates.length} sample(s) repeat an earlier record version: intake stores them once and counts the re-delivery.` : "No sample repeats a record version." },
+    { id: "source_authority", status: "pass", detail: `${source} is the authority for ${payload.entity} records; nothing here overrides it.` },
+    { id: "reporting_impact", status: refused.length ? "warn" : "pass", code: refused.length ? "DEPENDENT_METRICS" : undefined, detail: `Metrics reading ${source} ${payload.entity}: ${deps.join(", ") || "none listed"}.` },
+    { id: "permissions", status: args.viewer.can.propose ? "pass" : "fail", code: args.viewer.can.propose ? undefined : "NOT_PERMITTED", detail: args.viewer.can.propose ? "The author may propose this check." : `${args.viewer.label} cannot propose changes.` },
+    refused.length
+      ? { id: "downstream_completeness", status: "fail", code: "RECORDS_WOULD_NOT_ARRIVE", detail: `${refused.length} record(s) of this shape would not reach the ledger's projection; ${deps.join(", ")} would be understated until a fix and replay.` }
+      : { id: "downstream_completeness", status: "pass", detail: "Every sample would reach its projection." },
+    { id: "quarantine_behaviour", status: "pass", detail: refused.length ? `Refused records are quarantined with their code (${codes.join(", ")}) and stay replayable; nothing is dropped or guessed.` : "Nothing would be quarantined." },
+    { id: "recovery", status: "pass", detail: "Preflight only. Activating a mapper version is a code deploy here; held records are recovered by a replay through the Action Center." },
+  ];
+  const ordering = ordered(checks);
+  return {
+    result: {
+      kind: "source_contract",
+      verdict: verdictOf(ordering),
+      checks: ordering,
+      impact: [],
+      exceptionsOpened: [],
+      exceptionsCleared: [],
+      unrelatedBranchesChanged: [],
+      dependentMetrics: deps,
+      limitations: ["A sample shows what the deployed mapper does with these payloads; it says nothing about payloads not sampled.", "Releasing a mapper version needs a code deploy, so this kind stops at review."],
+      samples: samples.map(({ index, outcome, addedFields, removedFields }) => ({ index, outcome, addedFields, removedFields })),
+    },
+    baseHash: sha256(canonicalJson({ version, knownShape: [...knownShape].sort() })),
+  };
+}

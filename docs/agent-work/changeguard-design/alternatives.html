@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChangeGuard design alternatives</title>
+<style>
+  :root { --bg:#f6f7f9; --surface:#fff; --text:#141820; --muted:#5b6472; --border:#dde1e7; --bad:#b42318; --warn:#b54708; --good:#067647; --accent:#1d4ed8; }
+  body { margin:0; padding:24px; background:var(--bg); color:var(--text); font:13px/1.45 system-ui, sans-serif; }
+  h1 { font-size:20px; margin:0 0 4px; } p.lead { color:var(--muted); margin:0 0 20px; max-width:880px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap:16px; }
+  .tablewrap { overflow-x:auto; }
+  .alt { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; }
+  .alt h2 { font-size:14px; margin:0 0 2px; } .alt .who { color:var(--muted); font-size:12px; margin-bottom:10px; }
+  .frame { border:1px dashed var(--border); border-radius:6px; padding:10px; background:#fbfcfd; min-height:210px; }
+  .row { display:flex; gap:8px; align-items:center; margin:4px 0; } .box { border:1px solid var(--border); border-radius:4px; padding:6px 8px; background:#fff; flex:1; }
+  .pill { font-size:11px; padding:1px 7px; border-radius:99px; border:1px solid currentColor; } .bad{color:var(--bad)} .warn{color:var(--warn)} .good{color:var(--good)} .acc{color:var(--accent)}
+  .step { display:flex; gap:6px; } .step b { width:18px; height:18px; border-radius:50%; background:var(--text); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:10px; flex:none; }
+  .node { border:1px solid var(--border); border-radius:4px; padding:4px 6px; background:#fff; font-size:11px; text-align:center; }
+  .arrow { color:var(--muted); } .score { margin-top:10px; font-size:12px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; margin-top:20px; background:var(--surface); } th, td { border:1px solid var(--border); padding:6px 8px; text-align:left; font-size:12px; } th { background:#f0f2f5; }
+  .chosen { outline:2px solid var(--accent); }
+</style>
+</head>
+<body>
+<h1>Marketing ChangeGuard: five product directions</h1>
+<p class="lead">Low-fidelity previews of five meaningfully different experiences for the same capability: a configuration change is preflighted, reviewed, approved by a different person, released into the synthetic environment and verified. Each is judged for a marketing operations user and a technical reviewer. The chosen direction is outlined.</p>
+<div class="grid">
+
+<section class="alt">
+  <h2>1 · Release preflight console</h2><div class="who">CI-style: a run with 14 checks, green/red</div>
+  <div class="frame">
+    <div class="row"><div class="box"><b>Preflight #41</b> lsa-B44-x → B04</div><span class="pill bad">FAILED</span></div>
+    <div class="row"><div class="box">✓ identifiers · ✓ financial precision · ✓ replay safety</div></div>
+    <div class="row"><div class="box bad">✗ mapping coverage: 10 leads at B44, 0 at B04</div></div>
+    <div class="row"><div class="box bad">✗ collision: cross-brand (moxie vs joshuas)</div></div>
+    <div class="row"><div class="box">… 9 more checks</div></div>
+  </div>
+  <div class="score">Engineer: strong. Marketing ops: weak (a wall of checks, no "so what").</div>
+</section>
+
+<section class="alt chosen">
+  <h2>2 · Evidence-to-decision workflow (chosen)</h2><div class="who">One page answers eight questions, in order</div>
+  <div class="frame">
+    <div class="step"><b>1</b><div class="box">What is changing? lsa-B44-x: unmapped → B04</div></div>
+    <div class="step"><b>2</b><div class="box">What depends on it? paid spend, paid CAC, budget signal</div></div>
+    <div class="step"><b>3</b><div class="box">What did we test? 14 checks, production write path, rolled back</div></div>
+    <div class="step"><b>4</b><div class="box bad">What failed? the campaign's own leads arrive at B44</div></div>
+    <div class="step"><b>5</b><div class="box">What could be affected? B04 spend $0 → $4,539; unmapped spend clears</div></div>
+    <div class="step"><b>6</b><div class="box acc">What must be corrected? resubmit as B44 ▸</div></div>
+    <div class="step"><b>7–8</b><div class="box">Who can approve? · What happened after release?</div></div>
+  </div>
+  <div class="score">Both audiences: strong. Reads top to bottom; every answer is real state.</div>
+</section>
+
+<section class="alt">
+  <h2>3 · Dependency impact explorer</h2><div class="who">A graph from campaign to report</div>
+  <div class="frame">
+    <div class="row"><span class="node">Ad account</span><span class="arrow">→</span><span class="node bad">Campaign lsa-B44-x</span><span class="arrow">→</span><span class="node">Branch B04?</span></div>
+    <div class="row"><span class="node">Calls (10)</span><span class="arrow">→</span><span class="node">Leads @B44</span><span class="arrow">→</span><span class="node">CRM</span><span class="arrow">→</span><span class="node">Revenue</span></div>
+    <div class="row"><span class="node">Spend</span><span class="arrow">→</span><span class="node">Paid CAC</span><span class="arrow">→</span><span class="node">Budget signal</span></div>
+  </div>
+  <div class="score">Engineer: insightful. Marketing ops: needs explanation; graph hides the verdict.</div>
+</section>
+
+<section class="alt">
+  <h2>4 · Change timeline and verification workspace</h2><div class="who">A ledger of states and evidence over time</div>
+  <div class="frame">
+    <div class="row"><div class="box">10:02 draft · marketing</div></div>
+    <div class="row"><div class="box bad">10:02 preflight failed · 2 checks</div></div>
+    <div class="row"><div class="box">10:05 resubmitted · supersedes #41</div></div>
+    <div class="row"><div class="box good">10:09 approved · approver (bound to hash 7c1e…)</div></div>
+    <div class="row"><div class="box good">10:10 released → verified</div></div>
+  </div>
+  <div class="score">Auditor: strong. Doesn't help decide; best as a section, not the page.</div>
+</section>
+
+<section class="alt">
+  <h2>5 · Branch-focused operational control view</h2><div class="who">Per-branch tiles of pending and recent changes</div>
+  <div class="frame">
+    <div class="row"><div class="box">B44 Willow<br><span class="pill warn">1 pending</span></div><div class="box">B04 Briar<br><span class="pill bad">1 blocked</span></div></div>
+    <div class="row"><div class="box">B09 Coral<br><span class="pill good">verified</span></div><div class="box">B12 Elm<br>—</div></div>
+  </div>
+  <div class="score">Branch managers: useful overview. Weak for a single change's decision; 44 tiles.</div>
+</section>
+</div>
+
+<div class="tablewrap"><table>
+  <thead><tr><th>Criterion</th><th>1 Console</th><th>2 Evidence → decision</th><th>3 Graph</th><th>4 Timeline</th><th>5 Branch tiles</th></tr></thead>
+  <tbody>
+    <tr><td>Answers the 8 questions in order</td><td>3 of 8</td><td><b>8 of 8</b></td><td>2 of 8</td><td>2 of 8</td><td>1 of 8</td></tr>
+    <tr><td>Marketing ops can act without help</td><td>No</td><td><b>Yes</b></td><td>Partly</td><td>No</td><td>Partly</td></tr>
+    <tr><td>Technical reviewer sees exact failures and hashes</td><td>Yes</td><td><b>Yes</b></td><td>No</td><td>Partly</td><td>No</td></tr>
+    <tr><td>Works on existing design system, no new nav sprawl</td><td>Yes</td><td><b>Yes (1 page + list)</b></td><td>Needs a graph library</td><td>Yes</td><td>Yes</td></tr>
+    <tr><td>Uses only real application state</td><td>Yes</td><td><b>Yes</b></td><td>Partly (lineage is sparse)</td><td>Yes</td><td>Yes</td></tr>
+  </tbody>
+</table></div>
+<p class="lead" style="margin-top:12px">Chosen: <b>2</b>, with the timeline (4) as its final section and the console's check list (1) inside question 3. The graph (3) and branch tiles (5) are not built: the first needs data the product does not have densely, the second answers a different question.</p>
+</body>
+</html>

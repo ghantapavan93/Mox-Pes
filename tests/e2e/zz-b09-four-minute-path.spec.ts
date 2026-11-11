@@ -90,7 +90,11 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
   await form.getByRole("button", { name: "Propose fix" }).click();
   const card = page.getByTestId("proposal").first();
   await expect(card).toContainText("proposed by engineer");
+  // The dry run re-projects and reconciles inside a rolled-back transaction (about 4–5 s here):
+  // wait for that request to finish, not for a fixed assertion timeout.
+  const dryRun = page.waitForResponse((r) => /\/api\/proposals\/\d+$/.test(r.url()) && r.request().method() === "POST", { timeout: 60_000 });
   await card.getByRole("button", { name: "Run dry run (rolled back)" }).click();
+  expect((await dryRun).status()).toBe(200);
   await expect(card).toContainText("Awaiting approval");
   await expect(card.getByText("conserved")).toHaveCount(golden.conservedRows.length);
   await expect(signal).toContainText(golden.signalBefore.status); // nothing was saved

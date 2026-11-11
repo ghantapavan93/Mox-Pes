@@ -124,6 +124,36 @@ test.describe("quality gate · layout shift", () => {
   }
 });
 
+test.describe("quality gate · hydration", () => {
+  // R-20: `getViewer` decided demo mode before reading the request. A build without DEMO_MODE
+  // never touched cookies there, so Next prerendered the viewer into every static shell as
+  // the guest; the request-time payload named the real role, and React threw #418 (text
+  // mismatch) on every page for any non-guest role. Only a production build shows it: the
+  // dev server prerenders nothing. Run this suite with CI=1.
+  test("every page hydrates without an error as a non-guest role, and its HTML names that role", async ({ page }) => {
+    test.setTimeout(240_000);
+    const errors: string[] = [];
+    let current = "";
+    page.on("pageerror", (e) => errors.push(`${current}: ${e.message.slice(0, 160)}`));
+    page.on("console", (m) => {
+      if (m.type() === "error" && /hydrat|#418|#423|#425/i.test(m.text())) errors.push(`${current}: ${m.text().slice(0, 160)}`);
+    });
+    const guestLabel = 'data-testid="viewer-label">Guest';
+    const wrongShell: string[] = [];
+    for (const [name, url, role] of await pages(page)) {
+      await setRole(page, role);
+      current = `${name} ${url} as ${role}`;
+      const html = await (await page.request.get(url)).text();
+      if (html.includes(guestLabel)) wrongShell.push(current);
+      await page.goto(url);
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(300); // a late streamed boundary hydrates after networkidle
+    }
+    expect(wrongShell, `HTML served a guest viewer to: ${wrongShell.join(", ")}`).toEqual([]);
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+});
+
 test.describe("quality gate · hostile inputs", () => {
   const HOSTILE = ["", "%00", "<script>alert(1)</script>", "'; drop table cases;--", "__proto__", "toString", "x".repeat(3000), "-1", "1e9", "99999999999999999999", "NaN", "Ｂ０９", "2026-02-30"];
   const QUERY: Record<string, string[]> = {

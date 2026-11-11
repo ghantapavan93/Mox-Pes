@@ -6,10 +6,13 @@ import { AdSpendMapper, CallTrackingMapper, DoorToDoorMapper, WebLeadMapper } fr
 /** Every mapper version that has ever shipped. Old versions stay so history is explainable. */
 const MAPPERS: Record<SourceName, Record<string, SourceMapper>> = {
   crm: { "1.0": new FieldRoutesMapper("1.0") },
-  calls: { "1.0": new CallTrackingMapper("1.0"), "1.1": new CallTrackingMapper("1.1") },
+  // calls@1.2 and ads@1.2 are STAGED: registered (testable, replayable) but not active.
+  // Activate them before a native CallRail feed or a non-USD ad account is connected
+  // (docs/agent-work/VENDOR-CONTRACTS.md).
+  calls: { "1.0": new CallTrackingMapper("1.0"), "1.1": new CallTrackingMapper("1.1"), "1.2": new CallTrackingMapper("1.2") },
   web: { "1.0": new WebLeadMapper() },
   d2d: { "1.0": new DoorToDoorMapper() },
-  ads: { "1.0": new AdSpendMapper("1.0"), "1.1": new AdSpendMapper("1.1") },
+  ads: { "1.0": new AdSpendMapper("1.0"), "1.1": new AdSpendMapper("1.1"), "1.2": new AdSpendMapper("1.2") },
 };
 
 /**

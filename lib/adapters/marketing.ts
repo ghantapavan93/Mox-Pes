@@ -61,6 +61,31 @@ const callV11 = z.union([
   z.object({ ...callBase, caller: z.object({ number: z.string().min(1) }) }),
 ]);
 
+/**
+ * v1.2 (staged, not active): reads the CallRail v3 qualification fields that v1.1 ignores.
+ * CallRail sends outbound calls (Outbound Post-Call webhook), spam marking and
+ * lead_status = "not_a_lead" in the same call object (apidocs.callrail.com, 2026-11-11). v1.1
+ * strips unknown keys, so each of those would be counted as a new inbound lead without a
+ * signal. v1.2 refuses them with their own code instead; it never guesses an exclusion, because
+ * the projection has no "excluded lead" state yet (docs/agent-work/VENDOR-CONTRACTS.md, C-3).
+ */
+const callQualification = {
+  direction: z.enum(["inbound", "outbound"]).optional(),
+  spam: z.boolean().optional(),
+  lead_status: z.enum(["good_lead", "not_a_lead", "previously_marked_good_lead"]).nullable().optional(),
+};
+const callV12 = z.union([
+  z.object({ ...callBase, ...callQualification, customer_phone_number: z.string().min(1) }),
+  z.object({ ...callBase, ...callQualification, caller: z.object({ number: z.string().min(1) }) }),
+]);
+
+function refuseUnqualified(c: z.infer<typeof callV12>): MapFailure | null {
+  if (c.direction === "outbound") return fail("NOT_INBOUND", `call ${c.id}: an outbound call is not a lead`);
+  if (c.spam === true) return fail("SPAM_CALL", `call ${c.id}: marked as spam in the call-tracking platform`);
+  if (c.lead_status === "not_a_lead") return fail("NOT_A_LEAD", `call ${c.id}: marked "not a lead" in the call-tracking platform`);
+  return null;
+}
+
 function callChannel(source: string, gclid: string | null): Pick<LeadRow, "channelCode" | "attributionEvidence"> {
   switch (source) {
     case "Google Ads":
@@ -81,7 +106,7 @@ function callChannel(source: string, gclid: string | null): Pick<LeadRow, "chann
 
 export class CallTrackingMapper implements SourceMapper {
   readonly source = "calls" as const;
-  constructor(readonly version: "1.0" | "1.1") {}
+  constructor(readonly version: "1.0" | "1.1" | "1.2") {}
 
   /**
    * Call-tracking platforms update a call after the fact (attribution, qualification) under
@@ -95,10 +120,14 @@ export class CallTrackingMapper implements SourceMapper {
   }
 
   map(record: RawRecord, ctx: MapContext): MapResult {
-    const schema = this.version === "1.0" ? callV10 : callV11;
+    const schema = this.version === "1.0" ? callV10 : this.version === "1.1" ? callV11 : callV12;
     const parsed = schema.safeParse(record.payload);
     if (!parsed.success) return schemaFailure("call", parsed.error);
     const c = parsed.data;
+    if (this.version === "1.2") {
+      const refused = refuseUnqualified(c as z.infer<typeof callV12>);
+      if (refused) return refused;
+    }
     const bad = requireBranch(ctx, c.branch_tag, "call.branch_tag");
     if (bad) return bad;
     const callerNumber = "customer_phone_number" in c ? c.customer_phone_number : c.caller.number;
@@ -278,9 +307,23 @@ const spendDay = z.object({
  *
  * v1.1 reads the campaign type and the local-services flag. Same records, corrected meaning.
  */
+/**
+ * v1.2 (staged, not active) adds two Google Ads API v26 facts to v1.1's typing:
+ *   * `metrics.conversions` is a double (fractional under data-driven attribution). The
+ *     column is an integer, so a fractional value is refused with its own code instead of a
+ *     generic schema error; storing it needs a numeric column and a `_v2` reporting view.
+ *   * spend is in the account's `customer.currency_code`. v1.1 has no currency, so a non-USD
+ *     account would be summed as dollars without a signal. v1.2 refuses any currency but USD;
+ *     a record without `currencyCode` is still ASSUMED to be USD (stated in VENDOR-CONTRACTS.md).
+ */
+const spendDayV12 = spendDay.extend({
+  conversions: z.number().nonnegative().max(2_147_483_647),
+  currencyCode: z.string().regex(/^[A-Z]{3}$/).optional(),
+});
+
 export class AdSpendMapper implements SourceMapper {
   readonly source = "ads" as const;
-  constructor(readonly version: "1.0" | "1.1" = "1.0") {}
+  constructor(readonly version: "1.0" | "1.1" | "1.2" = "1.0") {}
 
   identify(record: RawRecord): RecordIdentity | MapFailure {
     const p = (record.payload ?? {}) as Record<string, unknown>;
@@ -302,9 +345,18 @@ export class AdSpendMapper implements SourceMapper {
   }
 
   map(record: RawRecord): MapResult {
-    const parsed = spendDay.safeParse(record.payload);
+    const parsed = (this.version === "1.2" ? spendDayV12 : spendDay).safeParse(record.payload);
     if (!parsed.success) return schemaFailure("spend_day", parsed.error);
     const s = parsed.data;
+    if (this.version === "1.2") {
+      const currency = (s as z.infer<typeof spendDayV12>).currencyCode;
+      if (currency !== undefined && currency !== "USD") {
+        return fail("CURRENCY_UNSUPPORTED", `spend_day ${s.campaignId}: account currency ${currency}; only USD is summed`);
+      }
+      if (!Number.isInteger(s.conversions)) {
+        return fail("FRACTIONAL_CONVERSIONS", `spend_day ${s.campaignId}: ${s.conversions} platform conversions; the store keeps whole numbers only`);
+      }
+    }
     const typed = this.version !== "1.0";
     if (typed && s.localServicesEnabled === true && !s.campaignType) {
       // Without the campaign type the flag cannot be placed; refuse rather than guess a channel.

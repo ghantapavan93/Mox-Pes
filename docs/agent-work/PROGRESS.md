@@ -1,5 +1,10 @@
 # Progress (2026-11-11)
 
+> **Continuation (later the same day):** Stages 0–9 of the November 11 brief are done and
+> committed locally (nothing pushed). The stage-by-stage evidence, final regression (vitest
+> 510/510; Playwright production run 66 passed, 1 skipped) and what remains open are in
+> **`FINAL-EVIDENCE.md`**. The sections below describe the morning's work and are kept as written.
+
 ## What exists now that did not this morning
 
 1. **An adversarial harness against the live intake** (36 cases). It found 8 defects in code that

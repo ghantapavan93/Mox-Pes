@@ -60,3 +60,32 @@ guessed).
 ## Final runs
 
 See [PROGRESS.md](PROGRESS.md) § Final results.
+
+## Marketing ChangeGuard runs (2026-11-11, later)
+
+| Run | Commit | Result |
+|---|---|---|
+| Typecheck, lint | 0d76a4f | pass |
+| `vitest run` (unit + integration) | 0d76a4f | **548 / 548**, 45 files, 287 s |
+| `npm run build` | 0d76a4f | pass |
+| Playwright, production server, `VISUAL=1` | 120bee4 | 68 passed, 1 skipped, 0 failed (pixel baselines unchanged by the new nav item) |
+| Playwright, production server, `VISUAL=1` | 0d76a4f | **67 passed, 1 skipped, 1 failed**: the B09 four-minute path |
+| B09 path alone, production server | 0d76a4f | failed, passed, passed (3 runs) |
+| B09 path alone, production server, after waiting for the dry-run response | fdd7b79 | passed, failed (2 runs) |
+| Clean checkout of fdd7b79 (isolated worktree and databases) | fdd7b79 | see `FINAL-EVIDENCE.md` |
+
+**Open: the B09 four-minute path is intermittent at HEAD.**
+- **Two causes were seen.**
+  - (1) The dry-run step asserted with the default 5 s while the dry run measured 4.5 s on the
+    dev server. Fixed in fdd7b79: the test waits for the request.
+  - (2) The first step: after the client navigation from `/demo`, the Overview sometimes stays
+    on its skeleton past 5 s (trace screenshot). The page itself is fine: a direct load renders
+    in 1.5 s, and four scripted runs of the same click path on the production build revealed
+    in 1.3 s.
+- **A suspect, not a proven cause.** Every production page load logs React hydration error
+  #418 (text mismatch). It also appeared before ChangeGuard existed (seen on
+  `/decisions/opportunities` earlier the same day). Its source was not found, because the
+  minified build hides it and the dev build does not raise it.
+- **The browser pane's own "stuck on Loading…" is a separate artifact.** Its window is hidden,
+  so `requestAnimationFrame` never fires, and React's batched Suspense reveals (`$RB`, waiting
+  on `requestAnimationFrame`) never flush.

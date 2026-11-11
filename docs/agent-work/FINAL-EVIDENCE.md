@@ -71,3 +71,44 @@ publishes nothing) and the vendor contract tests. That single step answers the l
 risk (R-1: no real payload has ever been seen). It also tests whether missed follow-up can be
 measured (outbound calls) and gives the schema assistant its first human-labelled evaluation.
 It needs no deployment and no write access.
+
+---
+
+# Marketing ChangeGuard (the role-reversed mission, same day)
+
+Details: `CHANGEGUARD-GAP-ANALYSIS.md` (role-to-capability matrix, reuse map) and `CHANGEGUARD.md`
+(design, scenarios, demo, limits, review).
+
+| Commit | Content |
+|---|---|
+| `120bee4` | ChangeGuard: versioned mapping changes, 14-question preflight on the production write path (rolled back), bound approval, release and verification, source contract checks, causal-claim guard, UI, tests |
+| `0d76a4f` | Ten independent-review findings fixed (one high: monitoring had no permission check) |
+| `fdd7b79` | B09 browser path waits for its dry-run request |
+
+| Acceptance gate | Evidence | Status |
+|---|---|---|
+| Existing journeys, B09/B20, onboarding, totals | Clean checkout of `fdd7b79` in an isolated worktree and fresh databases: `npm ci`, migrate, seed, typecheck, lint, **vitest 548/548**, build, **Playwright 65 passed, 3 skipped, 1 failed** (the B09 four-minute path, first step) | **Met except one intermittent browser test** (R-20) |
+| Preflight reuses production logic | Mapping preflight runs the Action Center's mapping core plus reconciliation and rolls back; source checks run the deployed mapper | Met |
+| Versioned configuration; approval bound to the exact version | Config, preflight and base hashes; mapping version history; TOCTOU test | Met |
+| Unauthorized execution rejected; no external system modified | Self-approval, scope, hash swap, stale base, guest monitoring all refused (tests) | Met |
+| Unsafe detected, valid not blocked, FP/FN measured | 7 labelled cases: 0 FP, 0 FN (self-written: R-21) | Met, with stated limit |
+| Recovery | Stale approval → draft; post-release evidence → recovery required; no automatic rollback | Met |
+| Browser workflows functional and accessible | `zzz-changeguard` (2) pass; axe 0 violations on `/changes` and a change page at 1440 and 390 px | Met |
+| Performance measured | Preflight 1.1 s p50 on the full seeded world (7 runs) | Met (one machine) |
+| Independent adversarial review | 10 findings, all addressed; the review tests fail on the pre-fix code | Met |
+
+Screenshots: `docs/agent-work/changeguard-design/screens/` (change list, a failed preflight, a
+verified release); design alternatives: `changeguard-design/alternatives.html`.
+
+**Integration readiness, honestly:** this is a working pattern on synthetic data, not a
+production integration.
+- Before it could guard real changes it needs four things:
+  - real identity (SSO subjects);
+  - the campaign ids that real call and form leads carry (CallRail `campaign`, `gclid` /
+    `utm_campaign`);
+  - the warehouse's own mapping table instead of this app's;
+  - a held-out scenario set.
+- The parts that transfer as they are:
+  - the preflight rule ("run the real write, measure everything, roll back");
+  - the bound approval;
+  - the exact-move verification.

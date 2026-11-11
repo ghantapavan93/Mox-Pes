@@ -74,7 +74,10 @@ export function assessReadiness(input: ReadinessInput, policy: ReadinessPolicy =
     {
       key: "freshness",
       passed: fresh,
-      detail: input.dataAgeMs === null ? "A feed this journey reads has never delivered" : `Oldest feed delivered ${hoursOf(input.dataAgeMs)} ago (limit ${hoursOf(policy.maxDataAgeMs)})`,
+      detail:
+        input.dataAgeMs === null
+          ? "A source this journey reads has never succeeded"
+          : `Stalest source last succeeded ${hoursOf(input.dataAgeMs)} ago (limit ${hoursOf(policy.maxDataAgeMs)})`,
       overridable: can("freshness"),
     },
     {

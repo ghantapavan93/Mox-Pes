@@ -35,6 +35,16 @@ interface Prepared {
 export const LEAD_WRITE_LOCK = 742_002;
 const LEAD_SOURCES = new Set<SourceName>(["calls", "web", "d2d"]);
 
+/**
+ * Every path that writes `leads` from a lead source takes this shared lock first in its
+ * transaction (live intake and replay); a publication takes it exclusive. Shared holders run
+ * together; a publication waits for them and they wait for it, so a publication's compare and
+ * its write see the same leads.
+ */
+export async function lockLeadWritesShared(tx: Queryable, source: SourceName): Promise<void> {
+  if (LEAD_SOURCES.has(source)) await tx.query("select pg_advisory_xact_lock_shared($1)", [LEAD_WRITE_LOCK]);
+}
+
 const MIN_INSTANT = Date.parse("1970-01-01T00:00:00Z");
 const MAX_INSTANT = Date.parse("2100-01-01T00:00:00Z");
 
@@ -108,7 +118,7 @@ export async function ingestRecords(
   // side by side), exclusive for a file publication (lib/onboarding/service.ts). One lock in one
   // order cannot deadlock; the table lock it replaced was taken in the opposite order to these
   // inserts and deadlocked on an identical payload (tests/integration/concurrency.test.ts).
-  if (LEAD_SOURCES.has(source)) await tx.query("select pg_advisory_xact_lock_shared($1)", [LEAD_WRITE_LOCK]);
+  await lockLeadWritesShared(tx, source);
 
   const prepared = new Map<string, Prepared>();
   const repeatsInBatch = new Map<string, number>();

@@ -5,7 +5,7 @@ import { getNow, withTransaction, type Queryable } from "@/lib/db";
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 import { missedFollowUp, retentionBeforeService, type JourneyBrief, type JourneyId } from "./journeys";
-import { checkOverride, LEVELS, type ReadinessLevel } from "./readiness";
+import { checkOverride, LEVELS, type ReadinessAssessment, type ReadinessLevel } from "./readiness";
 
 export const JOURNEYS: Record<JourneyId, typeof missedFollowUp> = {
   missed_follow_up: missedFollowUp,
@@ -73,6 +73,19 @@ export async function recordOverride(pool: Pool, viewer: Viewer, input: Override
       override: { id, journey: input.journey, assessedLevel: verdict.from, overrideLevel: verdict.to, acceptedRisks: verdict.acceptedRisks, reason: input.reason.trim(), subject: viewer.subject, role: viewer.role, createdAt: now.toISOString() },
     };
   });
+}
+
+/**
+ * The override that applies now, if any: the newest one recorded against the level the data
+ * still assesses at, provided every check failing NOW is one that override accepted. A new
+ * failure (a stale feed, an open data-quality exception, or a different risk) lapses it.
+ */
+export function activeOverride(readiness: ReadinessAssessment, overrides: OverrideRow[]): OverrideRow | null {
+  const failing = readiness.checks.filter((c) => !c.passed);
+  if (failing.some((c) => !c.overridable)) return null;
+  return (
+    overrides.find((o) => o.assessedLevel === readiness.level && failing.every((c) => o.acceptedRisks.includes(c.key))) ?? null
+  );
 }
 
 /** Overrides for one journey, period and scope, newest first. */

@@ -7,6 +7,7 @@ import { recordEvent } from "@/lib/events/outbox";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
 import { branchRows, channelRows, paidCac, type Scope } from "@/lib/metrics/scorecard";
 import { feedbackSummary } from "@/lib/feedback";
+import { lockLeadWritesShared } from "./ingest";
 import { projectAll, type ProjectionItem } from "./project";
 
 export interface ReplayRequest {
@@ -117,6 +118,8 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
 
   const body = async (tx: PoolClient): Promise<ReplayResult> => {
     await lockReconcile(tx);
+    // A replay writes leads too: it must not land between a publication's compare and its write.
+    await lockLeadWritesShared(tx, req.source);
     if (!req.dryRun) {
       const key = await tx.query(
         `insert into replays (idempotency_key, request_fingerprint, exception_id, dry_run, actor, adapter_version, requested_ids,

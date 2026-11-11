@@ -78,16 +78,25 @@ function supported(c: ProportionDiff, direction: "lower" | "higher"): boolean | 
   return direction === "lower" ? c.ci95[1] < 0 : c.ci95[0] > 0;
 }
 
-/** Age of the stalest feed the journey reads, by the business clock (null if one never delivered). */
+/**
+ * Age of the stalest source the journey reads, by the business clock; null if a source has
+ * never succeeded. The platform's own rule (lib/health/feeds.ts): a source is as fresh as its
+ * last SUCCESSFUL ingestion run, so a healthy feed with no changed records is not stale. A
+ * push-only source with no runs at all falls back to its last delivery.
+ */
 async function dataAge(db: Queryable, sources: string[], now: Date): Promise<number | null> {
   const { rows } = await db.query<{ source: string; last: Date | null }>(
-    `select s.source, max(r.last_delivered_at) as last
-     from unnest($1::text[]) as s(source) left join raw_events r on r.source = s.source
-     group by s.source`,
+    `select s.source,
+       coalesce(
+         (select max(r.finished_at) from ingestion_runs r where r.source = s.source and r.status = 'succeeded'),
+         case when not exists (select 1 from ingestion_runs r where r.source = s.source)
+              then (select max(e.last_delivered_at) from raw_events e where e.source = s.source) end
+       ) as last
+     from unnest($1::text[]) as s(source)`,
     [sources],
   );
   if (rows.some((r) => r.last === null)) return null;
-  return Math.max(...rows.map((r) => now.getTime() - new Date(r.last!).getTime()));
+  return Math.max(0, ...rows.map((r) => now.getTime() - new Date(r.last!).getTime()));
 }
 
 /**
@@ -117,8 +126,10 @@ function readPattern(c: ProportionDiff, direction: "lower" | "higher", supported
 // ── Scenario B: missed follow-up ─────────────────────────────────────────────
 
 /**
- * Unit: a prospect's FIRST call or web lead in the period (one unit per phone hash), whose
- * outcome window (matureDays) has closed by the business clock.
+ * Unit: a prospect's FIRST call or web lead ever (one unit per phone hash, across all time and
+ * all branches), counted in the period and branch where that first contact happened, once its
+ * outcome window (matureDays) has closed by the business clock. A phone that was already a
+ * customer (first subscription sold before the contact − 2 h) is not a prospect.
  * Repeat contact: the same phone reached us again by call or form within repeatWindowDays.
  * Converted: a first subscription sold to that phone within [lead − 2 h, lead + matureDays].
  */
@@ -126,13 +137,18 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
   const now = args.now ?? (await getNow(db));
   const { matureDays, repeatWindowDays } = JOURNEY_DEFAULTS;
   const { rows } = await db.query<{ branch_id: string; units: string; repeated: string; repeat_converted: string; repeat_unconverted: string; single: string; single_converted: string }>(
-    `with l as (
-       select id, branch_id, phone_hash, occurred_at from leads
+    `with first_contact as (
+       select distinct on (phone_hash) id, branch_id, phone_hash, occurred_at from leads
        where source in ('calls', 'web') and phone_hash is not null
-         and occurred_at >= $1 and occurred_at < $2 and occurred_at <= $3::timestamptz - make_interval(days => $4)
-         and ($5::text[] is null or branch_id = any($5))
+       order by phone_hash, occurred_at, id
      ),
-     unit as (select distinct on (phone_hash) * from l order by phone_hash, occurred_at, id),
+     unit as (
+       select f.* from first_contact f
+       where f.occurred_at >= $1 and f.occurred_at < $2 and f.occurred_at <= $3::timestamptz - make_interval(days => $4)
+         and ($5::text[] is null or f.branch_id = any($5))
+         and not exists (select 1 from v_acquisitions a join crm_customers c using (crm_customer_id)
+                         where c.phone_hash = f.phone_hash and a.sold_at < f.occurred_at - interval '2 hours')
+     ),
      u as (
        select unit.branch_id,
          exists (select 1 from leads r where r.phone_hash = unit.phone_hash and r.source in ('calls', 'web')
@@ -165,6 +181,7 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
   );
   const medianValueCents = Math.round(Number(value.rows[0].median ?? 0));
   const singleRate = single > 0 ? singleConverted / single : 0;
+  /** The pool at risk for one branch: its unconverted repeat prospects at the single-contact rate. */
   const valueAt = (flagged: number) => Math.round(flagged * singleRate * medianValueCents);
 
   const cmp = proportionDiff(singleConverted, single, repeatConverted, repeated);
@@ -180,13 +197,17 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
     hypothesised: "lower",
   };
   const patternSupported = supported(cmp, "lower");
-  const valueAtStakeCents = valueAt(repeatUnconverted);
+  // Value at stake counts only the supported gap: the customers repeat prospects would add if
+  // they converted at the single-contact rate. An unsupported or reversed gap is worth nothing,
+  // so an override past "pattern" cannot also inherit an unearned materiality pass.
+  const excessCustomers = patternSupported && cmp.rateA !== null && cmp.rateB !== null ? Math.max(0, (cmp.rateA - cmp.rateB) * repeated) : 0;
+  const valueAtStakeCents = Math.round(excessCustomers * medianValueCents);
 
   const claims: Claim[] = [
     {
       kind: "observed_fact",
       statement: `${n(units)} prospects first called or sent a form in ${args.period.label} with a closed ${matureDays}-day outcome window. ${n(repeated)} of them contacted us again within ${repeatWindowDays} days; ${n(repeatUnconverted)} of those did not become customers.`,
-      basis: `One unit per phone hash: the first call or web lead in the period. Repeat = another call or form from the same phone within ${repeatWindowDays} days. Converted = first subscription sold to that phone within [lead − 2 h, lead + ${matureDays} days].`,
+      basis: `One unit per phone hash: its first call or web lead ever, counted where and when it happened; phones that were already customers are excluded. Repeat = another call or form from the same phone within ${repeatWindowDays} days. Converted = first subscription sold to that phone within [lead − 2 h, lead + ${matureDays} days].`,
     },
     {
       kind: "observed_fact",
@@ -205,8 +226,11 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
     },
     {
       kind: "inference",
-      statement: `If the ${n(repeatUnconverted)} unconverted repeat-contact prospects converted at the single-contact rate (${pct(singleRate)}), that would be about ${n(Math.round(repeatUnconverted * singleRate))} customers, ${dollars(valueAtStakeCents)} of annual contract value at the period's median (${dollars(medianValueCents)}).`,
-      basis: "Value at stake = unconverted repeat prospects × single-contact conversion rate × median first-subscription value in scope. An upper-bound style estimate, not a forecast.",
+      statement:
+        patternSupported === true
+          ? `If repeat-contact prospects converted at the single-contact rate (${pct(singleRate)}), about ${n(Math.round(excessCustomers))} more of them would have become customers: ${dollars(valueAtStakeCents)} of annual contract value at the period's median (${dollars(medianValueCents)}).`
+          : `No value is counted at stake: the gap is not supported. For scale only, ${n(repeatUnconverted)} repeat-contact prospects did not convert.`,
+      basis: "Value at stake = (single-contact rate − repeat-contact rate) × repeat-contact prospects × median first-subscription value in scope, and zero unless the interval supports the gap. Not a forecast.",
     },
     {
       kind: "hypothesis",

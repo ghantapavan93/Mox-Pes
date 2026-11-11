@@ -86,9 +86,9 @@
     },
     "failures": [],
     "latencyMs": {
-      "p50": 1.56,
-      "p95": 5.081,
-      "max": 11.561
+      "p50": 1.423,
+      "p95": 4.8,
+      "max": 11.3
     }
   },
   "baseline": {
@@ -325,9 +325,9 @@
       }
     ],
     "latencyMs": {
-      "p50": 0.275,
-      "p95": 4.194,
-      "max": 5.15
+      "p50": 0.255,
+      "p95": 1.791,
+      "max": 2.408
     }
   },
   "risk": {
@@ -344,6 +344,11 @@
       },
       "wrongDetail": [],
       "criticalUnsafeRate": 0,
+      "wrongDatasets": {
+        "count": 0,
+        "cases": 8,
+        "rate": 0
+      },
       "calibration": {
         "high": {
           "suggestions": 346,
@@ -507,7 +512,12 @@
           "label": null
         }
       ],
-      "criticalUnsafeRate": 0.018867924528301886,
+      "criticalUnsafeRate": 0.01078167115902965,
+      "wrongDatasets": {
+        "count": 3,
+        "cases": 8,
+        "rate": 0.375
+      },
       "calibration": {
         "none": {
           "suggestions": 371,

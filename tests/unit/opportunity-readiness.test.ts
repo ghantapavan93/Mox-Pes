@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { activeOverride, type OverrideRow } from "@/lib/opportunities/overrides";
 import { assessReadiness, checkOverride, READINESS_POLICY, type ReadinessInput } from "@/lib/opportunities/readiness";
 import { VIEWERS } from "@/lib/viewer";
 
@@ -41,6 +42,31 @@ describe("readiness levels", () => {
     const a = assessReadiness({ ...ready, openDataBlockers: 2, patternSupported: false, valueAtStakeCents: 0 });
     expect(a.level).toBe("blocked");
     expect(a.next).toMatch(/data-quality/);
+  });
+});
+
+describe("which recorded override applies now", () => {
+  const row = (assessedLevel: "blocked" | "monitor" | "validate", acceptedRisks: string[]): OverrideRow => ({
+    id: 1, journey: "missed_follow_up", assessedLevel, overrideLevel: "act", acceptedRisks, reason: "x".repeat(20), subject: "demo:approver", role: "approver", createdAt: "",
+  });
+
+  it("applies while the same risks are the only failures", () => {
+    expect(activeOverride(assessReadiness(ready), [row("validate", ["outcome"])])).not.toBeNull();
+  });
+
+  it("lapses when a new risk fails at the same level", () => {
+    const smallSample = assessReadiness({ ...ready, smallestArm: 5 });
+    const staleToo = assessReadiness({ ...ready, smallestArm: 5, dataAgeMs: null });
+    expect(activeOverride(smallSample, [row("blocked", ["sample", "outcome"])])).not.toBeNull();
+    // Still "blocked", but now also stale: the override never covered that, and cannot.
+    expect(staleToo.level).toBe("blocked");
+    expect(activeOverride(staleToo, [row("blocked", ["sample", "outcome"])])).toBeNull();
+    // Monitor because of materiality, override accepted pattern: does not apply.
+    expect(activeOverride(assessReadiness({ ...ready, valueAtStakeCents: 0 }), [row("monitor", ["pattern", "outcome"])])).toBeNull();
+  });
+
+  it("lapses when the data assesses at another level", () => {
+    expect(activeOverride(assessReadiness(ready), [row("blocked", ["sample", "outcome"])])).toBeNull();
   });
 });
 

@@ -47,8 +47,11 @@ with `branch_tag`. It is not a native CallRail webhook receiver.
 
 What C-3 fixes and what it does not: calls@1.2 makes those calls **visible**. It does not
 remove a lead that was already projected before the call was marked spam. The projection has no
-"excluded lead" state, so the old version stays counted beside a quarantined new version. The
-proper fix is an exclusion state on `leads` that metrics respect. It is not built.
+"excluded lead" state, so the old version stays counted beside a quarantined new version, and
+that quarantine opens a decision-blocking exception for the branch. The same holds for ads@1.2
+when a later fetch of a day turns fractional or non-USD. The proper fix is an exclusion state on
+`leads` (and a superseded state for spend days) that metrics respect. It is not built, and it
+must be built before activating either staged mapper.
 
 ## Google Ads (spend)
 

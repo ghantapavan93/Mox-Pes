@@ -43,6 +43,7 @@ describe("schema assistant evaluation gate", () => {
       const critical = assistant.wrongDetail.filter((w) => w.severity === "critical").map((w) => `${w.caseId}:${w.field}`);
       expect(assistant.wrongBySeverity.critical, critical.join(", ")).toBeLessThanOrEqual(ceiling);
       expect(assistant.criticalUnsafeRate).toBeLessThan(baseline.criticalUnsafeRate);
+      expect(assistant.wrongDatasets.count).toBeLessThanOrEqual(baseline.wrongDatasets.count);
       expect(assistant.correctionBurden.total).toBeLessThanOrEqual(baseline.correctionBurden.total);
     });
   }

@@ -3,7 +3,7 @@ import { OverrideForm } from "@/components/decisions/OverrideForm";
 import { Badge, Card, Forbidden, PageHeader, PeriodTabs, Skeleton } from "@/components/ui";
 import { money } from "@/lib/format";
 import type { ClaimKind, JourneyBrief } from "@/lib/opportunities/journeys";
-import { journeyFor, listOverrides, type OverrideRow } from "@/lib/opportunities/overrides";
+import { activeOverride, journeyFor, listOverrides, type OverrideRow } from "@/lib/opportunities/overrides";
 import { LEVELS, READINESS_POLICY, type ReadinessLevel } from "@/lib/opportunities/readiness";
 import { parsePeriod } from "@/lib/period";
 import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
@@ -109,8 +109,7 @@ function JourneyCard({ brief, overrides, viewer, periodKey, branch }: { brief: J
   const r = brief.readiness;
   const nextLevel = LEVELS[LEVELS.indexOf(r.level) + 1];
   const hardFail = r.checks.some((c) => !c.passed && !c.overridable);
-  // An override applies while the data still assesses at the level it was recorded against.
-  const active = overrides.find((o) => o.assessedLevel === r.level) ?? null;
+  const active = activeOverride(r, overrides);
   const c = brief.comparison;
   return (
     <Card

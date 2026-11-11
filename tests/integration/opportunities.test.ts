@@ -74,10 +74,11 @@ describe("missed follow-up", () => {
     const brief = await missedFollowUp(pool, { period: PERIODS.oct, branchIds: null });
     expect(brief.comparison).toMatchObject({ xA: 20, nA: 40, xB: 5, nB: 50 });
     expect(brief.comparison.ci95![1]).toBeLessThan(0);
-    expect(brief.branches).toEqual([{ branchId: B, units: 90, flagged: 45, valueAtRiskCents: brief.readinessInput.valueAtStakeCents }]);
-    // 45 unconverted repeat prospects × 50% single-contact rate × median first-subscription value
-    // ($1,500: 80 of the 105 October subscriptions).
-    expect(brief.readinessInput.valueAtStakeCents).toBe(45 * 0.5 * 150_000);
+    // Branch row: the pool at risk, 45 unconverted repeat prospects × 50% single-contact rate ×
+    // median first-subscription value ($1,500: 80 of the 105 October subscriptions).
+    expect(brief.branches).toEqual([{ branchId: B, units: 90, flagged: 45, valueAtRiskCents: 45 * 0.5 * 150_000 }]);
+    // Value at stake: only the supported gap, (50% − 10%) × 50 repeat prospects × $1,500.
+    expect(brief.readinessInput.valueAtStakeCents).toBe(20 * 150_000);
     expect(brief.readinessInput).toMatchObject({ smallestArm: 40, openDataBlockers: 0, patternSupported: true, measuredOutcome: false, dataAgeMs: 0 });
     expect(brief.readiness.level).toBe("validate");
   });
@@ -87,6 +88,22 @@ describe("missed follow-up", () => {
     expect(brief.claims.map((c) => c.kind)).toEqual(["observed_fact", "observed_fact", "inference", "inference", "hypothesis", "recommendation", "measured_outcome"]);
     expect(brief.claims.at(-1)!.statement).toMatch(/^None\./);
     expect(brief.claims.find((c) => c.kind === "hypothesis")!.basis).toMatch(/Not observable/);
+  });
+});
+
+describe("units are prospects at their first contact", () => {
+  it("an existing customer calling is not a prospect, and a later call is not a first contact", async () => {
+    // A customer since October 1 calls on October 6 (twice), and a prospect first seen in
+    // September calls again in October: neither is an October unit.
+    await ingest(pool, "crm", [crm.customer(60_001, B, phone("332", 1), oct(1)), crm.subscription(60_002, 60_001, B, oct(1), { contractValue: "540.00" })], { now: NOW });
+    await ingest(pool, "calls", [
+      call("EX-1", B, phone("332", 1), oct(6)), call("EX-2", B, phone("332", 1), oct(7)),
+      call("SEP-1", B, phone("332", 2), new Date(Date.UTC(2026, 8, 20, 15))), call("SEP-2", B, phone("332", 2), oct(6)),
+    ], { now: NOW });
+    const brief = await missedFollowUp(pool, { period: PERIODS.oct, branchIds: null });
+    expect(brief.branches[0]).toMatchObject({ units: 90, flagged: 45 });
+    const sep = await missedFollowUp(pool, { period: PERIODS.sep, branchIds: null });
+    expect(sep.branches).toEqual([expect.objectContaining({ units: 1 })]);
   });
 });
 

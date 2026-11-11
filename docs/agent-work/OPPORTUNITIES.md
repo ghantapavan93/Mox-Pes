@@ -21,17 +21,24 @@ with a control has run.
 
 ## Journey B: missed follow-up
 
-- **Unit:** a prospect's first call or web lead in the period (one per phone hash), with its
-  14-day outcome window closed.
+- **Unit:** a prospect's first call or web lead **ever** (one per phone hash, across all time
+  and branches), counted in the period and branch where it happened, with its 14-day outcome
+  window closed. A phone that was already a customer is not a prospect.
 - **Repeat contact:** the same phone called or sent a form again within 7 days.
 - **Converted:** a first subscription sold to that phone within [lead − 2 h, lead + 14 days].
 - **Comparison:** conversion after one contact vs after a repeat contact. The hypothesis
   predicts repeat contacts convert **less**.
+- **Value at stake:** only the supported gap, (single rate − repeat rate) × repeat prospects ×
+  median first-subscription value. It is zero when the interval does not support the gap.
 
-**On the seeded world (Sep–Oct, all branches):** 11,497 prospects. 2,012 repeat contacts, of
-which 1,193 did not convert. Conversion was 38.4% after one contact and 40.7% after a repeat
-contact: +2.3 points, 95% interval −0.1 to +4.7. **The data does not support the hypothesis.**
-Repeat contacts are, if anything, more interested prospects.
+**On the seeded world (Sep–Oct, all branches):** 10,926 prospects. 2,007 repeat contacts, of
+which 1,188 did not convert. Conversion was 40.7% after one contact and 40.8% after a repeat
+contact: +0.1 points, 95% interval −2.3 to +2.4. **The data does not support the hypothesis**,
+so the value at stake is $0.
+
+The first version of this journey counted existing customers who called as prospects (they can
+never "convert"). That dragged the single-contact rate down to 38.4%. The independent review
+caught it, and it is fixed and tested.
 
 That is the honest answer for this synthetic world. It is also why the hypothesis needs the
 outbound call log: the data here cannot show a callback that never happened.
@@ -52,7 +59,7 @@ simulation cancels at random, so that is the expected answer, and the journey fi
 
 | Check | Rule | Overridable? |
 |---|---|---|
-| Freshness | every feed the journey reads delivered within 36 h (the platform's stale rule) | **never** |
+| Freshness | every source the journey reads had a successful ingestion run within 36 h (the platform's stale rule); a push-only source with no runs falls back to its last delivery | **never** |
 | Data quality | no open `channel_coverage_gap` or `quarantined_source_records` exception in scope. `unmapped_spend` is excluded: these journeys read no spend | **never** |
 | Sample | the smaller comparison arm has ≥ 30 units | yes |
 | Materiality | value at stake ≥ $10,000 a year | yes |
@@ -72,8 +79,9 @@ unsupported), then **validate** (material and supported, nothing measured yet), 
 - Stored append-only in `opportunity_overrides` (migration 0016, trigger-enforced). The row
   holds the person's subject, the accepted risks and the assessment at that moment.
 - Audited as `override_opportunity_readiness`.
-- An override applies only while the data still assesses at the level it was recorded against.
-  If the data changes, the override lapses.
+- An override applies only while the data still assesses at the level it was recorded against
+  **and** every check failing now is one it accepted. A new failure (a stale feed, an open
+  data-quality exception, or a different risk) lapses it.
 
 On the seeded world, all-branch readiness is **blocked**: two open data-quality exceptions (the
 demo's own incidents). This is correct, and it cannot be overridden.

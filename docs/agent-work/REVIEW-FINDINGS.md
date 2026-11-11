@@ -59,3 +59,24 @@ formats, 1904 dates, empty styled cells). They are invisible to happy-path and e
 *content* tests, and they need either a hostile-input generator or a reviewer who thinks in bytes
 and transactions. Both reviews should be repeated after any change to `lib/onboarding/xlsx.ts`,
 `parse.ts` or `lib/adapters/redact.ts`.
+
+## Independent review of the continuation (2026-11-11, commits c6ed3e3..f3d123f)
+
+One reviewer agent, given the diff and no conclusions. Eight findings, each checked against the
+code before acting.
+
+| # | Finding | Severity | Disposition |
+|---|---|---|---|
+| 1 | The opportunities page showed an old override even after a non-overridable check (stale feed) started failing at the same level | High | **Fixed.** `activeOverride()` applies an override only if every check failing now is one it accepted; unit-tested |
+| 2 | Existing customers who called were counted as prospects who "did not convert" | Medium | **Fixed.** Excluded; integration test; mutation fails it. Seeded single-contact rate moved 38.4% → 40.7% |
+| 3 | Missed follow-up value at stake ignored the observed gap, so an override past "pattern" inherited an unearned materiality pass | Medium | **Fixed.** Only the supported gap is valued, as in retention |
+| 4 | Replay wrote leads without the lead-write lock, re-opening the publication compare/write race | Medium | **Fixed.** `lockLeadWritesShared()` in replay; deterministic test A4 is red without it ("no backend blocked on advisory") and green with it |
+| 5 | A unit was the first contact in the period and scope, not the prospect's first contact | Medium-low | **Fixed.** First contact across all time and branches; tested with a September prospect calling again in October |
+| 6 | Freshness used last delivery, not the platform's last-successful-run rule, and scanned `raw_events` | Low-medium | **Fixed.** `ingestion_runs` success per source; delivery time only for a source with no runs |
+| 7 | Staged calls@1.2 cannot retract a lead already projected; its quarantine also blocks the branch | Low (not active) | **Documented** as a precondition for activation (VENDOR-CONTRACTS.md C-3, REMAINING-RISKS R-17) |
+| 8 | `criticalUnsafeRate` mixed misfiled datasets (per case) into a per-suggestion rate | Low | **Fixed.** Field rate and `wrongDatasets` reported separately; gate covers both |
+
+The reviewer confirmed as sound: scope enforcement (`resolveScope` refuses), server-side
+recomputation of the assessed level, the statistics' directions, migrations 0014/0015,
+subject-based separation of duties, the publication lock order, the CSRF proxy and the checksum
+rule.

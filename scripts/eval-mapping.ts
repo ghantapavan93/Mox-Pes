@@ -42,7 +42,8 @@ console.log(`  precision (correct / suggested)   ${pctr(ra.precision)} | ${pctr(
 console.log(`  coverage (mappable suggested)     ${pctr(ra.coverage)} | ${pctr(rb.coverage)}`);
 console.log(`  abstention precision / recall     ${pctr(ra.abstentionPrecision)} / ${pctr(ra.abstentionRecall)} | ${pctr(rb.abstentionPrecision)} / ${pctr(rb.abstentionRecall)}`);
 console.log(`  wrong by severity (crit/high/med/low)  ${Object.values(ra.wrongBySeverity).join("/")} | ${Object.values(rb.wrongBySeverity).join("/")}`);
-console.log(`  critical unsafe rate              ${pctr(ra.criticalUnsafeRate)} | ${pctr(rb.criticalUnsafeRate)}`);
+console.log(`  critical unsafe rate (fields)     ${pctr(ra.criticalUnsafeRate)} | ${pctr(rb.criticalUnsafeRate)}`);
+console.log(`  wrong dataset (cases)             ${ra.wrongDatasets.count}/${ra.wrongDatasets.cases} | ${rb.wrongDatasets.count}/${rb.wrongDatasets.cases}`);
 console.log(`  correction burden (total, per case)  ${ra.correctionBurden.total}, ${ra.correctionBurden.perCase.toFixed(2)} | ${rb.correctionBurden.total}, ${rb.correctionBurden.perCase.toFixed(2)}`);
 console.log(`  calibration: ${Object.entries(ra.calibration).map(([k, v]) => `${k} ${v.correct}/${v.suggestions} (${pctr(v.accuracy)})`).join(", ")}`);
 if (args.includes("--failures")) console.log("\nAssistant wrong suggestions by consequence:");

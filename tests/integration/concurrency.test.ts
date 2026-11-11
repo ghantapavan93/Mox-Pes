@@ -6,6 +6,7 @@ import type { RawRecord } from "@/lib/adapters/contract";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { withTransaction } from "@/lib/db";
 import { ingestRecords } from "@/lib/ingest/ingest";
+import { replay } from "@/lib/ingest/replay";
 import { compileRows, type MappingSpec } from "@/lib/onboarding/compile";
 import { isRefusal, parseUpload } from "@/lib/onboarding/parse";
 import { decideMapping, getUpload, proposeMapping, publishUpload, purgeExpired, runDryRun, stageUpload, type PublishHooks } from "@/lib/onboarding/service";
@@ -161,6 +162,35 @@ describe("A · file publication collides with a live webhook", () => {
     // The webhook then finds the very same version already stored: a duplicate delivery.
     expect(await live).toMatchObject({ inserted: 0, duplicates: 1 });
     expect(await one(pool, "select count(*)::int as n, max(delivery_count)::int as d from raw_events where entity_id = 'CAL10001'")).toEqual({ n: 1, d: 2 });
+  });
+});
+
+describe("A4 · a replay collides with a publication", () => {
+  it("a replay of a quarantined call waits for the publication's compare-then-write, then applies; one lead, no deadlock", async () => {
+    // CAL10001 arrived earlier in the shape calls@1.0 cannot read (caller.number): quarantined.
+    const odd = call("CAL10001", "B01", "+12065550101", new Date("2026-11-03T17:14:00Z"), "Google Ads", { agent_note: "replayed" });
+    const payload: Record<string, unknown> = { ...(odd.payload as Record<string, unknown>), caller: { number: "+12065550101" } };
+    delete payload.customer_phone_number;
+    await withTransaction(pool, (tx) => ingestRecords(tx, { source: "calls", records: [{ entity: "call", payload }], mapper: mapperFor("calls", "1.0"), ctx: referenceContext, runId: null, now: NOW }));
+    const { id } = await one<{ id: string }>(pool, "select id from raw_events where entity_id = 'CAL10001' and status = 'quarantined'");
+
+    const a = await approvedUpload();
+    const p = pausedPublish(a, "afterCompare"); // compared: CAL10001 is not in the ledger yet
+    await p.reached;
+    const replayed = replay(pool, {
+      source: "calls", rawEventIds: [Number(id)], mapperVersion: "1.1", actor: "test", idempotencyKey: "a4-replay", dryRun: false,
+      now: NOW, scope: { from: new Date("2026-11-01T00:00:00Z"), to: new Date("2026-11-30T00:00:00Z"), branchIds: null },
+    });
+    try {
+      await blocked(["advisory"]);
+      expect(await stillPending(replayed)).toBe(true);
+      expect(await leadsOf("CAL10001")).toEqual({ n: 0 }); // the replay has written nothing yet
+    } finally {
+      p.release(); // never leave the publication paused, even when an assertion fails
+    }
+    expect(await p.result).toMatchObject({ published: 6 });
+    expect(await replayed).toMatchObject({ claimed: 1, projected: 1 });
+    expect(await leadsOf("CAL10001")).toEqual({ n: 1 });
   });
 });
 

@@ -84,8 +84,14 @@ export interface RiskMetrics {
   /** Wrong suggestions by consequence, with each one listed. */
   wrongBySeverity: Record<Severity, number>;
   wrongDetail: Array<{ caseId: string; field: string; severity: Severity; why: string; suggested: string | null; label: string | null }>;
-  /** Critical wrong suggestions (money meaning, wrong dataset) / suggestions made. */
+  /**
+   * Critical wrong FIELD suggestions (money meaning) / field suggestions made. Wrong datasets
+   * are counted per case in `wrongDatasets`, not here: their fields are never scored, so mixing
+   * them in would let an engine that misfiles every file report a rate of zero.
+   */
   criticalUnsafeRate: number;
+  /** Cases filed under the wrong dataset / cases where a dataset had to be detected. */
+  wrongDatasets: { count: number; cases: number; rate: number };
   /** Accuracy within each stated confidence (empty for engines that state none). */
   calibration: Record<string, { suggestions: number; correct: number; accuracy: number }>;
   /** Field decisions a person must make or undo: wrong suggestions + mappable fields left empty. */
@@ -118,11 +124,14 @@ export function riskMetrics(data: EvalDataset, engine: Engine): RiskMetrics {
   const wrongBySeverity: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0 };
   const wrongDetail: RiskMetrics["wrongDetail"] = [];
   const calibration: RiskMetrics["calibration"] = {};
+  let fieldCritical = 0, detectionCases = 0, wrongDatasets = 0;
   for (const c of data.cases) {
     const result = engine(c);
     const labeled = c.dataset ?? (c.expect.dataset !== "abstain" ? c.expect.dataset : undefined);
+    if (c.dataset === null && c.expect.dataset) detectionCases++;
     if (c.dataset === null && c.expect.dataset && result.dataset.chosen !== null && result.dataset.chosen !== c.expect.dataset) {
       // A file put under the wrong dataset is under the wrong source authority.
+      wrongDatasets++;
       wrongBySeverity.critical++;
       wrongDetail.push({ caseId: c.id, field: "(dataset)", severity: "critical", why: "wrong dataset (source authority)", suggested: result.dataset.chosen, label: c.expect.dataset });
       burden++; // a person must notice the wrong dataset and choose again
@@ -154,6 +163,7 @@ export function riskMetrics(data: EvalDataset, engine: Engine): RiskMetrics {
         burden++; // a person must notice and undo it
         const { severity, why } = severityOf(labeled, field);
         wrongBySeverity[severity]++;
+        if (severity === "critical") fieldCritical++;
         wrongDetail.push({ caseId: c.id, field, severity, why, suggested, label });
       }
     }
@@ -166,7 +176,8 @@ export function riskMetrics(data: EvalDataset, engine: Engine): RiskMetrics {
     abstentionRecall: shouldAbstain ? rightAbstentions / shouldAbstain : 0,
     wrongBySeverity,
     wrongDetail,
-    criticalUnsafeRate: suggestions ? wrongBySeverity.critical / suggestions : 0,
+    criticalUnsafeRate: suggestions ? fieldCritical / suggestions : 0,
+    wrongDatasets: { count: wrongDatasets, cases: detectionCases, rate: detectionCases ? wrongDatasets / detectionCases : 0 },
     calibration,
     correctionBurden: { total: burden, perCase: data.cases.length ? burden / data.cases.length : 0 },
   };

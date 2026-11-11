@@ -95,7 +95,8 @@ anything: the six v3 wrong suggestions are the same six as on first contact.
 | Abstention recall (should-ask fields left empty) | 100.0% / 76.8% | 98.4% / 72.3% | **89.4% / 68.1%** |
 | Abstention precision (empty fields that should be empty) | 100.0% / 93.5% | 75.0% / 75.8% | **48.8% / 49.2%** |
 | Wrong: critical / high / medium / low | 0/0/0/0 / 7/5/4/0 | 0/0/1/0 / 7/8/8/3 | **1/1/2/2 / 6/6/9/4** |
-| Critical unsafe rate (critical wrong / suggestions) | 0.0% / 1.9% | 0.0% / 2.1% | **0.4% / 2.0%** |
+| Critical unsafe rate (critical wrong field suggestions / field suggestions) | 0.0% / 1.1% | 0.0% / 0.9% | **0.4% / 0.7%** |
+| Wrong dataset (cases misfiled / cases needing detection) | 0/8 / 3/8 | 0/8 / 4/8 | **0/9 / 4/9** |
 | Correction burden (field decisions a person must make or undo) | 0 / 19 | 23 / 41 | **52 / 58** |
 
 Evidence: `docs/agent-work/evidence/mapping-eval-v{1,2,3}-risk.json`. The baseline's critical
@@ -115,7 +116,10 @@ errors on v3 are two money fields and four files put under the wrong dataset.
 ### What this view adds, honestly
 
 - **The safety gain is concentrated where it matters.** On v3 the assistant makes one critical
-  error against the baseline's six (0.4% vs 2.0% of suggestions).
+  error against the baseline's six: one money field (0.4% of field suggestions) against the
+  baseline's two money fields (0.7%) and four misfiled datasets (4 of 9 files). Wrong datasets
+  are counted per file, not per suggestion: a misfiled file's fields are never scored, so mixing
+  the two would reward misfiling (found by the independent review).
 - **The human workload is barely smaller.** Correction burden on v3 is 52 against 58. The
   assistant converts most of the baseline's silent errors into questions; it does not remove
   the person. A question is visible; a wrong suggestion has to be noticed.
@@ -127,7 +131,8 @@ errors on v3 are two money fields and four files put under the wrong dataset.
   too small to show anything. Confidence labels must not be used to skip review.
 
 `tests/unit/onboarding-eval.test.ts` gates it: critical wrong suggestions at or under 0 / 0 / 1
-on v1 / v2 / v3, a critical rate below the baseline's, and a correction burden no larger than
+on v1 / v2 / v3, a critical field rate below the baseline's, no more misfiled datasets than the
+baseline, and a correction burden no larger than
 the baseline's. Setting the v3 ceiling to 0 fails on the ServiceTitan case (checked).
 
 ### Model-backed candidate

@@ -3,52 +3,59 @@
 **The question:** *Can we trust the numbers we're using to decide where our next marketing dollar
 should go?*
 
-Everything shown is synthetic and labelled as such. Prepare: `npm run db:seed`,
-`npm run demo:exports`, `npm run dev`, role switcher top right.
+Everything shown is synthetic and labelled as such. Prepare:
 
-## 1. Data you have never seen (about 90 seconds)
+```
+npm run db:seed
+npm run demo:exports
+npm run dev
+```
 
-Role: **Marketing analyst**. Open **Data onboarding** and click **CRM payments export**.
+Use the role switcher (top right).
 
-- "We gave the system an export it was never designed for: a payments file from the CRM."
-- Point at **What is in the file**: every row profiled; the phone column shows only a masked shape.
-- Point at **Map each field**: *Net Paid* is suggested as cash collected, with the reason.
-  *Total* and *Contract Value* are refused as cash, and the screen says why: an invoice total
-  and a contract are not money received.
-- Answer the two questions it cannot answer itself (date order; times are branch-local), save,
-  and the dry run follows.
-- **The punchline:** "Every row is accounted for. The file and our ledger disagree on two payments,
-  and here they are to the cent: one is $20 higher in the file, one is voided in the file but paid
-  in our ledger. One payment we hold is missing from the file. Three rows were damaged by a
-  spreadsheet, and the system refused to guess what they meant."
-- "A correct refusal is the impressive result. Payments belong to the CRM, so this file can never
-  overwrite them. It can only show us where to look."
+**Verified:** every step below is covered by the test named in its row: a Playwright test
+(browser) or, where marked, an integration test. The full suite runs as
+`CI=1 VISUAL=1 npx playwright test` against a production build (results in `VERIFICATION.md`).
 
-## 2. The B09 incident (about 90 seconds)
+## The storyline: 14 steps
 
-**Guided demo** → B09 (the four-minute path, `/demo`). Google migrated B09's Local Services campaign
-into Performance Max. The old ad mapper filed that spend as Google Search: nothing crashed, but the
-meaning of the data changed. The Overview puts B09's channel cost comparison **on hold** instead of
-showing a confidently wrong number. Walk through the evidence (stored spend rows, leads and CRM
-customers), the proposed correction, the dry run (run in a transaction that rolls back), approval by
-a **different** role, the verified recalculation, and the audit trail.
+| # | Time | Role | Screen and action | What to say | Verified by |
+|---|---|---|---|---|---|
+| 1 | 0:00 | Marketing | **Overview** → B09's budget signal is **on hold** | "Nothing crashed. The meaning of the data changed, so the number is held instead of shown wrong." | `os-golden-path` a |
+| 2 | 0:20 | Marketing | **Decision Lab** says *not ready* and links the blocking incident | "Readiness comes before any budget move." | `os-golden-path` b |
+| 3 | 0:35 | Marketing | **Incident** → campaign, spend, leads and CRM outcomes as evidence | "Google moved Local Services into Performance Max; the old mapper filed it as Search." | `os-golden-path` c |
+| 4 | 0:55 | Marketing | **Investigate** → the AI investigator cites the evidence and proposes a re-map | "It cites stored records. It does not decide." | `os-golden-path` d |
+| 5 | 1:15 | Engineer | **Dry run** on the server: before and after, rolled back | "We see the effect before anything changes." | `os-golden-path` e |
+| 6 | 1:30 | Approver | A **different person** approves; the proposer cannot | "The database refuses self-approval, not only the screen." | `os-golden-path` f; `security.test.ts` |
+| 7 | 1:45 | — | Executed: metrics recompute, the ledger is verified unchanged | "The raw ledger never changed. Only the interpretation did." | `os-golden-path` g·h |
+| 8 | 2:00 | Marketing | **Audit & Health** → proposer, dry run, approver, executed records | "Every step has a person and a time." | `os-golden-path` i; `z-redesign-navigation` |
+| 9 | 2:15 | Marketing | **Data onboarding** → *CRM payments export*: profiled; the phone column shows only shapes and counts | "An export the system was never designed for." | `z-onboarding` 2 (UI); `onboarding.test.ts` (profiles carry no personal values) |
+| 10 | 2:40 | Marketing | Suggestions: *Net Paid* = cash collected; *Contract Value* refused as cash, with the reason; stating the wrong meaning is refused by the rules | "A contract is not money received." | `onboarding.test.ts` (FieldRoutes payments export: `Net Paid`, `WRONG_MONEY_MEANING`); not asserted in the browser |
+| 11 | 3:05 | Approver | Dry run: the file differs from the ledger in amount and status, shown to the cent; the decision panel says compare-only and there is no publish button | "Payments belong to the CRM. A file can show where to look, never overwrite them." | `z-onboarding` 2 |
+| 12 | 3:30 | Marketing | **Revenue opportunities**: missed follow-up. Facts, inference, hypothesis, recommendation, and "Measured outcome: none" | "The data does not support the missed-follow-up story here, and the page says so." | `z-opportunities` 1 |
+| 13 | 4:00 | Approver | Readiness **blocked** by open incidents: no override offered. One branch, one month: an override is offered for a small sample | "A judgment call cannot fix broken data. It can accept a small sample, with a name and a reason." | `z-opportunities` 2 |
+| 14 | 4:25 | Engineer | **Integrations** → arm a 429, run a sync, watch the retry succeed | "Failures back off, recover, or fail loudly." | `os-modules` (rate_limit) |
 
-## 3. A decision, not a forecast (about 45 seconds)
+## The failed input (about 20 seconds, anywhere after step 9)
 
-**Decision Lab**: per paid channel, a verdict on whether the numbers are safe to use for a budget
-decision, with its reasons and evidence. The scenario builder shifts budget using the branch's
-verified cost per customer from SQL, not the platform's claim. The A/A self-check proves the
-experiment statistics before anyone trusts an experiment. No revenue uplift is claimed; a pilot
-would be measured, not predicted.
+**Data onboarding:** upload `mixed-garbage.csv`, an employee shift schedule whose columns look
+like a phone, a date and a branch. The step rail says **"No dataset fits"**. It does not guess.
 
-## 4. Resilience (about 45 seconds)
-
-**Integrations** → fault panel: trigger a 429 or a stale worker and watch the job back off,
-recover or fail loudly. Or, in onboarding, switch to the analyst and try to approve their own
-mapping: the button says why not, the server refuses, and the database itself refuses.
+Verified by `z-onboarding` 4 ("a file that fits no dataset is not guessed at"). The hostile-input
+quality gate (`z-quality-gates`) and 36 adversarial intake cases (`adversarial-intake.test.ts`)
+cover the rest.
 
 ## Close (15 seconds)
 
 "This does not replace the CRM or Power BI. It checks what flows between them, says exactly where
 the numbers disagree, and lets a person fix it with an audit trail. What I don't know yet is
 whether you already have this lineage in your warehouse. That's my first question."
+
+## What not to say
+
+Do not claim any of these:
+- a live integration (everything is mocked or synthetic; `VENDOR-CONTRACTS.md`);
+- revenue uplift (no intervention has been measured);
+- that the AI is accurate in general (2.2% wrong suggestions on held-out data, one critical;
+  `AI-EVALUATION.md`);
+- production capacity (one laptop: `PERFORMANCE.md`).

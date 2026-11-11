@@ -76,7 +76,7 @@ export function ExperimentRunner({ initial, canRecord }: { initial: AaExperiment
           {busy === "preview" ? "Analysing…" : "Re-analyse (not stored)"}
         </button>
         {canRecord && (
-          <button type="button" disabled={!!busy} onClick={() => void run("record")} className="rounded bg-text px-3 py-1.5 font-medium text-white disabled:opacity-50">
+          <button type="button" disabled={!!busy} onClick={() => void run("record")} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
             {busy === "record" ? "Recording…" : "Record this run"}
           </button>
         )}

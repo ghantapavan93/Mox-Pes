@@ -5,6 +5,7 @@ import { errorResponse } from "@/lib/http";
 import { getException } from "@/lib/queries";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, canSeeBranch } from "@/lib/viewer";
+import { parseRecordId } from "@/lib/record-id";
 
 const reason = z.string().trim().min(5).max(500);
 const body = z.discriminatedUnion("action", [
@@ -25,11 +26,12 @@ const ACTION_FOR_KIND: Record<string, string> = {
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
-    if (!/^\d{1,15}$/.test(id)) throw new ActionError("Exception not found", 404);
+    const exceptionId = parseRecordId(id);
+    if (exceptionId === null) throw new ActionError("Exception not found", 404);
     const input = body.parse(await request.json());
     const viewer = await getViewer();
     const pool = getPool();
-    const exception = await getException(pool, Number(id));
+    const exception = await getException(pool, exceptionId);
     if (!exception || !canSeeBranch(viewer, exception.branchId)) throw new ActionError("Exception not found", 404);
     if (ACTION_FOR_KIND[exception.kind] !== input.action) throw new ActionError(`"${input.action}" does not apply to ${exception.kind}`, 400);
     if (exception.status !== "open") throw new ActionError("Exception is already resolved", 409);

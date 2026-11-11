@@ -153,9 +153,9 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                     <Badge tone="bad" dot>{h.kind === "channel_coverage_gap" ? "Channel imbalance" : KIND_LABEL[h.kind] ?? h.kind}</Badge>
                     <p className="mt-1 leading-5 text-text">{h.summary}</p>
                   </div>
-                  <span className="col-start-2 flex gap-3 text-xs sm:col-start-auto sm:flex-col sm:items-end sm:gap-1">
-                    <Link href={`/exceptions/${h.exceptionId}`} className="font-medium text-accent hover:underline">incident #{h.exceptionId}</Link>
-                    <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="text-accent hover:underline">readiness</Link>
+                  <span className="col-start-2 flex gap-3 text-xs sm:col-start-auto sm:flex-col sm:items-end sm:gap-0">
+                    <Link href={`/exceptions/${h.exceptionId}`} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">incident #{h.exceptionId}</Link>
+                    <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="inline-flex min-h-6 items-center text-accent hover:underline">readiness</Link>
                   </span>
                 </li>
               ))}
@@ -179,7 +179,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           subtitle="Flags compare each branch with the median branch in this period. Select a branch to investigate."
           flush
         >
-          <TableWrap flush minWidth={720}>
+          <TableWrap label="Branches" flush minWidth={720}>
             <thead>
               <tr>
                 <Th>Branch</Th>
@@ -223,7 +223,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
 
       {brands.length > 1 && (
         <Card title="By brand" subtitle="Each brand computed like the company line, not summed from branch rows. Unmapped spend belongs to no brand. Which branch trades under which brand is synthetic." flush>
-          <TableWrap flush>
+          <TableWrap label="Brands" flush>
             <thead>
               <tr>
                 <Th>Brand</Th>

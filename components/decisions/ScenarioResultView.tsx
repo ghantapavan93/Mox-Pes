@@ -39,7 +39,7 @@ export function ScenarioResultView({ result }: { result: ScenarioResult }) {
         ]}
       />
 
-      <TableWrap>
+      <TableWrap label="Scenario by channel">
         <thead>
           <tr>
             <Th>Channel</Th>
@@ -66,7 +66,7 @@ export function ScenarioResultView({ result }: { result: ScenarioResult }) {
 
       <div>
         <h3 className="mb-1 text-xs font-semibold text-text">Sensitivity to the diminishing-returns elasticity β</h3>
-        <TableWrap>
+        <TableWrap label="Scenario sensitivity">
           <thead>
             <tr>
               <Th>β</Th>

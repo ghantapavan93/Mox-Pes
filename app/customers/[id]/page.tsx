@@ -299,7 +299,7 @@ function RecordsCard({ journey }: { journey: CustomerJourney }) {
       <div className="grid gap-6 xl:grid-cols-3">
         <section aria-labelledby="subs-h">
           <h3 id="subs-h" className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">Subscriptions ({count(journey.subscriptions.length)})</h3>
-          <TableWrap>
+          <TableWrap label="Subscriptions">
             <thead><tr><Th>Id</Th><Th>Status</Th><Th>Sold</Th><Th align="right">Annual value</Th></tr></thead>
             <tbody>
               {journey.subscriptions.map((s) => (
@@ -315,7 +315,7 @@ function RecordsCard({ journey }: { journey: CustomerJourney }) {
         </section>
         <section aria-labelledby="appts-h">
           <h3 id="appts-h" className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">Appointments ({count(journey.appointments.length)})</h3>
-          <TableWrap>
+          <TableWrap label="Appointments">
             <thead><tr><Th>Id</Th><Th>Kind</Th><Th>Status</Th><Th>When</Th></tr></thead>
             <tbody>
               {journey.appointments.map((a) => (
@@ -331,7 +331,7 @@ function RecordsCard({ journey }: { journey: CustomerJourney }) {
         </section>
         <section aria-labelledby="pays-h">
           <h3 id="pays-h" className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">Payments and refunds ({count(journey.payments.length)})</h3>
-          <TableWrap>
+          <TableWrap label="Payments and refunds">
             <thead><tr><Th>Id</Th><Th>Status</Th><Th>When</Th><Th align="right">Amount</Th></tr></thead>
             <tbody>
               {journey.payments.map((p) => (

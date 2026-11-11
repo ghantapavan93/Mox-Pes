@@ -94,7 +94,7 @@ export function RecordCompare({ connectorId, offices, entities }: { connectorId:
           {result.source.error && <p className="text-xs text-bad">Source: {result.source.error}</p>}
           {result.mapped.error && <p className="text-xs text-bad">Mapper: {result.mapped.error}</p>}
           {result.fields.length > 0 && (
-            <TableWrap>
+            <TableWrap label="Source versus stored columns">
               <thead><tr><Th>Column</Th><Th>Source → mapper</Th><Th>Stored</Th><Th>Match</Th></tr></thead>
               <tbody>
                 {result.fields.map((f) => (
@@ -111,7 +111,7 @@ export function RecordCompare({ connectorId, offices, entities }: { connectorId:
           {result.source.payload && (
             <details className="rounded border border-border">
               <summary className="px-3 py-2 text-xs text-muted">Source record (redacted wire payload)</summary>
-              <pre className="overflow-x-auto bg-surface-2 p-3 text-[11px]">{JSON.stringify(result.source.payload, null, 2)}</pre>
+              <pre role="region" aria-label="Source record" tabIndex={0} className="overflow-x-auto bg-surface-2 p-3 text-[11px]">{JSON.stringify(result.source.payload, null, 2)}</pre>
             </details>
           )}
           <div>

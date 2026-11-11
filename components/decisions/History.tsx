@@ -42,7 +42,7 @@ export function SavedScenarios({ scenarios, labelFor }: { scenarios: SavedScenar
 export function ExperimentHistory({ experiments }: { experiments: StoredExperiment[] }) {
   if (experiments.length === 0) return <p className="text-sm text-muted">No experiment runs recorded in your scope yet.</p>;
   return (
-    <TableWrap>
+    <TableWrap label="Recorded experiment runs">
       <thead>
         <tr>
           <Th>Run</Th>

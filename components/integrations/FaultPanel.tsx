@@ -192,7 +192,7 @@ export function FaultPanel({
           </div>
           <p className="text-xs text-muted">{KIND_HELP[kind]}</p>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={busy} className="rounded bg-text px-3 py-1.5 font-medium text-white disabled:opacity-50">
+            <button type="submit" disabled={busy} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
               {busy ? "Saving…" : "Arm fault"}
             </button>
             {faults.length > 0 && (

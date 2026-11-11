@@ -85,7 +85,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
         title="Campaign lineage"
         subtitle="As captured when the gap was detected: the campaign that stopped, and the one that started in the same ad account. Simulated migration; the Google change it imitates is real."
       >
-        <TableWrap>
+        <TableWrap label="Campaigns around the gap">
           <thead>
             <tr><Th>Role</Th><Th>Campaign</Th><Th>Platform · type</Th><Th>Local services</Th><Th>Spend since gap</Th><Th>Filed as (at detection)</Th></tr>
           </thead>
@@ -121,7 +121,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
 
       <div className="grid gap-6 2xl:grid-cols-2">
         <Card title="Stored spend records around the gap" subtitle="Raw log rows, as the platform sent them, with the mapper version that classified each">
-          <TableWrap>
+          <TableWrap label="Raw spend rows">
             <thead><tr><Th>Raw event</Th><Th>Date · campaign</Th><Th>Type</Th><Th align="right">Cost</Th><Th>Classified</Th></tr></thead>
             <tbody>
               {spend.rows.map((r) => (
@@ -137,7 +137,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
           </TableWrap>
         </Card>
         <Card title={`${String(ev.channelLabel)} leads after the gap (sample)`} subtitle={`${count(Number(ev.leadsSinceGap))} leads in total: the channel did not stop, its spend moved`}>
-          <TableWrap>
+          <TableWrap label="Leads since the gap">
             <thead><tr><Th>Lead</Th><Th>When</Th><Th>Channel · evidence</Th><Th>Campaign on the lead</Th></tr></thead>
             <tbody>
               {leads.rows.map((l) => (
@@ -171,7 +171,7 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
             {crm.length === 0 ? (
               <p className="text-sm text-muted">No customers credited to this channel since the gap.</p>
             ) : (
-              <TableWrap>
+              <TableWrap label="Customers credited to the channel">
                 <thead><tr><Th>Customer</Th><Th>Sold</Th><Th>Initial service</Th><Th align="right">Invoiced</Th><Th align="right">Collected</Th></tr></thead>
                 <tbody>
                   {crm.slice(0, 8).map((r) => (

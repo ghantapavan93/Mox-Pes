@@ -61,7 +61,7 @@ async function Demo() {
       </Card>
 
       <Card title={`Eight steps · ${clock(PATH_SECONDS)}`}>
-        <TableWrap>
+        <TableWrap label="Guided path steps">
           <table className="w-full text-sm" data-testid="demo-steps">
             <thead>
               <tr>

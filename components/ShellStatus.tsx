@@ -2,11 +2,9 @@ import Link from "next/link";
 import { Database, Globe2 } from "lucide-react";
 import { dateTime } from "@/lib/format";
 import { freshness } from "@/lib/metrics/scorecard";
+import { feedAttention } from "@/lib/health/feeds";
 import { BRAND_BY_ID } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
-
-/** A feed is stale when its last successful run is older than this, by the business clock. */
-const STALE_AFTER_MS = 36 * 3_600_000;
 
 /**
  * Top-bar data freshness: when the numbers were last current, and whether any feed is behind.
@@ -16,19 +14,17 @@ export async function FreshnessIndicator() {
   const [streams, now] = await Promise.all([freshness(getPool()), businessNow()]);
   const successes = streams.map((s) => s.lastSuccessAt).filter((d): d is Date => d !== null);
   const asOf = successes.length ? new Date(Math.min(...successes.map((d) => new Date(d).getTime()))) : null;
-  const stale = streams.filter((s) => !s.lastSuccessAt || now.getTime() - new Date(s.lastSuccessAt).getTime() > STALE_AFTER_MS);
-  const failing = streams.filter((s) => s.lastRunStatus && s.lastRunStatus !== "succeeded");
-  const ok = stale.length === 0 && failing.length === 0;
+  const { stale, failing, ok } = feedAttention(streams, now);
   return (
     <Link
       href="/audit"
-      className="hidden items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2 hover:text-text md:inline-flex"
+      className="hidden min-w-0 items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2 hover:text-text md:inline-flex"
       data-testid="freshness-indicator"
       title={ok ? "All feeds succeeded within 36 hours" : `${stale.length} stale, ${failing.length} failing — open Audit & Health`}
     >
-      <span aria-hidden className={`size-2 rounded-full ${ok ? "bg-good" : "bg-warn"}`} />
-      <Database aria-hidden className="size-3.5" />
-      <span>
+      <span aria-hidden className={`size-2 shrink-0 rounded-full ${ok ? "bg-good" : "bg-warn"}`} />
+      <Database aria-hidden className="size-3.5 shrink-0" />
+      <span className="truncate">
         {asOf ? <>Data as of <span className="font-medium text-text">{dateTime(asOf)}</span></> : "No successful sync yet"}
         <span className="text-faint"> · {ok ? `${streams.length} feeds fresh` : `${stale.length + failing.length} of ${streams.length} feeds need attention`}</span>
       </span>

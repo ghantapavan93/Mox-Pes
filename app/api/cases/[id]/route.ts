@@ -6,6 +6,7 @@ import { getPool, getViewer } from "@/lib/server";
 import { ROLES } from "@/lib/viewer";
 import { assignCaseOwner, closeCase } from "@/lib/workflow/proposals";
 import { MANUAL_CLOSE_STATES } from "@/lib/workflow/states";
+import { parseRecordId } from "@/lib/record-id";
 
 const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("assign"), owner: z.enum(ROLES).nullable() }),
@@ -20,8 +21,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   await connection();
   try {
     const { id } = await ctx.params;
-    if (!/^\d{1,15}$/.test(id)) throw new ActionError("Case not found", 404);
-    const caseId = Number(id);
+    const caseId = parseRecordId(id);
+    if (caseId === null) throw new ActionError("Case not found", 404);
     const input = body.parse(await request.json());
     const viewer = await getViewer();
     if (input.action === "assign") {

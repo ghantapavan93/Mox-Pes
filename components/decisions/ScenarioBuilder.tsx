@@ -168,7 +168,7 @@ export function ScenarioBuilder({
         </fieldset>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button type="submit" disabled={!!busy || !!localProblem} className="rounded bg-text px-3 py-1.5 font-medium text-white disabled:opacity-50">
+          <button type="submit" disabled={!!busy || !!localProblem} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
             {busy === "run" ? "Projecting…" : "Run projection"}
           </button>
           <button

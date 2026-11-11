@@ -5,6 +5,7 @@ import { errorResponse } from "@/lib/http";
 import { decideIdentityConflict } from "@/lib/identity";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { ForbiddenError } from "@/lib/viewer";
+import { parseRecordId } from "@/lib/record-id";
 
 const body = z.object({
   decision: z.enum(["accept", "reject"]),
@@ -21,12 +22,13 @@ const body = z.object({
 export async function POST(request: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
-    if (!/^\d{1,15}$/.test(id)) throw new ActionError("Identity conflict not found", 404);
+    const conflictId = parseRecordId(id);
+    if (conflictId === null) throw new ActionError("Identity conflict not found", 404);
     const input = body.parse(await request.json());
     const viewer = await getViewer();
     if (!viewer.can.reviewIdentity) throw new ForbiddenError(`${viewer.label} cannot review identity matches`);
     const result = await decideIdentityConflict(getPool(), {
-      conflictId: Number(id),
+      conflictId,
       decision: input.decision,
       reason: input.reason,
       actor: viewer.role,

@@ -36,7 +36,11 @@ between sections. Dense where people compare rows, spacious where they read a se
 | `Card` | Any titled panel | `flush` for edge-to-edge tables; `action` slot for a link or button |
 | `Segmented` / `PeriodTabs` | Choices that live in the URL (brand, period) | Links, not buttons: shareable, back-button safe; `aria-current` marks the choice |
 | `ButtonLink` | Navigation that looks like an action | primary / secondary / ghost |
-| `Stat` | Every headline number | Definition one click away (formula, source, caveat); optional `delta` with which direction is good |
+| `Stat` | Every headline number that is a defined metric | Definition one click away (formula, source, caveat, link to its `/definitions` entry); optional `delta` with which direction is good |
+| `KpiTile` | Headline counts that are not defined metrics (queue sizes, feed health) | With `href` the tile links to the filtered view behind the number; `current` marks the active filter |
+| `FilterSelect`, `FilterChips` | GET filter forms | Labelled native selects; applied filters as removable chips, each linking to the view without it |
+| `Pager` | Offset-paged lists | "Showing a–b of n", previous/next; disabled ends are `aria-disabled` |
+| `SectionNav` | Long pages (incident, Audit & Health, Decision Lab) | Sticky anchor links under the top bar; sections set `scroll-mt-28` |
 | `Badge`, `SeverityBadge`, `StatusBadge` | States and labels | `dot` for status; colour plus word |
 | `Th` / `Td` / `TableWrap` | Tables | Scroll horizontally inside their panel, never the page; header cells are `scope="col"` |
 | `KV` | Label/value facts | `columns={1}` in a narrow rail |
@@ -74,17 +78,33 @@ between sections. Dense where people compare rows, spacious where they read a se
    labels inside a scrolling table cannot escape it), and raw JSON wraps anywhere. `tests/e2e/z-layout.spec.ts`
    loads all 12 pages at 1440, 1280, 768 and 390 px and fails on any horizontal page scroll: the
    first redesign build failed it on 9 of 12 pages, which is how these rules were found.
-6. **Numbers carry their definition.** Every KPI opens to its formula, source and caveat;
+6. **Primary lists become cards on phones.** Below 768 px the incident queue, the customer
+   directory and the audit trail render one card per row (the table is `display: none` there, so
+   assistive tech meets each row once); other tables scroll inside their panel.
+7. **Never add up what does not add up.** Incident amounts mix spend and revenue and overlap, so
+   Incidents shows counts and per-type amounts, not a money total; the deduplicated revenue at
+   risk is a defined metric on Overview.
+8. **Numbers carry their definition.** Every KPI opens to its formula, source and caveat;
    `/definitions` is the dictionary.
 
-## Screens redesigned so far
+## Screens
 
-| Screen | Status |
+Every page opens with `PageHeader` (eyebrow = area · scope · period), answers its main question
+before showing detail, and keeps filters in the URL.
+
+| Screen | Information architecture |
 |---|---|
-| Shell (sidebar, top bar, guide bar) | Done |
-| Overview | Done: trust callout, KPIs vs September, issues requiring review, weekly composition chart, bridge, branch and brand tables, freshness |
-| Incident detail | Done: header with impact strip, sticky section navigation, evidence / fix & approval / records / audit, a rail with the decision and the role-by-role fix steps |
-| Incidents list, AI Investigator, Customer Journeys, Decision Lab, Google feedback, Definitions, Integrations, Audit & Health | Restyled through the shared components (cards, tables, badges, tabs); their layouts are the next slices |
+| Shell | Grouped sidebar (Operate, Understand, Systems), collapsible rail, top bar with scope and freshness, guide bar on `?guide=b09` |
+| Overview | Headline answer, trust callout, KPIs vs September, issues requiring review, weekly composition, bridge, branch and brand tables |
+| Incidents | KPI strip (open, high severity, needs approval, closed; no money total, because case amounts mix spend and revenue and overlap), the fix workflow as a left-to-right state strip with side exits, amount at stake by incident type (click to filter), approval lane, then the filterable queue with removable filter chips |
+| Incident detail | Impact strip, sticky section navigation (evidence, fix & approval, records, audit), rail with the decision and role-by-role fix steps |
+| AI Investigator | Model/deterministic mode stated first, incident scope callout, ask panel, recent investigations as a list with confidence and proposals |
+| Customer Journeys | Lifecycle tiles (click to filter), identity review queue *above* the directory (decisions before browsing), directory with search, branch and lifecycle filters |
+| Decision Lab | Branch and period in the header toolbar; sections numbered by the three questions (records right? enough evidence? did spend cause it?); readiness verdict first, blocking incidents linked |
+| Google feedback | Decisions grouped by outcome (sent, withheld on purpose, not eligible), latest decisions, the event that would be sent, rules and limits |
+| Definitions | Index of every entry, attribution policy, one card per metric with a stable anchor (`#metric-<key>`) that every KPI links to |
+| Integrations | Health strip (connector, record versions, quarantine, unrecovered failures), then three views in the URL: CRM connector (operate), Field mapping (inspect), Ingestion pipeline (audit the log); the full audit trail lives on Audit & Health |
+| Audit & Health | Health strip first (feeds, failed runs, domain events, connector), sticky section navigation, filterable audit trail with expandable details, throughput, feeds and runs, domain events, connector |
 
 Committed screenshots are the pixel baselines: Overview and the B09 incident at 1440 and 390 px
 (`tests/e2e/__screenshots__/`, checked with `VISUAL=1`). Full before/after sets (12 pages × 4

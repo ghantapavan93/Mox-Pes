@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { CaseQueue } from "@/components/actions/CaseQueue";
 import { ProposalStatusBadge, SourceBadge } from "@/components/actions/badges";
-import { Card, Forbidden, Skeleton } from "@/components/ui";
+import { ButtonLink, Callout, Card, FilterChips, FilterSelect, Forbidden, KpiTile, PageHeader, Pager, Segmented, Skeleton } from "@/components/ui";
 import { KIND_LABEL, count, money } from "@/lib/format";
 import { exceptionSummary } from "@/lib/queries";
-import { BRANCHES } from "@/lib/reference";
+import { BRANCHES, BRAND_BY_ID } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
-import { ForbiddenError, VIEWERS, resolveScope } from "@/lib/viewer";
+import { ForbiddenError, VIEWERS, resolveScope, type Viewer } from "@/lib/viewer";
 import { KIND_TITLE } from "@/lib/workflow/kinds";
 import { OWNER_ROLES } from "@/lib/workflow/proposals";
 import { caseStateCounts, countQueue, exceptionsWithoutCase, listQueue, type StateFilter } from "@/lib/workflow/queries";
-import { ACTIVE_STATES, CASE_STATES, CLOSED_STATES, STATE_LABEL, STATE_TONE, isCaseState } from "@/lib/workflow/states";
+import { ACTIVE_STATES, CASE_STATES, CLOSED_STATES, STATE_LABEL, STATE_TONE, isCaseState, type CaseState } from "@/lib/workflow/states";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -19,27 +20,40 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 const SEVERITIES = ["high", "medium", "low"] as const;
 const PAGE_SIZE = 50;
 
+/** The main path of a fix, in order (lib/workflow/states.ts); every other state is a side exit. */
+const MAIN_PATH: readonly CaseState[] = ["detected", "investigating", "proposed", "dry_run_verified", "awaiting_approval", "applied", "verified", "resolved"];
+const SIDE_EXITS: readonly CaseState[] = CASE_STATES.filter((s) => !MAIN_PATH.includes(s));
+
 /** `?page=` as a positive integer; anything else is page 1. */
 function parsePage(value: string | undefined): number {
   if (!value || !/^\d{1,6}$/.test(value)) return 1;
   return Math.max(1, Number(value));
 }
 
-export default function ActionCenterPage({ searchParams }: { searchParams: SearchParams }) {
+/** What the numbers on this page are computed over, in words. */
+function scopeLabel(viewer: Viewer, branchIds: string[] | null): string {
+  if (branchIds && branchIds.length === 1) return `Branch ${branchIds[0]}`;
+  if (viewer.brandIds) return viewer.brandIds.map((b) => BRAND_BY_ID.get(b)!.name).join(", ");
+  if (branchIds) return `${branchIds.length} branches`;
+  return "All 44 branches";
+}
+
+export default function IncidentsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>
-      <ActionCenter searchParams={searchParams} />
+      <Incidents searchParams={searchParams} />
     </Suspense>
   );
 }
 
 /**
- * The Action Center queue. Every exception has a case; the queue shows where each case is
- * in its workflow, who owns it, and its latest proposal. Filters are plain GET parameters
- * (state, severity, branch, kind, owner), validated here and applied in SQL with the
- * viewer's branch scope.
+ * Incidents: the Action Center queue. Every reconciliation exception is a case. The page answers,
+ * in order: how much is open and at stake; where each case is in the fix workflow; which kinds of
+ * problem carry the money; what needs a decision now; then the filterable queue itself.
+ * Filters are plain GET parameters (state, severity, branch, kind, owner, page), validated here
+ * and applied in SQL with the viewer's branch scope, so a filter never widens what a viewer sees.
  */
-async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
+async function Incidents({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
   const viewer = await getViewer();
   const rawState = one(sp.state);
@@ -62,13 +76,14 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
 
   const pool = getPool();
   const queueFilters = { branchIds, state, severity, kind, owner };
-  const [counts, rows, queueTotal, lane, summary, uncased] = await Promise.all([
+  const [counts, rows, queueTotal, lane, summary, uncased, highOpen] = await Promise.all([
     caseStateCounts(pool, branchIds),
     listQueue(pool, { ...queueFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
     countQueue(pool, queueFilters),
     listQueue(pool, { branchIds, state: "awaiting_approval", limit: 12 }),
     exceptionSummary(pool, branchIds),
     exceptionsWithoutCase(pool, branchIds),
+    countQueue(pool, { branchIds, state: "active", severity: "high" }),
   ]);
   const filters = { state: state === "active" ? undefined : state, severity, kind, owner, branch };
   const href = (patch: Record<string, string | undefined>) => {
@@ -78,102 +93,208 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
     return s ? `/exceptions?${s}` : "/exceptions";
   };
   const total = (states: readonly string[]) => states.reduce((n, s) => n + (counts[s as keyof typeof counts] ?? 0), 0);
+  const activeTotal = total(ACTIVE_STATES);
+  const closedTotal = total(CLOSED_STATES);
+  const awaiting = counts.awaiting_approval ?? 0;
+  const kindsWithOpen = summary.filter((s) => s.open > 0).length;
+  const maxKindCents = Math.max(1, ...summary.map((s) => s.amountCents));
   const branchOptions = viewer.branchIds ? BRANCHES.filter((b) => viewer.branchIds!.includes(b.id)) : BRANCHES;
   const lastPage = Math.max(1, Math.ceil(queueTotal / PAGE_SIZE));
   const firstShown = (page - 1) * PAGE_SIZE + 1;
   const lastShown = firstShown + rows.length - 1;
   const pageHref = (n: number) => href({ page: n > 1 ? String(n) : undefined });
   const stateTitle = state === "active" ? "Active cases" : state === "closed" ? "Closed cases" : state === "all" ? "All cases" : STATE_LABEL[state];
+  const ownerLabel = (r: string) => (r === "unassigned" ? "Unassigned" : (VIEWERS[r as keyof typeof VIEWERS]?.label.split(" · ")[0] ?? r));
+  const chips = [
+    ...(state !== "active" ? [{ label: <>State: {state === "closed" ? "all closed" : state === "all" ? "all" : STATE_LABEL[state]}</>, removeHref: href({ state: undefined, page: undefined }) }] : []),
+    ...(severity ? [{ label: <>Severity: {severity}</>, removeHref: href({ severity: undefined, page: undefined }) }] : []),
+    ...(branch ? [{ label: <>Branch: {branch}</>, removeHref: href({ branch: undefined, page: undefined }) }] : []),
+    ...(kind ? [{ label: <>Type: {KIND_LABEL[kind]}</>, removeHref: href({ kind: undefined, page: undefined }) }] : []),
+    ...(owner ? [{ label: <>Owner: {ownerLabel(owner)}</>, removeHref: href({ owner: undefined, page: undefined }) }] : []),
+  ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Action Center</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted">
-          Every reconciliation exception is a case. A fix is proposed, dry-run in a transaction that is rolled back, approved by a role other
-          than the proposer&apos;s, then executed once by the application, verified and audited. A case closes when reconciliation confirms the
-          data agrees, and re-opens if the condition returns. All data is synthetic.
-        </p>
+      <PageHeader
+        eyebrow={`Action Center · ${scopeLabel(viewer, branchIds)}`}
+        title="Incidents"
+        description={
+          <p className="max-w-3xl">
+            Every reconciliation exception is a case. A fix is proposed, dry-run in a transaction that is rolled back, approved by a role other than the
+            proposer&apos;s, then executed once by the application, verified and audited. A case closes when reconciliation confirms the data agrees, and
+            re-opens if the condition returns. All data is synthetic.
+          </p>
+        }
+        actions={<ButtonLink href="/investigator">Ask the AI investigator</ButtonLink>}
+      />
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="incident-kpis">
+        <KpiTile
+          label="Open cases"
+          value={count(activeTotal)}
+          sub={`across ${count(kindsWithOpen)} incident type${kindsWithOpen === 1 ? "" : "s"}`}
+          tone={activeTotal > 0 ? "warn" : "neutral"}
+          href={href({ state: undefined, severity: undefined, kind: undefined, owner: undefined, page: undefined })}
+          current={state === "active" && !severity && !kind && !owner}
+        />
+        {/* No money total here: case amounts mix spend and revenue and overlap, so they do not add
+            up. The deduplicated revenue at risk is a defined metric, shown on Overview. */}
+        <KpiTile
+          label="High-severity open cases"
+          value={count(highOpen)}
+          sub={`of ${count(activeTotal)} open`}
+          tone={highOpen > 0 ? "bad" : "good"}
+          href={href({ state: undefined, severity: "high", page: undefined })}
+          current={state === "active" && severity === "high"}
+        />
+        <KpiTile
+          label="Needs an approval decision"
+          value={count(awaiting)}
+          sub="Dry run verified; another role decides"
+          tone={awaiting > 0 ? "accent" : "neutral"}
+          href={href({ state: "awaiting_approval", page: undefined })}
+          current={state === "awaiting_approval"}
+        />
+        <KpiTile
+          label="Closed"
+          value={count(closedTotal)}
+          sub={`${count(counts.resolved ?? 0)} resolved by reconciliation`}
+          tone={closedTotal > 0 ? "good" : "neutral"}
+          href={href({ state: "closed", page: undefined })}
+          current={state === "closed"}
+        />
       </div>
 
-      <nav aria-label="Cases by state" className="flex flex-wrap gap-2 text-xs" data-testid="state-counts">
-        <StateChip href={href({ state: undefined })} label="Active" n={total(ACTIVE_STATES)} current={state === "active"} />
-        {CASE_STATES.map((s) => (
-          <StateChip key={s} href={href({ state: s })} label={STATE_LABEL[s]} n={counts[s] ?? 0} current={state === s} tone={STATE_TONE[s]} />
-        ))}
-        <StateChip href={href({ state: "closed" })} label="All closed" n={total(CLOSED_STATES)} current={state === "closed"} />
-        <StateChip href={href({ state: "all" })} label="All" n={total(CASE_STATES)} current={state === "all"} />
-      </nav>
       {uncased > 0 && (
-        <p className="text-xs text-warn">
-          {count(uncased)} exception{uncased === 1 ? "" : "s"} raised at ingestion get a case on the next reconciliation run.
-        </p>
+        <Callout tone="warn" title={`${count(uncased)} exception${uncased === 1 ? "" : "s"} not in the queue yet`}>
+          Raised at ingestion; each gets a case on the next reconciliation run.
+        </Callout>
       )}
 
-      <Card title={`Awaiting approval (${count(counts.awaiting_approval ?? 0)})`} subtitle="Dry run verified; needs a decision from a role other than the proposer's">
-        {lane.length === 0 ? (
-          <p className="text-sm text-muted">Nothing is waiting for approval.</p>
-        ) : (
-          <ul className="divide-y divide-border" data-testid="approval-lane">
-            {lane.map((r) => (
-              <li key={r.caseId} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                <div className="min-w-0">
+      <Card title="Where cases are in the fix workflow" subtitle="Each step links to its cases. A fix moves left to right; a side exit closes a case with a reason.">
+        <nav aria-label="Cases by state" className="space-y-3" data-testid="state-counts">
+          <Segmented
+            label="View"
+            items={[
+              { href: href({ state: undefined, page: undefined }), label: <>Active · {count(activeTotal)}</>, current: state === "active" },
+              { href: href({ state: "closed", page: undefined }), label: <>All closed · {count(closedTotal)}</>, current: state === "closed" },
+              { href: href({ state: "all", page: undefined }), label: <>All · {count(total(CASE_STATES))}</>, current: state === "all" },
+            ]}
+          />
+          <ol className="flex items-stretch gap-1 overflow-x-auto pb-1" aria-label="Fix workflow states">
+            {MAIN_PATH.map((s, i) => (
+              <li key={s} className="flex shrink-0 items-center gap-1">
+                {i > 0 && <ChevronRight aria-hidden className="size-3.5 shrink-0 text-faint" />}
+                <StateStep href={href({ state: s, page: undefined })} label={STATE_LABEL[s]} n={counts[s] ?? 0} current={state === s} tone={STATE_TONE[s]} />
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs text-faint">Side exits</span>
+            {SIDE_EXITS.map((s) => (
+              <StateStep key={s} href={href({ state: s, page: undefined })} label={STATE_LABEL[s]} n={counts[s] ?? 0} current={state === s} tone={STATE_TONE[s]} compact />
+            ))}
+          </div>
+        </nav>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card
+          className="xl:col-span-2"
+          title="Amount at stake by incident type"
+          subtitle="Each open case's own amount: spend for spend incidents, revenue for revenue incidents. Amounts overlap, so they are not added up; the deduplicated revenue at risk is on Overview. Select a type to filter the queue."
+          flush
+        >
+          <ul className="divide-y divide-border" data-testid="kind-breakdown">
+            {summary.map((s) => {
+              const current = kind === s.kind;
+              const width = s.amountCents > 0 ? Math.max(2, (s.amountCents / maxKindCents) * 100) : 0;
+              return (
+                <li key={s.kind}>
+                  <Link
+                    href={href({ kind: current ? undefined : s.kind, page: undefined })}
+                    aria-current={current ? "true" : undefined}
+                    className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-4 py-2.5 text-sm hover:bg-surface-2 sm:grid-cols-[12rem_minmax(0,1fr)_auto] ${current ? "bg-accent-soft" : ""}`}
+                  >
+                    <span className="min-w-0 truncate font-medium text-text">{KIND_LABEL[s.kind] ?? s.kind}</span>
+                    <span aria-hidden className="col-span-2 row-start-2 h-1.5 rounded-full bg-sunken sm:col-span-1 sm:row-start-auto">
+                      <span className="block h-1.5 rounded-full bg-bad" style={{ width: `${width}%` }} />
+                    </span>
+                    <span className="whitespace-nowrap text-right text-xs tabular-nums text-muted">
+                      <span className="font-semibold text-text">{money(s.amountCents)}</span> · {count(s.open)} open · {count(s.resolved)} resolved
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+
+        <Card title={`Awaiting approval (${count(awaiting)})`} subtitle="Dry run verified; needs a decision from a role other than the proposer's" flush>
+          {lane.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-muted">Nothing is waiting for approval.</p>
+          ) : (
+            <ul className="divide-y divide-border" data-testid="approval-lane">
+              {lane.map((r) => (
+                <li key={r.caseId} className="px-4 py-2.5 text-sm">
                   <Link href={`/exceptions/${r.exceptionId}`} className="font-medium text-accent hover:underline">
                     {r.proposal ? KIND_TITLE[r.proposal.kind] : "Case"} · {KIND_LABEL[r.kind] ?? r.kind}
                   </Link>
-                  <span className="ml-2 text-xs text-muted">{r.branchId ?? "company"} · case #{r.caseId}</span>
-                  <div className="truncate text-xs text-muted">{r.summary}</div>
-                </div>
-                {r.proposal && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted">proposed by {r.proposal.proposedRole}</span>
-                    <SourceBadge source={r.proposal.source} />
-                    <ProposalStatusBadge status={r.proposal.status} />
+                  <div className="text-xs text-muted">
+                    {r.branchId ?? "company"} · case #{r.caseId} · {money(r.amountCents)}
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-7">
-        {summary.map((s) => (
-          <Link
-            key={s.kind}
-            href={href({ kind: kind === s.kind ? undefined : s.kind })}
-            aria-current={kind === s.kind ? "true" : undefined}
-            className={`rounded-lg border bg-surface p-3 text-sm hover:border-accent ${kind === s.kind ? "border-accent" : "border-border"}`}
-          >
-            <div className="text-xs text-muted">{KIND_LABEL[s.kind] ?? s.kind}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">{count(s.open)}</div>
-            <div className="text-[11px] text-faint">
-              {money(s.amountCents)} open · {count(s.resolved)} resolved
-            </div>
-          </Link>
-        ))}
+                  {r.proposal && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-muted">proposed by {r.proposal.proposedRole}</span>
+                      <SourceBadge source={r.proposal.source} />
+                      <ProposalStatusBadge status={r.proposal.status} />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {awaiting > lane.length && (
+            <Link href={href({ state: "awaiting_approval", page: undefined })} className="flex items-center gap-1 border-t border-border px-4 py-2 text-xs font-medium text-accent hover:underline">
+              All {count(awaiting)} awaiting approval <ArrowRight aria-hidden className="size-3" />
+            </Link>
+          )}
+        </Card>
       </div>
 
       <Card
-        title={`${stateTitle}${kind ? ` · ${KIND_LABEL[kind]}` : ""}${branchIds ? ` · ${branchIds.join(", ")}` : ""} (${count(queueTotal)})`}
-        action={
-          <form method="get" action="/exceptions" className="flex flex-wrap items-end gap-2 text-xs" aria-label="Filter cases">
-            <Select name="state" label="State" value={state} options={[["active", "Active"], ...CASE_STATES.map((s) => [s, STATE_LABEL[s]] as [string, string]), ["closed", "All closed"], ["all", "All"]]} />
-            <Select name="severity" label="Severity" value={severity ?? ""} options={[["", "Any"], ...SEVERITIES.map((s) => [s, s] as [string, string])]} />
-            <Select name="branch" label="Branch" value={branch ?? ""} options={[["", viewer.branchIds ? "My branches" : "All"], ...branchOptions.map((b) => [b.id, `${b.id} ${b.name}`] as [string, string])]} />
-            <Select name="kind" label="Kind" value={kind ?? ""} options={[["", "Any"], ...Object.entries(KIND_LABEL)]} />
-            <Select name="owner" label="Owner" value={owner ?? ""} options={[["", "Anyone"], ["unassigned", "Unassigned"], ...OWNER_ROLES.map((r) => [r, VIEWERS[r].label.split(" · ")[0]] as [string, string])]} />
-            <button type="submit" className="rounded bg-text px-2.5 py-1 font-medium text-white">
+        id="queue"
+        title={`${stateTitle}${kind ? ` · ${KIND_LABEL[kind]}` : ""}${branch && branchIds ? ` · ${branchIds.join(", ")}` : ""} (${count(queueTotal)})`}
+        subtitle="What needs someone comes first: awaiting approval, failed, proposed; then by severity and revenue at stake."
+        flush
+      >
+        <form
+          method="get"
+          action="/exceptions"
+          aria-label="Filter cases"
+          className="grid grid-cols-2 items-end gap-3 border-b border-border bg-surface-2/60 px-4 py-3 sm:grid-cols-3 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto]"
+        >
+          <FilterSelect name="state" label="State" value={state} options={[["active", "Active"], ...CASE_STATES.map((s) => [s, STATE_LABEL[s]] as [string, string]), ["closed", "All closed"], ["all", "All"]]} />
+          <FilterSelect name="severity" label="Severity" value={severity ?? ""} options={[["", "Any"], ...SEVERITIES.map((s) => [s, s] as [string, string])]} />
+          <FilterSelect name="branch" label="Branch" value={branch ?? ""} options={[["", viewer.branchIds ? "My branches" : "All"], ...branchOptions.map((b) => [b.id, `${b.id} ${b.name}`] as [string, string])]} />
+          <FilterSelect name="kind" label="Type" value={kind ?? ""} options={[["", "Any"], ...Object.entries(KIND_LABEL)]} />
+          <FilterSelect name="owner" label="Owner" value={owner ?? ""} options={[["", "Anyone"], ["unassigned", "Unassigned"], ...OWNER_ROLES.map((r) => [r, ownerLabel(r)] as [string, string])]} />
+          <div className="flex items-center gap-3">
+            <button type="submit" className="h-8 rounded-md bg-accent px-3 text-sm font-medium text-white hover:bg-accent-hover">
               Apply
             </button>
-            <Link href="/exceptions" className="py-1 text-accent hover:underline">
+            <Link href="/exceptions" className="text-sm text-accent hover:underline">
               Reset
             </Link>
-          </form>
-        }
-      >
+          </div>
+        </form>
+        {chips.length > 0 && (
+          <div className="border-b border-border px-4 py-2">
+            <FilterChips items={chips} clearHref="/exceptions" testId="queue-filters" />
+          </div>
+        )}
         {rows.length === 0 && queueTotal > 0 ? (
-          <p className="text-sm text-muted" data-testid="queue-past-end">
+          <p className="px-4 py-4 text-sm text-muted" data-testid="queue-past-end">
             Page {count(page)} is past the last page of these cases.{" "}
             <Link href={pageHref(lastPage)} className="text-accent hover:underline">
               Go to page {count(lastPage)}
@@ -181,69 +302,36 @@ async function ActionCenter({ searchParams }: { searchParams: SearchParams }) {
             .
           </p>
         ) : (
-          <CaseQueue rows={rows} empty="No cases match these filters in your scope." />
+          <CaseQueue rows={rows} empty="No cases match these filters in your scope." flush />
         )}
         {queueTotal > 0 && rows.length > 0 && (
-          <nav aria-label="Case queue pages" className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted" data-testid="queue-pagination">
-            <span>
-              Showing {count(firstShown)}–{count(lastShown)} of {count(queueTotal)}
-            </span>
-            <span className="flex gap-2">
-              {page > 1 ? (
-                <Link href={pageHref(page - 1)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
-                  ← Previous
-                </Link>
-              ) : (
-                <span className="rounded border border-border px-2 py-1 text-faint" aria-disabled="true">
-                  ← Previous
-                </span>
-              )}
-              <span className="px-1 py-1">
-                page {count(page)} of {count(lastPage)}
-              </span>
-              {page < lastPage ? (
-                <Link href={pageHref(page + 1)} className="rounded border border-border px-2 py-1 text-accent hover:bg-surface-2">
-                  Next →
-                </Link>
-              ) : (
-                <span className="rounded border border-border px-2 py-1 text-faint" aria-disabled="true">
-                  Next →
-                </span>
-              )}
-            </span>
-          </nav>
+          <Pager page={page} lastPage={lastPage} first={firstShown} last={lastShown} total={queueTotal} hrefFor={pageHref} label="Case queue pages" testId="queue-pagination" />
         )}
       </Card>
     </div>
   );
 }
 
-function StateChip({ href, label, n, current, tone }: { href: string; label: string; n: number; current: boolean; tone?: string }) {
+/** One state in the workflow strip: its name, its tone dot, and how many cases are in it. */
+function StateStep({ href, label, n, current, tone, compact = false }: { href: string; label: string; n: number; current: boolean; tone: string; compact?: boolean }) {
   const dot = tone === "bad" ? "bg-bad" : tone === "warn" ? "bg-warn" : tone === "good" ? "bg-good" : tone === "accent" ? "bg-accent" : "bg-faint";
+  const frame = current ? "border-accent bg-accent-soft text-text" : "border-border bg-surface text-muted hover:border-accent";
+  if (compact) {
+    return (
+      <Link href={href} aria-current={current ? "page" : undefined} className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs ${frame}`}>
+        <span aria-hidden className={`size-1.5 rounded-full ${dot}`} />
+        {label}
+        <span className={`font-semibold tabular-nums ${n > 0 ? "text-text" : "text-faint"}`}>{count(n)}</span>
+      </Link>
+    );
+  }
   return (
-    <Link
-      href={href}
-      aria-current={current ? "page" : undefined}
-      className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 hover:border-accent ${current ? "border-accent bg-accent-soft text-text" : "border-border bg-surface text-muted"} ${n === 0 && !current ? "opacity-60" : ""}`}
-    >
-      {tone && <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dot}`} />}
-      {label}
-      <span className="font-semibold tabular-nums text-text">{count(n)}</span>
+    <Link href={href} aria-current={current ? "page" : undefined} className={`flex min-w-[6.5rem] flex-col gap-0.5 rounded-md border px-3 py-1.5 ${frame}`}>
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs">
+        <span aria-hidden className={`size-1.5 rounded-full ${dot}`} />
+        {label}
+      </span>
+      <span className={`text-base font-semibold tabular-nums ${n > 0 ? "text-text" : "text-faint"}`}>{count(n)}</span>
     </Link>
-  );
-}
-
-function Select({ name, label, value, options }: { name: string; label: string; value: string; options: Array<[string, string]> }) {
-  return (
-    <label className="flex flex-col gap-0.5">
-      <span className="text-[10px] uppercase tracking-wide text-faint">{label}</span>
-      <select name={name} defaultValue={value} className="rounded border border-border bg-surface px-1.5 py-1 text-xs">
-        {options.map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

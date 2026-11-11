@@ -24,7 +24,8 @@ async function ViewerControls() {
   const viewer = await getViewer();
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="hidden text-xs text-faint xl:inline" data-testid="viewer-label">{viewer.label}</span>
+      {/* 2xl only: below it the role select already names the viewer, and the top bar must stay one row. */}
+      <span className="hidden text-xs text-faint 2xl:inline" data-testid="viewer-label">{viewer.label}</span>
       <RoleSwitcher current={viewer.role} />
     </div>
   );
@@ -77,9 +78,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </div>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-surface/95 px-4 py-2 backdrop-blur lg:px-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <Suspense fallback={<span className="text-xs text-faint">…</span>}>
+            {/* One row from lg up, whatever streams in: the freshness text truncates instead of wrapping, and
+                each streamed part has a fallback of its own size. A late wrap here pushed every page down
+                (CLS 0.25-0.39 at 1440 px, measured with a layout-shift observer). */}
+            <header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border bg-surface/95 px-4 py-2 backdrop-blur lg:flex-nowrap lg:px-6">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Suspense fallback={<span aria-hidden className="inline-block h-[26px] w-40 rounded-md bg-sunken" />}>
                   <ScopeIndicator />
                 </Suspense>
                 <p className="inline-flex items-center gap-1.5 rounded-md bg-warn-soft px-2 py-1 text-[11px] text-warn" role="note">
@@ -88,11 +92,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <span className="hidden sm:inline 2xl:hidden">· demo roles, server-enforced</span>
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
                 <Suspense fallback={null}>
                   <FreshnessIndicator />
                 </Suspense>
-                <Suspense fallback={<span className="text-xs text-faint">…</span>}>
+                <Suspense fallback={<span aria-hidden className="inline-block h-[26px] w-56 rounded-md bg-sunken" />}>
                   <ViewerControls />
                 </Suspense>
               </div>

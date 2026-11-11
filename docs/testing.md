@@ -144,3 +144,31 @@ config) unreachable.
 - **Screenshots:** `npx tsx scripts/capture-screens.ts docs/redesign/<dir> <base-url>` captures
   12 pages × 4 widths. `docs/redesign/` is git-ignored (about 25 MB per set); the full before and
   after sets are archived outside the repository.
+
+## Hardening pass (2026-11-10)
+
+Diagnostic sweeps against a production build (`next start`, demo mode). The scripts are not yet
+regression tests; see "Not yet pinned" below.
+
+| Check | Result before | Fix | Result after |
+|---|---|---|---|
+| Hostile inputs: every page and GET API × 27 hostile values (long, unicode, `__proto__`, `NaN`, `1e9`, SQL/HTML fragments, bad dates, duplicate keys, bad path ids) × 5 roles, 6,880 requests | First pass: 0 server errors. That pass only looked for 5xx, and a streamed page that fails after its headers are sent still answers **200**, its error visible only as a numeric digest in the flight payload (checked against a server pointed at a missing database: every page 200 + digest). Second pass, digest-aware: `/exceptions/99999999999999999999` crashed for every role (`Number()` gives 1e20, `Number.isInteger` passes it, Postgres rejects it as an out-of-range `bigint`) | one id parser at every page and API boundary, `lib/record-id.ts` (1–15 digits, no leading zero) | 0 |
+| Layout shift (CLS, layout-shift observer) at 1440 px | 0.25–0.39 on every page: the top bar wrapped to two rows when streamed parts arrived, pushing the page down 34 px | top bar is one row from `lg` (freshness text truncates, viewer label only at `2xl`), size-matched Suspense fallbacks | 0–0.003 on every page; Customers 0 in three isolated runs (one cold run read 0.115) |
+| axe-core, WCAG 2.0/2.1/2.2 A+AA + best practice, 16 pages × 1440 and 390 px | 6 rules failing: label-in-name (search trigger, payload buttons), scrollable regions not keyboard-reachable, links distinguished by colour only, touch targets under 24 px, then duplicate region names | name from visible content; every scroll box a named, focusable region (`TableWrap` now requires a unique `label`); links in running text underlined; 24 px targets | 0 violations |
+| Largest contentful paint, cold, local | Overview 1.7 s, others 0.1–0.8 s | — | — |
+
+Pixel baselines changed on purpose (one-row top bar; 24 px incident links) and were re-taken and
+re-checked after a fresh reseed.
+
+**Pinned:** `tests/e2e/z-quality-gates.spec.ts` (axe at 1440 and 390 px, CLS under 0.1 at both
+widths, hostile query values and path ids as two roles with digest detection), plus
+`tests/unit/record-id.test.ts`. Each was run red first: the axe and desktop CLS gates against a
+clean build of commit 7ff8547 (before these fixes) list every violation fixed here; the hostile
+gate failed on the bigint overflow before `parseRecordId`. The mobile CLS gate passes on the old
+build too (that shift was desktop-only); it guards against one.
+
+**Known, not changed:** a missing record renders the not-found page with HTTP 200 (plus `noindex`),
+because `notFound()` runs after streaming has started. Documented Next.js behaviour
+(`node_modules/next/dist/docs/.../not-found.md`); a true 404 would need the lookup in Proxy,
+before rendering. Overview is the slowest page (about 1.1 s server time, local), all of it metric
+SQL, which this pass did not touch.

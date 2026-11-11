@@ -69,7 +69,7 @@ export function JobsLive({ connectorId, initialJobs, officeLabels }: { connector
       {jobs.length === 0 ? (
         <p className="text-sm text-muted">No sync jobs yet. Run a sync to queue one per office and entity.</p>
       ) : (
-        <TableWrap>
+        <TableWrap label="Sync jobs">
           <thead>
             <tr>
               <Th>Job</Th><Th>Office</Th><Th>Entity</Th><Th>State</Th><Th align="right">Attempt</Th><Th align="right">Read</Th>

@@ -66,7 +66,7 @@ export function SnapshotDiff({ before, after, verification }: { before: StateSna
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" role="region" aria-label="Ledger before and after" tabIndex={0}>
         <table className="w-full min-w-[420px] text-xs">
           <thead>
             <tr className="text-[10px] uppercase tracking-wide text-faint">

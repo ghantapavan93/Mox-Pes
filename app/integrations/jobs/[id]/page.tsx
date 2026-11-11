@@ -8,6 +8,7 @@ import { getJobDetail } from "@/lib/connectors/studio";
 import { fmtDuration, jobTone } from "@/lib/connectors/views";
 import { getPool, getViewer } from "@/lib/server";
 import { resolveScope } from "@/lib/viewer";
+import { parseRecordId } from "@/lib/record-id";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -24,8 +25,8 @@ const STATUS_TONE = (status: number | null): "good" | "warn" | "bad" | "neutral"
 
 async function SyncJob({ params }: Props) {
   const { id } = await params;
-  const jobId = Number(id);
-  if (!Number.isSafeInteger(jobId) || jobId <= 0) notFound();
+  const jobId = parseRecordId(id);
+  if (jobId === null) notFound();
   const viewer = await getViewer();
   if (viewer.branchIds) {
     return <Forbidden message="Sync jobs span offices and credentials, so they are limited to company-wide roles." />;
@@ -104,7 +105,7 @@ async function SyncJob({ params }: Props) {
         {calls.length === 0 ? (
           <p className="text-sm text-muted">{job.state === "queued" ? "No calls yet — waiting for a worker." : "No API calls were made."}</p>
         ) : (
-          <TableWrap>
+          <TableWrap label="API call trace">
             <thead>
               <tr><Th>Attempt</Th><Th>At</Th><Th>Call</Th><Th>Status</Th><Th align="right">ms</Th><Th align="right">Ids</Th><Th>Sample ids</Th><Th>Error</Th></tr>
             </thead>

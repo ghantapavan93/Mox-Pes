@@ -3,6 +3,7 @@ import { ActionError } from "@/lib/actions";
 import { errorResponse } from "@/lib/http";
 import { getCustomerJourney, getJourneyRawEvent, getProspectJourney, parseJourneyRef } from "@/lib/identity";
 import { getPool, getViewer } from "@/lib/server";
+import { parseRecordId } from "@/lib/record-id";
 
 /**
  * GET /api/customers/:id/raw-events/:rawEventId — the stored source payload behind one timeline
@@ -16,7 +17,8 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   try {
     const { id, rawEventId } = await ctx.params;
     const ref = parseJourneyRef(id);
-    if (!ref || !/^\d{1,15}$/.test(rawEventId)) throw new ActionError("Not found", 404);
+    const rawId = parseRecordId(rawEventId);
+    if (!ref || rawId === null) throw new ActionError("Not found", 404);
     const viewer = await getViewer();
     const pool = getPool();
     const journey =
@@ -24,7 +26,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
         ? await getCustomerJourney(pool, ref.crmCustomerId, viewer.branchIds)
         : await getProspectJourney(pool, ref.identityId, viewer.branchIds);
     if (!journey) throw new ActionError("Customer not found", 404);
-    const raw = await getJourneyRawEvent(pool, journey, Number(rawEventId));
+    const raw = await getJourneyRawEvent(pool, journey, rawId);
     if (!raw) throw new ActionError("That raw event is not part of this customer's journey", 404);
     return NextResponse.json(raw);
   } catch (error) {

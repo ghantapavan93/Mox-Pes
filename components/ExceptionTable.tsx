@@ -6,7 +6,7 @@ import { SeverityBadge, StatusBadge, TableWrap, Td, Th } from "./ui";
 export function ExceptionTable({ rows, empty = "No exceptions in scope." }: { rows: ExceptionRow[]; empty?: string }) {
   if (rows.length === 0) return <p className="text-sm text-muted">{empty}</p>;
   return (
-    <TableWrap>
+    <TableWrap label="Open exceptions">
       <thead>
         <tr>
           <Th>Exception</Th>

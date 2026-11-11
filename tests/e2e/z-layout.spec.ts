@@ -5,7 +5,7 @@ import { reseedDemo } from "./db";
 /**
  * Layout regressions for the redesign (docs/design-system.md, behaviour rule 5).
  *
- *   * Every page, at 1440 / 1280 / 768 / 390 px: no horizontal page scroll. Wide tables scroll
+ *   * Every page (and each Integrations view), at 1440 / 1280 / 768 / 390 px: no horizontal page scroll. Wide tables scroll
  *     inside their panel; the page never does. (The first redesign build failed this at 1440 and
  *     390 because grid panels could not shrink below their tables.)
  *   * Shell: the sidebar collapses to an icon rail and keeps every link's accessible name; the
@@ -35,6 +35,9 @@ const PAGES = (incident: string): Array<[string, string]> => [
   ["feedback", "/feedback?period=oct"],
   ["definitions", "/definitions"],
   ["integrations", "/integrations"],
+  ["integrations-mapping", "/integrations?view=mapping"],
+  ["integrations-pipeline", "/integrations?view=pipeline"],
+  ["incidents-filtered", "/exceptions?state=all&severity=high&kind=channel_coverage_gap"],
   ["audit", "/audit"],
   ["branch", "/branches/B09?period=oct"],
   ["demo", "/demo"],

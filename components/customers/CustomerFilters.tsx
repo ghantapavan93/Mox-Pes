@@ -104,7 +104,7 @@ export function CustomerFilters({
             ))}
           </select>
         </label>
-        <button type="submit" disabled={pending} className="rounded bg-text px-3 py-1.5 font-medium text-white disabled:opacity-50">
+        <button type="submit" disabled={pending} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
           Search
         </button>
         <button type="button" onClick={clear} disabled={pending} className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 disabled:opacity-50">

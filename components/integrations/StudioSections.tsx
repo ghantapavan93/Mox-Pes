@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { Badge, Card, KV, TableWrap, Td, Th } from "@/components/ui";
 import { count, dateTime } from "@/lib/format";
 import type { FieldSpec } from "@/lib/connectors/fieldroutes-mapping";
@@ -107,7 +108,7 @@ export function OfficeGrid({ rows, entities }: { rows: OfficeRow[]; entities: re
   if (rows.length === 0) return <p className="text-sm text-muted">No offices in your scope.</p>;
   return (
     // Own scroll box (both axes): TableWrap's negative margin would be clipped inside it.
-    <div className="max-h-[30rem] overflow-auto rounded border border-border">
+    <div className="max-h-[30rem] overflow-auto rounded border border-border" role="region" aria-label="Offices by entity" tabIndex={0}>
       <table className="w-full min-w-[760px] border-collapse">
         <thead className="sticky top-0 bg-surface">
           <tr>
@@ -161,14 +162,15 @@ export function MappingInspector({ spec, entities }: { spec: FieldSpec[]; entiti
         const rows = spec.filter((s) => s.entity === entity);
         const deviations = rows.filter((r) => r.evidence === "deviation").length;
         return (
-          <details key={entity} open={i === 0} className="rounded border border-border">
-            <summary className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm">
+          <details key={entity} open={i === 0} className="group rounded border border-border">
+            <summary className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm hover:bg-surface-2">
+              <ChevronRight aria-hidden className="size-3.5 text-muted transition-transform group-open:rotate-90" />
               <span className="font-mono font-medium">{entity}</span>
               <span className="text-xs text-muted">{rows.length} fields</span>
               {deviations > 0 && <Badge tone="bad">{deviations} doc deviation{deviations === 1 ? "" : "s"}</Badge>}
             </summary>
             <div className="px-4 pb-3">
-              <TableWrap>
+              <TableWrap label={`${entity} field mapping`} minWidth={900}>
                 <thead><tr><Th>FieldRoutes field</Th><Th>Canonical destination</Th><Th>Transform</Th><Th>Rule</Th><Th>Evidence</Th></tr></thead>
                 <tbody>
                   {rows.map((r) => (
@@ -200,7 +202,7 @@ export function MapperVersions({ deployed, available, usage }: { deployed: strin
       {usage.length === 0 ? (
         <p className="text-sm text-muted">No CRM records stored yet.</p>
       ) : (
-        <TableWrap>
+        <TableWrap label="Mapper versions">
           <thead><tr><Th>Mapped by</Th><Th align="right">Stored versions</Th><Th align="right">Quarantined</Th></tr></thead>
           <tbody>
             {usage.map((u) => (

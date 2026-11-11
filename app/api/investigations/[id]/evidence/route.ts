@@ -5,6 +5,7 @@ import { EvidenceIdSchema } from "@/lib/ai/evidence";
 import { resolveEvidence } from "@/lib/ai/queries";
 import { errorResponse } from "@/lib/http";
 import { businessNow, getPool, getViewer } from "@/lib/server";
+import { parseRecordId } from "@/lib/record-id";
 
 const query = z.object({ ref: EvidenceIdSchema });
 
@@ -18,11 +19,12 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
   await connection();
   try {
     const { id } = await ctx.params;
-    if (!/^\d{1,15}$/.test(id)) throw new ActionError("Investigation not found", 404);
+    const investigationId = parseRecordId(id);
+    if (investigationId === null) throw new ActionError("Investigation not found", 404);
     const input = query.parse(Object.fromEntries(new URL(request.url).searchParams));
     const viewer = await getViewer();
     const pool = getPool();
-    return NextResponse.json(await resolveEvidence({ db: pool, viewer, now: await businessNow() }, Number(id), input.ref));
+    return NextResponse.json(await resolveEvidence({ db: pool, viewer, now: await businessNow() }, investigationId, input.ref));
   } catch (error) {
     return errorResponse(error);
   }

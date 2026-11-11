@@ -234,7 +234,7 @@ function EvidenceBody({ view, returned, onPick }: { view: EvidenceView; returned
       )}
       <div>
         <p className="text-xs font-medium text-muted">Stored record (contact details are hash tokens; free text is third-party data)</p>
-        <pre className="mt-1 max-h-[60vh] overflow-auto rounded bg-surface-2 p-3 font-mono text-[11px] leading-snug">{json}</pre>
+        <pre role="region" aria-label="Tool output" tabIndex={0} className="mt-1 max-h-[60vh] overflow-auto rounded bg-surface-2 p-3 font-mono text-[11px] leading-snug">{json}</pre>
       </div>
     </>
   );

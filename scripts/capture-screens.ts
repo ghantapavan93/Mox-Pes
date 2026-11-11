@@ -45,6 +45,8 @@ async function main() {
       ["10-audit", "/audit", "approver"],
       ["11-branch-b09", "/branches/B09?period=oct", "marketing"],
       ["12-demo", "/demo", "marketing"],
+      ["13-integrations-mapping", "/integrations?view=mapping", "engineer"],
+      ["14-integrations-pipeline", "/integrations?view=pipeline", "engineer"],
     ];
     for (const w of WIDTHS) {
       await page.setViewportSize({ width: w.width, height: w.height });

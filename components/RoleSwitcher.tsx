@@ -17,7 +17,7 @@ export function RoleSwitcher({ current }: { current: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
-    <label className="flex items-center gap-2 text-xs text-muted">
+    <label className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs text-muted">
       <span>Viewing as</span>
       <select
         aria-label="Viewing as"

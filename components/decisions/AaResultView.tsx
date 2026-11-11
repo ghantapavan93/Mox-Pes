@@ -33,7 +33,7 @@ export function AaResultView({ result }: { result: AaExperimentResult }) {
         {result.limitation}
       </p>
 
-      <TableWrap>
+      <TableWrap label="A/A arms">
         <thead>
           <tr>
             <Th>Arm</Th>

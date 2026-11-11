@@ -6,7 +6,7 @@ import { CoverageGapRecords } from "@/components/CoverageGap";
 import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
-import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
 import { quarantineGroupIds } from "@/lib/ingest/replay";
@@ -17,6 +17,7 @@ import { DECISION_BLOCKING_KINDS } from "@/lib/metrics/decision";
 import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
+import { parseRecordId } from "@/lib/record-id";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -47,8 +48,8 @@ const WHY: Record<string, string> = {
 
 async function ExceptionDetail({ params }: Props) {
   const { id } = await params;
-  const exceptionId = Number(id);
-  if (!Number.isInteger(exceptionId)) notFound();
+  const exceptionId = parseRecordId(id);
+  if (exceptionId === null) notFound();
   const [viewer, exception] = await Promise.all([getViewer(), getException(getPool(), exceptionId)]);
   if (!exception) notFound();
   // Out of scope reads as missing, as for customers and investigations: naming the branch would
@@ -115,22 +116,16 @@ async function ExceptionDetail({ params }: Props) {
         ))}
       </dl>
 
-      <nav aria-label="Incident sections" className="sticky top-[49px] z-20 -mx-4 border-b border-border bg-bg/95 px-4 backdrop-blur lg:-mx-6 lg:px-6" data-testid="incident-sections">
-        <ul className="flex gap-1 overflow-x-auto text-sm">
-          {[
-            ["#evidence", "Evidence"],
-            ["#action-center", "Fix & approval"],
-            ["#records", "Records"],
-            ["#case-audit", "Audit"],
-          ].map(([href, label]) => (
-            <li key={href}>
-              <a href={href} className="inline-block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 font-medium text-muted hover:border-border-strong hover:text-text">
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <SectionNav
+        label="Incident sections"
+        testId="incident-sections"
+        items={[
+          ["#evidence", "Evidence"],
+          ["#action-center", "Fix & approval"],
+          ["#records", "Records"],
+          ["#case-audit", "Audit"],
+        ]}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0 space-y-6">
@@ -322,7 +317,7 @@ async function Records({ exception }: { exception: ExceptionRow }) {
     const samples = await quarantineSamples(pool, sampleIds);
     return (
       <Card title={`Held records (${count(ids.length)} quarantined now)`} subtitle="Payloads are stored redacted: contact details are hashed before anything else sees them">
-        <TableWrap>
+        <TableWrap label="Raw events behind this incident">
           <thead>
             <tr>
               <Th>Raw event</Th>
@@ -341,7 +336,7 @@ async function Records({ exception }: { exception: ExceptionRow }) {
                   {s.error_code ? <Badge tone="bad">{s.error_code}</Badge> : <Badge tone="good">projected</Badge>}
                   <div className="mt-1 text-muted">{s.error_detail}</div>
                 </Td>
-                <Td><pre className="max-w-xs overflow-x-auto whitespace-pre-wrap break-all text-[10px] text-muted">{JSON.stringify(s.payload, null, 1).slice(0, 420)}</pre></Td>
+                <Td><pre role="region" aria-label="Payload sample" tabIndex={0} className="max-w-xs overflow-x-auto whitespace-pre-wrap break-all text-[10px] text-muted">{JSON.stringify(s.payload, null, 1).slice(0, 420)}</pre></Td>
                 <Td className="text-xs">
                   {(s.customers as Array<{ customerId: number; basis: string; channel: string }> | null)?.map((c) => (
                     <div key={c.customerId}>
@@ -364,7 +359,7 @@ async function Records({ exception }: { exception: ExceptionRow }) {
     return (
       <Card title={`Customer #${exception.subjectId} — record trail`} subtitle="Every lead record that matches this customer's phone or email, then their CRM history">
         <div className="grid gap-6 lg:grid-cols-2">
-          <TableWrap>
+          <TableWrap label="Matching lead records">
             <thead><tr><Th>Lead</Th><Th>When</Th><Th>Branch</Th><Th>Channel / evidence</Th></tr></thead>
             <tbody>
               {trail.leads.map((l) => (
@@ -377,7 +372,7 @@ async function Records({ exception }: { exception: ExceptionRow }) {
               ))}
             </tbody>
           </TableWrap>
-          <TableWrap>
+          <TableWrap label="Matching CRM records">
             <thead><tr><Th>CRM record</Th><Th>When</Th><Th>Detail</Th><Th align="right">Amount</Th></tr></thead>
             <tbody>
               {trail.events.map((e) => (
@@ -400,8 +395,8 @@ async function Records({ exception }: { exception: ExceptionRow }) {
     return (
       <Card title="Stored vs incoming payload">
         <div className="grid gap-4 md:grid-cols-2">
-          <pre className="overflow-x-auto rounded bg-surface-2 p-3 text-[11px]">{JSON.stringify(stored.rows[0]?.payload, null, 2)}</pre>
-          <pre className="overflow-x-auto rounded bg-warn-soft p-3 text-[11px]">{JSON.stringify(ev.incomingPayload, null, 2)}</pre>
+          <pre role="region" aria-label="Stored payload" tabIndex={0} className="overflow-x-auto rounded bg-surface-2 p-3 text-[11px]">{JSON.stringify(stored.rows[0]?.payload, null, 2)}</pre>
+          <pre role="region" aria-label="Incoming payload" tabIndex={0} className="overflow-x-auto rounded bg-warn-soft p-3 text-[11px]">{JSON.stringify(ev.incomingPayload, null, 2)}</pre>
         </div>
       </Card>
     );

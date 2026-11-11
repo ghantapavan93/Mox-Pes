@@ -90,7 +90,7 @@ export function IdentityPanel({ journey, viewer }: { journey: CustomerJourney; v
           {journey.links.length === 0 ? (
             <p className="text-sm text-muted">No records linked yet.</p>
           ) : (
-            <TableWrap>
+            <TableWrap label="Identity links">
               <thead>
                 <tr>
                   <Th>Source record (original id)</Th>
@@ -163,7 +163,7 @@ export function IdentityPanel({ journey, viewer }: { journey: CustomerJourney; v
 
 export function ConflictList({ conflicts, viewer, showCustomer = true }: { conflicts: IdentityConflict[]; viewer: Viewer; showCustomer?: boolean }) {
   return (
-    <TableWrap>
+    <TableWrap label="Identity conflicts">
       <thead>
         <tr>
           <Th>Lead</Th>

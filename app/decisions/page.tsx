@@ -4,7 +4,8 @@ import { ExperimentRunner } from "@/components/decisions/ExperimentRunner";
 import { ExperimentHistory, SavedScenarios } from "@/components/decisions/History";
 import { ScenarioBuilder, type ScenarioChannelOption } from "@/components/decisions/ScenarioBuilder";
 import { VerdictMatrix } from "@/components/decisions/VerdictMatrix";
-import { Badge, Card, Forbidden, PeriodTabs, Skeleton } from "@/components/ui";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { Badge, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
@@ -43,38 +44,49 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-faint">
-            {branch.id} {branch.name} · {period.label}
+      <PageHeader
+        eyebrow={`Understand · ${branch.id} ${branch.name} · ${period.label}`}
+        title="Decision Lab"
+        description={
+          <p className="max-w-3xl">
+            Can this branch move paid budget on the evidence it has? Three separate questions: are the records right, is there enough reliable evidence to
+            act, and did the spend cause the customers. Clean data answers the first two; only a randomized experiment answers the third.
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">Decision Lab</h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted">
-            Can this branch move paid budget on the evidence it has? Three separate questions: are the records right, is there enough reliable
-            evidence to act, and did the spend cause the customers. Clean data answers the first two; only a randomized experiment answers the third.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {/* A plain GET form: works without JavaScript and from the keyboard. */}
-          <form method="get" action="/decisions" className="flex items-center gap-2 text-xs">
-            <input type="hidden" name="period" value={period.key} />
-            <label className="flex items-center gap-2">
-              <span className="text-muted">Branch</span>
-              <select name="branch" defaultValue={branch.id} className="rounded border border-border bg-surface px-2 py-1 text-sm">
-                {branchOptions.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.id} {b.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" className="rounded border border-border bg-surface px-2.5 py-1 hover:bg-surface-2">
-              Show
-            </button>
-          </form>
-          <PeriodTabs current={period.key} base="/decisions" extra={`&branch=${branch.id}`} />
-        </div>
-      </div>
+        }
+        toolbar={
+          <>
+            {/* A plain GET form: works without JavaScript and from the keyboard. */}
+            <form method="get" action="/decisions" className="flex items-center gap-2 text-sm" aria-label="Choose a branch">
+              <input type="hidden" name="period" value={period.key} />
+              <label className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted">Branch</span>
+                <select name="branch" defaultValue={branch.id} className="h-8 rounded-md border border-border-strong bg-surface px-2 text-sm">
+                  {branchOptions.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.id} {b.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit" className="h-8 rounded-md border border-border bg-surface px-3 text-sm font-medium shadow-raised hover:bg-surface-2">
+                Show
+              </button>
+            </form>
+            <PeriodTabs current={period.key} base="/decisions" extra={`&branch=${branch.id}`} />
+          </>
+        }
+      />
+
+      <SectionNav
+        label="Decision Lab sections"
+        testId="decision-sections"
+        items={[
+          ["#readiness", "1 · Are the records right?"],
+          ["#verdicts", "2 · Enough evidence?"],
+          ["#scenarios", "Scenarios"],
+          ["#experiments", "3 · Did spend cause it?"],
+        ]}
+      />
 
       <Suspense fallback={<Card title="Verdicts"><Skeleton lines={4} /></Card>}>
         <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} />
@@ -102,6 +114,8 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
       <ReadinessSummary verdicts={verdicts} canInvestigate={viewer.can.investigate} />
 
       <Card
+        id="verdicts"
+        className="scroll-mt-28"
         title={`Verdicts · ${verdicts.branchId} ${verdicts.branchName}`}
         subtitle={`Per paid-media channel · ${period.label} · open a verdict for its reasons and evidence`}
         action={<BudgetSignalNote verdicts={verdicts} />}
@@ -109,7 +123,7 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
         <VerdictMatrix verdicts={verdicts} />
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-5">
+      <div id="scenarios" className="grid scroll-mt-28 gap-6 xl:grid-cols-5">
         <Card
           className="xl:col-span-3"
           title="Scenario builder"
@@ -143,40 +157,46 @@ function ReadinessSummary({ verdicts, canInvestigate }: { verdicts: DecisionVerd
     }
   }
   const ready = notReady.length === 0;
+  const Icon = ready ? CheckCircle2 : XCircle;
   return (
-    <div
-      className={`rounded border p-3 text-sm ${ready ? "border-good/30 bg-good-soft" : "border-bad/30 bg-bad-soft"}`}
+    <section
+      id="readiness"
+      aria-label="Readiness"
+      className={`scroll-mt-28 flex gap-3 rounded-lg border px-4 py-3 text-sm ${ready ? "border-good/30 bg-good-soft" : "border-bad/30 bg-bad-soft"}`}
       data-testid="readiness-summary"
     >
-      <p className="flex flex-wrap items-center gap-2">
-        {ready ? <Badge tone="good">Ready</Badge> : <Badge tone="bad">Not ready</Badge>}
-        <span>
-          {ready
-            ? `Every paid channel at ${verdicts.branchId} passes the readiness checks for ${verdicts.period.label}. Effectiveness is still a separate question.`
-            : `${notReady.length} of ${verdicts.channels.length} paid channels at ${verdicts.branchId} are not ready for a budget decision in ${verdicts.period.label}: ${notReady.map((c) => c.label).join(", ")}.`}
-        </span>
-      </p>
-      {blockers.size > 0 && (
-        <ul className="mt-2 space-y-1">
-          {[...blockers].map(([href, text]) => {
-            const id = href.match(/\/exceptions\/(\d+)$/)?.[1];
-            return (
-              <li key={href} className="flex flex-wrap items-baseline gap-2">
-                <span>{text}</span>
-                <Link href={href} className="text-accent hover:underline" data-testid="readiness-incident-link">
-                  open incident →
-                </Link>
-                {id && canInvestigate && (
-                  <Link href={`/investigator?exception=${id}`} className="text-accent hover:underline">
-                    investigate →
+      <Icon aria-hidden className={`mt-0.5 size-4 shrink-0 ${ready ? "text-good" : "text-bad"}`} />
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-center gap-2">
+          {ready ? <Badge tone="good">Ready</Badge> : <Badge tone="bad">Not ready</Badge>}
+          <span className="font-medium text-text">
+            {ready
+              ? `Every paid channel at ${verdicts.branchId} passes the readiness checks for ${verdicts.period.label}. Effectiveness is still a separate question.`
+              : `${notReady.length} of ${verdicts.channels.length} paid channels at ${verdicts.branchId} are not ready for a budget decision in ${verdicts.period.label}: ${notReady.map((c) => c.label).join(", ")}.`}
+          </span>
+        </p>
+        {blockers.size > 0 && (
+          <ul className="mt-2 space-y-1.5 text-text">
+            {[...blockers].map(([href, text]) => {
+              const id = href.match(/\/exceptions\/(\d+)$/)?.[1];
+              return (
+                <li key={href} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span>{text}</span>
+                  <Link href={href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
+                    open incident →
                   </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+                  {id && canInvestigate && (
+                    <Link href={`/investigator?exception=${id}`} className="font-medium text-accent hover:underline">
+                      investigate →
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -237,7 +257,7 @@ async function Experiments({ viewer, period }: { viewer: Viewer; period: Period 
     listExperiments(pool, viewer),
   ]);
   return (
-    <section id="experiments" className="scroll-mt-6 space-y-6">
+    <section id="experiments" className="scroll-mt-28 space-y-6">
       <Card
         title="A/A analysis · statistics self-check"
         subtitle={`Synthetic web leads in ${viewer.branchIds ? viewer.branchIds.join(", ") : "all branches"}, split at analysis time by a stable hash into two identical arms. It checks the unit definition, outcome join and statistics only — not assignment or exposure logging — is kept apart from the scenario forecasts above, and measures no channel.`}

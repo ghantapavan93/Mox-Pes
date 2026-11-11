@@ -38,7 +38,7 @@ export function BudgetSignalCard({ signal, periodLabel, periodKey }: { signal: B
           {copy.effectiveness}{" "}
           <Link href={copy.decisionsHref} className="text-accent hover:underline">Decision readiness and effectiveness per channel →</Link>
         </p>
-        <TableWrap>
+        <TableWrap label="Budget signal by paid channel">
           <thead><tr><Th>Paid channel</Th><Th align="right">Spend</Th><Th align="right">New customers</Th><Th align="right">Attributed cost per customer</Th></tr></thead>
           <tbody>
             {signal.channels.map((c) => (

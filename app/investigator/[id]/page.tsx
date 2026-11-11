@@ -11,6 +11,7 @@ import { getInvestigation, proposalStates, type InvestigationDetail } from "@/li
 import { count, dateTime } from "@/lib/format";
 import { getPool, getViewer } from "@/lib/server";
 import type { Viewer } from "@/lib/viewer";
+import { parseRecordId } from "@/lib/record-id";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -27,10 +28,11 @@ const usd = (micros: number) => `$${(micros / 1_000_000).toFixed(micros > 0 && m
 
 async function Investigation({ params }: Props) {
   const { id } = await params;
-  if (!/^\d{1,15}$/.test(id)) notFound();
+  const investigationId = parseRecordId(id);
+  if (investigationId === null) notFound();
   const viewer = await getViewer();
   // Out of scope is indistinguishable from missing, as on every other page.
-  const inv = await getInvestigation(getPool(), viewer, Number(id));
+  const inv = await getInvestigation(getPool(), viewer, investigationId);
   if (!inv) notFound();
   const r = inv.result;
   const toolSteps = inv.steps.filter((s) => s.kind === "tool_call");

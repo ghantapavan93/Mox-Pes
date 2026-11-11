@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui";
+import { Callout, Card, PageHeader, metricAnchor } from "@/components/ui";
 import { METRICS } from "@/lib/metrics/definitions";
 
 const POLICY: Array<[string, string]> = [
@@ -12,45 +12,89 @@ const POLICY: Array<[string, string]> = [
   ["Time", "Spend by spend date; acquisitions by initial-service date; revenue by payment date. Periods are calendar periods, not cohorts."],
 ];
 
+/**
+ * The dictionary: the attribution policy every number obeys, then one entry per metric
+ * (formula, source, caveat) from lib/metrics/definitions.ts, the same object every KPI tile
+ * opens. Static; nothing here depends on the viewer.
+ */
 export default function DefinitionsPage() {
+  const metrics = Object.values(METRICS);
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Definitions</h1>
-        <p className="mt-1 max-w-3xl text-sm text-muted">
-          One definition per number, implemented once in SQL (database/migrations/0002_attribution_views.sql and lib/metrics/scorecard.ts) and
-          tested to the cent against generated ground truth.
-        </p>
-      </div>
-      <Card title="Attribution policy">
-        <dl className="space-y-3 text-sm">
+      <PageHeader
+        eyebrow="Understand · reference"
+        title="Definitions"
+        description={
+          <p className="max-w-3xl">
+            One definition per number, implemented once in SQL (<code className="font-mono text-xs">database/migrations/0002_attribution_views.sql</code> and{" "}
+            <code className="font-mono text-xs">lib/metrics/scorecard.ts</code>) and tested to the cent against generated ground truth. Every KPI tile in the app opens
+            the same entry shown here.
+          </p>
+        }
+      />
+
+      <nav aria-label="On this page" className="rounded-lg border border-border bg-surface p-4 shadow-raised" data-testid="definitions-index">
+        <p className="mb-2 text-xs font-medium text-muted">On this page</p>
+        <ul className="flex flex-wrap gap-1.5 text-xs">
+          {[
+            ["#policy", "Attribution policy"],
+            ...metrics.map((m) => [`#${metricAnchor(m.key)}`, m.label]),
+            ["#not-attribution", "What attribution is not"],
+          ].map(([href, label]) => (
+            <li key={href}>
+              <a href={href} className="inline-block rounded-md border border-border px-2 py-1 font-medium text-text hover:border-accent hover:text-accent">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <Card id="policy" title="Attribution policy" subtitle="The rules every metric below obeys">
+        <dl className="divide-y divide-border text-sm">
           {POLICY.map(([k, v]) => (
-            <div key={k} className="grid gap-1 sm:grid-cols-[12rem_1fr]">
-              <dt className="font-semibold">{k}</dt>
+            <div key={k} className="grid gap-1 py-2.5 first:pt-0 last:pb-0 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+              <dt className="font-semibold text-text">{k}</dt>
               <dd className="text-muted">{v}</dd>
             </div>
           ))}
         </dl>
       </Card>
-      <Card title="Metrics">
-        <div className="space-y-4">
-          {Object.values(METRICS).map((m) => (
-            <div key={m.key} className="border-b border-dashed border-border pb-3 text-sm">
-              <h3 className="font-semibold">{m.label}</h3>
-              <p className="mt-1"><span className="text-muted">Formula:</span> {m.formula}</p>
-              <p><span className="text-muted">Source:</span> {m.sources}</p>
-              <p><span className="text-muted">Caveat:</span> {m.caveat}</p>
-            </div>
+
+      <section aria-labelledby="metrics-heading" className="space-y-3">
+        <h2 id="metrics-heading" className="text-[13px] font-semibold text-text">
+          Metrics ({metrics.length})
+        </h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {metrics.map((m) => (
+            <article key={m.key} id={metricAnchor(m.key)} className="scroll-mt-20 rounded-lg border border-border bg-surface p-4 shadow-raised">
+              <h3 className="text-sm font-semibold text-text">{m.label}</h3>
+              <dl className="mt-2 space-y-2 text-sm">
+                <div>
+                  <dt className="text-xs font-medium text-muted">Formula</dt>
+                  <dd className="text-text">{m.formula}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted">Source</dt>
+                  <dd className="text-text [overflow-wrap:anywhere]">{m.sources}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium text-muted">Caveat</dt>
+                  <dd className="text-text">{m.caveat}</dd>
+                </div>
+              </dl>
+            </article>
           ))}
         </div>
-      </Card>
-      <Card title="What attribution is not">
-        <p className="text-sm text-muted">
-          Attributed revenue says which recorded touch preceded a sale. It does not say the sale would not have happened without the ad.
-          Incremental lift needs a holdout (geo split or platform lift study); this system makes such tests possible by providing clean,
-          branch-level outcomes, but does not claim them.
-        </p>
-      </Card>
+      </section>
+
+      <div id="not-attribution" className="scroll-mt-20">
+        <Callout tone="warn" title="What attribution is not">
+          Attributed revenue says which recorded touch preceded a sale. It does not say the sale would not have happened without the ad. Incremental lift
+          needs a holdout (geo split or platform lift study); this system makes such tests possible by providing clean, branch-level outcomes, but does not
+          claim them.
+        </Callout>
+      </div>
     </div>
   );
 }

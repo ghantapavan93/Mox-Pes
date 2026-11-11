@@ -132,13 +132,15 @@ export function CommandMenu() {
       <button
         type="button"
         onClick={show}
-        className="flex w-full items-center gap-2 rounded-md border border-shell-border bg-shell-raised px-2.5 py-1.5 text-left text-xs text-shell-text hover:border-shell-muted hover:text-white"
-        aria-label="Open command menu"
+        className="relative flex w-full items-center gap-2 rounded-md border border-shell-border bg-shell-raised px-2.5 py-1.5 text-left text-xs text-shell-text hover:border-shell-muted hover:text-white"
         title="Search or jump to… (Ctrl K)"
       >
+        {/* Name from content: the visible label first, then the purpose (WCAG 2.5.3, label in name).
+            Collapsed, the labels hide and the sr-only text still names the button. */}
         <Search aria-hidden className="size-3.5 shrink-0" />
         <span data-sidebar-label className="flex-1">Search or jump to…</span>
         <kbd data-sidebar-label className="rounded bg-white/10 px-1 font-mono text-[10px]">Ctrl K</kbd>
+        <span className="sr-only"> (open command menu)</span>
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[12vh]" onClick={close}>

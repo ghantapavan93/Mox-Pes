@@ -70,7 +70,7 @@ export function DecisionForm({
         />
       </label>
       {hint && <p className="text-xs text-faint">{hint}</p>}
-      <button type="submit" disabled={busy} className="rounded bg-text px-3 py-1.5 font-medium text-white disabled:opacity-50">
+      <button type="submit" disabled={busy} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
         {busy ? "Saving…" : submitLabel}
       </button>
       {message && <p role="status" className={message.ok ? "text-good" : "text-bad"}>{message.text}</p>}

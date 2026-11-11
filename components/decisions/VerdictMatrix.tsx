@@ -76,7 +76,7 @@ function Row({ c }: { c: ChannelVerdicts }) {
 export function VerdictMatrix({ verdicts }: { verdicts: DecisionVerdicts }) {
   if (verdicts.channels.length === 0) return <p className="text-sm text-muted">No paid-media channels are defined.</p>;
   return (
-    <TableWrap>
+    <TableWrap label="Verdicts by paid channel">
       <thead>
         <tr>
           <Th>Paid channel</Th>

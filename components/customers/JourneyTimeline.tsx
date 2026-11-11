@@ -65,9 +65,10 @@ export function JourneyTimeline({ items, journeyId }: { items: TimelineItem[]; j
                   returnFocus.current = e.currentTarget;
                   setOpen(item);
                 }}
-                className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-accent hover:bg-surface-2"
-                aria-label={`Show source payload for ${KIND_LABEL[item.kind]} ${item.sourceRecordId} (raw event ${item.rawEventId})`}
+                className="relative rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-accent hover:bg-surface-2"
               >
+                {/* Name from content, so it contains the visible label (WCAG 2.5.3, label in name). */}
+                <span className="sr-only">Show source payload for {KIND_LABEL[item.kind]} {item.sourceRecordId}: </span>
                 raw #{item.rawEventId} · {item.adapterVersion}
               </button>
             </div>
@@ -197,7 +198,7 @@ function RawEventDetail({ raw, onPick }: { raw: RawEventView; onPick: (id: numbe
       </div>
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Payload as stored (redacted at ingest)</h3>
-        <pre className="mt-1 max-h-[50vh] overflow-auto rounded bg-surface-2 p-3 text-[11px] leading-relaxed">{JSON.stringify(raw.payload, null, 2)}</pre>
+        <pre role="region" aria-label="Source payload" tabIndex={0} className="mt-1 max-h-[50vh] overflow-auto rounded bg-surface-2 p-3 text-[11px] leading-relaxed">{JSON.stringify(raw.payload, null, 2)}</pre>
         <p className="mt-1 text-[11px] text-faint">Contact details were replaced by hash tokens (h:phone:…, h:email:…) before the payload was stored.</p>
       </div>
     </>

@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { BudgetSignalCard } from "@/components/BudgetSignalCard";
 import { ExceptionTable } from "@/components/ExceptionTable";
 import { WeeklyBars } from "@/components/WeeklyBars";
-import { Card, Forbidden, PeriodTabs, Skeleton, Stat, TableWrap, Td, Th } from "@/components/ui";
+import { ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, Skeleton, Stat, TableWrap, Td, Th } from "@/components/ui";
 import { count, money, pct } from "@/lib/format";
 import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows, channelRows, totals } from "@/lib/metrics/scorecard";
@@ -54,25 +54,24 @@ async function Branch({ params, searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs text-faint">
-            <Link href={`/?period=${period.key}`} className="hover:underline">Overview</Link> / Branch
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            {branch.id} {branch.name} <span className="text-base font-normal text-muted">· {branch.region} · {branch.timezone}</span>
-          </h1>
-          <p className="mt-1 text-sm text-muted">Which part of the acquisition-to-revenue path deserves investigation?</p>
-          <p className="mt-2 flex flex-wrap gap-3 text-xs">
-            <Link href={`/decisions?branch=${branch.id}&period=${period.key}`} className="text-accent hover:underline">Decision readiness →</Link>
-            <Link href={`/exceptions?branch=${branch.id}`} className="text-accent hover:underline">Incidents →</Link>
+      <PageHeader
+        crumbs={[{ href: `/?period=${period.key}`, label: "Overview" }, { label: `${branch.id} ${branch.name}` }]}
+        eyebrow={`Branch · ${branch.region} · ${branch.timezone} · ${period.label}`}
+        title={`${branch.id} ${branch.name}`}
+        description={<p>Which part of the acquisition-to-revenue path deserves investigation?</p>}
+        actions={
+          <>
+            <ButtonLink href={`/decisions?branch=${branch.id}&period=${period.key}`}>Decision readiness</ButtonLink>
+            <ButtonLink href={`/exceptions?branch=${branch.id}`}>Incidents</ButtonLink>
             {viewer.can.investigate && (
-              <Link href={`/investigator?branch=${branch.id}`} className="text-accent hover:underline">Investigate this branch →</Link>
+              <ButtonLink href={`/investigator?branch=${branch.id}`} variant="primary">
+                Investigate this branch
+              </ButtonLink>
             )}
-          </p>
-        </div>
-        <PeriodTabs current={period.key} base={`/branches/${branch.id}`} />
-      </div>
+          </>
+        }
+        toolbar={<PeriodTabs current={period.key} base={`/branches/${branch.id}`} />}
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} />
@@ -94,7 +93,7 @@ async function Branch({ params, searchParams }: Props) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Channels" subtitle="Acquisitions credited by first evidenced touch">
-          <TableWrap>
+          <TableWrap label="Channels">
             <thead>
               <tr>
                 <Th>Channel</Th>

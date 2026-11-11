@@ -127,7 +127,7 @@ export async function WorkflowPanel({ exception, viewer }: { exception: Exceptio
               {audit.length === 0 ? (
                 <p className="text-sm text-muted">No audit rows for this case yet.</p>
               ) : (
-                <TableWrap>
+                <TableWrap label="Case audit history">
                   <thead>
                     <tr>
                       <Th>When</Th>

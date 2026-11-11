@@ -143,7 +143,32 @@ export function ButtonLink({ href, children, variant = "secondary", testId, icon
   );
 }
 
+/**
+ * Sticky in-page navigation for long pages (incident detail, Audit & Health). Plain anchors, so
+ * every section is linkable and the back button works; sections set `scroll-mt` to clear it.
+ */
+export function SectionNav({ label, items, testId }: { label: string; items: Array<[href: string, label: string]>; testId?: string }) {
+  return (
+    <nav aria-label={label} className="sticky top-[49px] z-20 -mx-4 border-b border-border bg-bg/95 px-4 backdrop-blur lg:-mx-6 lg:px-6" data-testid={testId}>
+      <ul className="flex gap-1 overflow-x-auto text-sm">
+        {items.map(([href, text]) => (
+          <li key={href}>
+            <a href={href} className="inline-block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 font-medium text-muted hover:border-border-strong hover:text-text">
+              {text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 // ── Data display ────────────────────────────────────────────────────────────
+
+/** Stable anchor of one metric's entry on /definitions, so any page can link straight to it. */
+export function metricAnchor(key: string): string {
+  return `metric-${key}`;
+}
 
 /** A KPI with its definition one click away. Every headline number goes through this. */
 export function Stat({
@@ -176,6 +201,11 @@ export function Stat({
           <p><span className="font-semibold text-text">Formula.</span> {def.formula}</p>
           <p><span className="font-semibold text-text">Source.</span> {def.sources}</p>
           <p><span className="font-semibold text-text">Caveat.</span> {def.caveat}</p>
+          <p>
+            <Link href={`/definitions#${metricAnchor(String(metric))}`} className="font-medium text-accent hover:underline">
+              Full definition
+            </Link>
+          </p>
         </div>
       </details>
       <p className={`mt-2 text-[26px] font-semibold leading-8 tracking-tight tabular-nums ${toneClass}`}>{value}</p>
@@ -186,6 +216,114 @@ export function Stat({
       )}
       {sub && <p className={`mt-1 text-xs leading-4 ${subTone === "bad" ? "font-medium text-bad" : "text-muted"}`}>{sub}</p>}
     </div>
+  );
+}
+
+/**
+ * A headline count that is not a defined metric (queue sizes, feed counts). With `href` the whole
+ * tile is a link to the filtered view behind the number. Defined metrics use `Stat` instead.
+ */
+export function KpiTile({
+  label,
+  value,
+  sub,
+  tone = "neutral",
+  href,
+  current = false,
+  testId,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  sub?: ReactNode;
+  tone?: "neutral" | "bad" | "warn" | "good" | "accent";
+  href?: string;
+  current?: boolean;
+  testId?: string;
+}) {
+  const toneClass = { neutral: "text-text", bad: "text-bad", warn: "text-warn", good: "text-good", accent: "text-accent" }[tone];
+  const body = (
+    <>
+      <p className="text-xs font-medium leading-4 text-muted">{label}</p>
+      <p className={`mt-2 text-[26px] font-semibold leading-8 tracking-tight tabular-nums ${toneClass}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs leading-4 text-muted">{sub}</p>}
+    </>
+  );
+  const box = `block rounded-lg border bg-surface p-4 shadow-raised ${current ? "border-accent ring-1 ring-accent" : "border-border"}`;
+  return href ? (
+    <Link href={href} aria-current={current ? "true" : undefined} data-testid={testId} className={`${box} hover:border-accent`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={box} data-testid={testId}>
+      {body}
+    </div>
+  );
+}
+
+/** Applied filters as removable chips; each chip links to the same view without that filter. */
+export function FilterChips({ items, clearHref, testId }: { items: Array<{ label: ReactNode; removeHref: string }>; clearHref?: string; testId?: string }) {
+  if (items.length === 0) return null;
+  return (
+    <ul className="flex flex-wrap items-center gap-1.5 text-xs" aria-label="Applied filters" data-testid={testId}>
+      {items.map((it, i) => (
+        <li key={i}>
+          <Link href={it.removeHref} className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-soft px-2 py-0.5 font-medium text-text hover:border-accent">
+            {it.label}
+            <span aria-hidden className="text-muted">×</span>
+            <span className="sr-only">(remove filter)</span>
+          </Link>
+        </li>
+      ))}
+      {clearHref && items.length > 1 && (
+        <li>
+          <Link href={clearHref} className="px-1 font-medium text-accent hover:underline">Clear all</Link>
+        </li>
+      )}
+    </ul>
+  );
+}
+
+/** A labelled native select for GET filter forms (keyboard and screen-reader friendly by default). */
+export function FilterSelect({ name, label, value, options }: { name: string; label: string; value: string; options: Array<[string, string]> }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="text-[11px] font-medium text-muted">{label}</span>
+      <select name={name} defaultValue={value} className="h-8 max-w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-text">
+        {options.map(([v, l]) => (
+          <option key={v} value={v}>
+            {l}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Previous / next links with a "Showing a–b of n" summary. Disabled ends say so to assistive tech. */
+export function Pager({ page, lastPage, first, last, total, hrefFor, label, testId }: { page: number; lastPage: number; first: number; last: number; total: number; hrefFor: (page: number) => string; label: string; testId?: string }) {
+  const n = (x: number) => x.toLocaleString("en-US");
+  const cls = "rounded-md border border-border px-2.5 py-1";
+  return (
+    <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-muted" data-testid={testId}>
+      <span>
+        Showing {n(first)}–{n(last)} of {n(total)}
+      </span>
+      <span className="flex items-center gap-2">
+        {page > 1 ? (
+          <Link href={hrefFor(page - 1)} className={`${cls} bg-surface font-medium text-accent hover:bg-surface-2`}>← Previous</Link>
+        ) : (
+          <span className={`${cls} text-faint`} aria-disabled="true">← Previous</span>
+        )}
+        <span>
+          page {n(page)} of {n(lastPage)}
+        </span>
+        {page < lastPage ? (
+          <Link href={hrefFor(page + 1)} className={`${cls} bg-surface font-medium text-accent hover:bg-surface-2`}>Next →</Link>
+        ) : (
+          <span className={`${cls} text-faint`} aria-disabled="true">Next →</span>
+        )}
+      </span>
+    </nav>
   );
 }
 
@@ -225,10 +363,14 @@ export function Td({ children, align = "left", className = "" }: { children?: Re
   return <td className={`border-b border-border px-3 py-2 align-top text-sm leading-5 ${align === "right" ? "text-right tabular-nums" : ""} ${className}`}>{children}</td>;
 }
 
-/** A horizontally scrollable table. Inside a padded Card it bleeds to the card edges. */
-export function TableWrap({ children, flush = false, minWidth = 640 }: { children: ReactNode; flush?: boolean; minWidth?: number }) {
+/**
+ * A horizontally scrollable table. Inside a padded Card it bleeds to the card edges. The scroll
+ * box is a named, focusable region so keyboard users can scroll it (WCAG 2.1.1; axe
+ * scrollable-region-focusable).
+ */
+export function TableWrap({ children, flush = false, minWidth = 640, label }: { children: ReactNode; flush?: boolean; minWidth?: number; /** Unique on the page: names the scroll region. */ label: string }) {
   return (
-    <div className={`${flush ? "" : "-mx-4"} overflow-x-auto`}>
+    <div className={`${flush ? "" : "-mx-4"} overflow-x-auto`} role="region" aria-label={label} tabIndex={0}>
       <table className="w-full border-collapse [&_tbody_tr:hover]:bg-surface-2/60" style={{ minWidth }}>{children}</table>
     </div>
   );

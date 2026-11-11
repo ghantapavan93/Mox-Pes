@@ -5,6 +5,9 @@ import type { Queryable } from "@/lib/db";
 import { count, dateTime, money } from "@/lib/format";
 import { auditTrail, failedRunsWithRecovery, listExceptions, recentRuns, replayHistory, streamTotals } from "@/lib/queries";
 
+/** The full, filterable trail is on Audit & Health; this panel previews the latest entries. */
+const AUDIT_PREVIEW = 8;
+
 /**
  * The ingestion pipeline view that predates the Studio: the raw event log, quarantine groups,
  * failed-run recovery, recent runs, replays and the audit log. Unchanged in substance; it now
@@ -33,8 +36,10 @@ export async function PipelineSections({ db }: { db: Queryable }) {
               ["Duplicate deliveries absorbed", count(deliveries - events)],
               ["Deployed mappers", Object.entries(ACTIVE_VERSION).map(([s, v]) => `${s}@${v}`).join(" · ")],
             ]}
+            columns={1}
           />
-          <TableWrap>
+          <div className="mt-4" />
+          <TableWrap label="Raw event log by source" minWidth={360}>
             <thead><tr><Th>Source</Th><Th align="right">Versions</Th><Th align="right">Deliveries</Th><Th align="right">Quarantined</Th></tr></thead>
             <tbody>
               {totals.map((t) => (
@@ -49,7 +54,7 @@ export async function PipelineSections({ db }: { db: Queryable }) {
           </TableWrap>
         </Card>
 
-        <Card className="lg:col-span-2" title="Quarantine groups" subtitle="Grouped by source, error and branch">
+        <Card id="quarantine" className="lg:col-span-2" title="Quarantine groups" subtitle="Grouped by source, error and branch">
           {quarantines.length === 0 ? (
             <p className="text-sm text-muted">Nothing quarantined.</p>
           ) : (
@@ -71,11 +76,11 @@ export async function PipelineSections({ db }: { db: Queryable }) {
         </Card>
       </div>
 
-      <Card title="Failed runs and how they recovered" subtitle="A failed run never advances its cursor, so the next run re-reads the missed window">
+      <Card id="failed-runs" title="Failed runs and how they recovered" subtitle="A failed run never advances its cursor, so the next run re-reads the missed window">
         {failures.length === 0 ? (
           <p className="text-sm text-muted">No failed runs.</p>
         ) : (
-          <TableWrap>
+          <TableWrap label="Failed runs">
             <thead><tr><Th>Run</Th><Th>Stream</Th><Th>When</Th><Th>Error</Th><Th>Recovered by</Th></tr></thead>
             <tbody>
               {failures.map((f) => (
@@ -93,7 +98,7 @@ export async function PipelineSections({ db }: { db: Queryable }) {
       </Card>
 
       <Card title="Latest scheduled ingestion runs" subtitle="One run per stream per day in the simulation; each is one transaction">
-        <TableWrap>
+        <TableWrap label="Latest ingestion runs">
           <thead>
             <tr><Th>Run</Th><Th>Stream</Th><Th>Mapper</Th><Th>Window</Th><Th align="right">Fetched</Th><Th align="right">New</Th><Th align="right">Dupes</Th><Th align="right">Quarantined</Th><Th>Status</Th></tr>
           </thead>
@@ -120,7 +125,7 @@ export async function PipelineSections({ db }: { db: Queryable }) {
           {replays.length === 0 ? (
             <p className="text-sm text-muted">No replays yet.</p>
           ) : (
-            <TableWrap>
+            <TableWrap label="Replays">
               <thead><tr><Th>Key</Th><Th>Mapper</Th><Th>By</Th><Th align="right">Claimed</Th><Th align="right">Projected</Th></tr></thead>
               <tbody>
                 {replays.map((r) => (
@@ -136,12 +141,16 @@ export async function PipelineSections({ db }: { db: Queryable }) {
             </TableWrap>
           )}
         </Card>
-        <Card title="Audit log" subtitle="Every replay, decision, sync request and job transition: who, what, why">
+        <Card
+          title="Latest audit entries"
+          subtitle="Every replay, decision, sync request and job transition: who, what, why"
+          action={<Link href="/audit" className="text-xs font-medium text-accent hover:underline">Full audit trail</Link>}
+        >
           {audit.length === 0 ? (
             <p className="text-sm text-muted">No decisions recorded yet.</p>
           ) : (
             <ul className="space-y-2 text-sm" data-testid="audit-log">
-              {audit.map((a) => (
+              {audit.slice(0, AUDIT_PREVIEW).map((a) => (
                 <li key={a.id} className="border-b border-dashed border-border pb-2">
                   <span className="font-medium">{a.actor}</span> · <span className="font-mono text-xs">{a.action}</span> · {a.subject}
                   {/* Raw detail can be one long unbroken JSON string: wrap anywhere, show two lines (full row on Audit & Health). */}

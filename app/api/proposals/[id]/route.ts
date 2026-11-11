@@ -6,6 +6,7 @@ import { dispatchEvents } from "@/lib/events/consumers";
 import { drainJobs } from "@/lib/jobs/kick";
 import { getPool, getViewer } from "@/lib/server";
 import { approveProposal, dryRunProposal, executeProposal, rejectProposal } from "@/lib/workflow/proposals";
+import { parseRecordId } from "@/lib/record-id";
 
 const reason = z.string().trim().min(5).max(1000);
 const body = z.discriminatedUnion("action", [
@@ -25,8 +26,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   await connection();
   try {
     const { id } = await ctx.params;
-    if (!/^\d{1,15}$/.test(id)) throw new ActionError("Proposal not found", 404);
-    const proposalId = Number(id);
+    const proposalId = parseRecordId(id);
+    if (proposalId === null) throw new ActionError("Proposal not found", 404);
     const input = body.parse(await request.json());
     const viewer = await getViewer();
     const pool = getPool();

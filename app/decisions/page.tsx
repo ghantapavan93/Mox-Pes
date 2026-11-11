@@ -53,6 +53,11 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
             act, and did the spend cause the customers. Clean data answers the first two; only a randomized experiment answers the third.
           </p>
         }
+        actions={
+          <Link href={`/decisions/opportunities?period=${period.key}`} className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium shadow-raised hover:bg-surface-2">
+            Revenue opportunities
+          </Link>
+        }
         toolbar={
           <>
             {/* A plain GET form: works without JavaScript and from the keyboard. */}

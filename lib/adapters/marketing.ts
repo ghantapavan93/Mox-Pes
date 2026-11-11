@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { microsToCents, payloadHash } from "@/lib/primitives";
+import { isValidIsoDate, isValidIsoInstant, microsToCents, payloadHash } from "@/lib/primitives";
 import { AD_PLATFORM_CHANNEL, type ChannelCode } from "@/lib/reference";
 import {
   fail,
@@ -14,7 +14,11 @@ import {
 import { emailHashOf, phoneHashOf } from "./redact";
 import { schemaFailure } from "./validation";
 
-const isoInstant = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/, "expected ISO-8601 with offset");
+// Shape AND calendar: the JS Date parser turns "2026-02-30T10:00:00Z" into March 2 (ADV-24).
+const isoInstant = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/, "expected ISO-8601 with offset")
+  .refine(isValidIsoInstant, "not a real calendar instant");
 const branchId = z.string().regex(/^B\d{2}$/);
 
 function identifyBy(record: RawRecord, entity: string, idField: string, versionField: string): RecordIdentity | MapFailure {
@@ -24,8 +28,8 @@ function identifyBy(record: RawRecord, entity: string, idField: string, versionF
   if (typeof entityId !== "string" || typeof version !== "string") {
     return fail("MISSING_IDENTITY", `${entity}: missing ${idField} or ${versionField}`);
   }
+  if (!isValidIsoInstant(version)) return fail("INVALID_TIMESTAMP", `${entity}.${versionField}: "${version.slice(0, 40)}"`);
   const occurredAt = new Date(version);
-  if (Number.isNaN(occurredAt.getTime())) return fail("INVALID_TIMESTAMP", `${entity}.${versionField}: "${version}"`);
   return { entity, entityId, externalId: `${entity}:${entityId}:${version}`, occurredAt, versionClock: "source" };
 }
 
@@ -253,7 +257,7 @@ const spendDay = z.object({
   accountId: z.string().min(1),
   campaignId: z.string().min(1),
   campaignName: z.string().min(1),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().refine(isValidIsoDate, "expected a real 'YYYY-MM-DD' date"),
   costMicros: z.string().regex(/^\d{1,18}$/),
   clicks: z.number().int().nonnegative().max(2_147_483_647),
   conversions: z.number().int().nonnegative().max(2_147_483_647),

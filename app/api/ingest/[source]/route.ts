@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { withTransaction } from "@/lib/db";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, readJsonBody } from "@/lib/http";
 import { ingestRecords } from "@/lib/ingest/ingest";
 import { businessNow, getPool } from "@/lib/server";
 
 const PUSH_SOURCES = ["web", "calls", "d2d"] as const;
+/** 500 records of a few KB each fit with room to spare; anything larger is refused unread (413). */
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const body = z.object({
   records: z.array(z.object({ entity: z.string().min(1).max(40), payload: z.record(z.string(), z.unknown()) })).min(1).max(500),
 });
@@ -34,7 +36,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ source: st
     if (!PUSH_SOURCES.includes(source as (typeof PUSH_SOURCES)[number])) {
       return NextResponse.json({ error: `Push ingestion is not enabled for "${source}"` }, { status: 404 });
     }
-    const { records } = body.parse(await request.json());
+    const { records } = body.parse(await readJsonBody(request, MAX_BODY_BYTES));
     const now = await businessNow();
     // Reconciliation is not run inline: it scans all history and would make every push
     // wait on the reconcile lock. It runs on its schedule (POST /api/reconcile).

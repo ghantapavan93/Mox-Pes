@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { withTransaction, type Queryable } from "@/lib/db";
 import { payloadHash } from "@/lib/primitives";
-import type { MapContext, MapResult, RawRecord, RecordIdentity, SourceClient, SourceMapper, SourceName } from "@/lib/adapters/contract";
+import type { MapContext, MapFailure, MapResult, RawRecord, RecordIdentity, SourceClient, SourceMapper, SourceName } from "@/lib/adapters/contract";
 import { redactValue } from "@/lib/adapters/redact";
 import { isFailure } from "@/lib/adapters/validation";
 import { recordEvent } from "@/lib/events/outbox";
@@ -34,7 +34,7 @@ export function prepare(record: RawRecord, mapper: SourceMapper, ctx: MapContext
   const payload = redactValue(record.payload);
   const hash = payloadHash(payload);
   const redacted: RawRecord = { entity: record.entity, payload };
-  const identified = mapper.identify(redacted, ctx);
+  const identified = guarded(() => mapper.identify(redacted, ctx));
   // An identity must be storable: an instant Postgres and every report can represent.
   const identity =
     !isFailure(identified) && !(identified.occurredAt.getTime() >= MIN_INSTANT && identified.occurredAt.getTime() < MAX_INSTANT)
@@ -50,7 +50,19 @@ export function prepare(record: RawRecord, mapper: SourceMapper, ctx: MapContext
       receivedAt,
     };
   }
-  return { identity, payload, hash, result: mapper.map(redacted, ctx), receivedAt };
+  return { identity, payload, hash, result: guarded(() => mapper.map(redacted, ctx)), receivedAt };
+}
+
+/**
+ * A mapper that throws on one record (a bug, or an input its schema let through) quarantines
+ * that record as MAPPER_ERROR; it never fails the batch the record arrived in (ADV-35).
+ */
+function guarded<T>(step: () => T | MapFailure): T | MapFailure {
+  try {
+    return step();
+  } catch (error) {
+    return { ok: false, code: "MAPPER_ERROR", detail: String((error as Error)?.message ?? error).slice(0, 300) };
+  }
 }
 
 /**

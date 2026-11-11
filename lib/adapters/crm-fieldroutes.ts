@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { parseMoneyToCents, payloadHash, wallTimeToInstant } from "@/lib/primitives";
+import { isValidIsoDate, isValidWallTime, parseMoneyToCents, payloadHash, wallTimeToInstant } from "@/lib/primitives";
 import { fail, type MapContext, type MapResult, type RawRecord, type RecordIdentity, type SourceMapper } from "./contract";
 import { emailHashOf, phoneHashOf } from "./redact";
 import { schemaFailure } from "./validation";
@@ -17,11 +17,18 @@ import { schemaFailure } from "./validation";
  * change completed-service counts without anyone noticing.
  */
 
-// ≤ 15 digits: fits bigint AND stays exact as a JS number (2^53 ≈ 9.0e15).
-const id = z.string().regex(/^\d{1,15}$/, "expected a numeric id string of at most 15 digits");
-const wallTime = z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/, "expected 'YYYY-MM-DD HH:MM:SS'");
-const money = z.string().regex(/^-?\d+(\.\d{1,2})?$/, "expected a decimal amount");
+// ≤ 15 digits: fits bigint AND stays exact as a JS number (2^53 ≈ 9.0e15). Canonical decimal
+// only: "0042" and "42" would otherwise be two ledger records of one customer (ADV-19).
+const CANONICAL_ID = /^(0|[1-9]\d{0,14})$/;
+const id = z.string().regex(CANONICAL_ID, "expected a canonical numeric id (no leading zeros, at most 15 digits)");
 const ZERO_DATE = "0000-00-00 00:00:00";
+// Shape AND calendar: "2026-02-30 10:00:00" is refused, not rolled into March (ADV-12).
+const wallTime = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/, "expected 'YYYY-MM-DD HH:MM:SS'")
+  .refine((v) => v === ZERO_DATE || isValidWallTime(v), "not a real calendar time");
+// At most 13 whole digits keeps every amount exact in cents (ADV-15).
+const money = z.string().regex(/^-?\d{1,13}(\.\d{1,2})?$/, "expected a decimal amount");
 
 const customerSchema = z.object({
   customerID: id,
@@ -57,8 +64,8 @@ const appointmentSchema = z.object({
   officeID: id,
   salesAnchor: z.enum(["0", "1"]),
   status: z.enum(["0", "1", "2", "-1", "-2"]),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  start: z.string().regex(/^\d{2}:\d{2}:\d{2}$/),
+  date: z.string().refine(isValidIsoDate, "expected a real 'YYYY-MM-DD' date"),
+  start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/, "expected 'HH:MM:SS'"),
   dateCompleted: wallTime,
   dateUpdated: wallTime,
 });
@@ -122,6 +129,8 @@ export class FieldRoutesMapper implements SourceMapper {
     const office = Number(p.officeID);
     const tz = ctx.timezoneForOffice(office);
     if (typeof entityId !== "string" || !tz) return fail("MISSING_IDENTITY", `${record.entity}: no id or unknown officeID`);
+    // The ledger is keyed by the id as received; a non-canonical spelling must not become a second key.
+    if (!CANONICAL_ID.test(entityId)) return fail("INVALID_IDENTITY", `${record.entity}: "${entityId.slice(0, 40)}" is not a canonical id`);
     // Payments carry no dateUpdated: a version is identified by its content and ordered
     // by receipt (versionClock "received"), so void → successful → void is never lost.
     const isPayment = record.entity === "payment";

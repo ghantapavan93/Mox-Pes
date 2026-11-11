@@ -26,8 +26,16 @@ const PHONE_KEY = /phone|caller|mobile|\btel\b|number/i;
 const NON_CONTACT_KEY = /(^|_)id$|Id$|ID$|account|campaign|date|time|micros|cost|amount|total/i;
 /** Fields that hold free text: scrub contact details embedded anywhere in them. */
 const FREE_TEXT_KEY = /note|message|text|comment|description/i;
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const EMBEDDED_EMAIL = /[^\s@<>()]+@[^\s@<>()]+\.[A-Za-z]{2,}/g;
+// A whole-value email: one "@", a dot-separated domain, bounded parts. The old form
+// /^[^@\s]+@[^@\s]+\.[^@\s]+$/ backtracked quadratically on "a@" + "."*n + "@" (40 KB: 2 s);
+// the length guard in redactString keeps any residual cost bounded (security review #3).
+const EMAIL = /^[^@\s]{1,64}@[^@\s.]{1,63}(\.[^@\s.]{1,63})+$/;
+/** RFC 5321: an address is at most 254 characters; longer values are never emails or phones. */
+const MAX_CONTACT_CHARS = 320;
+// Bounded repetition (RFC 5321 part lengths) keeps the scan linear. The unbounded form,
+// /[^\s@<>()]+@.../, rescans to the end of every long run without "@" from each start
+// position: a 200 KB note took 36 s and a 3 MB one pinned an ingest transaction (ADV-46).
+const EMBEDDED_EMAIL = /[^\s@<>()]{1,64}@[^\s@<>()]{1,253}\.[A-Za-z]{2,24}/g;
 const EMBEDDED_PHONE = /(\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b|\+?\b1?\d{10}\b/g;
 
 function redactString(raw: string, key: string | undefined): string {
@@ -36,11 +44,12 @@ function redactString(raw: string, key: string | undefined): string {
   if (value.startsWith(PHONE_TOKEN) || value.startsWith(EMAIL_TOKEN)) return value;
   if (key !== undefined && NON_CONTACT_KEY.test(key) && !PHONE_KEY.test(key)) return value;
   const trimmed = value.trim();
-  if (EMAIL.test(trimmed)) {
+  const short = trimmed.length <= MAX_CONTACT_CHARS;
+  if (short && EMAIL.test(trimmed)) {
     const hashed = hashEmail(trimmed);
     return hashed ? `${EMAIL_TOKEN}${hashed}` : "[email]";
   }
-  if (FORMATTED_PHONE.test(trimmed) || (BARE_PHONE.test(trimmed) && key !== undefined && PHONE_KEY.test(key))) {
+  if (short && (FORMATTED_PHONE.test(trimmed) || (BARE_PHONE.test(trimmed) && key !== undefined && PHONE_KEY.test(key)))) {
     const hashed = hashPhone(trimmed);
     if (hashed) return `${PHONE_TOKEN}${hashed}`;
   }

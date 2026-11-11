@@ -6,12 +6,17 @@ import { createHash } from "node:crypto";
 
 const DECIMAL_MONEY = /^(-)?(\d+)(?:\.(\d{1,2}))?$/;
 
+/**
+ * Exact decimal -> integer cents. An amount whose cents exceed Number.MAX_SAFE_INTEGER
+ * (about $90 trillion) cannot be held exactly and is refused, never rounded (ADV-15).
+ */
 export function parseMoneyToCents(value: string): number {
   const match = DECIMAL_MONEY.exec(value.trim());
   if (!match) throw new Error(`Not a money amount: "${value}"`);
   const [, sign, whole, fraction = ""] = match;
-  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  return sign ? -cents : cents;
+  const cents = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, "0"));
+  if (cents > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error(`Money amount out of exact range: "${value}"`);
+  return sign ? -Number(cents) : Number(cents);
 }
 
 /** Google Ads reports cost in micros (1/1,000,000 of the currency unit). Half-up to cents. */
@@ -82,26 +87,67 @@ export function payloadHash(payload: unknown): string {
 const LEGACY_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
 const ISO_WITH_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
+/**
+ * One formatter per (locale, zone), built once. Constructing an Intl.DateTimeFormat costs far
+ * more than using one, and a wall-time conversion uses several: per call, it held the onboarding
+ * dry run to about 2,100 rows/s (scripts/bench-onboarding.ts). Formatters are immutable, so
+ * sharing them is safe; an unknown zone still throws, on first use, as before.
+ */
+const FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+function formatterFor(locale: "en-US" | "en-CA", timeZone: string): Intl.DateTimeFormat {
+  const key = `${locale}|${timeZone}`;
+  let f = FORMATTERS.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    FORMATTERS.set(key, f);
+  }
+  return f;
+}
+
 function zoneOffsetMinutes(utcMillis: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(new Date(utcMillis));
+  const parts = formatterFor("en-US", timeZone).formatToParts(new Date(utcMillis));
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
   const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
   return (asUtc - utcMillis) / 60_000;
+}
+
+/**
+ * Whether the parts name a real calendar instant. Date.UTC and the JS Date parser both roll
+ * an impossible date into another day ("2026-02-30" becomes March 2, "24:00" the next day);
+ * source data with such a value is wrong, and is refused rather than moved (ADV-12, ADV-24).
+ */
+export function isRealCalendarTime(year: number, month: number, day: number, hour = 0, minute = 0, second = 0): boolean {
+  if (month < 1 || month > 12 || day < 1 || hour > 23 || minute > 59 || second > 59) return false;
+  return day <= new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+const ISO_PARTS = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2})))?$/;
+
+/** "YYYY-MM-DD" naming a real day. */
+export function isValidIsoDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m !== null && isRealCalendarTime(+m[1], +m[2], +m[3]);
+}
+
+/** ISO-8601 with an explicit offset, naming a real instant (offset within ±14:00). */
+export function isValidIsoInstant(value: string): boolean {
+  const m = ISO_PARTS.exec(value);
+  if (!m || m[4] === undefined) return false;
+  if (m[7] !== "Z" && (Number(m[9]) > 14 || Number(m[10]) > 59)) return false;
+  return isRealCalendarTime(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]);
+}
+
+/** "YYYY-MM-DD HH:MM:SS" naming a real wall-clock time. */
+export function isValidWallTime(value: string): boolean {
+  const m = LEGACY_TIMESTAMP.exec(value);
+  return m !== null && isRealCalendarTime(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]);
 }
 
 /** Interprets a zone-less wall-clock timestamp in `timeZone` and returns the instant. */
 export function wallTimeToInstant(wallTime: string, timeZone: string): Date {
   const m = LEGACY_TIMESTAMP.exec(wallTime);
   if (!m) throw new Error(`Not a "YYYY-MM-DD HH:MM:SS" timestamp: "${wallTime}"`);
+  if (!isRealCalendarTime(+m[1], +m[2], +m[3], +m[4], +m[5], +m[6])) throw new Error(`Not a real calendar time: "${wallTime}"`);
   const naiveUtc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
   // Two passes settle the offset across a DST boundary.
   let instant = naiveUtc - zoneOffsetMinutes(naiveUtc, timeZone) * 60_000;
@@ -111,16 +157,7 @@ export function wallTimeToInstant(wallTime: string, timeZone: string): Date {
 
 /** Formats an instant as the CRM would: zone-less wall time at the branch. */
 export function instantToWallTime(instant: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(instant);
+  const parts = formatterFor("en-CA", timeZone).formatToParts(instant);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
   return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}:${get("second")}`;
 }

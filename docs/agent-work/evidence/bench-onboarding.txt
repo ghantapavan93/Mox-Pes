@@ -1,0 +1,5 @@
+Machine: AMD Ryzen 9 5900HX with Radeon Graphics         x16, 15791 MB RAM, win32 10.0.26300, Node v22.14.0
+Postgres: PostgreSQL 17.8 on x86_64-windows
+  1000 rows, 0.1 MB | parse 8.8 ms | profile 27.8 ms | assistant 21.6 ms | compile+mapper 192.2 ms (5203 rows/s) | eligible 1000 | heap +6.8 MB | publish 163.2 ms (6127 rows/s, 1000 projected)
+ 10000 rows, 0.9 MB | parse 41.3 ms | profile 189.8 ms | assistant 33.7 ms | compile+mapper 1191.7 ms (8391 rows/s) | eligible 10000 | heap +25.5 MB | publish 1241.3 ms (8056 rows/s, 10000 projected)
+ 50000 rows, 4.6 MB | parse 198.7 ms | profile 1035.9 ms | assistant 250.5 ms | compile+mapper 5621.7 ms (8894 rows/s) | eligible 50000 | heap +156 MB | publish 6460.9 ms (7739 rows/s, 50000 projected)

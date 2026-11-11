@@ -121,7 +121,9 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
   await next(page, 7);
   await useStepRole(page, 7);
   await expect(page).toHaveURL(/\/branches\/B09\?/);
-  const after = page.getByTestId("budget-signal");
+  // The visible one: Next keeps the previous route mounted but hidden (React Activity) for
+  // instant back navigation, so the incident page's own budget card is still in the DOM.
+  const after = page.getByTestId("budget-signal").filter({ visible: true });
   await expect(after).toContainText(golden.signalAfter.ratio);
   await expect(after).toContainText(golden.signalAfter.status);
   const lab = await page.request.get(`/decisions?branch=B09&period=oct`);

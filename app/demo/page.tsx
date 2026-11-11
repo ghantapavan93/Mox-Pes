@@ -61,8 +61,8 @@ async function Demo() {
       </Card>
 
       <Card title={`Eight steps · ${clock(PATH_SECONDS)}`}>
-        <TableWrap label="Guided path steps">
-          <table className="w-full text-sm" data-testid="demo-steps">
+        {/* TableWrap renders the <table>; a second one inside it is invalid HTML and broke hydration. */}
+        <TableWrap label="Guided path steps" testId="demo-steps">
             <thead>
               <tr>
                 <Th>#</Th>
@@ -95,7 +95,6 @@ async function Demo() {
                 );
               })}
             </tbody>
-          </table>
         </TableWrap>
       </Card>
     </div>

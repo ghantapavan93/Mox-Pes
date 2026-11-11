@@ -1,0 +1,7 @@
+Employee ID,Employee,Role,Branch,Shift Date,Start,End,Phone,Hourly Rate,Total,Notes
+E-0101,Jordan Vale,Service Technician,Alder,2026-11-09,7:00 AM,3:30 PM,(206) 555-0120,$24.50,$208.25,Route 4 - termite follow-ups
+E-0102,Casey Moreno,Inside Sales,Alder,2026-11-09,9:00 AM,5:30 PM,(206) 555-0121,$21.00,$178.50,Covers phones during lunch
+E-0103,Riley Achterberg,Service Technician,Granite,2026-11-09,6:30 AM,3:00 PM,(312) 555-0122,$25.75,$218.88,
+E-0104,Sam Okonkwo-Lee,Branch Manager,Granite,2026-11-09,8:00 AM,5:00 PM,(312) 555-0123,$38.00,$342.00,"Source: Google Ads training, 2pm"
+E-0105,Avery Lindqvist,Customer Service,Clover,2026-11-10,10:00 AM,6:30 PM,(480) 555-0124,$20.25,$172.13,Call ID training
+E-0106,Morgan Hale,Service Technician,Clover,2026-11-10,7:00 AM,3:30 PM,(480) 555-0125,$24.50,$208.25,PTO afternoon - swap with E-0101

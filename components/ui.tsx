@@ -368,10 +368,13 @@ export function Td({ children, align = "left", className = "" }: { children?: Re
  * box is a named, focusable region so keyboard users can scroll it (WCAG 2.1.1; axe
  * scrollable-region-focusable).
  */
-export function TableWrap({ children, flush = false, minWidth = 640, label }: { children: ReactNode; flush?: boolean; minWidth?: number; /** Unique on the page: names the scroll region. */ label: string }) {
+/** Children are the table's sections (thead / tbody): TableWrap renders the <table> itself. */
+export function TableWrap({ children, flush = false, minWidth = 640, label, testId }: { children: ReactNode; flush?: boolean; minWidth?: number; /** Unique on the page: names the scroll region. */ label: string; testId?: string }) {
   return (
     <div className={`${flush ? "" : "-mx-4"} overflow-x-auto`} role="region" aria-label={label} tabIndex={0}>
-      <table className="w-full border-collapse [&_tbody_tr:hover]:bg-surface-2/60" style={{ minWidth }}>{children}</table>
+      <table className="w-full border-collapse [&_tbody_tr:hover]:bg-surface-2/60" style={{ minWidth }} data-testid={testId}>
+        {children}
+      </table>
     </div>
   );
 }

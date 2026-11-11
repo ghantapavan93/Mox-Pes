@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { setRole } from "./action-center";
 import { reseedDemo } from "./db";
+import { stageSample } from "./onboarding";
 
 /**
  * Layout regressions for the redesign (docs/design-system.md, behaviour rule 5).
@@ -25,7 +26,7 @@ async function b09IncidentHref(page: Page): Promise<string> {
   return hits.find((h) => h.kind === "incident")?.href ?? "/exceptions";
 }
 
-const PAGES = (incident: string): Array<[string, string]> => [
+const PAGES = (incident: string, upload: string): Array<[string, string]> => [
   ["overview", "/?period=oct"],
   ["incidents", "/exceptions"],
   ["incident", incident],
@@ -39,6 +40,8 @@ const PAGES = (incident: string): Array<[string, string]> => [
   ["integrations-pipeline", "/integrations?view=pipeline"],
   ["incidents-filtered", "/exceptions?state=all&severity=high&kind=channel_coverage_gap"],
   ["audit", "/audit"],
+  ["onboarding", "/onboarding"],
+  ["onboarding-upload", upload],
   ["branch", "/branches/B09?period=oct"],
   ["demo", "/demo"],
 ];
@@ -50,8 +53,10 @@ test.describe("layout · no horizontal page scroll", () => {
       await page.setViewportSize({ width, height: 900 });
       await setRole(page, "engineer");
       const incident = await b09IncidentHref(page);
+      const upload = await stageSample(page, "demo-crm-payments.csv", { dryRun: true, answers: { moneyMeaning: { amount: "collected_payment" } } });
+      await setRole(page, "engineer");
       const overflowing: string[] = [];
-      for (const [name, url] of PAGES(incident)) {
+      for (const [name, url] of PAGES(incident, upload)) {
         await page.goto(url);
         await page.waitForLoadState("networkidle");
         const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));

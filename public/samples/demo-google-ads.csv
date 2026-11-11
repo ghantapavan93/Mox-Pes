@@ -1,0 +1,10 @@
+Campaign report
+"October 20, 2026 - October 22, 2026"
+Day,Campaign,Campaign ID,Campaign status,Currency code,Clicks,Cost,Conversions
+2026-10-20,B01 Alder | Search | Pest,gs-B01,Enabled,USD,22,236.87,2.00
+2026-10-20,B02 Aspen | Search | Pest,gs-B02,Enabled,USD,12,158.65,3.00
+2026-10-21,B01 Alder | Search | Pest,gs-B01,Enabled,USD,34,344.10,5.00
+2026-10-21,B02 Aspen | Search | Pest,gs-B02,Enabled,USD,13,177.01,0.00
+2026-10-22,B01 Alder | Search | Pest,gs-B01,Enabled,USD,33,304.36,1.00
+2026-10-22,B02 Aspen | Search | Pest,gs-B02,Enabled,USD,24,205.62,1.00
+Total: Account,,,,USD,138,"1,426.61",

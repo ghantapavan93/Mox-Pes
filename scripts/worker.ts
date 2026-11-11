@@ -1,7 +1,8 @@
-import { createPool, DEFAULT_DATABASE_URL } from "@/lib/db";
+import { createPool, DEFAULT_DATABASE_URL, getNow } from "@/lib/db";
 import { dispatchEvents } from "@/lib/events/consumers";
 import { defaultRuntime } from "@/lib/jobs/runtime";
 import { runPendingJobs } from "@/lib/jobs/sync";
+import { purgeExpired } from "@/lib/onboarding/service";
 
 /**
  * The sync worker: `npm run worker`. Claims ready jobs (FOR UPDATE SKIP LOCKED), runs them,
@@ -35,6 +36,9 @@ async function main() {
       // Stored batches published intake.records_stored: reconciliation and identity catch up,
       // once per loop however many batches there were.
       await dispatchEvents(pool);
+      // Onboarding retention runs on a schedule as well as on every onboarding request.
+      const purged = await purgeExpired(pool, await getNow(pool));
+      if (purged > 0) console.log(JSON.stringify({ level: "info", msg: "onboarding uploads past retention purged", uploads: purged }));
       if (outcomes.length === 0) await new Promise((resolve) => setTimeout(resolve, idleMs));
     } catch (error) {
       // A database blip must not kill the worker; jobs it held are re-queued by heartbeat expiry.

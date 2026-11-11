@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { setRole, type Role } from "./action-center";
+import { stageSample } from "./onboarding";
 
 /**
  * Quality gates (docs/testing.md, "Hardening pass"). Each one started as a diagnostic sweep that
@@ -34,6 +35,7 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
   await setRole(page, "engineer");
   const incident = await incidentHref(page);
   const customer = await customerHref(page);
+  const upload = await stageSample(page, "demo-crm-payments.csv", { dryRun: true, answers: { moneyMeaning: { amount: "collected_payment" } } });
   return [
     ["overview", "/?period=oct", "marketing"],
     ["incidents", "/exceptions", "marketing"],
@@ -48,6 +50,8 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["integrations-mapping", "/integrations?view=mapping", "engineer"],
     ["integrations-pipeline", "/integrations?view=pipeline", "engineer"],
     ["audit", "/audit", "approver"],
+    ["onboarding", "/onboarding", "marketing"],
+    ["onboarding-upload", upload, "approver"],
     ["branch", "/branches/B09?period=oct", "marketing"],
     ["demo", "/demo", "marketing"],
   ];
@@ -123,13 +127,15 @@ test.describe("quality gate · hostile inputs", () => {
     "/feedback": ["period"],
     "/integrations": ["view"],
     "/audit": ["actor", "action", "subject", "from", "to", "before"],
+    "/onboarding/1": ["rows", "page"],
+    "/api/onboarding/uploads/1/rows": ["disposition", "page"],
     "/api/search": ["q"],
     "/api/customers": ["q", "branch", "lifecycle", "page"],
     "/api/metrics": ["period", "branch", "brand"],
     "/api/decisions/verdicts": ["branch", "period"],
     "/api/identity/conflicts": ["status", "limit"],
   };
-  const PATHS = ["/exceptions/{v}", "/customers/{v}", "/branches/{v}", "/investigator/{v}", "/integrations/jobs/{v}", "/api/customers/{v}", "/api/investigations/{v}", "/api/connectors/jobs/{v}"];
+  const PATHS = ["/exceptions/{v}", "/customers/{v}", "/branches/{v}", "/investigator/{v}", "/integrations/jobs/{v}", "/api/customers/{v}", "/api/investigations/{v}", "/api/connectors/jobs/{v}", "/onboarding/{v}", "/api/onboarding/uploads/{v}", "/api/onboarding/uploads/{v}/rows"];
 
   for (const role of ["marketing", "partner"] as const) {
     test(`no hostile query value or path id breaks a page or API · ${role}`, async ({ page }) => {

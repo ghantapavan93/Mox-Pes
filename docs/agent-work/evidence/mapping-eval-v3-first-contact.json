@@ -1,0 +1,1225 @@
+{
+  "datasetVersion": "2026-11-11.v3",
+  "cases": 56,
+  "assistant": {
+    "engine": "deterministic@1.0",
+    "overall": {
+      "labels": 365,
+      "correct": 305,
+      "wrong": 6,
+      "abstained": 54,
+      "suggestions": 269,
+      "accuracy": 0.8356164383561644,
+      "wrongSuggestionRate": 0.022304832713754646,
+      "abstentionRecall": 0.8936170212765957,
+      "overAbstention": 0.16981132075471697
+    },
+    "byCategory": {
+      "correct_mapping": {
+        "labels": 103,
+        "correct": 87,
+        "wrong": 0,
+        "abstained": 16,
+        "suggestions": 81
+      },
+      "ambiguous_header": {
+        "labels": 35,
+        "correct": 33,
+        "wrong": 2,
+        "abstained": 0,
+        "suggestions": 30
+      },
+      "plausible_but_wrong": {
+        "labels": 78,
+        "correct": 71,
+        "wrong": 2,
+        "abstained": 5,
+        "suggestions": 65
+      },
+      "financial_semantics": {
+        "labels": 37,
+        "correct": 29,
+        "wrong": 2,
+        "abstained": 6,
+        "suggestions": 22
+      },
+      "dataset_detection": {
+        "labels": 22,
+        "correct": 10,
+        "wrong": 0,
+        "abstained": 12,
+        "suggestions": 10
+      },
+      "missing_required": {
+        "labels": 25,
+        "correct": 21,
+        "wrong": 0,
+        "abstained": 4,
+        "suggestions": 9
+      },
+      "pii_and_free_text": {
+        "labels": 13,
+        "correct": 12,
+        "wrong": 0,
+        "abstained": 1,
+        "suggestions": 12
+      },
+      "prompt_injection": {
+        "labels": 21,
+        "correct": 21,
+        "wrong": 0,
+        "abstained": 0,
+        "suggestions": 21
+      },
+      "format_trap": {
+        "labels": 31,
+        "correct": 21,
+        "wrong": 0,
+        "abstained": 10,
+        "suggestions": 19
+      }
+    },
+    "detection": {
+      "cases": 9,
+      "correct": 7,
+      "failures": [
+        "v3-dd-03-gravity-forms-entries: expected web_leads, got abstain",
+        "v3-dd-04-ringcentral-call-log: expected calls, got abstain"
+      ]
+    },
+    "failures": [
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "call_id",
+        "label": "sid",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "started_at",
+        "label": "dateCreated",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "caller_phone",
+        "label": "from",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "tracking_number",
+        "label": "to",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "call_source",
+        "label": "lead_src",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "note",
+        "label": "agent_comment",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-03-hubspot-form-submissions",
+        "category": "correct_mapping",
+        "field": "lead_id",
+        "label": "Conversion ID",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-03-hubspot-form-submissions",
+        "category": "correct_mapping",
+        "field": "submitted_at",
+        "label": "Conversion Date",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-04-typeform-question-headers",
+        "category": "correct_mapping",
+        "field": "submitted_at",
+        "label": "Submit Date (UTC)",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-04-typeform-question-headers",
+        "category": "correct_mapping",
+        "field": "message",
+        "label": "Anything else we should know?",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-08-microsoft-ads-daily",
+        "category": "correct_mapping",
+        "field": "date",
+        "label": "Time period",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-09-sheets-multi-platform",
+        "category": "correct_mapping",
+        "field": "campaign_id",
+        "label": "Camp ID",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-10-salesforce-web-to-lead",
+        "category": "correct_mapping",
+        "field": "click_id",
+        "label": "GCLID__c",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-10-salesforce-web-to-lead",
+        "category": "correct_mapping",
+        "field": "message",
+        "label": "Description",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-11-sheets-call-log",
+        "category": "correct_mapping",
+        "field": "caller_phone",
+        "label": "Caller #",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-11-sheets-call-log",
+        "category": "correct_mapping",
+        "field": "tracking_number",
+        "label": "Number Dialed",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ah-01-meta-clicks-all-vs-link",
+        "category": "ambiguous_header",
+        "field": "clicks",
+        "label": "ambiguous",
+        "suggested": "Link clicks",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-06-payment-date-vs-created",
+        "category": "ambiguous_header",
+        "field": "paid_at",
+        "label": "ambiguous",
+        "suggested": "Created (UTC)",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-01-five9-dialer-campaign",
+        "category": "plausible_but_wrong",
+        "field": "started_at",
+        "label": "TIMESTAMP",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-01-five9-dialer-campaign",
+        "category": "plausible_but_wrong",
+        "field": "campaign",
+        "label": null,
+        "suggested": "CAMPAIGN",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-04-branch-column-holds-regions",
+        "category": "plausible_but_wrong",
+        "field": "ticket_id",
+        "label": "Invoice",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-04-branch-column-holds-regions",
+        "category": "plausible_but_wrong",
+        "field": "status",
+        "label": "Result",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-08-gravity-form-id-is-not-lead-id",
+        "category": "plausible_but_wrong",
+        "field": "lead_id",
+        "label": "Entry Id",
+        "suggested": "Form ID",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-11-linkedin-unsupported-platform",
+        "category": "plausible_but_wrong",
+        "field": "campaign_id",
+        "label": "Campaign ID",
+        "suggested": null,
+        "status": "ambiguous",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-11-linkedin-unsupported-platform",
+        "category": "plausible_but_wrong",
+        "field": "cost",
+        "label": "Total Spent",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-01-stripe-amount-fee-net",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "Amount",
+        "suggested": null,
+        "status": "ambiguous",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-01-stripe-amount-fee-net",
+        "category": "financial_semantics",
+        "field": "paid_at",
+        "label": "Created date (UTC)",
+        "suggested": null,
+        "status": "blocked",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-02-square-gross-net-total-collected",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "Total Collected",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-02-square-gross-net-total-collected",
+        "category": "financial_semantics",
+        "field": "paid_at",
+        "label": "ambiguous",
+        "suggested": "Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-05-servicetitan-invoice-grain",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "ambiguous",
+        "suggested": "Amount Paid",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-07-sheets-collected-vs-job-and-ltv",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "Collected $",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-07-sheets-collected-vs-job-and-ltv",
+        "category": "financial_semantics",
+        "field": "paid_at",
+        "label": "Pay Date",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-07-sheets-collected-vs-job-and-ltv",
+        "category": "financial_semantics",
+        "field": "payment_id",
+        "label": "Ref #",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-01-terse-crm-payments",
+        "category": "dataset_detection",
+        "field": "customer_id",
+        "label": "Acct",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-01-terse-crm-payments",
+        "category": "dataset_detection",
+        "field": "ticket_id",
+        "label": "Applied To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "lead_id",
+        "label": "Entry Id",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "submitted_at",
+        "label": "Date Created",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "zip",
+        "label": "Your ZIP",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "phone",
+        "label": "Phone",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "email",
+        "label": "Email",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "message",
+        "label": "Tell us about your pest problem",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "call_id",
+        "label": "Session Id",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "started_at",
+        "label": "Start Time",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "dataset not chosen",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-01-twilio-no-branch-no-source",
+        "category": "missing_required",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-01-twilio-no-branch-no-source",
+        "category": "missing_required",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-02-typeform-no-zip",
+        "category": "missing_required",
+        "field": "submitted_at",
+        "label": "Submit Date (UTC)",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-02-typeform-no-zip",
+        "category": "missing_required",
+        "field": "message",
+        "label": "How can we help?",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pii-01-gravity-message-with-pii",
+        "category": "pii_and_free_text",
+        "field": "message",
+        "label": "Tell us more",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-02-office-ids-and-zip-plus-four",
+        "category": "format_trap",
+        "field": "zip",
+        "label": "Zip Code",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-02-office-ids-and-zip-plus-four",
+        "category": "format_trap",
+        "field": "submitted_at",
+        "label": "Received",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-03-split-date-and-time",
+        "category": "format_trap",
+        "field": "call_id",
+        "label": "Session Id",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-03-split-date-and-time",
+        "category": "format_trap",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-03-split-date-and-time",
+        "category": "format_trap",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-04-google-ads-api-micros",
+        "category": "format_trap",
+        "field": "date",
+        "label": "segments.date",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-04-google-ads-api-micros",
+        "category": "format_trap",
+        "field": "cost",
+        "label": "metrics.cost_micros",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-04-google-ads-api-micros",
+        "category": "format_trap",
+        "field": "clicks",
+        "label": "metrics.clicks",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-04-google-ads-api-micros",
+        "category": "format_trap",
+        "field": "conversions",
+        "label": "metrics.conversions",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-05-accounting-negatives-and-dmy-dates",
+        "category": "format_trap",
+        "field": "customer_id",
+        "label": "Client ID",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      }
+    ],
+    "latencyMs": {
+      "p50": 2.143,
+      "p95": 6.031,
+      "max": 9.823
+    }
+  },
+  "baseline": {
+    "engine": "naive-header-match",
+    "overall": {
+      "labels": 365,
+      "correct": 311,
+      "wrong": 21,
+      "abstained": 33,
+      "suggestions": 300,
+      "accuracy": 0.852054794520548,
+      "wrongSuggestionRate": 0.07,
+      "abstentionRecall": 0.6808510638297872,
+      "overAbstention": 0.10377358490566038
+    },
+    "byCategory": {
+      "correct_mapping": {
+        "labels": 103,
+        "correct": 90,
+        "wrong": 3,
+        "abstained": 10,
+        "suggestions": 87
+      },
+      "ambiguous_header": {
+        "labels": 35,
+        "correct": 27,
+        "wrong": 7,
+        "abstained": 1,
+        "suggestions": 34
+      },
+      "plausible_but_wrong": {
+        "labels": 78,
+        "correct": 69,
+        "wrong": 4,
+        "abstained": 5,
+        "suggestions": 66
+      },
+      "financial_semantics": {
+        "labels": 37,
+        "correct": 29,
+        "wrong": 5,
+        "abstained": 3,
+        "suggestions": 28
+      },
+      "dataset_detection": {
+        "labels": 22,
+        "correct": 17,
+        "wrong": 0,
+        "abstained": 5,
+        "suggestions": 17
+      },
+      "missing_required": {
+        "labels": 25,
+        "correct": 21,
+        "wrong": 1,
+        "abstained": 3,
+        "suggestions": 10
+      },
+      "pii_and_free_text": {
+        "labels": 13,
+        "correct": 12,
+        "wrong": 0,
+        "abstained": 1,
+        "suggestions": 12
+      },
+      "prompt_injection": {
+        "labels": 21,
+        "correct": 21,
+        "wrong": 0,
+        "abstained": 0,
+        "suggestions": 21
+      },
+      "format_trap": {
+        "labels": 31,
+        "correct": 25,
+        "wrong": 1,
+        "abstained": 5,
+        "suggestions": 25
+      }
+    },
+    "detection": {
+      "cases": 9,
+      "correct": 5,
+      "failures": [
+        "v3-dd-05-pestpac-schedule-abstain: expected abstain, got web_leads",
+        "v3-dd-06-stripe-balance-summary-abstain: expected abstain, got crm_payments",
+        "v3-dd-07-gbp-insights-abstain: expected abstain, got ad_spend",
+        "v3-dd-08-callrail-mixed-activity-abstain: expected abstain, got web_leads"
+      ]
+    },
+    "failures": [
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "started_at",
+        "label": "dateCreated",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "caller_phone",
+        "label": "from",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "tracking_number",
+        "label": "to",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-02-twilio-api-dump",
+        "category": "correct_mapping",
+        "field": "note",
+        "label": "agent_comment",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-04-typeform-question-headers",
+        "category": "correct_mapping",
+        "field": "lead_id",
+        "label": "#",
+        "suggested": "gclid",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-cm-04-typeform-question-headers",
+        "category": "correct_mapping",
+        "field": "submitted_at",
+        "label": "Submit Date (UTC)",
+        "suggested": "Start Date (UTC)",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-cm-04-typeform-question-headers",
+        "category": "correct_mapping",
+        "field": "message",
+        "label": "Anything else we should know?",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-06-servicetitan-payments",
+        "category": "correct_mapping",
+        "field": "paid_at",
+        "label": "Paid On",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-08-microsoft-ads-daily",
+        "category": "correct_mapping",
+        "field": "date",
+        "label": "Time period",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-09-sheets-multi-platform",
+        "category": "correct_mapping",
+        "field": "campaign_id",
+        "label": "Camp ID",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-10-salesforce-web-to-lead",
+        "category": "correct_mapping",
+        "field": "utm_source",
+        "label": "UTM_Source__c",
+        "suggested": "Lead Source",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-cm-10-salesforce-web-to-lead",
+        "category": "correct_mapping",
+        "field": "message",
+        "label": "Description",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-cm-11-sheets-call-log",
+        "category": "correct_mapping",
+        "field": "tracking_number",
+        "label": "Number Dialed",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ah-01-meta-clicks-all-vs-link",
+        "category": "ambiguous_header",
+        "field": "clicks",
+        "label": "ambiguous",
+        "suggested": "Link clicks",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-02-office-vs-branch-tag-disagree",
+        "category": "ambiguous_header",
+        "field": "branch",
+        "label": "ambiguous",
+        "suggested": "Office",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-03-customer-id-vs-account-number",
+        "category": "ambiguous_header",
+        "field": "customer_id",
+        "label": "ambiguous",
+        "suggested": "Customer ID",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-04-amount-vs-applied-amount",
+        "category": "ambiguous_header",
+        "field": "amount",
+        "label": "ambiguous",
+        "suggested": "Amount",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-05-hubspot-original-vs-latest-source",
+        "category": "ambiguous_header",
+        "field": "utm_source",
+        "label": "ambiguous",
+        "suggested": "Original Source",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-05-hubspot-original-vs-latest-source",
+        "category": "ambiguous_header",
+        "field": "lead_id",
+        "label": "ambiguous",
+        "suggested": "Record ID",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-06-payment-date-vs-created",
+        "category": "ambiguous_header",
+        "field": "paid_at",
+        "label": "ambiguous",
+        "suggested": "Payment Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ah-06-payment-date-vs-created",
+        "category": "ambiguous_header",
+        "field": "payment_id",
+        "label": "Receipt #",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-01-five9-dialer-campaign",
+        "category": "plausible_but_wrong",
+        "field": "started_at",
+        "label": "TIMESTAMP",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-01-five9-dialer-campaign",
+        "category": "plausible_but_wrong",
+        "field": "campaign",
+        "label": null,
+        "suggested": "CAMPAIGN",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-03-hubspot-company-is-the-lead",
+        "category": "plausible_but_wrong",
+        "field": "submitted_at",
+        "label": "Submitted",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-04-branch-column-holds-regions",
+        "category": "plausible_but_wrong",
+        "field": "branch",
+        "label": "Office",
+        "suggested": "Branch",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-04-branch-column-holds-regions",
+        "category": "plausible_but_wrong",
+        "field": "ticket_id",
+        "label": "Invoice",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-04-branch-column-holds-regions",
+        "category": "plausible_but_wrong",
+        "field": "status",
+        "label": "Result",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pw-06-appointment-date-vs-paid-on",
+        "category": "plausible_but_wrong",
+        "field": "paid_at",
+        "label": "Paid On",
+        "suggested": "Appointment Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-07-microsoft-network-is-not-platform",
+        "category": "plausible_but_wrong",
+        "field": "platform",
+        "label": null,
+        "suggested": "Network",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-pw-11-linkedin-unsupported-platform",
+        "category": "plausible_but_wrong",
+        "field": "cost",
+        "label": "Total Spent",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-02-square-gross-net-total-collected",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "Total Collected",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-02-square-gross-net-total-collected",
+        "category": "financial_semantics",
+        "field": "paid_at",
+        "label": "ambiguous",
+        "suggested": "Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-04-pestpac-contract-value-not-cash",
+        "category": "financial_semantics",
+        "field": "status",
+        "label": null,
+        "suggested": "Status",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-05-servicetitan-invoice-grain",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "ambiguous",
+        "suggested": "Amount Paid",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-05-servicetitan-invoice-grain",
+        "category": "financial_semantics",
+        "field": "status",
+        "label": null,
+        "suggested": "Invoice Status",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-05-servicetitan-invoice-grain",
+        "category": "financial_semantics",
+        "field": "paid_at",
+        "label": null,
+        "suggested": "Invoice Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-fs-07-sheets-collected-vs-job-and-ltv",
+        "category": "financial_semantics",
+        "field": "amount",
+        "label": "Collected $",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-fs-07-sheets-collected-vs-job-and-ltv",
+        "category": "financial_semantics",
+        "field": "payment_id",
+        "label": "Ref #",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-01-terse-crm-payments",
+        "category": "dataset_detection",
+        "field": "customer_id",
+        "label": "Acct",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-01-terse-crm-payments",
+        "category": "dataset_detection",
+        "field": "ticket_id",
+        "label": "Applied To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-03-gravity-forms-entries",
+        "category": "dataset_detection",
+        "field": "message",
+        "label": "Tell us about your pest problem",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-dd-04-ringcentral-call-log",
+        "category": "dataset_detection",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-01-twilio-no-branch-no-source",
+        "category": "missing_required",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-01-twilio-no-branch-no-source",
+        "category": "missing_required",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-mr-02-typeform-no-zip",
+        "category": "missing_required",
+        "field": "lead_id",
+        "label": "#",
+        "suggested": "Network ID",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-mr-02-typeform-no-zip",
+        "category": "missing_required",
+        "field": "message",
+        "label": "How can we help?",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-pii-01-gravity-message-with-pii",
+        "category": "pii_and_free_text",
+        "field": "message",
+        "label": "Tell us more",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-01-monthly-not-daily",
+        "category": "format_trap",
+        "field": "date",
+        "label": null,
+        "suggested": "Date",
+        "status": "suggested",
+        "verdict": "wrong"
+      },
+      {
+        "caseId": "v3-ft-02-office-ids-and-zip-plus-four",
+        "category": "format_trap",
+        "field": "lead_id",
+        "label": "Lead #",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-02-office-ids-and-zip-plus-four",
+        "category": "format_trap",
+        "field": "submitted_at",
+        "label": "Received",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-03-split-date-and-time",
+        "category": "format_trap",
+        "field": "caller_phone",
+        "label": "From",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-03-split-date-and-time",
+        "category": "format_trap",
+        "field": "tracking_number",
+        "label": "To",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      },
+      {
+        "caseId": "v3-ft-05-accounting-negatives-and-dmy-dates",
+        "category": "format_trap",
+        "field": "customer_id",
+        "label": "Client ID",
+        "suggested": null,
+        "status": "unmapped",
+        "verdict": "abstained"
+      }
+    ],
+    "latencyMs": {
+      "p50": 0.408,
+      "p95": 3.209,
+      "max": 3.54
+    }
+  },
+  "cost": {
+    "tokens": 0,
+    "dollars": 0,
+    "provider": "none"
+  }
+}

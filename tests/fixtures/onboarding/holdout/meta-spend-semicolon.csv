@@ -1,0 +1,9 @@
+﻿Reporting starts;Reporting ends;Day;Campaign name;Campaign ID;Account ID;Amount spent (USD);Link clicks;Results;Result indicator;Impressions
+2026-11-01;2026-11-03;2026-11-01;Oak - Lead Form;120200000000000101;1000000001;42.18;38;3;actions:onsite_conversion.lead_grouped;5120
+2026-11-01;2026-11-03;2026-11-01;"Cedar; Spring Promo";120200000000000102;1000000001;27.90;19;1;actions:onsite_conversion.lead_grouped;3302
+2026-11-01;2026-11-03;2026-11-01;"Harbor Lead Gen
+Retargeting";120200000000000103;1000000001;15.40;9;;actions:onsite_conversion.lead_grouped;1404
+2026-11-01;2026-11-03;2026-11-02;"=HYPERLINK(""http://example.test/claim"";""Spend report"")";120200000000000104;1000000001;11.25;6;1;actions:onsite_conversion.lead_grouped;880
+2026-11-01;2026-11-03;2026-11-02;Oak - Lead Form;120200000000000101;1000000001;44.02;41;2;actions:onsite_conversion.lead_grouped;5390
+2026-11-01;2026-11-03;2026-11-03;"Cedar; Spring Promo";120200000000000102;1000000001;30.10;22;0;actions:onsite_conversion.lead_grouped;3410
+2026-11-01;2026-11-03;2026-11-03;Oak - Lead Form;120200000000000101;1000000001;40.77;35;3;actions:onsite_conversion.lead_grouped;4980

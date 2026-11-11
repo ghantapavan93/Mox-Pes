@@ -19,10 +19,27 @@ async function withDemoPool<T>(fn: (pool: Pool) => Promise<T>): Promise<T> {
   }
 }
 
-/** Rebuilds the demo database from the synthetic world (about two minutes). */
+/**
+ * Rebuilds the demo database from the synthetic world (about two minutes).
+ *
+ * The app may still be processing events from the previous spec's last action (after-response
+ * consumers: reconciliation, identity). Dropping the schema under them can deadlock, and
+ * Postgres then cancels one side. When the reseed is the victim it waits and tries again: the
+ * background work finishes in seconds.
+ */
 export async function reseedDemo(): Promise<void> {
   if (process.env.SKIP_SEED) return;
-  await withDemoPool((pool) => seed(pool, { log: (line) => console.log(`[seed] ${line}`) }));
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await withDemoPool((pool) => seed(pool, { log: (line) => console.log(`[seed] ${line}`) }));
+      return;
+    } catch (error) {
+      const deadlock = (error as { code?: string }).code === "40P01";
+      if (!deadlock || attempt >= 4) throw error;
+      console.log(`[seed] deadlocked with background work (attempt ${attempt}); retrying in 3 s`);
+      await new Promise((resolve) => setTimeout(resolve, 3_000));
+    }
+  }
 }
 
 /** The CRM records of one serviced synthetic customer, shaped like FieldRoutes sends them. */

@@ -1,0 +1,12 @@
+Campaign report
+"November 1, 2026 - November 3, 2026"
+Day,Campaign,Campaign ID,Campaign status,Currency code,Impr.,Clicks,Cost,Conversions
+2026-11-01,Alder - Termite - Search,20481516001,Enabled,USD,1840,52,187.40,4.00
+2026-11-01,Granite - General Pest,20481516002,Enabled,USD,960,21,64.12,1.00
+2026-11-01,Cedar - Rodent - Brand,20481516003,Paused,USD,0,0,0.00,0.00
+2026-11-02,Alder - Termite - Search,20481516001,Enabled,USD,9120,310,"1,234.56",11.00
+2026-11-02,Granite - General Pest,20481516002,Enabled,USD,1011,24,70.05,1.50
+2026-11-03,Alder - Termite - Search,20481516001,Enabled,USD,1712,47,171.05,3.00
+2026-11-03,Granite - General Pest,20481516002,Enabled,USD,988,22,66.80,2.00
+Total: Campaigns,,,,USD,15631,476,"1,793.98",22.50
+Total: Account,,,,USD,15631,476,"1,793.98",22.50

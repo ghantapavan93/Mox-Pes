@@ -172,3 +172,19 @@ because `notFound()` runs after streaming has started. Documented Next.js behavi
 (`node_modules/next/dist/docs/.../not-found.md`); a true 404 would need the lookup in Proxy,
 before rendering. Overview is the slowest page (about 1.1 s server time, local), all of it metric
 SQL, which this pass did not touch.
+
+## Adversarial and onboarding pass (2026-11-11)
+
+Records: `docs/agent-work/` (start with `README.md` there).
+
+| Suite | What it proves |
+|---|---|
+| `tests/integration/adversarial-intake.test.ts` | 36 hostile inputs through the live intake path; 8 defects found and fixed (impossible dates rolled to other days, padded ids, float money, a throwing mapper failing its batch, an unbounded push body, quadratic redaction) |
+| `tests/integration/onboarding.test.ts` | The onboarding workflow end to end on held-out exports: questions, quarantine, ledger comparison to the cent, separation of duties (service and schema), publication bound to the reviewed dry run, retention on every path |
+| `tests/unit/onboarding-parse.test.ts` | Parser, XLSX reader (macros, bombs, encryption, escaping paths), value transforms, DST gaps and repeated hours |
+| `tests/unit/onboarding-review.test.ts` | One test per independent-review finding, using the reviewer's counterexample |
+| `tests/unit/onboarding-eval.test.ts` | The schema assistant may not become less safe on any evaluation set |
+| `tests/e2e/z-onboarding.spec.ts` | The workflow in the browser as two roles; onboarding pages are also in the axe, layout-shift, hostile-input and four-width layout gates |
+
+Evaluation: `npm run eval:mapping -- --set=v3 --failures`. Benchmark: `npm run bench:onboarding -- --ingest`.
+Demo exports: `npm run demo:exports` after `npm run db:seed`.

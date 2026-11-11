@@ -78,15 +78,17 @@ async function Customers({ searchParams }: { searchParams: SearchParams }) {
         }
       />
 
-      {/* Fallbacks are the size of what replaces them, so nothing below moves when they resolve (CLS). */}
-      <Suspense fallback={<TilesPlaceholder />}>
-        <OverviewTiles scope={scope} href={href} lifecycle={lifecycle} />
-      </Suspense>
+      {/*
+        The tiles and the review queue render with the page (inside its one boundary), not behind
+        their own fallbacks. Their heights depend on the data (the tiles are 110 px, not the 90 px a
+        placeholder guessed; the queue is one line or a list), and when they streamed in after the
+        directory below had painted, it moved: CLS 0.116 at 1440 px on a cold load. Both queries
+        run in parallel with the directory's, so the wait is the slowest of them.
+      */}
+      <OverviewTiles scope={scope} href={href} lifecycle={lifecycle} />
 
       {/* Decisions before browsing: the review queue sits above the directory. */}
-      <Suspense fallback={<div aria-hidden className="h-[108px] animate-pulse rounded-lg bg-sunken md:h-[68px]" />}>
-        <ReviewQueue scope={scope} viewer={viewer} />
-      </Suspense>
+      <ReviewQueue scope={scope} viewer={viewer} />
 
       <Card
         title="Customer and prospect directory"
@@ -111,20 +113,6 @@ async function Customers({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-/** Same grid and tile height as OverviewTiles (90 px tiles, one caption line). */
-function TilesPlaceholder() {
-  return (
-    <div className="space-y-2" role="status" aria-busy="true">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} aria-hidden className="h-[90px] animate-pulse rounded-lg bg-sunken" />
-        ))}
-      </div>
-      <div aria-hidden className="h-4" />
-      <span className="sr-only">Loading…</span>
-    </div>
-  );
-}
 
 async function OverviewTiles({
   scope,

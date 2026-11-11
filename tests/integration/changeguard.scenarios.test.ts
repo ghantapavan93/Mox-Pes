@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
-import { mapCampaignToBranch } from "@/lib/actions";
+import { mapCampaignToBranch, overrideLeadBranch } from "@/lib/actions";
 import { groundDraft } from "@/lib/ai/analyst";
 import type { DraftFindings } from "@/lib/ai/contract";
 import { createChange, decideChange, getChange, listChanges, monitorChange, releaseChange, rerunPreflight, type ChangeRow } from "@/lib/changeguard/service";
@@ -137,7 +137,7 @@ describe("Scenario A · a new campaign mapped to the wrong branch", () => {
     await ingest(pool, "calls", [0, 1, 2].map((i) => call(`CG-44-late-${i}`, "B43", `+1480555${String(2000 + i)}`, later, "Google LSA", { campaign: "lsa-B44-x" })), { now: later });
     const monitored = await monitorChange(pool, marketing, corrected.id, later);
     expect(monitored.status).toBe("recovery_required");
-    expect(monitored.verification!.checks.find((c) => c.id === "evidence_since_release")).toMatchObject({ passed: false });
+    expect(monitored.verification!.monitor!.find((c) => c.id === "evidence_since_release")).toMatchObject({ passed: false });
     expect(await one(pool, "select branch_id from campaign_branch_map where campaign_id = $1", [b44CampaignId])).toEqual({ branch_id: "B44" });
   });
 });
@@ -261,6 +261,67 @@ describe("Scenario H · an AI conclusion that the change increased revenue", () 
     expect(report.claimsDropped).toBe(1);
     expect(report.dropped[0].reason).toMatch(/measured experiment/);
     expect(kept.observations.map((o) => o.text)).toEqual(["The change may have increased revenue; this is not measured.", "Spend of $500.00 moved from unallocated to B44."]);
+  });
+});
+
+describe("independent review findings (each failed before its fix)", () => {
+  const newCampaign = async (externalId: string, name: string, leads: Array<[string, number]>) => {
+    await ingest(pool, "ads", [1, 2].map((d) => spend(externalId, name, "google_ads", d, 20)), { now: NOW });
+    let i = 0;
+    const calls = leads.flatMap(([branch, n]) => Array.from({ length: n }, () => call(`${externalId}-${i++}`, branch, `+1520555${String(4000 + i)}`, at(4), "Google Ads", { campaign: externalId })));
+    if (calls.length) await ingest(pool, "calls", calls, { now: NOW });
+    return Number((await one<{ id: string }>(pool, "select id from ad_campaigns where external_campaign_id = $1", [externalId])).id);
+  };
+
+  it("monitoring needs a role that may propose or approve (a guest could flip a released change)", async () => {
+    const released = (await listChanges(pool, approver)).find((c) => c.status === "recovery_required")!;
+    await expect(monitorChange(pool, VIEWERS.guest, released.id, NOW)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("evidence drifting across the 50% line between approval and release invalidates the approval", async () => {
+    const id = await newCampaign("gs-B07-x", "B07 | Search | Drift", [["B07", 5], ["B08", 3], ["B10", 2]]);
+    const change = await createChange(pool, marketing, { kind: "campaign_mapping", payload: { campaignId: id, branchId: "B07" }, reason: "Half of the leads land at B07" }, NOW);
+    expect(change.preflight!.checks.find((c) => c.id === "mapping_coverage")).toMatchObject({ status: "warn", code: "LEAD_EVIDENCE_SPLIT" });
+    await decideChange(pool, approver, change.id, { decision: "approve", reason: "Split, but B07 holds half", configHash: change.configHash, preflightHash: change.preflightHash! }, NOW);
+    // Same branches, same top branch, but B07 now holds 5 of 13: the coverage rule would fail.
+    await ingest(pool, "calls", [call("gs-B07-x-late-1", "B08", "+15205559001", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-2", "B10", "+15205559002", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-3", "B10", "+15205559003", at(5), "Google Ads", { campaign: "gs-B07-x" })], { now: NOW });
+    await expect(releaseChange(pool, marketing, change.id, NOW)).rejects.toMatchObject({ status: 409 });
+    expect((await getChange(pool, approver, change.id)).change.status).toBe("draft");
+  });
+
+  it("a remap across brands is refused even when no lead carries the campaign id", async () => {
+    const id = await newCampaign("fb-B01-nolead", "Prospecting without ids", []);
+    await mapCampaignToBranch(pool, { campaignId: id, branchId: "B01", actor: "setup", reason: "fixture mapping", now: NOW });
+    const change = await createChange(pool, marketing, { kind: "campaign_mapping", payload: { campaignId: id, branchId: "B44" }, reason: "Move the campaign to Willow" }, NOW);
+    expect(change.preflight!.checks.find((c) => c.id === "mapping_coverage")).toMatchObject({ code: "NO_LEAD_EVIDENCE" });
+    expect(change.preflight!.checks.find((c) => c.id === "mapping_collision")).toMatchObject({ status: "fail", code: "CROSS_BRAND" });
+  });
+
+  it("lead evidence follows a person's branch override, as the metrics do", async () => {
+    const id = await newCampaign("gs-B03-o", "B03 | Search | Override", [["B03", 2]]);
+    const lead = await one<{ id: string }>(pool, "select id from leads where campaign_external_id = 'gs-B03-o' order by id limit 1");
+    await overrideLeadBranch(pool, { leadId: Number(lead.id), branchId: "B02", actor: "setup", reason: "caller was in B02", now: NOW });
+    const change = await createChange(pool, marketing, { kind: "campaign_mapping", payload: { campaignId: id, branchId: "B03" }, reason: "Map to where its leads land" }, NOW);
+    expect(change.preflight!.checks.find((c) => c.id === "mapping_coverage")!.evidence).toEqual({ leadEvidence: [{ branchId: "B02", leads: 1 }, { branchId: "B03", leads: 1 }] });
+    expect(change.preflight!.unrelatedBranchesChanged).toEqual([]);
+  });
+
+  it("a scoped role cannot read a company-wide source check, and nobody can supersede another author's change", async () => {
+    const source = (await listChanges(pool, approver)).find((c) => c.kind === "source_contract")!;
+    await expect(getChange(pool, partner, source.id)).rejects.toBeInstanceOf(ForbiddenError);
+    const theirs = (await listChanges(pool, approver)).find((c) => c.kind === "campaign_mapping" && c.status === "preflight_failed" && c.authorSubject === "demo:marketing")!;
+    await expect(
+      createChange(pool, engineer, { kind: "campaign_mapping", payload: { campaignId: b01CampaignId, branchId: "B02" }, reason: "Taking over someone else's change", supersedes: theirs.id }, NOW),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("the release checks are real: spend moved exactly, and nothing unrelated moved", async () => {
+    const verified = (await listChanges(pool, approver)).find((c) => c.title.startsWith("lsa-B44-x") && c.verification)!;
+    const ids = verified.verification!.checks.map((c) => `${c.id}:${c.passed}`);
+    expect(ids).toEqual(["applied:true", "spend_moved_exactly:true", "unrelated_unchanged:true", "predicted_exceptions_cleared:true"]);
+    expect(verified.verification!.checks[1].detail).toBe("B44 gained exactly $500.00 of paid spend from unallocated.");
+    // Monitoring replaced, never appended: the release checks are still the four above.
+    expect(verified.verification!.monitor?.map((c) => c.id)).toEqual(["still_applied", "evidence_since_release"]);
   });
 });
 

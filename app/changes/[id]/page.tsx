@@ -258,6 +258,20 @@ async function Change({ params }: { params: Params }) {
                   </li>
                 ))}
               </ul>
+              {change.verification.monitor && (
+                <ul className="space-y-1" aria-label="Monitoring">
+                  {change.verification.monitor.map((c) => (
+                    <li key={c.id} className="flex gap-2">
+                      <span aria-hidden className={c.passed ? "text-good" : "text-bad"}>
+                        {c.passed ? "✓" : "✗"}
+                      </span>
+                      <span>
+                        <span className="font-medium">monitoring, {c.layer.replace("_", " ")}</span>: {c.detail}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <p className="text-muted">
                 Measured business improvement: <strong>not measured</strong>. A correct configuration is not evidence of more revenue; that needs an experiment.
               </p>

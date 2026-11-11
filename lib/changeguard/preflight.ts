@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { mapCampaignToBranchInTransaction } from "@/lib/actions";
+import { ActionError, mapCampaignToBranchInTransaction } from "@/lib/actions";
 import type { RawRecord, SourceName } from "@/lib/adapters/contract";
 import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/registry";
 import type { Queryable } from "@/lib/db";
@@ -47,6 +47,8 @@ export interface CampaignBase {
   lineage: Array<{ campaignId: number; relation: "predecessor" | "successor"; branchId: string | null }>;
   spendCents: number;
   spendDays: { first: string | null; last: string | null; days: number };
+  /** Media spend inside the reporting window: exactly what a mapping moves between branches' paid spend. */
+  mediaSpendInWindowCents: number;
 }
 
 export async function readCampaignBase(db: Queryable, campaignId: number): Promise<CampaignBase | null> {
@@ -57,12 +59,12 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
   );
   if (c.rowCount === 0) return null;
   const row = c.rows[0];
-  const [evidence, lineage, spend] = await Promise.all([
-    db.query<{ branch_id: string; n: string }>(
-      "select branch_id, count(*) as n from leads where campaign_external_id = $1 group by branch_id order by count(*) desc, branch_id",
+  // Sequential: `db` may be a single transaction client, which must not run queries concurrently.
+  const evidence = await db.query<{ branch_id: string; n: string }>(
+      "select effective_branch_id as branch_id, count(*) as n from v_leads where campaign_external_id = $1 group by effective_branch_id order by count(*) desc, effective_branch_id",
       [row.external_campaign_id],
-    ),
-    db.query<{ campaign_id: string; relation: "predecessor" | "successor"; branch_id: string | null }>(
+    );
+  const lineage = await db.query<{ campaign_id: string; relation: "predecessor" | "successor"; branch_id: string | null }>(
       `select l.predecessor_campaign_id as campaign_id, 'predecessor' as relation, m.branch_id
          from campaign_lineage l left join campaign_branch_map m on m.campaign_id = l.predecessor_campaign_id
         where l.successor_campaign_id = $1
@@ -71,12 +73,13 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
          from campaign_lineage l left join campaign_branch_map m on m.campaign_id = l.successor_campaign_id
         where l.predecessor_campaign_id = $1`,
       [campaignId],
-    ),
-    db.query<{ cents: string | null; first: string | null; last: string | null; days: string }>(
-      "select sum(cost_cents) as cents, min(spend_date)::text as first, max(spend_date)::text as last, count(distinct spend_date) as days from ad_spend_daily where campaign_id = $1",
-      [campaignId],
-    ),
-  ]);
+    );
+  const spend = await db.query<{ cents: string | null; first: string | null; last: string | null; days: string; media_in_window: string | null }>(
+      `select sum(s.cost_cents) as cents, min(s.spend_date)::text as first, max(s.spend_date)::text as last, count(distinct s.spend_date) as days,
+              sum(s.cost_cents) filter (where ch.cost_basis = 'media' and s.spend_date >= ($2::timestamptz at time zone 'UTC')::date and s.spend_date < ($3::timestamptz at time zone 'UTC')::date) as media_in_window
+       from ad_spend_daily s join channels ch on ch.code = s.channel_code where s.campaign_id = $1`,
+      [campaignId, PERIODS.all.from, PERIODS.all.to],
+    );
   return {
     campaignId: Number(row.id),
     externalCampaignId: row.external_campaign_id,
@@ -88,6 +91,7 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
     lineage: lineage.rows.map((r) => ({ campaignId: Number(r.campaign_id), relation: r.relation, branchId: r.branch_id })),
     spendCents: Number(spend.rows[0].cents ?? 0),
     spendDays: { first: spend.rows[0].first, last: spend.rows[0].last, days: Number(spend.rows[0].days) },
+    mediaSpendInWindowCents: Number(spend.rows[0].media_in_window ?? 0),
   };
 }
 
@@ -97,10 +101,23 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
  * stale. Lead counts are deliberately not hashed (they grow every day); the branches they point
  * to are.
  */
-export function baseHashOf(base: CampaignBase): string {
+export type EvidenceVerdict = "none" | "agrees" | "split" | "disagrees";
+
+/** How the campaign's leads relate to a proposed branch: the rule the coverage check applies. */
+export function evidenceVerdict(base: CampaignBase, branchId: string): EvidenceVerdict {
+  const total = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
+  if (total === 0) return "none";
+  const at = base.leadEvidence.find((e) => e.branchId === branchId)?.leads ?? 0;
+  if (at / total < 0.5) return "disagrees";
+  return at < total ? "split" : "agrees";
+}
+
+export function baseHashOf(base: CampaignBase, branchId: string): string {
   return sha256(
     canonicalJson({
       currentBranchId: base.currentBranchId,
+      // The coverage verdict itself: evidence that drifts across the 50% line changes the hash.
+      verdict: evidenceVerdict(base, branchId),
       evidenceBranches: base.leadEvidence.map((e) => e.branchId).sort(),
       majority: base.leadEvidence[0]?.branchId ?? null,
       lineage: base.lineage,
@@ -116,11 +133,10 @@ interface Snapshot {
 
 async function snapshot(tx: Queryable): Promise<Snapshot> {
   const period = PERIODS.all;
-  const [rows, open, total] = await Promise.all([
-    branchRows(tx, { from: period.from, to: period.to, branchIds: null }),
-    tx.query<{ fingerprint: string; kind: string; summary: string }>("select fingerprint, kind, summary from exceptions where status = 'open'"),
-    tx.query<{ cents: string | null }>("select sum(cost_cents) as cents from ad_spend_daily"),
-  ]);
+  // Sequential: one transaction client.
+  const rows = await branchRows(tx, { from: period.from, to: period.to, branchIds: null });
+  const open = await tx.query<{ fingerprint: string; kind: string; summary: string }>("select fingerprint, kind, summary from exceptions where status = 'open'");
+  const total = await tx.query<{ cents: string | null }>("select sum(cost_cents) as cents from ad_spend_daily");
   return {
     rows: new Map(rows.map((r) => [r.branchId, { paidSpendCents: r.paidSpendCents, paidAcquired: r.paidAcquired, paidCacCents: paidCac(r.paidSpendCents, r.paidAcquired), canonical: canonicalJson(r) }])),
     open: new Map(open.rows.map((r) => [r.fingerprint, { kind: r.kind, summary: r.summary }])),
@@ -129,13 +145,22 @@ async function snapshot(tx: Queryable): Promise<Snapshot> {
 }
 
 /** The production write: the Action Center's mapping core for a new mapping, the same rule for a remap. */
-export async function applyCampaignMapping(tx: PoolClient, args: { campaignId: number; branchId: string; actor: string; reason: string; now: Date }): Promise<void> {
-  const current = await tx.query<{ branch_id: string }>("select branch_id from campaign_branch_map where campaign_id = $1", [args.campaignId]);
+export async function applyCampaignMapping(
+  tx: PoolClient,
+  args: { campaignId: number; branchId: string; actor: string; reason: string; now: Date; expectedPrevious?: string | null },
+): Promise<void> {
+  // Serialise with every other mapping write first, then re-read: a mapping made since the
+  // caller looked must never be silently overwritten.
+  await lockReconcile(tx);
+  const current = await tx.query<{ branch_id: string }>("select branch_id from campaign_branch_map where campaign_id = $1 for update", [args.campaignId]);
+  const now = current.rows[0]?.branch_id ?? null;
+  if (args.expectedPrevious !== undefined && now !== args.expectedPrevious) {
+    throw new ActionError(`The campaign maps to ${now ?? "no branch"} now, not ${args.expectedPrevious ?? "no branch"} as reviewed`, 409);
+  }
   if (current.rowCount === 0) {
     await mapCampaignToBranchInTransaction(tx, args);
     return;
   }
-  await lockReconcile(tx);
   await tx.query("update campaign_branch_map set branch_id = $2, mapped_by = $3, mapped_at = $4 where campaign_id = $1", [args.campaignId, args.branchId, args.actor, args.now]);
   await tx.query("insert into audit_log (at, actor, action, subject, detail) values ($1, $2, 'remap_campaign', $3, $4)", [
     args.now,
@@ -201,7 +226,8 @@ export async function preflightCampaignMapping(
   const totalLeads = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
   const atTarget = base.leadEvidence.find((e) => e.branchId === target.id)?.leads ?? 0;
   const majority = base.leadEvidence[0] ?? null;
-  const evidenceBrands = new Set(base.leadEvidence.map((e) => BRANCH_BY_ID.get(e.branchId)?.brandId).filter(Boolean));
+  const majorityBrand = majority ? BRANCH_BY_ID.get(majority.branchId)?.brandId ?? null : null;
+  const previousBrand = previous ? BRANCH_BY_ID.get(previous)?.brandId ?? null : null;
   const nameBranch = /^(B\d{2})\b/.exec(base.name)?.[1] ?? null;
   if (previous === target.id) {
     checks.push({ id: "mapping_coverage", status: "fail", code: "NO_CHANGE", detail: `The campaign already maps to ${target.id}; this change would do nothing.` });
@@ -236,10 +262,16 @@ export async function preflightCampaignMapping(
   const collisions: string[] = [];
   let collisionStatus: PreflightCheck["status"] = "pass";
   let collisionCode: string | undefined;
-  if (evidenceBrands.size > 0 && !evidenceBrands.has(target.brandId)) {
+  // A campaign belongs to one brand's account: the brand of most of its leads, or for a remap the
+  // brand it maps to now. Moving it to another brand is a cross-brand transfer, never routine.
+  if (majorityBrand && majorityBrand !== target.brandId) {
     collisionStatus = "fail";
     collisionCode = "CROSS_BRAND";
-    collisions.push(`${target.id} belongs to brand "${target.brandId}", but this campaign's leads arrive at brand "${[...evidenceBrands].join(", ")}" branches.`);
+    collisions.push(`${target.id} belongs to brand "${target.brandId}", but most of this campaign's leads arrive at brand "${majorityBrand}".`);
+  } else if (previousBrand && previousBrand !== target.brandId) {
+    collisionStatus = "fail";
+    collisionCode = "CROSS_BRAND";
+    collisions.push(`The campaign maps to ${previous} (brand "${previousBrand}") now; moving it to brand "${target.brandId}" is a cross-brand transfer.`);
   }
   const lineageElsewhere = base.lineage.filter((l) => l.branchId !== null && l.branchId !== target.id);
   if (lineageElsewhere.length > 0) {
@@ -305,10 +337,20 @@ export async function preflightCampaignMapping(
   const opened = [...after.open].filter(([f]) => !before.open.has(f)).map(([fingerprint, v]) => ({ fingerprint, ...v }));
   const cleared = [...before.open].filter(([f]) => !after.open.has(f)).map(([fingerprint, v]) => ({ fingerprint, ...v }));
 
+  // Money moves, it is not created: the proposed branch gains exactly the campaign's media spend in
+  // the window, the previous branch loses exactly that, and company spend is unchanged.
+  const moved = base.mediaSpendInWindowCents;
+  const delta = (b: string | null) => (b ? (after.rows.get(b)?.paidSpendCents ?? 0) - (before.rows.get(b)?.paidSpendCents ?? 0) : 0);
+  const exact = delta(target.id) === moved && (previous === null || delta(previous) === -moved) && before.totalSpendCents === after.totalSpendCents;
   checks.push(
-    before.totalSpendCents === after.totalSpendCents
-      ? { id: "financial_precision", status: "pass", detail: `Company spend is unchanged to the cent (${dollars(before.totalSpendCents)}); the change only moves ${dollars(base.spendCents)} between branches.` }
-      : { id: "financial_precision", status: "fail", code: "SPEND_NOT_CONSERVED", detail: `Company spend changed from ${dollars(before.totalSpendCents)} to ${dollars(after.totalSpendCents)} in the preview.` },
+    exact
+      ? { id: "financial_precision", status: "pass", detail: `${target.id} gains exactly ${dollars(moved)} of paid spend${previous ? `, ${previous} loses exactly that` : " (from unallocated)"}; company spend is unchanged to the cent (${dollars(before.totalSpendCents)}).` }
+      : {
+          id: "financial_precision",
+          status: "fail",
+          code: "SPEND_NOT_CONSERVED",
+          detail: `Expected ${target.id} +${dollars(moved)}${previous ? ` and ${previous} −${dollars(moved)}` : ""}; the preview moved ${dollars(delta(target.id))}${previous ? ` and ${dollars(delta(previous))}` : ""} (company spend ${dollars(before.totalSpendCents)} → ${dollars(after.totalSpendCents)}).`,
+        },
   );
   const fmtCac = (c: number | null) => (c === null ? "n/a" : dollars(c));
   checks.push({
@@ -351,7 +393,7 @@ export async function preflightCampaignMapping(
     dependentMetrics: dependenciesOf("campaign_branch_map"),
     limitations,
   };
-  return { result, baseHash: baseHashOf(base), base };
+  return { result, baseHash: baseHashOf(base, target.id), base };
 }
 
 function shapeOf(value: unknown, prefix = ""): string[] {

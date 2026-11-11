@@ -2,7 +2,10 @@ import type { Pool, PoolClient } from "pg";
 import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import { getNow, withRollback, withTransaction, type Queryable } from "@/lib/db";
-import { money } from "@/lib/format";
+import { branchRows } from "@/lib/metrics/scorecard";
+import { PERIODS } from "@/lib/period";
+import { canonicalJson } from "@/lib/primitives";
+import { lockReconcile } from "@/lib/reconcile/reconcile";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import {
   assertChangeTransition,
@@ -16,6 +19,9 @@ import {
   type PreflightResult,
 } from "./model";
 import { applyCampaignMapping, baseHashOf, preflightCampaignMapping, preflightSourceContract, readCampaignBase } from "./preflight";
+
+/** Exact to the cent: an "exactly" claim must not be rounded for display. */
+const exactMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export interface ChangeRow {
   id: number;
@@ -52,7 +58,10 @@ export interface VerificationCheck {
 }
 
 export interface Verification {
+  /** Checked in the release transaction. */
   checks: VerificationCheck[];
+  /** The latest post-release monitoring run (replaced on every run). */
+  monitor?: VerificationCheck[];
   /** Never claimed by this system: a measured business improvement needs an experiment. */
   businessImprovement: "not measured";
   at: string;
@@ -98,6 +107,8 @@ function branchesOf(row: Pick<ChangeRow, "kind" | "payload" | "base">): string[]
 
 function assertScope(viewer: Viewer, branches: string[], action: string): void {
   if (viewer.branchIds === null) return;
+  // A change that names no branch (a source contract check) spans every branch: company-wide roles only.
+  if (branches.length === 0) throw new ForbiddenError(`${viewer.label} cannot ${action}: it is not limited to your branches`);
   const outside = branches.filter((b) => !viewer.branchIds!.includes(b));
   if (outside.length > 0) throw new ForbiddenError(`${viewer.label} cannot ${action}: ${outside.join(", ")} is outside your branches`);
 }
@@ -144,6 +155,10 @@ async function runPreflight(pool: Pool, row: Pick<ChangeRow, "id" | "kind" | "pa
 async function storePreflight(pool: Pool, id: number, viewer: Viewer, pre: Awaited<ReturnType<typeof runPreflight>>, now: Date): Promise<ChangeRow> {
   return withTransaction(pool, async (tx) => {
     const row = await loadForUpdate(tx, id);
+    // Checked under the row lock: an approval that committed while the preflight ran is not undone.
+    if (!["draft", "preflight_failed", "ready_for_review"].includes(row.status)) {
+      throw new ActionError(`The change became ${row.status} while the preflight ran; nothing was changed`, 409);
+    }
     const to: ChangeStatus = pre.result.verdict === "fail" ? "preflight_failed" : "ready_for_review";
     // A failed or stale review goes back to draft first; the state machine names each step.
     if (row.status !== "draft") {
@@ -189,6 +204,7 @@ export async function createChange(pool: Pool, viewer: Viewer, input: NewChange 
     if (input.supersedes) {
       const old = await loadForUpdate(tx, input.supersedes);
       if (old.kind !== input.kind) throw new ActionError("A resubmission must keep the change kind", 400);
+      if (old.authorSubject !== viewer.subject) throw new ForbiddenError("Only the author can resubmit their own change; propose a new one instead");
       assertChangeTransition(old.status, "superseded");
       await tx.query("update config_changes set status = 'superseded' where id = $1", [old.id]);
       await recordEvent(tx, old.id, old.status, "superseded", viewer, at);
@@ -244,8 +260,9 @@ export async function decideChange(pool: Pool, viewer: Viewer, id: number, input
       throw new ActionError("A source contract check stops at review: activating a mapper version is a code deploy", 409);
     }
     if (input.decision === "approve" && row.kind === "campaign_mapping") {
-      const base = await readCampaignBase(tx, CampaignMappingPayload.parse(row.payload).campaignId);
-      if (!base || baseHashOf(base) !== row.baseHash) throw new ActionError("The mapping or its evidence changed since the preflight: re-run it before approving", 409);
+      const payload = CampaignMappingPayload.parse(row.payload);
+      const base = await readCampaignBase(tx, payload.campaignId);
+      if (!base || baseHashOf(base, payload.branchId) !== row.baseHash) throw new ActionError("The mapping or its evidence changed since the preflight: re-run it before approving", 409);
     }
     const to: ChangeStatus = input.decision === "approve" ? "approved" : "rejected";
     assertChangeTransition(row.status, to);
@@ -258,19 +275,18 @@ export async function decideChange(pool: Pool, viewer: Viewer, id: number, input
   });
 }
 
-async function liveBranchState(tx: Queryable, campaignId: number) {
-  const { rows } = await tx.query<{ branch_id: string | null; total: string | null }>(
-    `select (select branch_id from campaign_branch_map where campaign_id = $1) as branch_id, (select sum(cost_cents) from ad_spend_daily) as total`,
-    [campaignId],
-  );
-  return { branchId: rows[0].branch_id, totalSpendCents: Number(rows[0].total ?? 0) };
+/** Every branch's reporting row, keyed by branch, for before/after comparison inside one transaction. */
+async function allBranchRows(tx: Queryable) {
+  const rows = await branchRows(tx, { from: PERIODS.all.from, to: PERIODS.all.to, branchIds: null });
+  return new Map(rows.map((r) => [r.branchId, r]));
 }
 
 /**
  * Releases an approved campaign mapping inside the synthetic environment, then verifies it in
- * the same transaction. The approval's bindings are re-checked under the row lock: the payload
- * still hashes to the approved configuration, and the base still hashes to what was reviewed.
- * If the base moved, the approval is invalidated (back to draft) instead of releasing.
+ * the same transaction. Under the change's row lock and the mapping lock, the approval's
+ * bindings are re-checked: the payload still hashes to the approved configuration, and the base
+ * (mapping, evidence verdict, lineage) still hashes to what was reviewed. If the base moved, the
+ * approval is invalidated (back to draft) instead of releasing.
  */
 export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?: Date): Promise<ChangeRow> {
   if (!viewer.can.propose) throw new ForbiddenError(`${viewer.label} cannot release configuration changes`);
@@ -282,22 +298,26 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
     if (row.status !== "approved") throw new ActionError(`Only an approved change can be released (this one is ${row.status})`, 409);
     const payload = CampaignMappingPayload.parse(row.payload);
     if (configHash(row.kind, payload) !== row.configHash) throw new ActionError("The stored configuration no longer matches its approved hash", 409);
+    // Take the mapping lock BEFORE reading the base, so no mapping write lands between the check and the apply.
+    await lockReconcile(tx);
     const base = await readCampaignBase(tx, payload.campaignId);
-    if (!base || baseHashOf(base) !== row.baseHash) {
+    if (!base || baseHashOf(base, payload.branchId) !== row.baseHash) {
       assertChangeTransition("approved", "draft");
       await tx.query("update config_changes set status = 'draft', approved_subject = null, approved_role = null, approved_at = null where id = $1", [id]);
       await recordEvent(tx, id, "approved", "draft", viewer, at, { why: "approval invalidated: the mapping or its evidence changed since review" });
       return { stale: true as const };
     }
-    const before = await liveBranchState(tx, payload.campaignId);
+    const previous = base.currentBranchId;
+    const evidence = base.leadEvidence.map((e) => e.branchId);
+    const before = await allBranchRows(tx);
     const versions = await tx.query<{ v: number | null }>("select max(version) as v from campaign_mapping_versions where campaign_id = $1", [payload.campaignId]);
     let version = versions.rows[0].v ?? 0;
     if (version === 0) {
       // First time ChangeGuard touches this campaign: record the mapping as found as version 1.
       version = 1;
-      await tx.query("insert into campaign_mapping_versions (campaign_id, version, branch_id, change_id, recorded_by, recorded_at) values ($1, 1, $2, null, 'as found', $3)", [payload.campaignId, before.branchId, at]);
+      await tx.query("insert into campaign_mapping_versions (campaign_id, version, branch_id, change_id, recorded_by, recorded_at) values ($1, 1, $2, null, 'as found', $3)", [payload.campaignId, previous, at]);
     }
-    await applyCampaignMapping(tx, { campaignId: payload.campaignId, branchId: payload.branchId, actor: viewer.role, reason: `config change ${id}`, now: at });
+    await applyCampaignMapping(tx, { campaignId: payload.campaignId, branchId: payload.branchId, actor: viewer.role, reason: `config change ${id}`, now: at, expectedPrevious: previous });
     await tx.query("insert into campaign_mapping_versions (campaign_id, version, branch_id, change_id, recorded_by, recorded_at) values ($1, $2, $3, $4, $5, $6)", [
       payload.campaignId,
       version + 1,
@@ -309,26 +329,41 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
     await tx.query("update config_changes set status = 'monitoring', released_by = $2, released_at = $3 where id = $1", [id, viewer.subject, at]);
     await recordEvent(tx, id, "approved", "monitoring", viewer, at, { version: version + 1 });
 
-    const after = await liveBranchState(tx, payload.campaignId);
-    const predicted = row.preflight!;
+    const live = await tx.query<{ branch_id: string | null }>("select branch_id from campaign_branch_map where campaign_id = $1", [payload.campaignId]);
+    const after = await allBranchRows(tx);
+    const spend = (m: typeof before, b: string | null) => (b ? (m.get(b)?.paidSpendCents ?? 0) : 0);
+    const moved = base.mediaSpendInWindowCents;
+    const gained = spend(after, payload.branchId) - spend(before, payload.branchId);
+    const exact = gained === moved && (previous === null || spend(after, previous) - spend(before, previous) === -moved);
+    const touched = new Set([payload.branchId, ...(previous ? [previous] : []), ...evidence]);
+    const unrelated = [...before.keys()].filter((b) => !touched.has(b) && canonicalJson(before.get(b)) !== canonicalJson(after.get(b)));
     const open = await tx.query<{ fingerprint: string }>("select fingerprint from exceptions where status = 'open'");
     const openNow = new Set(open.rows.map((r) => r.fingerprint));
-    const notCleared = predicted.exceptionsCleared.filter((e) => openNow.has(e.fingerprint));
-    const audit = await tx.query("select 1 from audit_log where subject = $1 and action in ('map_campaign', 'remap_campaign') and at = $2", [`campaign:${payload.campaignId}`, at]);
+    const predictedCleared = row.preflight?.exceptionsCleared ?? [];
+    const notCleared = predictedCleared.filter((e) => openNow.has(e.fingerprint));
     const checks: VerificationCheck[] = [
-      { id: "applied", layer: "configuration", passed: after.branchId === payload.branchId, detail: `The live mapping is ${after.branchId ?? "unmapped"} (approved: ${payload.branchId}); recorded as version ${version + 1}.` },
-      { id: "spend_conserved", layer: "data_integrity", passed: before.totalSpendCents === after.totalSpendCents, detail: `Company spend ${before.totalSpendCents === after.totalSpendCents ? "unchanged to the cent" : "CHANGED"} across the release (${money(before.totalSpendCents)} → ${money(after.totalSpendCents)}).` },
-      { id: "predicted_exceptions_cleared", layer: "data_integrity", passed: notCleared.length === 0, detail: notCleared.length === 0 ? `${predicted.exceptionsCleared.length} exception(s) cleared as the preflight predicted.` : `${notCleared.length} exception(s) the preflight expected to clear are still open.` },
-      { id: "audit", layer: "operational", passed: (audit.rowCount ?? 0) > 0, detail: "The mapping write is in the audit log with its actor and time." },
+      { id: "applied", layer: "configuration", passed: live.rows[0]?.branch_id === payload.branchId, detail: `The live mapping is ${live.rows[0]?.branch_id ?? "unmapped"} (approved: ${payload.branchId}); recorded as version ${version + 1}.` },
+      {
+        id: "spend_moved_exactly",
+        layer: "data_integrity",
+        passed: exact,
+        detail: exact
+          ? `${payload.branchId} gained exactly ${exactMoney(moved)} of paid spend${previous ? `; ${previous} lost exactly that` : " from unallocated"}.`
+          : `Expected ${payload.branchId} +${exactMoney(moved)}; it moved ${exactMoney(gained)}.`,
+      },
+      { id: "unrelated_unchanged", layer: "data_integrity", passed: unrelated.length === 0, detail: unrelated.length === 0 ? "No branch outside the change moved." : `Branches outside the change moved during the release: ${unrelated.join(", ")}.` },
+      {
+        id: "predicted_exceptions_cleared",
+        layer: "operational",
+        passed: notCleared.length === 0,
+        detail: notCleared.length === 0 ? `${predictedCleared.length} exception(s) cleared as the preflight predicted.` : `${notCleared.length} exception(s) the preflight expected to clear are still open.`,
+      },
     ];
-    const allPassed = checks.every((c) => c.passed);
-    const hard = checks.filter((c) => !c.passed && c.layer !== "operational" && c.id !== "predicted_exceptions_cleared");
-    if (hard.length > 0) {
-      // A broken invariant must not stand: undo the whole release.
-      throw new ActionError(`Release verification failed, nothing was applied: ${hard.map((c) => c.detail).join(" ")}`, 409);
-    }
+    // The configuration must apply, or nothing stands. Other misses (new data arriving in the
+    // window, an exception still open) are reported as DEGRADED for a person to look at.
+    if (!checks[0].passed) throw new ActionError(`Release verification failed, nothing was applied: ${checks[0].detail}`, 409);
     const verification: Verification = { checks, businessImprovement: "not measured", at: at.toISOString() };
-    const to: ChangeStatus = allPassed ? "verified" : "degraded";
+    const to: ChangeStatus = checks.every((c) => c.passed) ? "verified" : "degraded";
     await tx.query("update config_changes set status = $2, verification = $3, verified_at = $4 where id = $1", [id, to, verification, at]);
     await recordEvent(tx, id, "monitoring", to, { subject: "system:verifier", role: "system" }, at, { passed: checks.filter((c) => c.passed).length, of: checks.length });
     return { stale: false as const };
@@ -340,9 +375,11 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
 /**
  * Post-release monitoring: is the released configuration still in place, and does the evidence
  * that arrived since still agree with it? Either failing is RECOVERY_REQUIRED: a person must
- * propose a compensating change. Nothing is rolled back automatically.
+ * propose a compensating change. Nothing is rolled back automatically. The release checks are
+ * kept as they were; the monitoring checks are replaced on every run.
  */
 export async function monitorChange(pool: Pool, viewer: Viewer, id: number, now?: Date): Promise<ChangeRow> {
+  if (!viewer.can.propose && !viewer.can.approve) throw new ForbiddenError(`${viewer.label} cannot monitor configuration changes`);
   const at = now ?? (await getNow(pool));
   return withTransaction(pool, async (tx) => {
     const row = await loadForUpdate(tx, id);
@@ -351,14 +388,13 @@ export async function monitorChange(pool: Pool, viewer: Viewer, id: number, now?
     const payload = CampaignMappingPayload.parse(row.payload);
     const base = await readCampaignBase(tx, payload.campaignId);
     const since = await tx.query<{ branch_id: string; n: string }>(
-      `select l.branch_id, count(*) as n from leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
-       where c.id = $1 and l.occurred_at >= $2 group by l.branch_id order by count(*) desc`,
+      `select l.effective_branch_id as branch_id, count(*) as n from v_leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
+       where c.id = $1 and l.occurred_at >= $2 group by l.effective_branch_id order by count(*) desc`,
       [payload.campaignId, row.releasedAt],
     );
     const total = since.rows.reduce((t, r) => t + Number(r.n), 0);
     const atTarget = Number(since.rows.find((r) => r.branch_id === payload.branchId)?.n ?? 0);
-    const checks: VerificationCheck[] = [
-      ...(row.verification?.checks ?? []),
+    const monitor: VerificationCheck[] = [
       { id: "still_applied", layer: "configuration", passed: base?.currentBranchId === payload.branchId, detail: `The live mapping is ${base?.currentBranchId ?? "unmapped"} (released: ${payload.branchId}).` },
       {
         id: "evidence_since_release",
@@ -367,12 +403,12 @@ export async function monitorChange(pool: Pool, viewer: Viewer, id: number, now?
         detail: total === 0 ? "No lead with this campaign's id has arrived since the release." : `${atTarget} of ${total} lead(s) since the release arrived at ${payload.branchId}.`,
       },
     ];
-    const failing = checks.slice(-2).filter((c) => !c.passed);
-    const to: ChangeStatus = failing.length > 0 ? "recovery_required" : "verified";
+    const releaseChecks = row.verification?.checks ?? [];
+    const to: ChangeStatus = monitor.some((c) => !c.passed) ? "recovery_required" : releaseChecks.every((c) => c.passed) ? "verified" : "degraded";
     assertChangeTransition(row.status, to);
-    const verification: Verification = { checks, businessImprovement: "not measured", at: at.toISOString() };
+    const verification: Verification = { checks: releaseChecks, monitor, businessImprovement: "not measured", at: at.toISOString() };
     await tx.query("update config_changes set status = $2, verification = $3, verified_at = $4 where id = $1", [id, to, verification, at]);
-    await recordEvent(tx, id, row.status, to, viewer, at, { failing: failing.map((c) => c.id) });
+    await recordEvent(tx, id, row.status, to, viewer, at, { failing: monitor.filter((c) => !c.passed).map((c) => c.id) });
     return getChangeTx(tx, id);
   });
 }

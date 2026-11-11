@@ -62,7 +62,7 @@ test("wrong branch blocked → corrected → approved by a different person → 
   await expect(shown(page, "change-status")).toContainText("verified");
   const after = shown(page, "q-after");
   await expect(after).toContainText("configuration success: The live mapping is B44");
-  await expect(after).toContainText("data integrity success: Company spend unchanged to the cent");
+  await expect(after).toContainText("data integrity success: B44 gained exactly $4,539.34 of paid spend from unallocated");
   await expect(after).toContainText("Measured business improvement: not measured");
 });
 

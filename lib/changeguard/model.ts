@@ -42,7 +42,7 @@ export const CHANGE_TRANSITIONS: Readonly<Record<ChangeStatus, readonly ChangeSt
   rejected: [],
   monitoring: ["verified", "degraded"],
   verified: ["recovery_required", "verified"],
-  degraded: ["recovery_required", "verified"],
+  degraded: ["recovery_required", "verified", "degraded"],
   recovery_required: [],
   superseded: [],
 };

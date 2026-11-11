@@ -33,15 +33,22 @@ function unsupportedIds(ids: string[], returned: ReadonlySet<string>): string[] 
  * experiment evidence, so such a claim is always dropped, whatever records it cites. Stating it
  * as a hypothesis ("may have") is allowed and stays a hypothesis.
  */
-const IMPACT = String.raw`(revenue|sales|bookings?|conversions?|customers|profit|roi|cac)`;
-// Improvement claims only: "caused 53 customers to lose their lead" is a data-integrity
-// finding about a defect, not a business-impact claim, and must stay.
+// Business OUTCOMES only. A bare "customers" or "paid customers" is a reporting count ("paid
+// customers 3 → 5 in the preview", "0 customers attributed") and must stay; "new / more
+// customers" is growth. "caused 53 customers to lose their lead" is a defect finding and stays.
+const IMPACT = String.raw`(revenue|sales|profit|roi|bookings?|conversions?|(?:new|more|additional|extra)(?: \w+)? customers)`;
+// Gaps of free text that may contain decimals ("12.5%") but do not cross a sentence end.
+const GAP = (n: number) => String.raw`(?:[^.]|\.(?=\d)){0,${n}}`;
+const CHANGE = String.raw`(change|remap|mapping|release|fix|correction|campaign|launch|update)`;
 const CAUSAL_IMPACT = [
-  new RegExp(String.raw`\b(increas|rais|boost|improv|lift|grew|grow|drove|generat)\w*\b[^.]{0,80}\b${IMPACT}\b`, "i"),
-  new RegExp(String.raw`\b${IMPACT}\b[^.]{0,60}\b(rose|increased|grew|improved|went up|jumped)\b[^.]{0,60}\b(because|due to|after|thanks to|as a result)\b`, "i"),
-  new RegExp(String.raw`\b(led to|resulted in|responsible for)\b[^.]{0,30}\b(more|higher|additional|extra|increased?)\b[^.]{0,40}\b${IMPACT}\b`, "i"),
+  new RegExp(String.raw`\b(increas|rais|boost|improv|lift|grew|grow|drove|generat|caus|add|brought in|deliver)\w*\b${GAP(80)}\b${IMPACT}\b`, "i"),
+  new RegExp(String.raw`\b${IMPACT}\b${GAP(60)}\b(rose|increased|grew|improved|went up|jumped|doubled)\b${GAP(60)}\b(because|due to|thanks to|as a result|after the ${CHANGE})\b`, "i"),
+  new RegExp(String.raw`\b(led to|resulted in|responsible for)\b${GAP(30)}\b(more|higher|additional|extra|increased?)\b${GAP(40)}\b${IMPACT}\b`, "i"),
+  // Cost of acquisition claimed as lowered by something.
+  new RegExp(String.raw`\b(cut|reduc|lower|halv|slash)\w*\b${GAP(20)}\b(cac|acquisition cost|cost per (customer|acquisition|lead))\b`, "i"),
 ];
-const HEDGED = /\b(may|might|could|possibly|hypothes|unproven|not (yet )?measured|cannot (yet )?say)\b/i;
+// Hedges, case-sensitive where a word is also a month ("May").
+const HEDGED = /\b(may (?:have|be|not|also)|might|could|possibly|hypothes\w*|unproven|not (?:yet )?measured|cannot (?:yet )?say)\b/i;
 
 export function isCausalImpactClaim(text: string): boolean {
   return CAUSAL_IMPACT.some((re) => re.test(text)) && !HEDGED.test(text);

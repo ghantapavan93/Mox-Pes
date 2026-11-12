@@ -154,7 +154,7 @@ export interface PreflightResult {
   /** Stated, never hidden: what the preview assumes and cannot know. */
   limitations: string[];
   /** Source contract only: per-sample outcome through the deployed mapper. */
-  samples?: Array<{ index: number; outcome: string; addedFields: string[]; removedFields: string[] }>;
+  samples?: Array<{ index: number; outcome: string; addedFields: string[]; removedFields: string[]; stagedOutcome?: string }>;
 }
 
 export function verdictOf(checks: PreflightCheck[]): PreflightResult["verdict"] {

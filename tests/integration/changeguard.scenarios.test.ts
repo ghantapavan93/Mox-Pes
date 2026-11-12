@@ -283,8 +283,10 @@ describe("independent review findings (each failed before its fix)", () => {
     const change = await createChange(pool, marketing, { kind: "campaign_mapping", payload: { campaignId: id, branchId: "B07" }, reason: "Half of the leads land at B07" }, NOW);
     expect(change.preflight!.checks.find((c) => c.id === "mapping_coverage")).toMatchObject({ status: "warn", code: "LEAD_EVIDENCE_SPLIT" });
     await decideChange(pool, approver, change.id, { decision: "approve", reason: "Split, but B07 holds half", configHash: change.configHash, preflightHash: change.preflightHash! }, NOW);
-    // Same branches, same top branch, but B07 now holds 5 of 13: the coverage rule would fail.
-    await ingest(pool, "calls", [call("gs-B07-x-late-1", "B08", "+15205559001", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-2", "B10", "+15205559002", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-3", "B10", "+15205559003", at(5), "Google Ads", { campaign: "gs-B07-x" })], { now: NOW });
+    // Same branches, but B08 now holds 6 of 13 against B07's 5: the evidence points elsewhere and
+    // the coverage rule would fail. (Held-out HO-50 changed the boundary: 5 of 13 while B07 is still
+    // the branch with the most leads is split, not a contradiction, so the drift must overtake B07.)
+    await ingest(pool, "calls", [call("gs-B07-x-late-1", "B08", "+15205559001", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-2", "B08", "+15205559002", at(5), "Google Ads", { campaign: "gs-B07-x" }), call("gs-B07-x-late-3", "B08", "+15205559003", at(5), "Google Ads", { campaign: "gs-B07-x" })], { now: NOW });
     await expect(releaseChange(pool, marketing, change.id, NOW)).rejects.toMatchObject({ status: 409 });
     expect((await getChange(pool, approver, change.id)).change.status).toBe("draft");
   });

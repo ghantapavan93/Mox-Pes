@@ -1,7 +1,7 @@
 import type { PoolClient } from "pg";
 import { ActionError, mapCampaignToBranchInTransaction } from "@/lib/actions";
 import type { RawRecord, SourceName } from "@/lib/adapters/contract";
-import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/registry";
+import { ACTIVE_VERSION, mapperFor, mapperVersions, referenceContext } from "@/lib/adapters/registry";
 import type { Queryable } from "@/lib/db";
 import { branchRows, paidCac } from "@/lib/metrics/scorecard";
 import { canonicalJson, sha256 } from "@/lib/primitives";
@@ -103,12 +103,19 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
  */
 export type EvidenceVerdict = "none" | "agrees" | "split" | "disagrees";
 
-/** How the campaign's leads relate to a proposed branch: the rule the coverage check applies. */
+/**
+ * How the campaign's leads relate to a proposed branch: the rule the coverage check applies.
+ * "disagrees" means the evidence points elsewhere: the proposed branch has under half of the
+ * leads AND another branch has more. Fragmented evidence where the proposed branch has the most
+ * (or ties for the most) without a majority is "split": a person decides (held-out HO-50; it
+ * used to be blocked as a contradiction of itself).
+ */
 export function evidenceVerdict(base: CampaignBase, branchId: string): EvidenceVerdict {
   const total = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
   if (total === 0) return "none";
   const at = base.leadEvidence.find((e) => e.branchId === branchId)?.leads ?? 0;
-  if (at / total < 0.5) return "disagrees";
+  const most = Math.max(...base.leadEvidence.map((e) => e.leads));
+  if (at / total < 0.5 && at < most) return "disagrees";
   return at < total ? "split" : "agrees";
 }
 
@@ -229,16 +236,17 @@ export async function preflightCampaignMapping(
   const majorityBrand = majority ? BRANCH_BY_ID.get(majority.branchId)?.brandId ?? null : null;
   const previousBrand = previous ? BRANCH_BY_ID.get(previous)?.brandId ?? null : null;
   const nameBranch = /^(B\d{2})\b/.exec(base.name)?.[1] ?? null;
+  const verdict = evidenceVerdict(base, target.id);
   if (previous === target.id) {
     checks.push({ id: "mapping_coverage", status: "fail", code: "NO_CHANGE", detail: `The campaign already maps to ${target.id}; this change would do nothing.` });
-  } else if (totalLeads === 0) {
+  } else if (verdict === "none") {
     checks.push({
       id: "mapping_coverage",
       status: "warn",
       code: "NO_LEAD_EVIDENCE",
       detail: "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it.",
     });
-  } else if (atTarget / totalLeads < 0.5) {
+  } else if (verdict === "disagrees") {
     checks.push({
       id: "mapping_coverage",
       status: "fail",
@@ -246,7 +254,7 @@ export async function preflightCampaignMapping(
       detail: `${totalLeads} lead(s) carry this campaign's id; ${atTarget} arrived at ${target.id} and ${majority!.leads} at ${majority!.branchId}. The mapping contradicts the campaign's own leads.`,
       evidence: { leadEvidence: base.leadEvidence },
     });
-  } else if (atTarget < totalLeads) {
+  } else if (verdict === "split") {
     checks.push({
       id: "mapping_coverage",
       status: "warn",
@@ -268,6 +276,14 @@ export async function preflightCampaignMapping(
     collisionStatus = "fail";
     collisionCode = "CROSS_BRAND";
     collisions.push(`${target.id} belongs to brand "${target.brandId}", but most of this campaign's leads arrive at brand "${majorityBrand}".`);
+  } else if (previousBrand && previousBrand !== target.brandId && majorityBrand === target.brandId) {
+    // The current mapping is in another brand, but the campaign's own leads arrive at the
+    // proposed brand: a correction toward the evidence. Still never routine, so a person must
+    // accept the brand change, but blocking it left a mis-mapped campaign with no path to repair
+    // (held-out HO-48).
+    collisionStatus = "warn";
+    collisionCode = "CROSS_BRAND_CORRECTION";
+    collisions.push(`The campaign maps to ${previous} (brand "${previousBrand}") now, but most of its leads arrive at brand "${target.brandId}": moving its spend across brands needs a person to confirm which ad account it belongs to.`);
   } else if (previousBrand && previousBrand !== target.brandId) {
     collisionStatus = "fail";
     collisionCode = "CROSS_BRAND";
@@ -396,6 +412,25 @@ export async function preflightCampaignMapping(
   return { result, baseHash: baseHashOf(base, target.id), base };
 }
 
+/** Numeric version order ("1.10" after "1.9"). */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
+
+/** The refusal code a mapper gives a record, or null if it projects it. */
+function misreadBy(mapper: ReturnType<typeof mapperFor>, record: RawRecord): string | null {
+  const identity = mapper.identify(record, referenceContext);
+  if (!("entityId" in identity)) return identity.code;
+  const mapped = mapper.map(record, { ...referenceContext, receivedAt: new Date(0) });
+  return mapped.ok ? null : mapped.code;
+}
+
 function shapeOf(value: unknown, prefix = ""): string[] {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return [];
   return Object.entries(value as Record<string, unknown>).flatMap(([k, v]) => {
@@ -414,6 +449,7 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
   const mapper = mapperFor(source);
   const latest = await db.query<{ payload: unknown }>("select payload from raw_events where source = $1 and entity = $2 and status = 'projected' order by id desc limit 1", [source, payload.entity]);
   const knownShape = new Set(latest.rowCount ? shapeOf(latest.rows[0].payload) : []);
+  const stagedVersions = mapperVersions(source).filter((v) => compareVersions(v, ACTIVE_VERSION[source]) > 0);
   const seen = new Set<string>();
   const samples = payload.samples.map((sample, index) => {
     const record: RawRecord = { entity: payload.entity, payload: sample };
@@ -425,10 +461,15 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
     if (seen.has(identity.externalId)) return { index, outcome: "duplicate", detail: "same record version as an earlier sample", addedFields: added, removedFields: removed };
     seen.add(identity.externalId);
     const mapped = mapper.map(record, { ...referenceContext, receivedAt: new Date(0) });
-    return mapped.ok
-      ? { index, outcome: `projected:${mapped.projection.table}`, detail: "", addedFields: added, removedFields: removed }
-      : { index, outcome: `refused:${mapped.code}`, detail: mapped.detail, addedFields: added, removedFields: removed };
+    if (!mapped.ok) return { index, outcome: `refused:${mapped.code}`, detail: mapped.detail, addedFields: added, removedFields: removed };
+    // A staged version reads documented vendor fields the deployed one ignores. If it refuses a
+    // record the deployed mapper projects, the deployed mapper would count it with no signal
+    // (outbound or spam calls as leads, another currency as dollars; held-out HO-24 / HO-25).
+    const misread = stagedVersions.map((v) => ({ v, r: misreadBy(mapperFor(source, v), record) })).find((x) => x.r !== null);
+    return { index, outcome: `projected:${mapped.projection.table}`, detail: "", addedFields: added, removedFields: removed, ...(misread ? { stagedOutcome: `${source}@${misread.v} refused:${misread.r}` } : {}) };
   });
+  const misreads = samples.filter((s): s is typeof s & { stagedOutcome: string } => "stagedOutcome" in s && typeof s.stagedOutcome === "string");
+  const misreadCodes = [...new Set(misreads.map((s) => s.stagedOutcome))];
   const refused = samples.filter((s) => s.outcome.startsWith("refused:"));
   const duplicates = samples.filter((s) => s.outcome === "duplicate");
   const codes = [...new Set(refused.map((s) => s.outcome.slice(8)))];
@@ -441,7 +482,14 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
   const checks: PreflightCheck[] = [
     refused.length > 0
       ? { id: "schema_compatibility", status: "fail", code: "INCOMPATIBLE_SHAPE", detail: `${refused.length} of ${samples.length} sample(s) are refused by the deployed mapper ${version} (${codes.join(", ")}).${structural}` }
-      : { id: "schema_compatibility", status: "pass", detail: `Every sample maps under the deployed ${version}.${structural}${added.length && !removed.length ? " Added fields are ignored by the mapper: a structural difference, not a contract violation." : ""}` },
+      : misreads.length > 0
+        ? {
+            id: "schema_compatibility",
+            status: "warn",
+            code: "DEPLOYED_MAPPER_MISREADS",
+            detail: `${misreads.length} of ${samples.length} sample(s) map under the deployed ${version}, but the staged version, which reads documented vendor fields ${version} ignores, refuses them (${misreadCodes.join(", ")}). The deployed mapper would count them with no signal; ${deps.join(", ") || "its metrics"} would include them. Activating the staged version is a code deploy; a person must decide before this shape is connected.${structural}`,
+          }
+        : { id: "schema_compatibility", status: "pass", detail: `Every sample maps under the deployed ${version}${stagedVersions.length ? ` and under the staged ${stagedVersions.map((v) => `${source}@${v}`).join(", ")}` : ""}.${structural}${added.length && !removed.length ? " Added fields are ignored by the mapper: a structural difference, not a contract violation." : ""}` },
     refused.some((s) => /MISSING_IDENTITY|MISSING_FIELD/.test(s.outcome))
       ? { id: "identifier_presence", status: "fail", code: "MISSING_IDENTIFIER", detail: "Some samples lack a required identifier or field." }
       : { id: "identifier_presence", status: "pass", detail: "Every sample carries the identifiers the mapper requires." },
@@ -474,7 +522,7 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
       unrelatedBranchesChanged: [],
       dependentMetrics: deps,
       limitations: ["A sample shows what the deployed mapper does with these payloads; it says nothing about payloads not sampled.", "Releasing a mapper version needs a code deploy, so this kind stops at review."],
-      samples: samples.map(({ index, outcome, addedFields, removedFields }) => ({ index, outcome, addedFields, removedFields })),
+      samples: samples.map((s) => ({ index: s.index, outcome: s.outcome, addedFields: s.addedFields, removedFields: s.removedFields, ...("stagedOutcome" in s && s.stagedOutcome ? { stagedOutcome: s.stagedOutcome } : {}) })),
     },
     baseHash: sha256(canonicalJson({ version, knownShape: [...knownShape].sort() })),
   };

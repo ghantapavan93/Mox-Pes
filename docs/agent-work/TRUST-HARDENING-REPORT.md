@@ -142,6 +142,14 @@ sequence, with nothing else running (log: `C:/Temp/final-regression-r38.log`).
 The isolated-checkout run of the commit that adds this report follows in 6a. It was added after
 that run finished.
 
+### 6a · Isolated checkout of `42bc086`
+
+The run used a detached git worktree, fresh databases (`rso_verify`, `rso_verify_test`),
+`npm ci`, migrations from empty and a new seed (log: `C:/Temp/rso-verify.log`). Every step
+passed: npm ci, migrate, seed, typecheck, lint, vitest **784 / 784**, production build, and the
+browser suite **111 passed, 1 skipped, 0 failed** (23.8 min). The evaluation packs were not
+re-run in the worktree; they ran in the main checkout at `69214bd`, and the code is the same.
+
 ## 7 · Next: the smallest complete Reliability Twin slice
 
 - **Change.** One change kind, the calls mapper version (calls@1.0 → calls@1.2, which reads the

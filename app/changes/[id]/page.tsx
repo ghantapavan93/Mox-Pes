@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChangeActions } from "@/components/changes/ChangeActions";
@@ -167,7 +168,8 @@ async function Change({ params }: { params: Params }) {
                 {pre.impact.map((i) => (
                   <tr key={i.branchId} className="border-t border-border">
                     <td className="py-1">
-                      {i.branchId} <span className="text-muted">({i.role.replace("_", " ")})</span>
+                      <Link href={`/branches/${i.branchId}/trace?period=all&metric=paid_cac`} className="text-accent hover:underline" data-testid="impact-trace-link">{i.branchId}</Link>{" "}
+                      <span className="text-muted">({i.role.replace("_", " ")})</span>
                     </td>
                     <td className="py-1 text-right tabular-nums">
                       {money(i.before.paidSpendCents)} → {money(i.after.paidSpendCents)}
@@ -244,6 +246,24 @@ async function Change({ params }: { params: Params }) {
         </Question>
 
         <Question n={8} title="What happened after release?" testId="q-after">
+          <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-[max-content_1fr]" aria-label="Evidence levels" data-testid="evidence-levels">
+            <dt className="font-medium text-text">Previewed impact</dt>
+            <dd className="text-muted">{pre ? `Measured on the real write path in a rolled-back transaction${change.preflightedAt ? `, ${dateTime(change.preflightedAt)}` : ""}. A prediction, not a fact about the live data.` : "No preview yet."}</dd>
+            <dt className="font-medium text-text">Verified configuration effect</dt>
+            <dd className="text-muted">
+              {change.verification
+                ? `${change.verification.checks.filter((c) => c.passed).length} of ${change.verification.checks.length} release checks passed on the live data, in the release transaction.`
+                : "Not released."}
+            </dd>
+            <dt className="font-medium text-text">Observed since release</dt>
+            <dd className="text-muted">
+              {change.verification?.monitor
+                ? `${change.verification.monitor.filter((c) => c.passed).length} of ${change.verification.monitor.length} monitoring checks passed (mapping still in place; new leads agree).`
+                : change.verification ? "Not monitored yet." : "Not released."}
+            </dd>
+            <dt className="font-medium text-text">Measured business outcome</dt>
+            <dd className="text-muted"><strong className="text-text">Not measured.</strong> Revenue or CAC improvement needs a controlled measurement; none exists.</dd>
+          </dl>
           {change.verification ? (
             <>
               <ul className="space-y-1" aria-label="Verification">

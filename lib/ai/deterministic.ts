@@ -436,7 +436,12 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
     for (const e of trace.excluded) {
       observations.push({ text: `${e.count} new customer(s) are left out of the denominator by the definition (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
     }
+    // Evidence the number cannot see: a campaign whose leads land here but which maps nowhere.
+    for (const m of trace.missing.filter((x) => x.kind === "unmapped_campaign").slice(0, 3)) {
+      observations.push({ text: m.detail, evidenceIds: m.evidenceIds, status: "verified" });
+    }
   }
+  const unmappedHere = trace?.missing.find((x) => x.kind === "unmapped_campaign") ?? null;
   const quarantine = exc?.exceptions.find((e) => e.kind === "quarantined_source_records");
   const gap = exc?.exceptions.find((e) => e.kind === "channel_coverage_gap");
   const proposals: ProposalSuggestion[] = [];
@@ -496,6 +501,13 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       evidenceIds: [evidence.exception(gap.id)],
       status: "verified",
     });
+  }
+  if (!quarantine && !gap && unmappedHere) {
+    // Not a write the AI path may take: the mapping is a person-owned configuration, previewed
+    // and approved in ChangeGuard (no Action Center proposal is suggested for it here).
+    next = `Preview mapping the campaign to ${b} in ChangeGuard (the trace links to it prefilled); a different person approves it there.`;
+    effect = "If approved and released, the campaign's spend moves from unallocated to this branch and its customers rejoin the denominator; ChangeGuard previews the exact change. No business improvement follows from a mapping by itself.";
+    confidence = { level: "medium", why: "The trace shows a campaign whose leads arrive here but which maps to no branch; whether it belongs here is a person's decision." };
   }
   if (!quarantine && !gap) {
     observations.push({

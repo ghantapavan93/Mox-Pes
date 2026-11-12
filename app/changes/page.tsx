@@ -8,7 +8,9 @@ import { BRANCHES } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { STATUS_TONE } from "./status";
 
-export default function ChangesPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default function ChangesPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">
       <PageHeader
@@ -24,22 +26,31 @@ export default function ChangesPage() {
         }
       />
       <Suspense fallback={<Skeleton lines={10} />}>
-        <Changes />
+        <Changes searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Changes() {
-  const viewer = await getViewer();
+async function Changes({ searchParams }: { searchParams: SearchParams }) {
+  const [sp, viewer] = await Promise.all([searchParams, getViewer()]);
   const pool = getPool();
   const [changes, campaigns] = await Promise.all([listChanges(pool, viewer), viewer.can.propose ? listCampaignOptions(pool, viewer) : Promise.resolve([])]);
   const branches = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name} (${b.brandId})` }));
+  // Arriving from a metric trace (/branches/[id]/trace): the campaign and branch it pointed at.
+  // Only values this viewer could pick anyway are used; anything else is ignored.
+  const askedCampaign = Number(typeof sp.campaign === "string" ? sp.campaign : NaN);
+  const askedBranch = typeof sp.branch === "string" ? sp.branch : null;
+  const campaign = campaigns.find((c) => c.id === askedCampaign) ?? null;
+  const branch = askedBranch && branches.some((b) => b.id === askedBranch) ? askedBranch : null;
+  const defaults = campaign
+    ? { campaignId: campaign.id, ...(branch ? { branchId: branch } : {}), reason: branch ? `The trace of ${branch} shows this campaign's leads arriving there while it maps to no branch.` : "" }
+    : undefined;
   return (
     <>
       {viewer.can.propose ? (
-        <Card title="Propose a campaign mapping change" subtitle="Campaigns without a branch are listed first. The preflight answers fourteen questions before anyone reviews it.">
-          <ChangeForm campaigns={campaigns} branches={branches} />
+        <Card title="Propose a campaign mapping change" subtitle={defaults ? "Prefilled from a metric trace. Nothing is checked or changed until you propose it." : "Campaigns without a branch are listed first. The preflight answers fourteen questions before anyone reviews it."}>
+          <ChangeForm campaigns={campaigns} branches={branches} defaults={defaults} />
         </Card>
       ) : (
         <Callout title="Read-only for your role">{viewer.label} can read changes in scope. Analysts and engineers propose; approvers decide.</Callout>

@@ -97,7 +97,18 @@ async function Trace({ params, searchParams }: Props) {
                 <li key={`${m.kind}-${i}`} className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-2">
                   <span className="shrink-0"><Badge tone="warn">{m.kind.replace(/_/g, " ").replace(":", " · ")}</Badge></span>
                   <span className="min-w-0 sm:flex-1">{m.detail}</span>
-                  <span className="flex shrink-0 gap-2">{m.evidenceIds.slice(0, 2).map((e) => <EvidenceLink key={e} id={e} />)}</span>
+                  <span className="flex shrink-0 flex-wrap gap-2">
+                    {m.evidenceIds.slice(0, 2).map((e) => <EvidenceLink key={e} id={e} />)}
+                    {m.kind === "unmapped_campaign" && m.evidenceIds[0] && (
+                      <Link
+                        className="text-xs font-medium text-accent hover:underline"
+                        href={`/changes?campaign=${m.evidenceIds[0].split(":")[1]}&branch=${branch.id}`}
+                        data-testid="trace-preview-mapping"
+                      >
+                        Preview mapping it to {branch.id}
+                      </Link>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

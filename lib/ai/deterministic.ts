@@ -422,6 +422,21 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       status: "verified",
     },
   ];
+  // Where the number comes from, reproduced from records (lib/lineage/trace.ts).
+  const trace = await ctx.call("getMetricTrace", { branchId: b, period: d.period, metric: "paid_cac" });
+  if (trace) {
+    const top = trace.campaigns.slice(0, 3);
+    observations.push({
+      text: trace.value.matches
+        ? `The number reproduces exactly from stored records. Largest spend: ${top.map((c) => `${c.externalCampaignId} ${money(c.spendCents)} filed as ${c.channelCode} (${Object.keys(c.mapperVersions).join(", ")})`).join("; ")}.`
+        : `The stored records do NOT reproduce the scorecard: ${trace.value.discrepancies.join(" ")}`,
+      evidenceIds: [bm, ...top.map((c) => c.evidenceId)],
+      status: "verified",
+    });
+    for (const e of trace.excluded) {
+      observations.push({ text: `${e.count} new customer(s) are left out of the denominator by the definition (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+    }
+  }
   const quarantine = exc?.exceptions.find((e) => e.kind === "quarantined_source_records");
   const gap = exc?.exceptions.find((e) => e.kind === "channel_coverage_gap");
   const proposals: ProposalSuggestion[] = [];

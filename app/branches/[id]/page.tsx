@@ -74,10 +74,10 @@ async function Branch({ params, searchParams }: Props) {
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} />
+        <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_spend`} />
         <Stat metric="prospects" value={count(t.prospects)} sub={`${count(t.paidProspects)} paid`} />
         <Stat metric="acquired" value={count(t.acquired)} sub={`${count(t.sold)} sold in period`} />
-        <Stat metric="paidCac" value={money(t.paidCacCents)} sub={company ? `company ${money(company.paidCacCents)}` : undefined} tone={company?.paidCacCents && t.paidCacCents && t.paidCacCents > company.paidCacCents * 1.4 ? "bad" : "neutral"} />
+        <Stat metric="paidCac" value={money(t.paidCacCents)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_cac`} sub={company ? `company ${money(company.paidCacCents)}` : undefined} tone={company?.paidCacCents && t.paidCacCents && t.paidCacCents > company.paidCacCents * 1.4 ? "bad" : "neutral"} />
         <Stat metric="unknownShare" value={pct(t.unknownShare)} sub={companyUnknown !== null ? `company ${pct(companyUnknown)}` : undefined} tone={companyUnknown && t.unknownShare && t.unknownShare > companyUnknown * 1.6 ? "bad" : "neutral"} />
         <Stat metric="atRisk" value={money(t.atRiskCents)} sub={`${count(t.openExceptions)} open exceptions`} tone={t.openExceptions > 0 ? "bad" : "good"} />
       </div>

@@ -12,6 +12,7 @@ import { exceptionSummary, getException, listExceptions, type ExceptionRow } fro
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { ForbiddenError, canSeeBranch, resolveScope, type Viewer } from "@/lib/viewer";
 import { auditFeed, caseAudit, caseForException } from "@/lib/workflow/queries";
+import { TRACEABLE, traceBranchMetric } from "@/lib/lineage/trace";
 import { evidence, uniqueIds } from "./evidence";
 
 /**
@@ -979,6 +980,61 @@ export const getMetricDefinition = defineTool({
   },
 });
 
+// ── getMetricTrace ───────────────────────────────────────────────────────────
+
+/**
+ * Where a branch's paid CAC (or paid spend) comes from: the same trace a person opens from the
+ * number (lib/lineage/trace.ts), bounded for the model. The value is reproduced from the listed
+ * records and checked against the scorecard; a mismatch is reported, not hidden.
+ */
+export const getMetricTrace = defineTool({
+  name: "getMetricTrace",
+  description:
+    "Where a branch's paid-media CAC or paid spend comes from: the number reproduced from records, the campaigns (with mapping and mapper versions) behind the spend, the customers counted, what the definition excludes, records excluded or held at intake, and what evidence is missing. Read-only, scoped.",
+  input: z.strictObject({ branchId, period, metric: z.enum(TRACEABLE).default("paid_cac") }),
+  async run(ctx, input) {
+    knownBranch(input.branchId);
+    const trace = await traceBranchMetric(ctx.db, ctx.viewer, { branchId: input.branchId, period: PERIODS[input.period as PeriodKey], metric: input.metric });
+    const data = {
+      metric: trace.metric,
+      scope: trace.scope,
+      value: trace.value,
+      campaigns: trace.numerator.campaigns.slice(0, 10).map((c) => ({
+        evidenceId: c.evidenceId,
+        externalCampaignId: c.externalCampaignId,
+        channelCode: c.channelCode,
+        spendCents: c.spendCents,
+        mappedTo: c.mapping.branchId,
+        mappingVersion: c.mapping.version,
+        mapperVersions: c.mapperVersions,
+        assumedCurrencyCents: c.assumedCurrencyCents,
+      })),
+      campaignsOmitted: Math.max(0, trace.numerator.campaigns.length - 10),
+      customersCounted: trace.denominator.count,
+      sampleCustomerIds: trace.denominator.customers.slice(0, 10).map((k) => k.evidenceId),
+      excluded: trace.excluded,
+      sourceRecords: trace.sourceRecords,
+      missing: trace.missing,
+      limitations: trace.limitations,
+    };
+    const ids = uniqueIds([
+      evidence.metricDefinition(trace.metric.key === "paid_cac" ? "paidCac" : "paidSpend"),
+      evidence.branchMetrics(input.branchId, input.period),
+      ...data.campaigns.map((c) => c.evidenceId),
+      ...data.sampleCustomerIds,
+      ...trace.excluded.flatMap((e) => e.evidenceIds),
+      ...trace.sourceRecords.flatMap((r) => r.sampleEvidenceIds),
+      ...trace.missing.flatMap((m) => m.evidenceIds),
+    ]);
+    const v = trace.value.reproduced;
+    return {
+      data,
+      evidenceIds: ids,
+      summary: `${input.branchId} ${input.period}: ${v.paidSpendCents} cents ÷ ${v.paidAcquired} = ${v.paidCacCents ?? "n/a"} cents per paid customer; ${trace.value.matches ? "reproduced exactly" : "DOES NOT reproduce"}; ${trace.missing.length} missing-evidence item(s)`,
+    };
+  },
+});
+
 // ── getAuditHistory ──────────────────────────────────────────────────────────
 
 export interface AuditHistory {
@@ -1095,6 +1151,7 @@ export const TOOLS = {
   compareMappingVersions,
   inspectCampaignClassification,
   getMetricDefinition,
+  getMetricTrace,
   getAuditHistory,
   getDecisionReadiness,
 } as const;

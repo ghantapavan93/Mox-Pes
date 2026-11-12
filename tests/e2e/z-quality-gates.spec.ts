@@ -59,6 +59,7 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["onboarding", "/onboarding", "marketing"],
     ["onboarding-upload", upload, "approver"],
     ["branch", "/branches/B09?period=oct", "marketing"],
+    ["trace", "/branches/B09/trace?period=oct&metric=paid_cac", "marketing"],
     ["demo", "/demo", "marketing"],
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],

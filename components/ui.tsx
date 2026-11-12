@@ -178,6 +178,7 @@ export function Stat({
   tone = "neutral",
   subTone = "neutral",
   delta,
+  traceHref,
 }: {
   metric: keyof typeof METRICS;
   value: ReactNode;
@@ -186,6 +187,8 @@ export function Stat({
   subTone?: "neutral" | "bad";
   /** Change against a comparison period; `good` says which direction is better for this metric. */
   delta?: { label: string; direction: "up" | "down" | "flat"; good: boolean | null };
+  /** Where the number's evidence trace is (lib/lineage/trace.ts), for metrics that have one. */
+  traceHref?: string;
 }) {
   const def = METRICS[metric];
   const toneClass = tone === "bad" ? "text-bad" : tone === "good" ? "text-good" : "text-text";
@@ -215,6 +218,11 @@ export function Stat({
         </p>
       )}
       {sub && <p className={`mt-1 text-xs leading-4 ${subTone === "bad" ? "font-medium text-bad" : "text-muted"}`}>{sub}</p>}
+      {traceHref && (
+        <Link href={traceHref} className="mt-2 text-xs font-medium text-accent hover:underline" data-testid={`trace-link-${String(metric)}`}>
+          Where does this come from?
+        </Link>
+      )}
     </div>
   );
 }

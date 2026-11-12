@@ -55,6 +55,19 @@ export async function withRollback<T>(pool: Pool, fn: (tx: PoolClient) => Promis
   }
 }
 
+/**
+ * Independent reads: at once on a pool (each read takes its own connection), one after another
+ * on a single client. A client cannot run two queries at once; pg 8 queues them with a
+ * deprecation warning and pg 9 removes the queue. Results keep the order of the reads.
+ */
+export async function readAll<T extends readonly unknown[]>(db: Queryable, reads: { [K in keyof T]: () => Promise<T[K]> }): Promise<T> {
+  const list = reads as unknown as ReadonlyArray<() => Promise<unknown>>;
+  if (db instanceof Pool) return (await Promise.all(list.map((read) => read()))) as unknown as T;
+  const out: unknown[] = [];
+  for (const read of list) out.push(await read());
+  return out as unknown as T;
+}
+
 /** The business clock. The demo dataset is frozen at a fixed instant; see app_clock. */
 export async function getNow(db: Queryable): Promise<Date> {
   const { rows } = await db.query<{ now: Date }>("select now from app_clock");

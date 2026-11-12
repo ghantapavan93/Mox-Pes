@@ -5,6 +5,7 @@ import { mapCampaignToBranch } from "@/lib/actions";
 import { detectIntent } from "@/lib/ai/deterministic";
 import { runInvestigation } from "@/lib/ai/investigate";
 import { accountsAwaitingCurrency, authorizeCurrencyRule, proposeCurrencyRule } from "@/lib/currency/rules";
+import type { Queryable } from "@/lib/db";
 import { decisionVerdicts } from "@/lib/decision/verdicts";
 import { testCacChange } from "@/lib/inquiry/cac-change";
 import { branchRows } from "@/lib/metrics/scorecard";
@@ -129,5 +130,32 @@ describe("VP acceptance first contact: defects, fixed", () => {
     expect(supported).toMatch(/Oct 1–30, 2026 \(UTC\): paid-media CAC \$237\.00/);
     expect(supported).toMatch(/From September to October, B12's paid-media CAC rose by \$37\.00, from \$200\.00 to \$237\.00/);
     expect(supported).toMatch(/collected cash \$745\.00/);
+  });
+});
+
+describe("reads on one connection", () => {
+  // The acceptance runs printed pg's "client.query() when the client is already executing a
+  // query" deprecation: verified readiness hands decisionVerdicts one transaction client, and
+  // decisionVerdicts sent eight reads at once. pg 8 queues them; pg 9 removes the queue.
+  it("decision verdicts send one query at a time on a single client", async () => {
+    const client = await pool.connect();
+    let inFlight = 0;
+    let most = 0;
+    const one: Queryable = {
+      query: (async (text: string, params?: unknown[]) => {
+        most = Math.max(most, ++inFlight);
+        try {
+          return await client.query(text, params);
+        } finally {
+          inFlight--;
+        }
+      }) as Queryable["query"],
+    };
+    try {
+      await decisionVerdicts(one, marketing, { branchId: "B12", period: PERIODS.oct });
+    } finally {
+      client.release();
+    }
+    expect(most).toBe(1);
   });
 });

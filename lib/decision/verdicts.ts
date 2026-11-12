@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ActionError } from "@/lib/actions";
-import { getNow, type Queryable } from "@/lib/db";
+import { getNow, readAll, type Queryable } from "@/lib/db";
 import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type BudgetSignal } from "@/lib/metrics/decision";
 import type { ChannelRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
@@ -139,15 +139,16 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
   if (!branch) throw new ActionError(`Unknown branch ${args.branchId}`, 404);
   const { period, branchId } = args;
 
-  const [now, signal, exceptions, records, spendCoverage, feeds, holdouts, latestAa] = await Promise.all([
-    getNow(db),
-    budgetSignal(db, branchId, { from: period.from, to: period.to }),
-    openExceptions(db, branchId),
-    recordReconciliation(db, branchId, period),
-    spendDaysByChannel(db, branchId, period),
-    feedFreshness(db),
-    holdoutExperiments(db, branchId, period),
-    latestAaExperiment(db, branchId, viewer.branchIds),
+  // At once on the pool; one at a time when the caller holds a single transaction client.
+  const [now, signal, exceptions, records, spendCoverage, feeds, holdouts, latestAa] = await readAll(db, [
+    () => getNow(db),
+    () => budgetSignal(db, branchId, { from: period.from, to: period.to }),
+    () => openExceptions(db, branchId),
+    () => recordReconciliation(db, branchId, period),
+    () => spendDaysByChannel(db, branchId, period),
+    () => feedFreshness(db),
+    () => holdoutExperiments(db, branchId, period),
+    () => latestAaExperiment(db, branchId, viewer.branchIds),
   ]);
 
   const channels = signal.channels.map((c) => {

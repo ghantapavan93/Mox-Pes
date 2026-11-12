@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { InvestigateForm } from "@/components/investigator/InvestigateForm";
+import { OpenInquiry } from "@/components/investigator/OpenInquiry";
 import { ModeBadge } from "@/components/investigator/TraceTable";
 import { Badge, Callout, Card, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { MODE_LABEL } from "@/lib/ai/contract";
 import { modelConfigured } from "@/lib/ai/model";
 import { listInvestigations, suggestedQuestions } from "@/lib/ai/queries";
 import { dateTime } from "@/lib/format";
+import { listInquiries } from "@/lib/inquiry/store";
 import { getException } from "@/lib/queries";
 import { BRANCHES } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
@@ -100,7 +102,37 @@ async function Investigator({ searchParams }: { searchParams: SearchParams }) {
           </Suspense>
         </Card>
       </div>
+      {viewer.can.investigate && (
+        <Card title="Investigation workspaces" subtitle="A question kept open: six competing explanations tested against the records, each with its evidence, counterevidence and what would change it. Re-test as records arrive.">
+          <div className="space-y-3">
+            <OpenInquiry branches={branches} initial={initialBranch ?? undefined} />
+            <Suspense fallback={<Skeleton lines={3} />}>
+              <Workspaces viewer={viewer} />
+            </Suspense>
+          </div>
+        </Card>
+      )}
     </div>
+  );
+}
+
+async function Workspaces({ viewer }: { viewer: Viewer }) {
+  const rows = await listInquiries(getPool(), viewer);
+  if (rows.length === 0) return <p className="text-sm text-muted">No open workspaces yet.</p>;
+  return (
+    <ul className="space-y-1 text-sm">
+      {rows.slice(0, 10).map((r) => (
+        <li key={r.id} className="flex flex-wrap items-center gap-2">
+          <Link href={`/investigator/inquiries/${r.id}`} className="font-medium text-accent hover:underline">
+            {r.question}
+          </Link>
+          <Badge tone={r.conclusion === "explained" ? "good" : r.conclusion === "unexplained" ? "bad" : "neutral"}>{r.conclusion.replace("_", " ")}</Badge>
+          <span className="text-xs text-faint">
+            v{r.version} · {dateTime(r.testedAt)}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

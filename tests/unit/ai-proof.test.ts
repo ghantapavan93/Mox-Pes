@@ -373,6 +373,20 @@ describe("reading statements as people write them", () => {
     expect(prove("B09's unattributed share rose 2% from September.").proofs[0].gap).toBe("ambiguous");
   });
 
+  it("reads the product's own template phrasings without false contradictions", () => {
+    // "Oct 1–30" is a date range, not the count; "across 1 campaign(s)" counts campaigns (no metric).
+    const dated = prove("B09, Oct 1–30, 2026 (UTC): paid media spend $4,825.80 across 1 campaign(s).");
+    expect(dated.proofs.find((p) => p.figure === "$4,825.80")).toMatchObject({ verdict: "VERIFIED" });
+    expect(dated.proofs.find((p) => p.figure === "1")).toMatchObject({ verdict: "UNRESOLVED", gap: "metric_unknown" });
+    expect(dated.template?.status).toBe("SUPPORTED");
+    // "(20 paid)": the paid customers; "$100,500.00 paid − $500.00 refunded": gross and refunds.
+    expect(prove("B09, Oct 1–30, 2026 (UTC): 25 new customers serviced (20 paid).").proofs.map((p) => p.verdict)).toEqual(["VERIFIED", "VERIFIED"]);
+    const cash = prove("B09, Oct 1–30, 2026 (UTC): collected cash $100,000.00 = $100,500.00 paid − $500.00 refunded.");
+    expect(cash.proofs.every((p) => p.verdict === "VERIFIED")).toBe(true);
+    // "no paid touch" is not "zero paid customers".
+    expect(prove("The held records' customers at B09 have no paid touch.").proofs.filter((p) => p.verdict === "CONTRADICTED")).toEqual([]);
+  });
+
   it("states no proof for a sentence without figures or directions", () => {
     expect(prove("The mapping for G-100 was changed by marketing.").model).toBeNull();
   });

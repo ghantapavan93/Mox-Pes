@@ -21,12 +21,15 @@ interface Awaiting {
   amountCents: number;
 }
 
+type Call = (key: string, url: string, body: Record<string, unknown>, done: string) => Promise<void>;
+
 const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Ad accounts whose feed states no currency, and the rules that make their spend count as USD.
  * Without a rule the spend is excluded and listed here, never assumed. An engineer proposes a
  * rule with a reason; a different person with approval rights authorizes it (lib/currency/rules.ts).
+ * Pending proposals are shown in full; authorized rules fold behind their count.
  */
 export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject }: { rules: Rule[]; awaiting: Awaiting[]; canPropose: boolean; canApprove: boolean; subject: string }) {
   const router = useRouter();
@@ -34,7 +37,7 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [reason, setReason] = useState("");
 
-  async function call(key: string, url: string, body: Record<string, unknown>, done: string) {
+  const call: Call = async (key, url, body, done) => {
     setBusy(key);
     setMessage(null);
     try {
@@ -48,7 +51,11 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
     } finally {
       setBusy(null);
     }
-  }
+  };
+
+  const pending = rules.filter((r) => !r.authorizedBy);
+  const authorized = rules.filter((r) => r.authorizedBy);
+  const rowProps = { busy, canApprove, canPropose, subject, call };
 
   return (
     <div className="space-y-3 text-sm" data-testid="currency-rules">
@@ -87,40 +94,22 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
           ))}
         </ul>
       )}
-      {rules.length > 0 && (
+      {pending.length > 0 && (
         <ul className="space-y-1">
-          {rules.map((r) => (
-            <li key={r.id} className="flex flex-wrap items-center gap-2 rounded bg-surface-2 px-2 py-1">
-              <Badge tone={r.authorizedBy ? "good" : "accent"}>{r.authorizedBy ? "authorized" : "awaiting a second person"}</Badge>
-              <span className="font-mono text-xs">
-                {r.platform} · {r.adAccountId}
-              </span>
-              <span className="min-w-0 break-words text-xs text-muted">
-                “{r.reason}” — proposed by {r.proposedBy}
-                {r.authorizedBy ? `, authorized by ${r.authorizedBy}` : ""}
-                {r.heldRecords > 0 ? ` · ${r.heldRecords} record(s) still held` : ""}
-              </span>
-              {!r.authorizedBy && canApprove && r.proposedBy !== subject && (
-                <button type="button" disabled={busy !== null} onClick={() => call(`a:${r.id}`, `/api/currency-rules/${r.id}`, { action: "authorize" }, "Authorized: {n} spend record(s) now count as USD.")} className="rounded border border-border px-2 py-0.5 text-xs">
-                  Authorize
-                </button>
-              )}
-              {(canPropose || canApprove) && (
-                <button
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => {
-                    const why = window.prompt("Why does this rule no longer hold? (at least 10 characters)") ?? "";
-                    if (why.trim().length >= 10) void call(`r:${r.id}`, `/api/currency-rules/${r.id}`, { action: "revoke", reason: why }, "Revoked: {n} spend record(s) excluded again.");
-                  }}
-                  className="rounded border border-border px-2 py-0.5 text-xs text-muted"
-                >
-                  Revoke
-                </button>
-              )}
-            </li>
+          {pending.map((r) => (
+            <RuleRow key={r.id} r={r} {...rowProps} />
           ))}
         </ul>
+      )}
+      {authorized.length > 0 && (
+        <details>
+          <summary className="cursor-pointer text-xs text-muted">{authorized.length} authorized account rule(s)</summary>
+          <ul className="mt-1 space-y-1">
+            {authorized.map((r) => (
+              <RuleRow key={r.id} r={r} {...rowProps} />
+            ))}
+          </ul>
+        </details>
       )}
       {message && (
         <p role="status" className={message.ok ? "text-good" : "text-bad"}>
@@ -128,5 +117,39 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
         </p>
       )}
     </div>
+  );
+}
+
+function RuleRow({ r, busy, canApprove, canPropose, subject, call }: { r: Rule; busy: string | null; canApprove: boolean; canPropose: boolean; subject: string; call: Call }) {
+  return (
+    <li className="flex flex-wrap items-center gap-2 rounded bg-surface-2 px-2 py-1">
+      <Badge tone={r.authorizedBy ? "good" : "accent"}>{r.authorizedBy ? "authorized" : "awaiting a second person"}</Badge>
+      <span className="font-mono text-xs">
+        {r.platform} · {r.adAccountId}
+      </span>
+      <span className="min-w-0 break-words text-xs text-muted">
+        “{r.reason}” — proposed by {r.proposedBy}
+        {r.authorizedBy ? `, authorized by ${r.authorizedBy}` : ""}
+        {r.heldRecords > 0 ? ` · ${r.heldRecords} record(s) still held` : ""}
+      </span>
+      {!r.authorizedBy && canApprove && r.proposedBy !== subject && (
+        <button type="button" disabled={busy !== null} onClick={() => call(`a:${r.id}`, `/api/currency-rules/${r.id}`, { action: "authorize" }, "Authorized: {n} spend record(s) now count as USD.")} className="rounded border border-border px-2 py-0.5 text-xs">
+          Authorize
+        </button>
+      )}
+      {(canPropose || canApprove) && (
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={() => {
+            const why = window.prompt("Why does this rule no longer hold? (at least 10 characters)") ?? "";
+            if (why.trim().length >= 10) void call(`r:${r.id}`, `/api/currency-rules/${r.id}`, { action: "revoke", reason: why }, "Revoked: {n} spend record(s) excluded again.");
+          }}
+          className="rounded border border-border px-2 py-0.5 text-xs text-muted"
+        >
+          Revoke
+        </button>
+      )}
+    </li>
   );
 }

@@ -6,7 +6,7 @@ import { PipelineSections } from "@/components/integrations/PipelineSections";
 import { RecordCompare } from "@/components/integrations/RecordCompare";
 import { RunSync } from "@/components/integrations/RunSync";
 import { ConnectorCard, MapperVersions, MappingInspector, OfficeGrid } from "@/components/integrations/StudioSections";
-import { Callout, Card, EmptyState, Forbidden, KpiTile, PageHeader, Segmented, Skeleton } from "@/components/ui";
+import { Badge, Callout, Card, EmptyState, Forbidden, KpiTile, PageHeader, Segmented, Skeleton } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { getConnector } from "@/lib/connectors/config";
 import { listFaults } from "@/lib/connectors/faults";
@@ -16,6 +16,8 @@ import { CRM_ENTITIES } from "@/lib/connectors/types";
 import { accountsAwaitingCurrency, listCurrencyRules } from "@/lib/currency/rules";
 import { toJobView } from "@/lib/connectors/views";
 import { count } from "@/lib/format";
+import { reliabilitySignals } from "@/lib/health/signals";
+import { PERIODS } from "@/lib/period";
 import { failedRunsWithRecovery, streamTotals } from "@/lib/queries";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 
@@ -111,11 +113,33 @@ async function Studio({ searchParams }: { searchParams: SearchParams }) {
       {view === "mapping" && <MappingView />}
       {view === "pipeline" && (
         <Suspense fallback={<Skeleton lines={8} />}>
+          <Signals now={now} />
           <PipelineSections db={pool} />
           <CurrencySection canPropose={viewer.can.sync} canApprove={viewer.can.approve} subject={viewer.subject} />
         </Suspense>
       )}
     </div>
+  );
+}
+
+/** What makes a figure wrong or incomplete right now, each with its owner; nothing when there is nothing to do. */
+async function Signals({ now }: { now: Date }) {
+  const signals = await reliabilitySignals(getPool(), { period: PERIODS.oct, now });
+  if (signals.length === 0) return null;
+  return (
+    <Card id="signals" title="Reliability signals" subtitle="Conditions that make a figure wrong or incomplete now. Each names who acts and where.">
+      <ul className="space-y-1 text-sm" data-testid="reliability-signals">
+        {signals.map((s) => (
+          <li key={s.code} className="flex flex-wrap items-baseline gap-2">
+            <Badge tone={s.severity === "high" ? "bad" : "warn"}>{s.severity}</Badge>
+            <span className="min-w-0 flex-1 break-words">{s.text}</span>
+            <a href={s.href} className="text-xs text-accent hover:underline">
+              {s.owner} →
+            </a>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

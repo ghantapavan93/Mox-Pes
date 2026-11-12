@@ -152,8 +152,11 @@ const FAMILY_WORDS: Array<[RegExp, Family]> = [
   [/\b(?:(?:paid|media|ad|advertising|marketing) )*spend(?:ing)?\b|\bspent\b|\bad costs?\b/gi, "spend"],
 ];
 
-/** The noun right after a count (past up to three adjectives: "18 stored spend records") decides what it counts. */
-const COUNTED = /^\s+((?:[A-Za-z][\w-]*\s+){0,3}?)(customers?|prospects?|payments?|refunds?|acquisitions?|leads?|campaigns?|calls?|records?|exceptions?|days?|feeds?|channels?|samples?|runs?|branch(?:es)?|rows?|events?|items?|mappings?|versions?|hours?|minutes?|weeks?|months?|ids?|changes?|cases?|proposals?)\b/i;
+/**
+ * The noun right after a count (past up to three adjectives: "18 stored spend records") decides
+ * what it counts. In a compound the last noun counts: "160 payment records" are records.
+ */
+const COUNTED = /^\s+((?:[A-Za-z][\w-]*\s+){0,3}?)(customers?|prospects?|payments?|refunds?|acquisitions?|leads?|campaigns?|calls?|records?|exceptions?|days?|feeds?|channels?|samples?|runs?|branch(?:es)?|rows?|events?|items?|mappings?|versions?|hours?|minutes?|weeks?|months?|ids?|changes?|cases?|proposals?)\b(?!\s+(?:records?|rows?|events?|ids?|items?|samples?)\b)/i;
 
 /** A metric word further than this from a figure does not name it. */
 const MAX_METRIC_DISTANCE = 60;
@@ -241,15 +244,37 @@ interface Fig {
   anyUnit?: boolean;
 }
 
+const MONTH_NAMES = "jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december";
+const blank = (m: string) => " ".repeat(m.length);
+
+/**
+ * The piece with what is not a quantity blanked out, positions kept: dates ("Oct 1–30"), years,
+ * times, ids and versions. A count is located here, so "1" in "Oct 1–30 … across 1 campaign(s)"
+ * is the campaign count, not the date (lib/ai/numbers.ts reads the same things as non-quantities).
+ */
+function maskNonQuantities(piece: string): string {
+  return piece
+    .replace(/\b[a-z_]+:[\w.:-]+/gi, blank)
+    .replace(/\bHTTP\s+\d{3}\b/gi, blank)
+    .replace(/\b[A-Za-z]+\d+[\w-]*/g, blank)
+    .replace(/\b[A-Za-z][\w]*[-_][\w-]*\d[\w-]*/g, blank)
+    .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, blank)
+    .replace(/\b\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?\b/g, blank)
+    .replace(new RegExp(String.raw`\b(?:${MONTH_NAMES})\.?\s+\d{1,2}(?:\s*[–-]\s*\d{1,2})?(?!\d)`, "gi"), blank)
+    .replace(new RegExp(String.raw`\b\d{1,2}\s+(?:${MONTH_NAMES})\b`, "gi"), blank)
+    .replace(/\b(?:199\d|20[0-3]\d)\b/g, blank);
+}
+
 /** The figures of a piece, with their positions and signs. Cents are read as money; number words as counts. */
 function figuresOf(piece: string): Fig[] {
   const nums = claimNumbers(piece);
+  const masked = maskNonQuantities(piece);
   const taken: Array<[number, number]> = [];
   const free = (s: number, e: number) => taken.every(([a, b]) => e <= a || s >= b);
   const out: Fig[] = [];
   for (const n of [...nums.filter((x) => x.kind !== "count"), ...nums.filter((x) => x.kind === "count")]) {
     const re = new RegExp(n.kind === "count" ? String.raw`(?<![\d$.,])${escapeRe(n.text)}(?![\d]|[.,]\d|\s?%)` : escapeRe(n.text), "g");
-    for (const m of piece.matchAll(re)) {
+    for (const m of (n.kind === "count" ? masked : piece).matchAll(re)) {
       const s = m.index ?? 0;
       const e = s + m[0].length;
       if (!free(s, e)) continue;
@@ -281,7 +306,8 @@ function figuresOf(piece: string): Fig[] {
     out.push({ text: m[1], kind: "count", value: /^\d$/.test(m[1]) ? Number(m[1]) : NUMBER_WORDS[m[1].toLowerCase()], precision: 0, start: s, end: e });
   }
   // Zero words: "spent nothing", "no paid customers", "none of its spend".
-  for (const m of piece.matchAll(/\b(nothing|none|no)\b(?=\s+(?:(?:[A-Za-z][\w-]*\s+){0,2}?)(?:paid|media|spend|spent|customers?|payments?|refunds?|prospects?|revenue|cash|collections?|on\b))|\b(nothing)\b/gi)) {
+  // "no" only when a metric noun follows ("no paid customers", "no paid media spend"), never "no paid touch".
+  for (const m of piece.matchAll(/\b(none|no)\b(?=\s+(?:(?:[A-Za-z][\w-]*\s+){0,2}?)(?:spend|customers|payments|refunds|prospects|revenue|cash|collections)\b)|\b(nothing)\b/gi)) {
     const s = m.index ?? 0;
     const word = m[1] ?? m[2];
     const e = s + word.length;
@@ -396,6 +422,12 @@ function familyFor(fig: Pick<Fig, "kind" | "start" | "end">, piece: string, ment
     if (PAID_TOUCH.test(after.slice(partOf[0].length).replace(/^(?:[A-Za-z-]+\s+){0,3}?customers?/i, ""))) return "paidCustomers";
     return "portion";
   }
+  // "146 new customers serviced (69 paid)", "(3 unknown)": a count qualified by one word.
+  if (fig.kind === "count" && mentions.some((m) => m.family === "customers" || m.family === "paidCustomers") && /^\s+(?:paid|paying)\b(?!\s+(?:media|spend|search|ads?)\b)/i.test(after)) return "paidCustomers";
+  if (fig.kind === "count" && mentions.some((m) => m.family === "customers") && /^\s+(?:unknown|unattributed)\b/i.test(after)) return "unknown";
+  // "$18,551.00 paid − $312.00 refunded": money named by its verb.
+  if (fig.kind === "money" && /^\s+(?:paid|in payments|gross)\b(?!\s+(?:media|spend|search|ads?|social|channels?)\b)/i.test(after)) return "gross";
+  if (fig.kind === "money" && /^\s+(?:refunded|in refunds)\b/i.test(after)) return "refunds";
   const counted = fig.kind === "count" ? COUNTED.exec(after) : null;
   if (counted) {
     const prefix = counted[1].toLowerCase();
@@ -1012,7 +1044,7 @@ function membershipProofs(piece: string, branches: Array<{ id: string; at: numbe
 // ── Arithmetic ───────────────────────────────────────────────────────────────
 
 const TOKEN = String.raw`[−-]?\$?\d[\d,]*(?:\.\d+)?(?:\s?[KkMm]\b)?%?(?:\s?cents\b)?`;
-const LABEL = String.raw`(?:\s+(?:(?:new|paid|paying|unique|media|ad)\s+)*(?:customers?|prospects?|leads?|campaigns?|calls?|spend)(?:\s+whose first evidenced touch was paid)?)?`;
+const LABEL = String.raw`(?:\s+(?:(?:(?:new|paid|paying|unique|media|ad)\s+)*(?:customers?|prospects?|leads?|campaigns?|calls?|spend)(?:\s+whose first evidenced touch was paid)?|paid|refunded|gross))?`;
 const OPERAND = String.raw`(${TOKEN})(${LABEL})`;
 const OPERATOR = String.raw`(?:\s*([÷/×*])\s*|\s+([x+−-])\s+)`;
 

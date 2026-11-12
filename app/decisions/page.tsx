@@ -9,6 +9,7 @@ import { Badge, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } 
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
+import { verifiedReadiness } from "@/lib/decision/verified";
 import { money } from "@/lib/format";
 import { parsePeriod, type Period } from "@/lib/period";
 import { BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
@@ -128,6 +129,10 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
         <VerdictMatrix verdicts={verdicts} />
       </Card>
 
+      <Suspense fallback={<Card title="Verified readiness"><Skeleton lines={4} /></Card>}>
+        <VerifiedReadinessCard viewer={viewer} branchId={branchId} period={period} />
+      </Suspense>
+
       <div id="scenarios" className="grid scroll-mt-28 gap-6 xl:grid-cols-5">
         <Card
           className="xl:col-span-3"
@@ -145,6 +150,56 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
         </Card>
       </div>
     </>
+  );
+}
+
+const VERIFIED_TONE = { READY: "good", READY_WITH_LIMITATIONS: "accent", NEEDS_REVIEW: "warn", NOT_READY: "bad" } as const;
+const VERIFIED_LABEL = { READY: "ready", READY_WITH_LIMITATIONS: "ready, with limitations", NEEDS_REVIEW: "needs review", NOT_READY: "not ready" } as const;
+
+/**
+ * Verified readiness (lib/decision/verified.ts): whether a budget decision can rest on PROVED
+ * numbers. The state first, then why; each channel opens to every rule of the policy with its
+ * result, and the policy itself is shown in full.
+ */
+async function VerifiedReadinessCard({ viewer, branchId, period }: { viewer: Viewer; branchId: string; period: Period }) {
+  const v = await verifiedReadiness(getPool(), viewer, { branchId, period });
+  return (
+    <Card id="verified" className="scroll-mt-28" title="Verified readiness" subtitle="Can a budget decision rest on numbers that are proved, not just computed? One fixed policy, every rule shown.">
+      <ul className="space-y-2 text-sm" data-testid="verified-readiness">
+        {v.channels.map((c) => (
+          <li key={c.channelCode} className="rounded border border-border p-2">
+            <details>
+              <summary className="flex cursor-pointer flex-wrap items-center gap-2">
+                <Badge tone={VERIFIED_TONE[c.state]}>{VERIFIED_LABEL[c.state]}</Badge>
+                <span className="font-medium">{c.label}</span>
+                {c.because[0] && <span className="min-w-0 break-words text-xs text-muted">{c.because[0]}</span>}
+              </summary>
+              <ul className="mt-2 space-y-1 text-xs">
+                {c.rules.map((r) => (
+                  <li key={r.code} className="flex gap-2">
+                    <span className={r.passed ? "text-good" : "text-bad"} aria-label={r.passed ? "passed" : "failed"}>
+                      {r.passed ? "✓" : "✗"}
+                    </span>
+                    <span className="min-w-0 break-words">
+                      {r.text}
+                      {!r.passed && <span className="text-faint"> (→ {VERIFIED_LABEL[r.forces]})</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </li>
+        ))}
+      </ul>
+      <details className="mt-3 text-xs text-muted">
+        <summary className="cursor-pointer">The policy, in order</summary>
+        <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+          {v.policy.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ol>
+      </details>
+    </Card>
   );
 }
 

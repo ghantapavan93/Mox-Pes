@@ -45,6 +45,10 @@ out.push(`| Forbidden statements in SUPPORTED claims | ${count(inv, "forbidden_s
 out.push(`| Authorization failures | ${count(inv, "authorization_failure")} | — |`);
 out.push(`| Unmatched figures (info, for review) | ${count(inv, "unmatched_figure")} | — |`);
 out.push(`| Invalid tool calls | ${count(inv, "invalid_tool_call")} | — |`);
+// The product's own sentences must never be contradicted by its own checker (a false rejection).
+const templateClaims = inv.flatMap((r) => r.claims ?? []);
+const selfContradicted = templateClaims.filter((c) => (c.proofs ?? []).some((p) => p.verdict === "CONTRADICTED"));
+out.push(`| Template sentences contradicted by their own proofs | ${selfContradicted.length} / ${templateClaims.length} | ${pct(selfContradicted.length, templateClaims.length)} |`);
 out.push("", `Outcome matrix (expected→got): ${Object.entries(byOutcome).map(([k, v]) => `${k} ${v}`).join(", ")}`, "");
 
 // Claims mode.

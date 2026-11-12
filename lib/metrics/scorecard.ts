@@ -27,6 +27,8 @@ export interface BranchRow {
   paidAcquired: number;
   /** Paid-media customers left out of the CAC because their campaign's spend is all held at intake. */
   heldCampaignAcquired: number;
+  /** Paid-media customers counted in the CAC whose campaign has spend days held in the period: the CAC is incomplete. */
+  partlyHeldAcquired: number;
   unknownAcquired: number;
   channelConflicts: number;
   /** Collected to date from customers first serviced in the period. */
@@ -68,22 +70,43 @@ const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 const scopeParams = (s: Scope) => [s.from, s.to, s.branchIds];
 
 /**
- * Campaigns whose spend is all held at intake: records exist in the ads feed (quarantined, e.g.
- * CURRENCY_UNSUPPORTED, or excluded, e.g. CURRENCY_UNSTATED) but none was ever counted, so the
- * campaign has no ad_campaigns row. Customers credited to one leave the CAC denominator, as
- * customers of an unmapped campaign do: their cost is in no figure. A CTE for `with` lists.
+ * Spend held at intake, per campaign-day: a day the ads feed sent (quarantined, e.g. another
+ * currency, or excluded, e.g. no stated currency without a rule) for which NO spend row is counted.
+ * A day counted from another version of the record is not held. (Review 2026-11-12: a campaign
+ * with an ad_campaigns row could still have all its spend removed, by a revoked rule or by
+ * migration 0020, and its customers stayed in the CAC.)
+ *
+ *   held_campaigns         every day the campaign sent is held: none of its cost is in any
+ *                          figure, so its customers leave the CAC denominator (definition v3);
+ *   held_days              the days themselves, to flag campaigns with SOME days held: their
+ *                          customers stay, but the CAC is then incomplete, and says so.
+ *
+ * Each status is read on its own, so the partial indexes on held raw events apply. Acquisitions
+ * carry a campaign id without a platform, so a held campaign id is matched on its id alone.
+ * CTEs for `with` lists.
  */
-export const HELD_CAMPAIGNS = `held_campaigns as (
-       select distinct re.payload ->> 'campaignId' as external_campaign_id
-       from raw_events re
-       where re.source = 'ads' and re.status in ('quarantined', 'excluded') and re.payload ->> 'campaignId' is not null
-         and not exists (select 1 from ad_campaigns c where c.external_campaign_id = re.payload ->> 'campaignId'))`;
+export const HELD_SPEND = `held_days as (
+       select distinct x.platform, x.ext, x.d::date as day
+       from (
+         select re.payload ->> 'platform' as platform, re.payload ->> 'campaignId' as ext, re.payload ->> 'date' as d
+         from raw_events re where re.source = 'ads' and re.status = 'excluded'
+         union all
+         select re.payload ->> 'platform', re.payload ->> 'campaignId', re.payload ->> 'date'
+         from raw_events re where re.source = 'ads' and re.status = 'quarantined'
+       ) x
+       where x.ext is not null and x.d ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+         and not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
+                         where c.platform = x.platform and c.external_campaign_id = x.ext and s.spend_date = x.d::date)),
+     held_campaigns as (
+       select distinct h.ext as external_campaign_id from held_days h
+       where not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
+                         where c.platform = h.platform and c.external_campaign_id = h.ext))`;
 
 export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow[]> {
   const { rows } = await db.query(
     `with p as (select $1::timestamptz as t0, $2::timestamptz as t1),
      b as (select id from branches where $3::text[] is null or id = any($3::text[])),
-     ${HELD_CAMPAIGNS},
+     ${HELD_SPEND},
      spend as (
        select m.branch_id, sum(s.cost_cents) as cost, sum(s.platform_conversions) as claimed
        from ad_spend_daily s
@@ -113,6 +136,11 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
                 and not exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as paid_acquired,
               count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
                 and exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as held_acquired,
+              -- Counted, but their campaign has spend days held in the period: the CAC is incomplete.
+              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
+                and not exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)
+                and exists (select 1 from held_days hd where hd.ext = a.campaign_external_id
+                              and hd.day >= (p.t0 at time zone 'UTC')::date and hd.day < (p.t1 at time zone 'UTC')::date)) as partly_held_acquired,
               count(*) filter (where a.channel_code = 'unknown') as unknown_acquired,
               count(*) filter (where a.channel_conflict) as conflicts,
               coalesce(sum(r.collected_cents), 0) as new_collected,
@@ -138,7 +166,7 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
        group by 1)
      select br.id, br.name, br.region,
             spend.cost, spend.claimed, leadagg.raw_leads, leadagg.prospects, leadagg.paid_prospects, sold.sold,
-            acq.acquired, acq.paid_acquired, acq.held_acquired, acq.unknown_acquired, acq.conflicts, acq.new_collected, acq.new_acv,
+            acq.acquired, acq.paid_acquired, acq.held_acquired, acq.partly_held_acquired, acq.unknown_acquired, acq.conflicts, acq.new_collected, acq.new_acv,
             rev.net, rev.refunds,
             exc.open_exceptions, risk.at_risk
      from b join branches br on br.id = b.id
@@ -165,6 +193,7 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
     acquired: num(r.acquired),
     paidAcquired: num(r.paid_acquired),
     heldCampaignAcquired: num(r.held_acquired),
+    partlyHeldAcquired: num(r.partly_held_acquired),
     unknownAcquired: num(r.unknown_acquired),
     channelConflicts: num(r.conflicts),
     newCustomerCollectedCents: num(r.new_collected),
@@ -227,6 +256,7 @@ export async function totals(db: Queryable, scope: Scope, rows?: BranchRow[]): P
   return {
     paidSpendCents,
     heldCampaignAcquired: sum("heldCampaignAcquired"),
+    partlyHeldAcquired: sum("partlyHeldAcquired"),
     platformClaimed: sum("platformClaimed"),
     rawLeads: sum("rawLeads"),
     prospects: num(distinct.rows[0].prospects),

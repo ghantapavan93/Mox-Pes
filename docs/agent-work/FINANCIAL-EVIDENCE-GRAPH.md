@@ -85,6 +85,35 @@ Each trace runs in one repeatable-read snapshot and is checked against the score
 | `tests/integration/cash-trace.test.ts` | A partial refund with odd cents; a refund in October for a September sale; a voided payment left out; new-customer collections to date; unknown share; brand rollups that partition the company |
 | `tests/unit/ai-proof.test.ts` | Completeness: correct-as-stored figures that leave held records out |
 
+## After the financial review of 2026-11-12
+
+An adversarial financial review found 15 defects, two on the headline CAC. Each fix has a
+reproducer in `tests/integration/currency-rules.test.ts` or `cash-trace.test.ts`.
+
+| # | Defect | Fix |
+|---|---|---|
+| 1 | **Critical.** A campaign counted as held only when it had no campaign row, but spend leaves the scorecard three ways that keep the row (the 0020 `assumed_usd` delete, a revoke, the gate removing an older row). Its customers stayed in the CAC: CAC too low, nothing flagged | Held spend is now read from the held raw events themselves, per campaign-day, wherever no counted row exists for that day (`HELD_SPEND` in `lib/metrics/scorecard.ts`) |
+| 2 | Replay stamped gate-held records `projected`: money lost for good, every held list silent | `projectAll` reports what the gate held; replay, intake and re-projection never mark those projected |
+| 3 | An older version counted after a newer one was held (same batch, late delivery, replay) | The gate drops a spend version older than any held version of the same campaign-day, in the batch or stored |
+| 4 | A campaign with some days held: customers counted, part of the cost missing, no flag | `partlyHeldAcquired`: an incompleteness reason on the CAC facts, the `complete` readiness rule, and a high reliability signal |
+| 5 | A spend trace stated "0 customers credited" per campaign | Only a CAC trace states a count; a spend trace states none |
+| 6 | "Awaiting currency" summed every fetch of every campaign-day, and days already counted | Newest held version per campaign-day, and only days with no counted version |
+| 7 | H4 could not see spend held for its currency | H4 reads it per month (below) |
+| 8 | H1, H3 and H4 were supported by a cent of spend, an exception of any age, or a paused campaign | Materiality (10% of the change) and direction rules (`WORKSPACE-READINESS-SIGNALS.md`) |
+| 9 | H1's per-campaign deltas wrong for a campaign with two channel rows | Summed per campaign over both months |
+| 10 | The held-spend exclusion cited customers only, never the records that caused it | `CAMPAIGN_SPEND_HELD` now cites up to five of the held raw events |
+| 11 | Revoke checked the campaign's first-seen account, not the record's | Revoke reads the account from each record's payload, as intake and authorize do |
+| 12 | Decomposition shares from rounded CACs, one clamped | Unrounded parts; the shares add to exactly 100%, shown unclamped |
+| 13 | Two cash invariants could never fail; over-refunds ignored the original's status | The company total is read independently from every successful payment; a refund against a voided payment is over; the tautology was removed |
+| 14 | Platform ambiguity of campaign ids | Documented only: acquisitions carry no platform |
+| 15 | A possible slow scan for held campaigns | One union over the excluded and quarantined ads events; measured in the final report |
+
+The authorization review added: an advisory lock orders currency decisions against intake (an
+ingest holds it shared from its start; authorize and revoke hold it exclusive), so a revoke can no
+longer race an in-flight ingest into counting money under a revoked rule, nor an authorize miss a
+record held by an ingest in flight (reproducer: "a revoke waits for an ads ingest in flight").
+Rules name one account; wildcards are refused through the API.
+
 ## Not done
 
 - **No page for the cash trace yet.** It is reachable through the investigator (`getCashTrace`),

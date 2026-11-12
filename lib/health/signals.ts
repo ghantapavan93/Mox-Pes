@@ -12,7 +12,7 @@ import type { Period } from "@/lib/period";
  */
 
 export interface ReliabilitySignal {
-  code: "currency_unstated" | "currency_rule_pending" | "held_spend_customers" | "refund_integrity" | "stale_feed";
+  code: "currency_unstated" | "currency_rule_pending" | "held_spend_customers" | "partly_held_spend" | "refund_integrity" | "stale_feed";
   severity: "high" | "medium";
   /** What is wrong, with its size. */
   text: string;
@@ -26,9 +26,9 @@ export async function reliabilitySignals(db: Queryable, args: { period: Period; 
   // Sequential: `db` may be one transaction client.
   const awaiting = await accountsAwaitingCurrency(db);
   if (awaiting.length > 0) {
-    const records = awaiting.reduce((t, a) => t + a.records, 0);
+    const days = awaiting.reduce((t, a) => t + a.campaignDays, 0);
     const cents = awaiting.reduce((t, a) => t + a.amountCents, 0);
-    out.push({ code: "currency_unstated", severity: "medium", text: `${awaiting.length} ad account(s) send spend with no stated currency: ${records} record(s), ${exactDollars(cents)} as written, are not counted until a rule says the account reports in USD.`, owner: "integration engineer", href: "/integrations?view=pipeline#currency" });
+    out.push({ code: "currency_unstated", severity: "medium", text: `${awaiting.length} ad account(s) send spend with no stated currency: ${days} campaign-day(s), ${exactDollars(cents)} as written, are not counted until a rule says the account reports in USD.`, owner: "integration engineer", href: "/integrations?view=pipeline#currency" });
   }
   const pending = await db.query<{ n: string }>("select count(*) as n from currency_rules where authorized_at is null and revoked_at is null");
   if (Number(pending.rows[0].n) > 0) {
@@ -38,6 +38,11 @@ export async function reliabilitySignals(db: Queryable, args: { period: Period; 
   const held = rows.filter((r) => r.heldCampaignAcquired > 0);
   if (held.length > 0) {
     out.push({ code: "held_spend_customers", severity: "high", text: `${held.reduce((t, r) => t + r.heldCampaignAcquired, 0)} paid customer(s) at ${held.length} branch(es) are left out of paid CAC (${args.period.label}) because their campaign's spend is held at intake: the CAC leaves those campaigns out.`, owner: "integration engineer", href: "/integrations?view=pipeline#currency" });
+  }
+  // Some days held, some counted: the customers stay in, part of their cost does not.
+  const partly = rows.filter((r) => r.partlyHeldAcquired > 0);
+  if (partly.length > 0) {
+    out.push({ code: "partly_held_spend", severity: "high", text: `${partly.reduce((t, r) => t + r.partlyHeldAcquired, 0)} paid customer(s) at ${partly.length} branch(es) are counted in paid CAC (${args.period.label}) while some days of their campaign's spend are held at intake: that CAC is understated.`, owner: "integration engineer", href: "/integrations?view=pipeline#currency" });
   }
   const refunds = await db.query<{ orphan: string; over: string }>(
     `select (select count(*) from crm_payments r where r.amount_cents < 0 and r.status = 'successful'

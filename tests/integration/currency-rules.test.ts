@@ -2,6 +2,9 @@ import type { Pool } from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { mapCampaignToBranch } from "@/lib/actions";
+import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/registry";
+import { ingestRecords } from "@/lib/ingest/ingest";
+import { replay } from "@/lib/ingest/replay";
 import { accountsAwaitingCurrency, authorizeCurrencyRule, proposeCurrencyRule, revokeCurrencyRule } from "@/lib/currency/rules";
 import { traceBranchMetric } from "@/lib/lineage/trace";
 import { branchRows } from "@/lib/metrics/scorecard";
@@ -79,7 +82,7 @@ describe("spend whose currency is not stated", () => {
 
   it("counts once an engineer proposes and a different approver authorizes the account's rule, and is excluded again when it is revoked", async () => {
     await world();
-    expect(await accountsAwaitingCurrency(pool)).toEqual([{ platform: "google_ads", adAccountId: "ACC-NONE", records: 5, amountCents: 20_000 }]);
+    expect(await accountsAwaitingCurrency(pool)).toEqual([{ platform: "google_ads", adAccountId: "ACC-NONE", campaignDays: 5, amountCents: 20_000 }]);
     await expect(proposeCurrencyRule(pool, marketing, { platform: "google_ads", adAccountId: "ACC-NONE", reason: "the account reports in USD", now: NOW })).rejects.toThrow(ForbiddenError);
     await expect(proposeCurrencyRule(pool, engineer, { platform: "google_ads", adAccountId: "ACC-NONE", reason: "short", now: NOW })).rejects.toThrow(/at least 10/);
 
@@ -105,6 +108,86 @@ describe("spend whose currency is not stated", () => {
     expect(excluded).toBe(5);
     expect(await one(pool, "select count(*)::int as n from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id where c.external_campaign_id = 'cr-none'")).toEqual({ n: 0 });
     expect(await one(pool, "select count(*)::int as n from raw_events where status = 'excluded' and exclusion_code = 'CURRENCY_UNSTATED'")).toEqual({ n: 5 });
+    // The campaign row survives the revoke; its customer still leaves the CAC with its spend, as
+    // the CAD campaign's does (review 2026-11-12, financial finding 1: the held rule looked for
+    // campaigns with no row).
+    const [row] = await branchRows(pool, { from: OCT.from, to: OCT.to, branchIds: ["B12"] });
+    expect({ paid: row.paidAcquired, held: row.heldCampaignAcquired }).toEqual({ paid: 2, held: 2 });
+  });
+
+  it("a replay keeps a gate-held record excluded, and an authorize later counts it (financial finding 2)", async () => {
+    await ingest(pool, "ads", [spend("cr-rp", "ACC-RP", 4, 90)], { now: NOW });
+    const raw = await one<{ id: string }>(pool, "select id from raw_events where payload ->> 'campaignId' = 'cr-rp'");
+    // As if it had failed projection once: quarantined, then replayed.
+    await pool.query("update raw_events set status = 'quarantined', error_code = 'PROJECTION_FAILED', exclusion_code = null where id = $1", [raw.id]);
+    await replay(pool, { source: "ads", rawEventIds: [Number(raw.id)], mapperVersion: ACTIVE_VERSION.ads, actor: "engineer", idempotencyKey: "rp-1", dryRun: false, now: NOW, scope: { ...OCT, branchIds: null } });
+    expect(await one(pool, "select status, exclusion_code from raw_events where id = $1", [raw.id])).toEqual({ status: "excluded", exclusion_code: "CURRENCY_UNSTATED" });
+    const { ruleId } = await proposeCurrencyRule(pool, engineer, { platform: "google_ads", adAccountId: "ACC-RP", reason: "the account settings show USD billing", now: NOW });
+    expect((await authorizeCurrencyRule(pool, approver, { ruleId, now: NOW })).reprojected).toBe(1);
+  });
+
+  it("an older version is never counted once a newer one was held, in one batch or two (financial finding 3)", async () => {
+    const older = spend("cr-old", "ACC-OLD", 5, 900, { currencyCode: "USD", fetchedAt: "2026-10-06T06:00:00Z" });
+    const newer = spend("cr-old", "ACC-OLD", 5, 500, { fetchedAt: "2026-10-07T06:00:00Z" });
+    await ingest(pool, "ads", [older, newer], { now: NOW });
+    expect(await one(pool, "select count(*)::int as n from ad_spend_daily")).toEqual({ n: 0 });
+    await freshDb(pool, { currencyRule: false });
+    await ingest(pool, "ads", [newer], { now: NOW });
+    await ingest(pool, "ads", [older], { now: new Date(NOW.getTime() + 60_000) });
+    expect(await one(pool, "select count(*)::int as n from ad_spend_daily")).toEqual({ n: 0 });
+  });
+
+  it("customers of a campaign with some days held stay in the CAC and are flagged (financial finding 4)", async () => {
+    const ads: RawRecord[] = [];
+    for (let d = 1; d <= 6; d++) ads.push(spend("cr-part", "ACC-PART", d, 50, d <= 3 ? { currencyCode: "USD" } : {}));
+    await ingest(pool, "ads", ads, { now: NOW });
+    const c = await one<{ id: string }>(pool, "select id from ad_campaigns where external_campaign_id = 'cr-part'");
+    await mapCampaignToBranch(pool, { campaignId: Number(c.id), branchId: "B12", actor: "setup", reason: "fixture mapping", now: at(1) });
+    const won = acquisition(1, "B12", "+14805571001", at(8), { source: "Google Ads" });
+    (won.call.payload as Record<string, unknown>).campaign = "cr-part";
+    await ingest(pool, "calls", [won.call], { now: NOW });
+    await ingest(pool, "crm", won.crm, { now: NOW });
+    await runReconcile(pool, NOW);
+    const [row] = await branchRows(pool, { from: OCT.from, to: OCT.to, branchIds: ["B12"] });
+    expect({ spend: row.paidSpendCents, paid: row.paidAcquired, held: row.heldCampaignAcquired, partly: row.partlyHeldAcquired }).toEqual({ spend: 15_000, paid: 1, held: 0, partly: 1 });
+  });
+
+  it("counts held spend once per campaign-day at its newest version, and not at all once a version counts (financial finding 6)", async () => {
+    for (const [i, fetched] of ["2026-10-06T06:00:00Z", "2026-10-07T06:00:00Z", "2026-10-08T06:00:00Z"].entries()) {
+      await ingest(pool, "ads", [spend("cr-3x", "ACC-3X", 5, 100 + i, { fetchedAt: fetched })], { now: new Date(NOW.getTime() + i * 60_000) });
+    }
+    expect(await accountsAwaitingCurrency(pool)).toEqual([{ platform: "google_ads", adAccountId: "ACC-3X", campaignDays: 1, amountCents: 10_200 }]);
+    await ingest(pool, "ads", [spend("cr-3x", "ACC-3X", 5, 103, { currencyCode: "USD", fetchedAt: "2026-10-09T06:00:00Z" })], { now: new Date(NOW.getTime() + 5 * 60_000) });
+    expect(await accountsAwaitingCurrency(pool)).toEqual([]);
+  });
+
+  it("a revoke excludes what the rule's own account counted, by the record's payload (financial finding 11)", async () => {
+    await ingest(pool, "ads", [spend("cr-acct", "ACC-A", 2, 10, { currencyCode: "USD" })], { now: NOW });
+    const { ruleId } = await proposeCurrencyRule(pool, engineer, { platform: "google_ads", adAccountId: "ACC-B", reason: "the account settings show USD billing", now: NOW });
+    await authorizeCurrencyRule(pool, approver, { ruleId, now: NOW });
+    // The campaign was first seen under ACC-A; this day reports under ACC-B, unstated.
+    await ingest(pool, "ads", [spend("cr-acct", "ACC-B", 3, 20)], { now: NOW });
+    expect(await one(pool, "select count(*)::int as n from ad_spend_daily where currency_basis = 'account_rule_usd'")).toEqual({ n: 1 });
+    expect((await revokeCurrencyRule(pool, engineer, { ruleId, reason: "the account bills in CAD after all", now: NOW })).excluded).toBe(1);
+    expect(await one(pool, "select count(*)::int as n from ad_spend_daily where currency_basis = 'account_rule_usd'")).toEqual({ n: 0 });
+  });
+
+  it("a revoke waits for an ads ingest in flight, so no spend stays counted under a revoked rule (authorization finding 1)", async () => {
+    const { ruleId } = await proposeCurrencyRule(pool, engineer, { platform: "google_ads", adAccountId: "ACC-RACE", reason: "the account settings show USD billing", now: NOW });
+    await authorizeCurrencyRule(pool, approver, { ruleId, now: NOW });
+    const c1 = await pool.connect();
+    try {
+      await c1.query("begin");
+      await ingestRecords(c1, { source: "ads", records: [spend("cr-race", "ACC-RACE", 6, 30)], mapper: mapperFor("ads"), ctx: referenceContext, runId: null, now: NOW });
+      const revoking = revokeCurrencyRule(pool, engineer, { ruleId, reason: "the account was moved to CAD billing", now: NOW });
+      // The revoke is blocked on the ingest's shared lock; the ingest commits first.
+      await new Promise((r) => setTimeout(r, 300));
+      await c1.query("commit");
+      expect((await revoking).excluded).toBe(1);
+    } finally {
+      c1.release();
+    }
+    expect(await one(pool, "select count(*)::int as n from ad_spend_daily where currency_basis = 'account_rule_usd'")).toEqual({ n: 0 });
   });
 
   it("a newer revision of a campaign-day that drops the currency takes the older counted row out: the newest observation decides", async () => {

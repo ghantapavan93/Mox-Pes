@@ -82,12 +82,29 @@ describe("why did paid CAC increase: six hypotheses", () => {
     expect(r.reads).toBeLessThanOrEqual(12);
   });
 
-  it("supports an integration stopping when a campaign's spend ends early and a feed is stale", async () => {
+  it("supports missing data only in the direction that raises CAC: stale customer feeds; stopped spend points the other way", async () => {
     await world({ octSpendStopsDay: 18, freshFeeds: false });
     const id = await openCacInquiry(pool, marketing, { branchId: "B09", now: NOW });
     const h4 = (await getInquiry(pool, marketing, id))!.result.hypotheses.find((h) => h.code === "H4")!;
     expect(h4.status).toBe("SUPPORTED");
-    expect(h4.evidence.map((e) => e.label)).toEqual(expect.arrayContaining(["Campaign inq-gs", "Feed ads"]));
+    expect(h4.evidence.map((e) => e.label)).toEqual(expect.arrayContaining(["Feed calls", "Feed crm.payment"]));
+    // Stopped October spend and a stale ads feed would LOWER October CAC (review 2026-11-12, financial 8).
+    expect(h4.counterevidence.map((e) => e.label)).toEqual(expect.arrayContaining(["Campaign inq-gs", "Feed ads"]));
+  });
+
+  it("a campaign that only stopped spending does not support H4 (financial 8)", async () => {
+    await world({ octSpendStopsDay: 18 });
+    const id = await openCacInquiry(pool, marketing, { branchId: "B09", now: NOW });
+    const h4 = (await getInquiry(pool, marketing, id))!.result.hypotheses.find((h) => h.code === "H4")!;
+    expect(h4.status).toBe("CONTRADICTED");
+    expect(h4.counterevidence.map((e) => e.label)).toContain("Campaign inq-gs");
+  });
+
+  it("the decomposition's two parts add to 100%, unclamped (financial 12)", async () => {
+    await world();
+    const id = await openCacInquiry(pool, marketing, { branchId: "B09", now: NOW });
+    const d = (await getInquiry(pool, marketing, id))!.result.decomposition!;
+    expect(d.spendShare + d.customerShare).toBeCloseTo(1, 12);
   });
 
   it("answers that there is nothing to explain when CAC did not increase", async () => {
@@ -126,6 +143,11 @@ describe("the workspace", () => {
     expect((await listInquiries(pool, partner)).map((x) => x.id)).not.toContain(id);
     await expect(openCacInquiry(pool, partner, { branchId: "B09", now: NOW })).rejects.toThrow(ForbiddenError);
     await expect(openCacInquiry(pool, guest, { branchId: "B09", now: NOW })).rejects.toThrow(ForbiddenError);
+    // Re-testing or annotating another branch's investigation answers as a missing one does: the
+    // id must not reveal that it exists (review 2026-11-12, A-3).
+    await expect(retestInquiry(pool, partner, { id, now: NOW })).rejects.toMatchObject({ status: 404, message: "Investigation not found" });
+    await expect(addInquiryNote(pool, partner, { id, text: "probing another branch", now: NOW })).rejects.toMatchObject({ status: 404, message: "Investigation not found" });
+    await expect(retestInquiry(pool, partner, { id: id + 999, now: NOW })).rejects.toMatchObject({ status: 404, message: "Investigation not found" });
     expect(await one(pool, "select count(*)::int as n from audit_log where subject = $1", [`inquiry:${id}`])).toEqual({ n: 2 });
   });
 });

@@ -61,10 +61,19 @@ function money(text: string, whole: string, frac: string | undefined, unit: stri
   return { text: text.trim(), kind: "money", value: Number(`${whole.replace(/,/g, "")}${frac ? `.${frac}` : ""}`), decimals: frac ? frac.length : 0, scale: unit ? SCALE[unit.toLowerCase()] : 1 };
 }
 
+/**
+ * Quoted text is a name, written by a person or a source ("Spring Promo 20% off"): never a
+ * figure. Templates quote every campaign name they insert, so a number in a name neither
+ * supports nor sinks a sentence (review 2026-11-12, AI-claims finding 20). Model text cannot hide
+ * a figure this way: the proof checker's closed reading still sees quoted digits (lib/ai/proof.ts).
+ */
+const QUOTED = /"[^"\n]{1,160}"|“[^”\n]{1,160}”/g;
+export const maskQuoted = (text: string): string => text.replace(QUOTED, (m) => " ".repeat(m.length));
+
 /** The checkable numbers in a claim. */
 export function claimNumbers(text: string): ClaimNumber[] {
   const out: ClaimNumber[] = [];
-  let rest = text;
+  let rest = maskQuoted(text);
   // Money: $1,234 · $1,234.56 · $1.2K · $3 million · USD 310 · 310.00 dollars.
   rest = rest.replace(new RegExp(String.raw`[−-]?(?:\$|\bUSD\s?)\s?${NUM}${UNIT}`, "gi"), (m, w: string, f?: string, u1?: string, u2?: string) => {
     out.push(money(m, w, f, u1 ?? u2));
@@ -94,7 +103,8 @@ export function claimNumbers(text: string): ClaimNumber[] {
     .replace(new RegExp(String.raw`\b(?:${MONTHS})\.?\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?(?!\d)`, "gi"), (m, a: string, b?: string) =>
       Number(a) <= 31 && (b === undefined || Number(b) <= 31) ? " " : m.replace(/^\S+/, " "),
     )
-    .replace(new RegExp(String.raw`\b(\d{1,2})\s+(?:${MONTHS})\b`, "gi"), (m, a: string) => (Number(a) <= 31 ? " " : m))
+    // "10 October" is a date; "10 October paid-media customers" is a count (lib/ai/proof.ts reads it so too).
+    .replace(new RegExp(String.raw`\b(\d{1,2})\s+(?:${MONTHS})\b(?!\s+(?:[A-Za-z][\w-]*\s+){0,2}?(?:customers?|payments?|refunds?|prospects?|leads?|calls?|acquisitions?)\b)`, "gi"), (m, a: string) => (Number(a) <= 31 ? " " : m))
     .replace(/\b(?:199\d|20[0-3]\d)\b/g, " ");
   // Counts: any number of two digits or more, and a single digit before a counted noun.
   rest = rest.replace(new RegExp(String.raw`(?<![\w.,])(\d)\s+(?=${COUNT_NOUN})`, "gi"), (m, d: string) => {

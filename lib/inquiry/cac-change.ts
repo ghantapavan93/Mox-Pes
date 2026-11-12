@@ -1,5 +1,6 @@
 import { ACTIVE_VERSION } from "@/lib/adapters/registry";
 import { evidence } from "@/lib/ai/evidence";
+import { CURRENCY_UNSTATED } from "@/lib/currency/coverage";
 import type { Queryable } from "@/lib/db";
 import { FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import { traceBranchMetric, exactDollars } from "@/lib/lineage/trace";
@@ -63,6 +64,9 @@ export interface CacChangeResult {
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 
+/** The least part of ln(CAC Oct / CAC Sep) a hypothesis must account for to count as a driver. */
+export const MATERIAL_SHARE = 0.1;
+
 /** Runs the six tests for one branch, in the caller's snapshot, as the viewer (scope-checked by the trace). */
 export async function testCacChange(db: Queryable, viewer: Viewer, args: { branchId: string; now: Date }): Promise<CacChangeResult> {
   const b = args.branchId;
@@ -87,28 +91,44 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
       ? { holds: null, detail: `Paid CAC is not defined for ${sCac === null ? "September" : "October"} (no paid customers), so a change cannot be measured.`, sepCacCents: sCac, octCacCents: oCac, evidenceIds: bmIds }
       : { holds: oCac > sCac, detail: `Paid CAC went from ${exactDollars(sCac)} in September to ${exactDollars(oCac)} in October (${oCac > sCac ? "+" : ""}${exactDollars(oCac - sCac)}).`, sepCacCents: sCac, octCacCents: oCac, evidenceIds: bmIds };
 
+  // ln(CAC Oct / CAC Sep) = ln(spend Oct / spend Sep) − ln(paid Oct / paid Sep), from the
+  // UNROUNDED parts, so the two shares add to exactly 100%. A share can be negative (paid
+  // customers rose, which lowered CAC) or above 100% (the other part pulled the other way); both
+  // are shown as they are, never clamped (review 2026-11-12, financial 12 and authorization 7).
   const decomposition =
-    premise.holds && sRow.paidSpendCents > 0 && oRow.paidSpendCents > 0 && sRow.paidAcquired > 0 && oRow.paidAcquired > 0 && sCac !== oCac
+    premise.holds && sRow.paidSpendCents > 0 && oRow.paidSpendCents > 0 && sRow.paidAcquired > 0 && oRow.paidAcquired > 0
       ? (() => {
-          const total = Math.log((oCac as number) / (sCac as number));
-          return { spendShare: Math.log(oRow.paidSpendCents / sRow.paidSpendCents) / total, customerShare: -Math.log(oRow.paidAcquired / sRow.paidAcquired) / total };
+          const spendLog = Math.log(oRow.paidSpendCents / sRow.paidSpendCents);
+          const customerLog = -Math.log(oRow.paidAcquired / sRow.paidAcquired);
+          const total = spendLog + customerLog;
+          return total === 0 ? null : { spendShare: spendLog / total, customerShare: customerLog / total };
         })()
       : null;
+  const share = (v: number) => `${v >= 0 ? "" : "−"}${pct(Math.abs(v))}`;
 
   // ── H1 spend up ──
   const spendDelta = oRow.paidSpendCents - sRow.paidSpendCents;
   const traceOct = await read(traceBranchMetric(db, viewer, { branchId: b, period: oct, metric: "paid_cac" }));
   const traceSep = await read(traceBranchMetric(db, viewer, { branchId: b, period: sep, metric: "paid_cac" }));
-  const sepByCampaign = new Map(traceSep.numerator.campaigns.map((c) => [c.externalCampaignId, c.spendCents]));
-  const moves = traceOct.numerator.campaigns
-    .map((c) => ({ id: c.externalCampaignId, evidenceId: c.evidenceId, delta: c.spendCents - (sepByCampaign.get(c.externalCampaignId) ?? 0) }))
-    .sort((x, y) => y.delta - x.delta);
+  // Per campaign, over every channel row it has in either month: a campaign reclassified within
+  // a month has two rows, and its delta is the sum of them (review 2026-11-12, financial 9).
+  const byCampaign = new Map<string, { sep: number; oct: number; evidenceId: string }>();
+  for (const [month, t] of [["sep", traceSep], ["oct", traceOct]] as const) {
+    for (const c of t.numerator.campaigns) {
+      const e = byCampaign.get(c.externalCampaignId) ?? { sep: 0, oct: 0, evidenceId: c.evidenceId };
+      e[month] += c.spendCents;
+      byCampaign.set(c.externalCampaignId, e);
+    }
+  }
+  const moves = [...byCampaign].map(([id, e]) => ({ id, evidenceId: e.evidenceId, delta: e.oct - e.sep })).sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta));
+  // A driver must account for a material part of the change, not merely move in its direction.
+  const spendMaterial = spendDelta > 0 && (decomposition === null || decomposition.spendShare >= MATERIAL_SHARE);
   const h1: HypothesisResult = {
     code: "H1",
     statement: "Paid media spend went up.",
-    status: spendDelta > 0 ? "SUPPORTED" : "CONTRADICTED",
-    summary: `Paid spend ${exactDollars(sRow.paidSpendCents)} → ${exactDollars(oRow.paidSpendCents)} (${spendDelta >= 0 ? "+" : ""}${exactDollars(spendDelta)})${decomposition ? `; about ${pct(Math.max(0, decomposition.spendShare))} of the CAC change on a log scale` : ""}.`,
-    test: "SUPPORTED if October paid spend is above September's; CONTRADICTED otherwise. Size: the spend part of ln(CAC Oct / CAC Sep).",
+    status: spendMaterial ? "SUPPORTED" : "CONTRADICTED",
+    summary: `Paid spend ${exactDollars(sRow.paidSpendCents)} → ${exactDollars(oRow.paidSpendCents)} (${spendDelta >= 0 ? "+" : ""}${exactDollars(spendDelta)})${decomposition ? `; ${share(decomposition.spendShare)} of the CAC change on a log scale` : ""}${spendDelta > 0 && !spendMaterial ? `, under the ${pct(MATERIAL_SHARE)} needed to count as a driver` : ""}.`,
+    test: `SUPPORTED if October paid spend is above September's and accounts for at least ${pct(MATERIAL_SHARE)} of ln(CAC Oct / CAC Sep); CONTRADICTED otherwise.`,
     evidence: [
       { label: "Paid spend Sep → Oct", value: `${exactDollars(sRow.paidSpendCents)} → ${exactDollars(oRow.paidSpendCents)}`, evidenceIds: bmIds },
       ...moves.slice(0, 3).filter((m) => m.delta !== 0).map((m) => ({ label: `Campaign ${m.id}`, value: `${m.delta > 0 ? "+" : ""}${exactDollars(m.delta)}`, evidenceIds: [m.evidenceId] })),
@@ -123,19 +143,32 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   const h2Counter: EvidenceLine[] = [];
   if (unknownUp) h2Counter.push({ label: "Unknown-channel share rose", value: `${pct(sRow.unknownAcquired / sRow.acquired)} → ${pct(oRow.unknownAcquired / oRow.acquired)}: some paid customers may have lost their evidence, not stopped coming`, evidenceIds: bmIds });
   if (oRow.heldCampaignAcquired > 0) h2Counter.push({ label: "Customers left out with held spend", value: `${oRow.heldCampaignAcquired} paid customer(s) credited to campaigns whose spend is held at intake`, evidenceIds: [evidence.branchMetrics(b, "oct")] });
+  const customersMaterial = paidDelta < 0 && (decomposition === null || decomposition.customerShare >= MATERIAL_SHARE);
   const h2: HypothesisResult = {
     code: "H2",
     statement: "Fewer new customers came through paid channels.",
-    status: paidDelta < 0 ? (h2Counter.length > 0 ? "UNRESOLVED" : "SUPPORTED") : "CONTRADICTED",
-    summary: `Paid customers ${sRow.paidAcquired} → ${oRow.paidAcquired} (${paidDelta >= 0 ? "+" : ""}${paidDelta})${decomposition ? `; about ${pct(Math.max(0, decomposition.customerShare))} of the CAC change on a log scale` : ""}.${paidDelta < 0 && h2Counter.length ? " The drop may be partly missing attribution, not missing customers." : ""}`,
-    test: "SUPPORTED if October has fewer paid customers than September and nothing suggests they are only unattributed or held; UNRESOLVED when the unknown share rose or customers were held out; CONTRADICTED if paid customers did not fall.",
+    status: customersMaterial ? (h2Counter.length > 0 ? "UNRESOLVED" : "SUPPORTED") : "CONTRADICTED",
+    summary: `Paid customers ${sRow.paidAcquired} → ${oRow.paidAcquired} (${paidDelta >= 0 ? "+" : ""}${paidDelta})${decomposition ? `; ${share(decomposition.customerShare)} of the CAC change on a log scale` : ""}${paidDelta < 0 && !customersMaterial ? `, under the ${pct(MATERIAL_SHARE)} needed to count as a driver` : ""}.${customersMaterial && h2Counter.length ? " The drop may be partly missing attribution, not missing customers." : ""}`,
+    test: `SUPPORTED if October has fewer paid customers than September, accounting for at least ${pct(MATERIAL_SHARE)} of ln(CAC Oct / CAC Sep), and nothing suggests they are only unattributed or held; UNRESOLVED when the unknown share rose or customers were held out; CONTRADICTED otherwise.`,
     evidence: [{ label: "Paid customers Sep → Oct", value: `${sRow.paidAcquired} → ${oRow.paidAcquired} (of ${sRow.acquired} → ${oRow.acquired} new customers)`, evidenceIds: bmIds }],
     counterevidence: h2Counter,
     wouldChange: "Held or unattributed October customers found to be paid (a replay of held call records, a mapping fix).",
   };
 
   // ── H3 misclassification ──
-  const gaps = await read(db.query<{ id: string; kind: string }>("select id, kind from exceptions where status = 'open' and branch_id = $1 and kind in ('channel_coverage_gap', 'branch_mismatch', 'channel_conflict') order by id limit 10", [b]));
+  // Only a condition inside the two months can move their figures: a coverage gap that starts
+  // before the end of October, a mismatch or conflict seen in the period (review 2026-11-12,
+  // financial 8: any open exception of any age supported H3).
+  const gaps = await read(
+    db.query<{ id: string; kind: string }>(
+      `select id, kind from exceptions
+       where status = 'open' and branch_id = $1 and kind in ('channel_coverage_gap', 'branch_mismatch', 'channel_conflict')
+         and coalesce((evidence ->> 'gapStart')::date, (evidence ->> 'lastOccurredAt')::timestamptz::date, last_detected_at::date) >= $2::date
+         and coalesce((evidence ->> 'gapStart')::date, (evidence ->> 'firstOccurredAt')::timestamptz::date, first_detected_at::date) < $3::date
+       order by id limit 10`,
+      [b, sep.from.toISOString().slice(0, 10), oct.to.toISOString().slice(0, 10)],
+    ),
+  );
   const oldMapper = await read(
     db.query<{ n: string }>(
       `select count(*) as n from ad_spend_daily s join campaign_branch_map m on m.campaign_id = s.campaign_id join raw_events re on re.id = s.raw_event_id
@@ -154,7 +187,7 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
         : oldCount > 0
           ? `No open classification exception, but ${oldCount} spend day(s) were classified by an older mapper than ads@${ACTIVE_VERSION.ads}.`
           : `No open classification exception, and every spend day in both months was classified by the active mapper ads@${ACTIVE_VERSION.ads}.`,
-    test: "SUPPORTED if an open coverage-gap, branch-mismatch or channel-conflict exception exists at the branch; UNRESOLVED if none but some spend was classified by an older mapper; CONTRADICTED otherwise.",
+    test: "SUPPORTED if an open coverage-gap, branch-mismatch or channel-conflict exception at the branch falls in September–October; UNRESOLVED if none but some spend was classified by an older mapper; CONTRADICTED otherwise.",
     evidence: gaps.rows.map((g) => ({ label: g.kind, value: `exception ${g.id}`, evidenceIds: [evidence.exception(Number(g.id))] })),
     counterevidence: [],
     wouldChange: "A new reconciliation run finding a coverage gap or a mismatch, or a mapper comparison showing a different channel.",
@@ -168,7 +201,30 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   for (const needed of ["ads", "calls", "crm.payment"]) {
     if (!streams.some((s) => s.stream === needed)) stale.push({ stream: needed, lastRunStatus: null, lastSuccessAt: null });
   }
-  const held = await read(db.query<{ id: string; records: string }>("select id, (evidence ->> 'records') as records from exceptions where status = 'open' and branch_id = $1 and kind = 'quarantined_source_records' order by id limit 10", [b]));
+  const held = await read(
+    db.query<{ id: string; records: string; source: string | null; last: string | null }>(
+      "select id, (evidence ->> 'records') as records, evidence ->> 'source' as source, evidence ->> 'lastOccurredAt' as last from exceptions where status = 'open' and branch_id = $1 and kind = 'quarantined_source_records' order by id limit 10",
+      [b],
+    ),
+  );
+  // Spend held at intake for its currency (excluded, so no quarantine exception shows it), per
+  // month, for campaigns mapped to the branch, on days with no counted version (review
+  // 2026-11-12, financial 7).
+  const currencyHeld = await read(
+    db.query<{ month: string; days: string; cents: string }>(
+      `select case when (re.payload ->> 'date')::date < $4::date then 'sep' else 'oct' end as month,
+              count(distinct (re.payload ->> 'campaignId', re.payload ->> 'date')) as days,
+              coalesce(sum(round(((re.payload ->> 'costMicros')::numeric) / 10000)), 0) as cents
+       from raw_events re
+       join ad_campaigns c on c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId'
+       join campaign_branch_map m on m.campaign_id = c.id
+       where re.source = 'ads' and ((re.status = 'excluded' and re.exclusion_code = $5) or re.status = 'quarantined')
+         and m.branch_id = $1 and (re.payload ->> 'date')::date >= $2::date and (re.payload ->> 'date')::date < $3::date
+         and not exists (select 1 from ad_spend_daily s where s.campaign_id = c.id and s.spend_date = (re.payload ->> 'date')::date)
+       group by 1`,
+      [b, sep.from.toISOString().slice(0, 10), oct.to.toISOString().slice(0, 10), oct.from.toISOString().slice(0, 10), CURRENCY_UNSTATED],
+    ),
+  );
   const stopped = await read(
     db.query<{ ext: string; last_day: string }>(
       `select c.external_campaign_id as ext, max(s.spend_date)::text as last_day
@@ -178,20 +234,39 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
       [b, sep.from.toISOString().slice(0, 10), oct.to.toISOString().slice(0, 10)],
     ),
   );
-  const h4Evidence: EvidenceLine[] = [
-    ...stale.map((s) => ({ label: `Feed ${s.stream}`, value: s.lastRunStatus === "failed" ? "last run failed" : s.lastSuccessAt === null ? "no successful run on record" : `no successful run for ${Math.round(hours(s.lastSuccessAt))} h`, evidenceIds: [] })),
-    ...held.rows.map((h) => ({ label: "Held source records", value: `${h.records ?? "?"} record(s), exception ${h.id}`, evidenceIds: [evidence.exception(Number(h.id))] })),
-    ...stopped.rows.map((s) => ({ label: `Campaign ${s.ext}`, value: `no spend after ${s.last_day}`, evidenceIds: [] })),
-  ];
+  // Missing data explains an INCREASE only in one direction: October customers missing, or
+  // September spend missing, raise the measured change; missing October spend or September
+  // customers lower it, so they are counterevidence, not support (review 2026-11-12, financial 8).
+  const feedLine = (s: (typeof stale)[number]) => (s.lastRunStatus === "failed" ? "last run failed" : s.lastSuccessAt === null ? "no successful run on record" : `no successful run for ${Math.round(hours(s.lastSuccessAt))} h`);
+  const raises: EvidenceLine[] = [];
+  const lowers: EvidenceLine[] = [];
+  for (const s of stale) {
+    if (s.stream === "ads") lowers.push({ label: `Feed ${s.stream}`, value: `${feedLine(s)}: October spend may be missing, which would LOWER October CAC`, evidenceIds: [] });
+    else raises.push({ label: `Feed ${s.stream}`, value: `${feedLine(s)}: October leads or customers may be missing, which raises October CAC`, evidenceIds: [] });
+  }
+  for (const h of held.rows) {
+    const line = { label: "Held source records", value: `${h.records ?? "?"} ${h.source ?? "source"} record(s), exception ${h.id}`, evidenceIds: [evidence.exception(Number(h.id))] };
+    const septemberSpend = h.source === "ads" && h.last !== null && new Date(h.last).getTime() < oct.from.getTime();
+    if (h.source !== "ads" || septemberSpend) raises.push({ ...line, value: `${line.value}: ${septemberSpend ? "September spend missing lowers September CAC" : "missing leads or customers raise CAC"}` });
+    else lowers.push({ ...line, value: `${line.value}: October spend missing would lower October CAC` });
+  }
+  for (const r of currencyHeld.rows) {
+    const line = { label: `Spend held for its currency (${r.month === "sep" ? "September" : "October"})`, value: `${r.days} campaign-day(s), ${exactDollars(Number(r.cents))} as written`, evidenceIds: [] };
+    if (r.month === "sep") raises.push({ ...line, value: `${line.value}: September CAC is understated, which makes the change look larger` });
+    else lowers.push({ ...line, value: `${line.value}: October CAC is understated, which hides part of an increase` });
+  }
+  for (const s of stopped.rows) lowers.push({ label: `Campaign ${s.ext}`, value: `no spend after ${s.last_day}: stopped spend lowers CAC, so it cannot explain an increase`, evidenceIds: [] });
   const h4: HypothesisResult = {
     code: "H4",
-    statement: "An integration stopped or held records, so October is missing data.",
-    status: h4Evidence.length > 0 ? "SUPPORTED" : "CONTRADICTED",
-    summary: h4Evidence.length ? `${h4Evidence.length} sign(s) of missing data: ${h4Evidence.map((e) => `${e.label} (${e.value})`).join("; ")}.` : `Every feed is fresh (within ${FRESHNESS_MAX_AGE_HOURS} h), no records are held at ${b}, and no mapped campaign's spend stops before the last five days of October.`,
-    test: `SUPPORTED if a feed is stale (> ${FRESHNESS_MAX_AGE_HOURS} h since success) or failed, records are held at the branch, or a mapped campaign's spend stops more than five days before the period ends; CONTRADICTED otherwise.`,
-    evidence: h4Evidence,
-    counterevidence: [],
-    wouldChange: "A failed run or a held batch found for October, or a campaign whose October spend arrives late.",
+    statement: "An integration stopped or held records, so the measured change is partly missing data.",
+    status: raises.length > 0 ? "SUPPORTED" : "CONTRADICTED",
+    summary: raises.length
+      ? `${raises.length} sign(s) of missing data that would make CAC look higher: ${raises.map((e) => `${e.label} (${e.value})`).join("; ")}.`
+      : `No sign of missing data that would make CAC look higher: every customer feed is fresh (within ${FRESHNESS_MAX_AGE_HOURS} h), no lead or customer records are held at ${b}, and no September spend is held.${lowers.length ? ` ${lowers.length} sign(s) point the other way.` : ""}`,
+    test: `SUPPORTED if data is missing in the direction that raises the measured CAC: a stale or failed lead or customer feed (> ${FRESHNESS_MAX_AGE_HOURS} h since success), held lead or customer records, or September spend held at intake; CONTRADICTED otherwise. Missing October spend lowers CAC and is listed as counterevidence.`,
+    evidence: raises,
+    counterevidence: lowers,
+    wouldChange: "A failed run or a held batch found for October leads or customers, held September spend, or late-arriving October spend.",
   };
 
   // ── H5 definition changed ──

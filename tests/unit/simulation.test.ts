@@ -66,7 +66,7 @@ describe("the synthetic world", () => {
 describe("attention flags are relative and explainable", () => {
   const row = (id: string, spend: number, paid: number, acquired: number, unknown: number): BranchRow => ({
     branchId: id, name: id, region: "Central", paidSpendCents: spend, platformClaimed: 0, rawLeads: 0, prospects: 0, paidProspects: 0, sold: 0,
-    acquired, paidAcquired: paid, heldCampaignAcquired: 0, unknownAcquired: unknown, channelConflicts: 0, newCustomerCollectedCents: 0, newCustomerAcvCents: 0,
+    acquired, paidAcquired: paid, heldCampaignAcquired: 0, partlyHeldAcquired: 0, unknownAcquired: unknown, channelConflicts: 0, newCustomerCollectedCents: 0, newCustomerAcvCents: 0,
     collectedCents: 0, refundsCents: 0, openExceptions: 0, atRiskCents: 0,
   });
   it("flags only the outlier", () => {

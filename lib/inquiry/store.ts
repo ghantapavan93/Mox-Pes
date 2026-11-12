@@ -51,7 +51,19 @@ export async function openCacInquiry(pool: Pool, viewer: Viewer, args: { branchI
   });
 }
 
-/** Re-runs the tests: a new version; the old one is kept. */
+/**
+ * An investigation outside the viewer's branches answers exactly as a missing one does, so its
+ * id cannot be used to learn which branch it is about (review 2026-11-12, A-3).
+ */
+function assertVisible(viewer: Viewer, branchId: string | undefined): asserts branchId is string {
+  if (!branchId || (viewer.branchIds && !viewer.branchIds.includes(branchId))) throw new ActionError("Investigation not found", 404);
+}
+
+/**
+ * Re-runs the tests: a new version; the old one is kept. Two re-tests at the same moment cannot
+ * both write version N+1: the (inquiry, version) key refuses the second, which the route reports
+ * as a conflict to retry (lib/http.ts).
+ */
 export async function retestInquiry(pool: Pool, viewer: Viewer, args: { id: number; now: Date }): Promise<number> {
   requirePermission(viewer, "investigate", "re-test an investigation");
   return withTransaction(pool, async (tx) => {
@@ -61,8 +73,7 @@ export async function retestInquiry(pool: Pool, viewer: Viewer, args: { id: numb
       [args.id],
     );
     const row = found.rows[0];
-    if (!row) throw new ActionError("Investigation not found", 404);
-    resolveScope(viewer, row.branch_id);
+    assertVisible(viewer, row?.branch_id);
     const result = await runTests(tx, viewer, row.branch_id, args.now);
     const version = Number(row.version) + 1;
     await storeVersion(tx, args.id, version, viewer.subject, args.now, result);
@@ -76,8 +87,7 @@ export async function addInquiryNote(pool: Pool, viewer: Viewer, args: { id: num
   const text = args.text.trim();
   if (text.length < 3 || text.length > 2000) throw new ActionError("A note is 3 to 2,000 characters", 400);
   const { rows } = await pool.query<{ branch_id: string }>("select branch_id from inquiries where id = $1", [args.id]);
-  if (!rows[0]) throw new ActionError("Investigation not found", 404);
-  resolveScope(viewer, rows[0].branch_id);
+  assertVisible(viewer, rows[0]?.branch_id);
   await pool.query("insert into inquiry_notes (inquiry_id, author, at, text) values ($1, $2, $3, $4)", [args.id, viewer.subject, args.now, text]);
 }
 

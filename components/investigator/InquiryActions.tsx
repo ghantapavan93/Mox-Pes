@@ -16,9 +16,10 @@ export function InquiryActions({ id, canAct }: { id: number; canAct: boolean }) 
     setMessage(null);
     try {
       const res = await fetch(`/api/inquiries/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
-      setMessage({ ok: true, text: done.replace("{v}", String(json.version ?? "")) });
+      // A proxy or crash page is not JSON: say so plainly, not "Unexpected token '<'".
+      const json = (await res.json().catch(() => null)) as { error?: string; version?: number } | null;
+      if (!res.ok) throw new Error(json?.error ?? `The request failed (HTTP ${res.status})`);
+      setMessage({ ok: true, text: done.replace("{v}", String(json?.version ?? "")) });
       if (body.action === "note") setNote("");
       router.refresh();
     } catch (err) {

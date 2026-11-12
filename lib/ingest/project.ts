@@ -1,6 +1,6 @@
 import type { Queryable } from "@/lib/db";
 import type { Projection } from "@/lib/adapters/contract";
-import { activeCurrencyRules, covered, CURRENCY_UNSTATED } from "@/lib/currency/coverage";
+import { activeCurrencyRules, covered, CURRENCY_UNSTATED, lockCurrencyShared } from "@/lib/currency/coverage";
 
 /**
  * Set-based projection: one statement per target table per batch.
@@ -170,10 +170,14 @@ const SQL: Record<Table, string> = {
  * (the newest observation decides). Every path that projects (intake, replay, re-projection after
  * a rule) goes through here, so none can count unstated money as USD.
  */
-async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<ProjectionItem[]> {
+async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ kept: ProjectionItem[]; held: number[] }> {
+  const isSpend = (i: ProjectionItem) => i.projection.table === "ad_spend_daily";
   const unstated = (i: ProjectionItem) => i.projection.table === "ad_spend_daily" && i.projection.row.currencyBasis !== "reported_usd" && i.projection.row.currencyBasis !== "account_rule_usd";
-  if (!items.some(unstated)) return items;
-  const rules = await activeCurrencyRules(db);
+  if (!items.some(isSpend)) return { kept: items, held: [] };
+  // Held until this transaction ends, so a rule cannot be revoked or authorized between this read
+  // and the commit of what it decided (lib/currency/coverage.ts).
+  await lockCurrencyShared(db);
+  const rules = items.some(unstated) ? await activeCurrencyRules(db) : new Set<string>();
   const held: Array<{ rawEventId: number; platform: string; externalCampaignId: string; spendDate: string; sourceUpdatedAt: string; adAccountId: string }> = [];
   const kept: ProjectionItem[] = [];
   for (const item of items) {
@@ -188,6 +192,39 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<Pro
       held.push({ rawEventId: item.rawEventId, platform: row.platform, externalCampaignId: row.externalCampaignId, spendDate: row.spendDate, sourceUpdatedAt: row.sourceUpdatedAt.toISOString(), adAccountId: row.adAccountId });
     }
   }
+  // The newest observation decides: a spend version older than a held one is not counted, whether
+  // the held one is in this batch or stored (a late delivery, a replay keeping its receipt time).
+  const keyOf = (p: string, c: string, d: string) => `${p}:${c}:${d}`;
+  const newestHeld = new Map<string, number>();
+  for (const h of held) newestHeld.set(keyOf(h.platform, h.externalCampaignId, h.spendDate), Math.max(newestHeld.get(keyOf(h.platform, h.externalCampaignId, h.spendDate)) ?? 0, Date.parse(h.sourceUpdatedAt)));
+  const keptSpend = kept.filter(isSpend);
+  if (keptSpend.length > 0) {
+    const stored = await db.query<{ platform: string; ext: string; day: string; fetched: Date }>(
+      `select r."platform" as platform, r."externalCampaignId" as ext, r."spendDate"::text as day, max((re.payload ->> 'fetchedAt')::timestamptz) as fetched
+       from jsonb_to_recordset($1::jsonb) as r("platform" text, "externalCampaignId" text, "spendDate" date)
+       join raw_events re on re.source = 'ads' and re.status = 'excluded' and re.exclusion_code = $2
+        and re.payload ->> 'platform' = r."platform" and re.payload ->> 'campaignId' = r."externalCampaignId" and re.payload ->> 'date' = r."spendDate"::text
+        -- Not the batch's own records: a held record re-projected under a new rule is still
+        -- marked excluded until its caller stamps it, and must not hold itself back.
+        and re.id <> all($3::bigint[])
+       group by 1, 2, 3`,
+      [
+        JSON.stringify(keptSpend.map((i) => { const row = i.projection.row as { platform: string; externalCampaignId: string; spendDate: string }; return { platform: row.platform, externalCampaignId: row.externalCampaignId, spendDate: row.spendDate }; })),
+        CURRENCY_UNSTATED,
+        items.map((i) => i.rawEventId),
+      ],
+    );
+    for (const s of stored.rows) {
+      const k = keyOf(s.platform, s.ext, s.day);
+      newestHeld.set(k, Math.max(newestHeld.get(k) ?? 0, new Date(s.fetched).getTime()));
+    }
+  }
+  const counted = kept.filter((i) => {
+    if (!isSpend(i)) return true;
+    const row = i.projection.row as { platform: string; externalCampaignId: string; spendDate: string; sourceUpdatedAt: Date };
+    const newer = newestHeld.get(keyOf(row.platform, row.externalCampaignId, row.spendDate));
+    return newer === undefined || row.sourceUpdatedAt.getTime() > newer;
+  });
   if (held.length > 0) {
     await db.query(
       `update raw_events set status = 'excluded', error_code = null, error_detail = null, exclusion_code = $2,
@@ -203,11 +240,17 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<Pro
       [JSON.stringify(held)],
     );
   }
-  return kept;
+  return { kept: counted, held: held.map((h) => h.rawEventId) };
 }
 
-export async function projectAll(db: Queryable, all: ProjectionItem[]): Promise<number> {
-  const items = await currencyGate(db, all);
+/**
+ * Projects a batch. `report.held` receives the raw event ids the currency gate held (excluded,
+ * not projected), so a caller does not mark or count them as projected.
+ */
+export async function projectAll(db: Queryable, all: ProjectionItem[], report?: { held: number[] }): Promise<number> {
+  const gated = await currencyGate(db, all);
+  if (report) report.held.push(...gated.held);
+  const items = gated.kept;
   const byTable = new Map<Table, Map<string, ProjectionItem>>();
   for (const item of items) {
     const { table, row } = item.projection;

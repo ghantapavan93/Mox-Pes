@@ -128,6 +128,8 @@ export interface BranchMetrics {
   paidCacCents: number | null;
   /** Paid-media customers left out of the CAC because their campaign's spend is all held at intake (another or no stated currency). */
   paidAcquiredHeldOut: number;
+  /** Paid-media customers counted in the CAC whose campaign has SOME days' spend held at intake: the CAC's cost is understated. */
+  paidAcquiredPartlyHeld: number;
   unknownShare: number | null;
   rawLeads: number;
   prospects: number;
@@ -161,6 +163,7 @@ export const getBranchMetrics = defineTool({
       unknownAcquired: row.unknownAcquired,
       paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
       paidAcquiredHeldOut: row.heldCampaignAcquired,
+      paidAcquiredPartlyHeld: row.partlyHeldAcquired,
       unknownShare: row.acquired > 0 ? row.unknownAcquired / row.acquired : null,
       rawLeads: row.rawLeads,
       prospects: row.prospects,
@@ -1016,7 +1019,9 @@ export const getMetricTrace = defineTool({
         assumedCurrencyCents: c.assumedCurrencyCents,
         ruleCurrencyCents: c.ruleCurrencyCents,
         // Paid customers in the denominator credited to this campaign (null when the list was capped).
-        paidCustomersCredited: trace.denominator.truncated ? null : trace.denominator.customers.filter((k) => k.campaignExternalId === c.externalCampaignId).length,
+        // Only a CAC trace lists the customers; a spend trace knows nothing of them, so it states
+        // no count rather than zero (review 2026-11-12, financial finding 5).
+        paidCustomersCredited: trace.metric.key !== "paid_cac" || trace.denominator.truncated ? null : trace.denominator.customers.filter((k) => k.campaignExternalId === c.externalCampaignId).length,
       })),
       campaignsOmitted: Math.max(0, trace.numerator.campaigns.length - 10),
       customersCounted: trace.denominator.count,
@@ -1225,6 +1230,7 @@ export const getBrandMetrics = defineTool({
       unknownAcquired: row.unknownAcquired,
       paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
       paidAcquiredHeldOut: row.heldCampaignAcquired,
+      paidAcquiredPartlyHeld: row.partlyHeldAcquired,
       unknownShare: row.acquired > 0 ? row.unknownAcquired / row.acquired : null,
       rawLeads: row.rawLeads,
       prospects: row.prospects,

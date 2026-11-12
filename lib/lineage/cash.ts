@@ -100,12 +100,15 @@ async function cashIn(db: Queryable, viewer: Viewer, args: { branchId: string; p
   const net = successful.reduce((t, p) => t + num(p.amount_cents), 0);
   const orphanRefunds = successful.filter((p) => num(p.amount_cents) < 0 && !p.original_stored);
 
-  // Refunds larger than what was paid: cumulative refunds per original payment, to date.
+  // Refunds larger than what was paid: cumulative refunds per original payment, to date. An
+  // original that did not succeed (voided, failed) paid nothing, so any refund against it is over
+  // (review 2026-11-12, financial 13).
   const over = await db.query(
-    `select o.crm_payment_id, o.amount_cents as paid, -sum(r.amount_cents) as refunded
+    `select o.crm_payment_id, o.amount_cents as paid, o.status, -sum(r.amount_cents) as refunded
      from crm_payments r join crm_payments o on o.crm_payment_id = r.original_payment_id
      where r.status = 'successful' and o.office_id = $1
-     group by o.crm_payment_id, o.amount_cents having -sum(r.amount_cents) > o.amount_cents`,
+     group by o.crm_payment_id, o.amount_cents, o.status
+     having -sum(r.amount_cents) > case when o.status = 'successful' then o.amount_cents else 0 end`,
     [branch.crmOfficeId],
   );
 
@@ -143,8 +146,9 @@ async function cashIn(db: Queryable, viewer: Viewer, args: { branchId: string; p
     { name: "net = gross − refunds", holds: net === gross - refunds, detail: `${exactDollars(gross)} − ${exactDollars(refunds)} = ${exactDollars(gross - refunds)}; net ${exactDollars(net)}` },
     { name: "every amount is whole cents", holds: payments.rows.every((p) => Number.isInteger(num(p.amount_cents))), detail: "amounts are stored as integer cents" },
     { name: "every refund names a stored original payment", holds: orphanRefunds.length === 0, detail: orphanRefunds.length ? `${orphanRefunds.length} refund(s) whose original payment is not stored` : "all refunds reference a stored payment" },
-    { name: "no payment is refunded beyond what was paid", holds: over.rows.length === 0, detail: over.rows.length ? `${over.rows.length} payment(s) refunded beyond their amount` : "cumulative refunds never exceed the original" },
-    { name: "revenue at risk counts each customer once", holds: riskCustomers.length <= risk.rows.reduce((t, r) => t + num(r.customers), 0), detail: `${riskCustomers.length} distinct customer(s) across ${risk.rows.length} open exception(s)` },
+    { name: "no payment is refunded beyond what was paid", holds: over.rows.length === 0, detail: over.rows.length ? `${over.rows.length} payment(s) refunded beyond their amount, or refunded although they did not succeed` : "cumulative refunds never exceed a successful original" },
+    // (A "counts each customer once" check was removed: a set is never larger than its list, so it
+    // could not fail. The at-risk figure is compared with the scorecard above instead.)
   ];
 
   const rows: CashPaymentRow[] = successful.slice(0, ROW_LIMIT).map((p) => ({
@@ -250,11 +254,17 @@ export async function rollupBrand(db: Queryable, viewer: Viewer, args: { brandId
   const totals = { paidSpendCents: sum("paidSpendCents"), acquired: sum("acquired"), paidAcquired: sum("paidAcquired"), paidCacCents: sum("paidAcquired") > 0 ? Math.round(sum("paidSpendCents") / sum("paidAcquired")) : null, collectedCents: sum("collectedCents"), refundsCents: sum("refundsCents") };
   const invariants: Invariant[] = [{ name: "the brand is exactly its branches", holds: rows.length === ids.length && rows.every((r) => ids.includes(r.branchId)), detail: `${rows.length} of ${ids.length} branches` }];
   if (!viewer.branchIds) {
-    // Company-wide viewers: the three brands must add up to the company, to the cent.
+    // Company-wide viewers: the three brands must add up to the company, to the cent. The company
+    // total is read independently, from every successful payment in the period, so cash from a
+    // CRM office no branch owns, or a branch in no brand, makes it fail (review 2026-11-12,
+    // financial 13: summing the same branch rows twice could never disagree).
     const all = await branchRows(db, { from: args.period.from, to: args.period.to, branchIds: null });
-    const company = all.reduce((t, r) => t + r.collectedCents, 0);
+    const company = num(
+      (await db.query("select coalesce(sum(amount_cents), 0) as c from crm_payments where status = 'successful' and paid_at >= $1 and paid_at < $2", [args.period.from, args.period.to])).rows[0].c,
+    );
     const byBrand = BRANDS.map((b) => all.filter((r) => branchesOfBrands([b.id]).includes(r.branchId)).reduce((t, r) => t + r.collectedCents, 0));
-    invariants.push({ name: "the brands partition the company (collected cash)", holds: byBrand.reduce((t, v) => t + v, 0) === company, detail: `Σ brands ${exactDollars(byBrand.reduce((t, v) => t + v, 0))}, company ${exactDollars(company)}` });
+    const brands = byBrand.reduce((t, v) => t + v, 0);
+    invariants.push({ name: "the brands partition the company (collected cash)", holds: brands === company, detail: `Σ brands ${exactDollars(brands)}, every successful payment ${exactDollars(company)}` });
   }
   return {
     brandId: brand.id,

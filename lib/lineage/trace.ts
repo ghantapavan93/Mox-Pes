@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import type { Queryable } from "@/lib/db";
 import { evidence } from "@/lib/ai/evidence";
 import { METRICS } from "@/lib/metrics/definitions";
-import { branchRows, freshness, HELD_CAMPAIGNS, paidCac, type BranchRow, type StreamFreshness } from "@/lib/metrics/scorecard";
+import { branchRows, freshness, HELD_SPEND, paidCac, type BranchRow, type StreamFreshness } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
@@ -168,7 +168,7 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
     params,
   );
   const acquired = await db.query(
-    `with ${HELD_CAMPAIGNS}
+    `with ${HELD_SPEND}
      select a.crm_customer_id, a.sold_at, a.initial_completed_at, a.channel_code, a.campaign_external_id, a.lead_id,
             a.attribution_basis, l.raw_event_id as lead_raw_event_id, ch.is_paid, ch.cost_basis,
             exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
@@ -266,7 +266,21 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
   const excluded: MetricTrace["excluded"] = [];
   if (args.metric === "paid_cac") {
     if (unmappedCustomers.length) excluded.push({ reason: "New paid customers whose crediting campaign is mapped to no branch: its spend is unallocated, so they are left out of the denominator too", code: "CAMPAIGN_UNMAPPED", count: unmappedCustomers.length, amountCents: null, evidenceIds: unmappedCustomers.slice(0, 10).map(evidence.customer) });
-    if (heldCustomers.length) excluded.push({ reason: "New paid customers whose crediting campaign's spend was all held at intake (another currency, or no stated currency without a rule): its cost is in no figure, so they are left out of the denominator too", code: "CAMPAIGN_SPEND_HELD", count: heldCustomers.length, amountCents: null, evidenceIds: heldCustomers.slice(0, 10).map(evidence.customer) });
+    if (heldCustomers.length) {
+      // The held spend records behind the exclusion, so the evidence leads to its cause.
+      const heldCampaignIds = [...new Set(acquired.rows.filter((r) => r.held_campaign).map((r) => r.campaign_external_id as string))];
+      const heldRaw = await db.query<{ id: string }>(
+        `select id from raw_events where source = 'ads' and status in ('excluded', 'quarantined') and payload ->> 'campaignId' = any($1::text[]) order by id desc limit 5`,
+        [heldCampaignIds],
+      );
+      excluded.push({
+        reason: "New paid customers whose crediting campaign's spend was all held at intake (another currency, or no stated currency without a rule): its cost is in no figure, so they are left out of the denominator too",
+        code: "CAMPAIGN_SPEND_HELD",
+        count: heldCustomers.length,
+        amountCents: null,
+        evidenceIds: [...heldCustomers.slice(0, 5).map(evidence.customer), ...heldRaw.rows.map((r) => evidence.rawEvent(Number(r.id)))],
+      });
+    }
     if (nonMedia.length) excluded.push({ reason: "New customers credited to a paid channel that is not media spend (e.g. sponsorship): not in paid-media CAC", code: "NOT_MEDIA", count: nonMedia.length, amountCents: null, evidenceIds: nonMedia.slice(0, 10).map(evidence.customer) });
   }
 

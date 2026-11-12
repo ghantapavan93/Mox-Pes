@@ -9,7 +9,7 @@ import { Badge, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } 
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
-import { verifiedReadiness } from "@/lib/decision/verified";
+import { verifiedReadinessSnapshot } from "@/lib/decision/verified";
 import { money } from "@/lib/format";
 import { parsePeriod, type Period } from "@/lib/period";
 import { BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
@@ -154,6 +154,8 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
 }
 
 const VERIFIED_TONE = { READY: "good", READY_WITH_LIMITATIONS: "accent", NEEDS_REVIEW: "warn", NOT_READY: "bad" } as const;
+/** A reason cut at a word boundary for the collapsed row. */
+const shorten = (text: string, max = 110) => (text.length <= max ? text : `${text.slice(0, text.lastIndexOf(" ", max)).replace(/[,;:]$/, "")}…`);
 const VERIFIED_LABEL = { READY: "ready", READY_WITH_LIMITATIONS: "ready, with limitations", NEEDS_REVIEW: "needs review", NOT_READY: "not ready" } as const;
 
 /**
@@ -162,7 +164,7 @@ const VERIFIED_LABEL = { READY: "ready", READY_WITH_LIMITATIONS: "ready, with li
  * result, and the policy itself is shown in full.
  */
 async function VerifiedReadinessCard({ viewer, branchId, period }: { viewer: Viewer; branchId: string; period: Period }) {
-  const v = await verifiedReadiness(getPool(), viewer, { branchId, period });
+  const v = await verifiedReadinessSnapshot(getPool(), viewer, { branchId, period });
   return (
     <Card id="verified" className="scroll-mt-28" title="Verified readiness" subtitle="Can a budget decision rest on numbers that are proved, not just computed? One fixed policy, every rule shown.">
       <ul className="space-y-2 text-sm" data-testid="verified-readiness">
@@ -172,14 +174,21 @@ async function VerifiedReadinessCard({ viewer, branchId, period }: { viewer: Vie
               <summary className="flex cursor-pointer flex-wrap items-center gap-2">
                 <Badge tone={VERIFIED_TONE[c.state]}>{VERIFIED_LABEL[c.state]}</Badge>
                 <span className="font-medium">{c.label}</span>
-                {c.because[0] && <span className="min-w-0 break-words text-xs text-muted">{c.because[0]}</span>}
+                {/* The first reason, short: the full text is one level down (progressive disclosure). */}
+                {c.because[0] && (
+                  <span className="min-w-0 break-words text-xs text-muted">
+                    {shorten(c.because[0])}
+                    {c.because.length > 1 ? ` (+${c.because.length - 1} more)` : ""}
+                  </span>
+                )}
               </summary>
               <ul className="mt-2 space-y-1 text-xs">
                 {c.rules.map((r) => (
                   <li key={r.code} className="flex gap-2">
-                    <span className={r.passed ? "text-good" : "text-bad"} aria-label={r.passed ? "passed" : "failed"}>
+                    <span className={r.passed ? "text-good" : "text-bad"} aria-hidden="true">
                       {r.passed ? "✓" : "✗"}
                     </span>
+                    <span className="sr-only">{r.passed ? "Passed:" : "Failed:"}</span>
                     <span className="min-w-0 break-words">
                       {r.text}
                       {!r.passed && <span className="text-faint"> (→ {VERIFIED_LABEL[r.forces]})</span>}

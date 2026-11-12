@@ -9,6 +9,7 @@ import { branchRows, channelRows, paidCac, type Scope } from "@/lib/metrics/scor
 import { feedbackSummary } from "@/lib/feedback";
 import { applyExclusions, leadKeysOf, lockLeadWritesShared, reapplyNewerExclusions } from "./ingest";
 import { projectAll, type ProjectionItem } from "./project";
+import { lockCurrencyShared } from "@/lib/currency/coverage";
 
 export interface ReplayRequest {
   source: SourceName;
@@ -120,6 +121,8 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
     await lockReconcile(tx);
     // A replay writes leads too: it must not land between a publication's compare and its write.
     await lockLeadWritesShared(tx, req.source);
+    // Before the claim's row locks, as intake does (lib/ingest/ingest.ts).
+    if (req.source === "ads") await lockCurrencyShared(tx);
     if (!req.dryRun) {
       const key = await tx.query(
         `insert into replays (idempotency_key, request_fingerprint, exception_id, dry_run, actor, adapter_version, requested_ids,
@@ -151,7 +154,7 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
 
     const items: ProjectionItem[] = [];
     const errors: ReplayResult["errors"] = [];
-    const projectedIds: number[] = [];
+    const mappedIds: number[] = [];
     const exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }> = [];
     for (const row of claimed.rows) {
       // A replayed record keeps its ORIGINAL receipt time: it was received then and only
@@ -159,7 +162,7 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
       const result = mapper.map({ entity: row.entity, payload: row.payload }, { ...referenceContext, receivedAt: row.received_at });
       if (result.ok) {
         items.push({ projection: result.projection, rawEventId: Number(row.id) });
-        projectedIds.push(Number(row.id));
+        mappedIds.push(Number(row.id));
       } else if (isExclusion(result)) {
         // The source says this record is not counted (e.g. an outbound or spam call): evidence,
         // not an error. In either mode it is marked excluded, and the lead an earlier version
@@ -173,7 +176,12 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
         errors.push({ rawEventId: Number(row.id), code: result.code, detail: result.detail });
       }
     }
-    await projectAll(tx, items);
+    const gate = { held: [] as number[] };
+    await projectAll(tx, items, gate);
+    // The currency gate held these: it already marked them excluded, and they must stay so, not
+    // be stamped projected below (review 2026-11-12, F-2).
+    const heldIds = new Set(gate.held);
+    const projectedIds = mappedIds.filter((id) => !heldIds.has(id));
     // After projection: a replayed version keeps its original receipt time, so a newer excluded
     // version of the same call still wins (held-out review F3), and exclusions found here apply.
     await applyExclusions(tx, exclusions, req.now);

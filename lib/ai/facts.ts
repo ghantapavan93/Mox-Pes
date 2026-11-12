@@ -112,8 +112,15 @@ function branchMetricFacts(d: Record<string, unknown>, evidenceIds: string[], to
   // Customers whose campaign's spend is held at intake are out of the CAC, and so is their cost:
   // the figures are right as stored but leave that campaign out.
   const heldOut = num(d.paidAcquiredHeldOut) ?? 0;
-  if (heldOut > 0) {
-    const reason = `${heldOut} paid customer(s) credited to campaigns whose spend is held at intake (another or no stated currency) are left out, with their cost`;
+  // Customers counted whose campaign has SOME days' spend held: the cost is understated, so the
+  // CAC reads low (review 2026-11-12, financial finding 4).
+  const partlyHeld = num(d.paidAcquiredPartlyHeld) ?? 0;
+  const reasons = [
+    ...(heldOut > 0 ? [`${heldOut} paid customer(s) credited to campaigns whose spend is held at intake (another or no stated currency) are left out, with their cost`] : []),
+    ...(partlyHeld > 0 ? [`${partlyHeld} paid customer(s) are credited to campaigns with some days' spend held at intake, so that cost is missing and the CAC is understated`] : []),
+  ];
+  if (reasons.length > 0) {
+    const reason = reasons.join("; ");
     for (const f of out) if (f.metric === "paidSpend" || f.metric === "paidAcquired" || f.metric === "paidCac") f.incompleteReason = reason;
   }
   add("unknownShare", d.unknownShare === null ? null : num(d.unknownShare), "unknownShare");
@@ -175,6 +182,15 @@ export function statusFacts(steps: ReadonlyArray<{ kind: string; status: string;
   return out;
 }
 
+/**
+ * The ids that cite a trace's FIGURES: its aggregate ids (the branch's or channel's metrics, the
+ * metric's definition), not the sample records it lists. A claim citing one sampled payment, raw
+ * event or customer is evidence about that record, not about the branch's total, so it must not
+ * pick up every figure of the trace (review 2026-11-12, AI-claims finding 16).
+ */
+const AGGREGATE_ID = /^(?:branch_metrics|channel_metrics|metric_definition):/;
+const aggregateIds = (ids: readonly string[]) => ids.filter((id) => AGGREGATE_ID.test(id));
+
 /** The typed metric facts the recorded tool calls of one investigation established. */
 export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string; tool: string | null; output: unknown; evidenceIds: string[] }>): MetricFact[] {
   const facts: MetricFact[] = [];
@@ -189,7 +205,8 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
       const period = scope?.period?.key;
       if (typeof scope?.branchId === "string" && isPeriod(period) && value?.reproduced && value.matches === true) {
         const entity = { type: "branch" as const, id: scope.branchId };
-        const cash = (metric: MetricKey, v: unknown, def: string) => facts.push({ metric, entity, period, value: num(v), unit: "usd_cents", currencyResolved: true, definitionVersion: version(def), evidenceIds: s.evidenceIds, tool: s.tool as string });
+        const ids = aggregateIds(s.evidenceIds);
+        const cash = (metric: MetricKey, v: unknown, def: string) => facts.push({ metric, entity, period, value: num(v), unit: "usd_cents", currencyResolved: true, definitionVersion: version(def), evidenceIds: ids, tool: s.tool as string });
         cash("collected", value.reproduced.collectedCents, "collected");
         cash("refunds", value.reproduced.refundsCents, "collected");
         cash("grossCollected", value.reproduced.grossCents, "collected");
@@ -217,7 +234,8 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
       const resolved = campaigns.every((c) => !num(c.assumedCurrencyCents)) && Number(d.campaignsOmitted ?? 0) === 0;
       const held = ((d.excluded as Array<{ code?: string; count?: number }> | undefined) ?? []).find((e) => e.code === "CAMPAIGN_SPEND_HELD");
       const incompleteReason = held ? `${held.count} paid customer(s) credited to campaigns whose spend is held at intake (another or no stated currency) are left out, with their cost` : null;
-      const base = { entity: { type: "branch" as const, id: branchId }, period, evidenceIds: s.evidenceIds, tool: s.tool, incompleteReason };
+      const ownIds = aggregateIds(s.evidenceIds);
+      const base = { entity: { type: "branch" as const, id: branchId }, period, evidenceIds: ownIds, tool: s.tool, incompleteReason };
       facts.push({ ...base, metric: "paidSpend", value: num(reproduced.paidSpendCents), unit: "usd_cents", currencyResolved: resolved, definitionVersion: version("paidSpend") });
       // A spend trace does not trace the denominator: only a CAC trace states paid customers and CAC.
       if ((d.metric as { key?: unknown } | undefined)?.key !== "paid_spend") {
@@ -226,9 +244,11 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
       }
       for (const c of campaigns) {
         if (typeof c.externalCampaignId !== "string") continue;
-        facts.push({ metric: "campaignSpend", entity: { type: "campaign", id: c.externalCampaignId }, period, value: num(c.spendCents), unit: "usd_cents", currencyResolved: !num(c.assumedCurrencyCents), definitionVersion: version("paidSpend"), evidenceIds: s.evidenceIds, tool: s.tool });
+        // A campaign's figures are cited by the trace's aggregate ids or the campaign's own.
+        const campaignIds = typeof c.evidenceId === "string" ? [...ownIds, c.evidenceId] : ownIds;
+        facts.push({ metric: "campaignSpend", entity: { type: "campaign", id: c.externalCampaignId }, period, value: num(c.spendCents), unit: "usd_cents", currencyResolved: !num(c.assumedCurrencyCents), definitionVersion: version("paidSpend"), evidenceIds: campaignIds, tool: s.tool });
         if (typeof c.paidCustomersCredited === "number") {
-          facts.push({ metric: "campaignAcquired", entity: { type: "campaign", id: c.externalCampaignId }, period, value: c.paidCustomersCredited, unit: "count", currencyResolved: true, definitionVersion: version("paidCac"), evidenceIds: s.evidenceIds, tool: s.tool });
+          facts.push({ metric: "campaignAcquired", entity: { type: "campaign", id: c.externalCampaignId }, period, value: c.paidCustomersCredited, unit: "count", currencyResolved: true, definitionVersion: version("paidCac"), evidenceIds: campaignIds, tool: s.tool });
         }
       }
       // A channel's spend is the sum of its campaigns, when every campaign is listed.
@@ -241,7 +261,7 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
         }
         for (const [code, v] of byChannel) {
           const label = CHANNEL_BY_CODE.get(code as ChannelCode)?.label ?? code;
-          facts.push({ metric: "channelSpend", entity: { type: "channel", id: `${branchId}:${code}`, label }, period, value: v.cents, unit: "usd_cents", currencyResolved: v.resolved, definitionVersion: version("paidSpend"), evidenceIds: s.evidenceIds, tool: s.tool });
+          facts.push({ metric: "channelSpend", entity: { type: "channel", id: `${branchId}:${code}`, label }, period, value: v.cents, unit: "usd_cents", currencyResolved: v.resolved, definitionVersion: version("paidSpend"), evidenceIds: ownIds, tool: s.tool });
         }
       }
     }

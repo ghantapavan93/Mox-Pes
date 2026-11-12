@@ -67,7 +67,48 @@ from the held-out set. Several are also tested end to end through `runInvestigat
 | Origin | Rule |
 |---|---|
 | **Template** (deterministic investigator, filled from structured results) | Authoritative. Dropped only on a **contradiction**. Money whose currency is not established, or tools that disagree, gives at most PARTIALLY_SUPPORTED |
-| **Model** (free text) | SUPPORTED only when every proposition is VERIFIED. A hard gap rejects the claim: the cited evidence cannot establish it. A soft gap (a figure outside the vocabulary, an ambiguous or conditional reading) shows it as PARTIALLY_SUPPORTED, with the limitation stated. A recommendation stated as a finding is shown as a recommendation |
+| **Model** (free text) | SUPPORTED only when every proposition is VERIFIED **and nothing in the sentence went unread** (the closed reading, below). A hard gap rejects the claim: the cited evidence cannot establish it. A soft gap (an ambiguous or conditional reading) shows it as PARTIALLY_SUPPORTED, with the limitation stated. A sentence with nothing to prove (an event, an explanation) is PARTIALLY_SUPPORTED, never SUPPORTED: the model is never the only verifier. A recommendation stated as a finding is shown as a recommendation |
+
+### The closed reading (added after the AI-claims review of 2026-11-12)
+
+An adversarial review found 18 shapes of wrong model text that the checker accepted as SUPPORTED,
+11 of them critical. The shared root: what the reader did not understand, it ignored, and it
+certified the sentence on the part it did read. "B09's collections did not fall" was proved as
+"fell"; "surged by $20,000" was proved by its size alone; "Elm's CAC" was proved as the
+investigation branch's; "300.00 per paid customer" was not seen as a figure at all.
+
+Model text is now held to a closed reading (`closedReading` in `lib/ai/proof.ts`). Each of these
+becomes an UNRESOLVED proposition with the hard gap `unread`, so the claim is rejected:
+
+| What was not read | Examples from the review |
+|---|---|
+| A negation the reader does not handle | "did not fall", "no more than $4,000", "isn't decision-ready", "no longer" |
+| A verb of change, rank or equality with no relation | "surged", "flat", "unchanged", "doubled", "ranks first", "the lowest" |
+| A comparison target that is not a month, branch, channel or figure | "than it collected", "than the company average", "than planned", "twice the Google Search CAC" |
+| A period the facts do not hold | November, Q3, last year, October 2025, daily, per week, average |
+| An entity it cannot place, or that no proposition is about | "Elm's", "b12's", "moxie's", "company-wide", an unlisted channel or campaign, a customer id, a second branch in a total stated before the list |
+| A figure in a form it does not parse | "300.00", "$-9,999.00", "one hundred fifty thousand", "9.9 million", "20.6 percentage points", a figure in quotes |
+| Another currency | "CA$", "A$", "EUR", "€" |
+| A second measure no proposition covers | "its spend and its collections both rose" |
+| A word that changes the metric | blended, recognized, profit, "per new paid customer" with a cash verb, "only", "excluding", a share of the wrong base |
+| A customer count with a verb that is not acquisition | paying, invoiced, refunded, cancelled, became customers |
+
+The checks are deliberately coarse: a correct sentence in words the checker does not read is
+rejected, never a wrong one accepted. Templates are not held to it; they are the product's own
+sentences in this vocabulary, and the held-out run reports how often a template sentence
+contradicts its own proofs.
+
+The same review also fixed, for every origin: "down from" and "up from" read as directions; a
+forecast word ("will") governs only what follows it, so "CAC was $4,825.80, which will need
+review" is contradicted, not excused; "almost $4,800" must not be above $4,800; a scaled figure
+("$0.1M") may be off by at most 5%; a count in arithmetic is exact ("÷ 20" is not 19.5–20.5);
+"N points" is read as a change of a share; every channel of a readiness claim is checked; a
+customer's figures in a template are not read as the branch's; a figure inside a quoted campaign
+name is a name; citing a sampled record of a trace no longer cites the trace's totals; a causal
+claim is unhedged unless the hedge is in its own sentence; and a business figure resting on a
+superseded revision is dropped whatever words ("after the correction") surround it.
+Reproducers: `tests/unit/ai-proof.test.ts` and `tests/unit/ai-claims.test.ts`, "the AI-claims
+review, 2026-11-12".
 
 A figure that no output prints is accepted only when a verified proof derives it: a difference, a
 share or a total. That proof is its evidence.
@@ -86,9 +127,13 @@ so this is not a held-out measure. A fresh independent set is the only honest ne
 ## What it does not do
 
 - **It reads a fixed vocabulary.** That is the product's own metrics, plus branches, channels,
-  campaigns, brands, two months and common phrasings. Text outside it is UNRESOLVED, and model text
-  is then never certified.
+  campaigns, brands, two months and common phrasings. Until the review of 2026-11-12, text outside
+  it was ignored and a model sentence could be certified on the part that was read; the closed
+  reading now rejects model text with any unread part. The closed reading is itself a list of
+  patterns: a wrong sentence in a shape no pattern names could still pass. It was tested against
+  the review's cases, not against a fresh independent set.
 - **It cannot verify a paraphrase of a definition** (IV-16).
-- **It does not understand negation in general.** Negated readiness and membership are handled.
+- **It does not understand negation in general.** Negated readiness, membership, zeros and
+  "not yet paid" are read; any other negation in model text rejects the claim.
 - **No language model was measured.** There is no model key. Model-written text was tested only
   through scripted providers.

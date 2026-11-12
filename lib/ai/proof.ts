@@ -35,10 +35,10 @@
  * Deterministic, outside the model. It does not understand every sentence: what it cannot read
  * stays UNRESOLVED, and `judge` decides what that means for the claim.
  */
-import type { PeriodKey } from "@/lib/period";
+import { PERIODS, type PeriodKey } from "@/lib/period";
 import { BRANCHES, BRANCH_BY_ID, BRANDS } from "@/lib/reference";
 import { METRIC_NAME, METRIC_UNIT, type MetricFact, type MetricKey, type StatusFacts, type Unit } from "./facts";
-import { claimNumbers, type ClaimNumber } from "./numbers";
+import { claimNumbers, maskQuoted, type ClaimNumber } from "./numbers";
 
 export type Verdict = "VERIFIED" | "CONTRADICTED" | "UNRESOLVED";
 
@@ -71,7 +71,20 @@ export type Gap =
   /** The statement can be read more than one way (a percent change of a share). */
   | "ambiguous"
   /** Conditional or forward-looking: not a fact the evidence can prove. */
-  | "hypothetical";
+  | "hypothetical"
+  /**
+   * Model text that says something the checker does not read: a negation, a verb of change or
+   * rank it does not know, a period, branch, channel, campaign or customer it cannot place, a
+   * figure in a form it does not parse, a second measure no proposition covers, or a qualifier
+   * that changes the metric. What was not read was not proved (see `closedReading`).
+   */
+  | "unread"
+  /**
+   * Model text that states no figure, measure or direction at all (an event, a mapping change,
+   * an explanation): nothing to contradict, nothing proved. Shown as a hypothesis, never as a
+   * finding, because the model is never the only verifier.
+   */
+  | "unproved";
 
 export interface ProofInput {
   metric: MetricKey;
@@ -87,7 +100,8 @@ export interface ProofInput {
   tool: string;
 }
 
-export type Qualifier = "exact" | "approximately" | "more_than" | "at_least" | "less_than" | "at_most";
+/** "almost", "nearly", "just under": close to the figure and not above it. */
+export type Qualifier = "exact" | "approximately" | "almost" | "more_than" | "at_least" | "less_than" | "at_most";
 
 export type Relation = "level" | "change" | "relative_change" | "points_change" | "direction" | "ratio" | "sum" | "share" | "arithmetic" | "membership" | "status" | "unknown";
 
@@ -125,6 +139,11 @@ export interface ProveContext {
   facts: MetricFact[];
   /** Readiness and freshness from every tool call of the run (counterevidence counts wherever it came from). */
   status?: StatusFacts;
+  /**
+   * Who wrote it. Model text is held to a closed reading: whatever the checker did not read is an
+   * "unread" gap. Template text is the product's own, written in the checker's vocabulary.
+   */
+  origin: ProofOrigin;
 }
 
 // ── Vocabulary ───────────────────────────────────────────────────────────────
@@ -190,16 +209,19 @@ function resolve(family: Family, kind: ClaimNumber["kind"] | null, entity: Entit
 
 // A comparative ("more paid customers in October than in September") is a direction, unless the
 // "than" is followed by a figure ("more than $4,000" is a bound).
-const UP = /\b(?:increas(?:e|ed|es|ing)|rose|risen|rises?|rising|grew|grown|grows?|growing|went up|(?:is|are|was|were) up|up by|higher|gain(?:ed|s)?|jump(?:ed|s)?|climb(?:ed|s)?|more(?=(?:\s+[\w'-]+){0,6}\s+than\s+(?![$\d−-])))/gi;
-const DOWN = /\b(?:decreas(?:e|ed|es|ing)|fell|fallen|falls?|falling|dropp(?:ed|ing)|drops?|declin(?:e|ed|es|ing)|went down|(?:is|are|was|were) down|down by|lower|lost|loses?|shrank|shrunk|reduced|(?:less|fewer)(?=(?:\s+[\w'-]+){0,6}\s+than\s+(?![$\d−-])))/gi;
+const UP = /\b(?:increas(?:e|ed|es|ing)|rose|risen|rises?|rising|grew|grown|grows?|growing|went up|(?:is|are|was|were) up|up (?:by|from)|higher|gain(?:ed|s)?|jump(?:ed|s)?|climb(?:ed|s)?|more(?=(?:\s+[\w'-]+){0,6}\s+than\s+(?![$\d−-])))/gi;
+const DOWN = /\b(?:decreas(?:e|ed|es|ing)|fell|fallen|falls?|falling|dropp(?:ed|ing)|drops?|declin(?:e|ed|es|ing)|went down|(?:is|are|was|were) down|down (?:by|from)|lower|lost|loses?|shrank|shrunk|reduced|(?:less|fewer)(?=(?:\s+[\w'-]+){0,6}\s+than\s+(?![$\d−-])))/gi;
 /** Forward-looking or conditional wording: a projection, not an observation. */
 const MODAL = /\b(?:would|could|should|might|will|if|unless|expected to|projected|projection|forecasts?|targets?)\b/i;
 /** A judgement that no metric measures. */
 const EVALUATIVE = /\b(?:more|less|most|least)\s+(?:effective|efficient|profitable|successful|valuable|productive)\b|\b(?:better|worse|best|worst)\s+(?:channel|campaign|branch|performer|investment|choice)\b|\b(?:outperform\w*|underperform\w*)\b/i;
 const SUPERLATIVE = /\b(lowest|highest|cheapest|most expensive|largest|smallest)\b[^.;]{0,60}?\b(?:in the company|of (?:all|any) (?:the )?branch(?:es)?|across (?:all )?(?:the )?branches|company[- ]wide|of all)\b/i;
-const MULTIPLE = /\b(twice|double|triple|half|(\d+(?:\.\d+)?|two|three|four|five|ten)\s+times)\b/i;
+const MULTIPLE = /\b(twice|doubled|double|tripled|triple|quadrupled|halved|half|(\d+(?:\.\d+)?|two|three|four|five|ten)\s+times)\b/i;
 /** "half of B10's", "twice B12's": a multiple of another branch's value. */
 const MULTIPLE_OF = /\b(?:twice|double|triple|half|(?:\d+(?:\.\d+)?|two|three|four|five|ten)\s+times)\s+(?:of\s+|that of\s+|as (?:much|high|large) as\s+)?(B\d{2})\b/i;
+/** The factor a multiple word states. */
+const factorOf = (m: RegExpExecArray): number =>
+  /^twice|^double/i.test(m[1]) ? 2 : /^tripl/i.test(m[1]) ? 3 : /^quadrupl/i.test(m[1]) ? 4 : /^hal[fv]/i.test(m[1]) ? 0.5 : NUMBER_WORDS[(m[2] ?? "").toLowerCase()] ?? Number(m[2]);
 
 const MONTH_WORD = String.raw`september|sept|sep|october|oct|this month|current month|last month|previous month|prior month`;
 const MONTHS = new RegExp(String.raw`\b(?:${MONTH_WORD})\b`, "gi");
@@ -261,20 +283,23 @@ function maskNonQuantities(piece: string): string {
     .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, blank)
     .replace(/\b\d{4}-\d{2}-\d{2}(?:T[\d:.]+Z?)?\b/g, blank)
     .replace(new RegExp(String.raw`\b(?:${MONTH_NAMES})\.?\s+\d{1,2}(?:\s*[–-]\s*\d{1,2})?(?!\d)`, "gi"), blank)
-    .replace(new RegExp(String.raw`\b\d{1,2}\s+(?:${MONTH_NAMES})\b`, "gi"), blank)
+    // "10 October" is a date, but "10 October paid-media customers" is a count of the month's customers.
+    .replace(new RegExp(String.raw`\b\d{1,2}\s+(?:${MONTH_NAMES})\b(?!\s+(?:[A-Za-z][\w-]*\s+){0,2}?(?:customers?|payments?|refunds?|prospects?|leads?|calls?|acquisitions?)\b)`, "gi"), blank)
     .replace(/\b(?:199\d|20[0-3]\d)\b/g, blank);
 }
 
 /** The figures of a piece, with their positions and signs. Cents are read as money; number words as counts. */
 function figuresOf(piece: string): Fig[] {
   const nums = claimNumbers(piece);
-  const masked = maskNonQuantities(piece);
+  // Names in quotes hold no figures (lib/ai/numbers.ts): figures are located outside them.
+  const unquoted = maskQuoted(piece);
+  const masked = maskNonQuantities(unquoted);
   const taken: Array<[number, number]> = [];
   const free = (s: number, e: number) => taken.every(([a, b]) => e <= a || s >= b);
   const out: Fig[] = [];
   for (const n of [...nums.filter((x) => x.kind !== "count"), ...nums.filter((x) => x.kind === "count")]) {
     const re = new RegExp(n.kind === "count" ? String.raw`(?<![\d$.,])${escapeRe(n.text)}(?![\d]|[.,]\d|\s?%)` : escapeRe(n.text), "g");
-    for (const m of (n.kind === "count" ? masked : piece).matchAll(re)) {
+    for (const m of (n.kind === "count" ? masked : unquoted).matchAll(re)) {
       const s = m.index ?? 0;
       const e = s + m[0].length;
       if (!free(s, e)) continue;
@@ -298,16 +323,28 @@ function figuresOf(piece: string): Fig[] {
   }
   // Number words (and single digits) before a counted noun or a comparative: "one more paid
   // customer", "2 more new customers", "two customers".
-  for (const m of piece.matchAll(/(?<![\d$.,])\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d)\b(?![.,]\d)(?=(\s+(?:more|fewer|less|additional|extra)\b|\s+(?:[A-Za-z][\w-]*\s+){0,3}?(?:customers?|payments?|refunds?|prospects?|acquisitions?)\b))/gi)) {
+  for (const m of unquoted.matchAll(/(?<![\d$.,])\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|\d)\b(?![.,]\d)(?=(\s+(?:more|fewer|less|additional|extra)\b|\s+(?:[A-Za-z][\w-]*\s+){0,3}?(?:customers?|payments?|refunds?|prospects?|acquisitions?)\b))/gi)) {
     const s = m.index ?? 0;
     const e = s + m[1].length;
     if (!free(s, e) || (/\b(?:of|to)\s*$/i.test(piece.slice(0, s)) && /^\s+of\b/i.test(piece.slice(e)))) continue;
     taken.push([s, e]);
     out.push({ text: m[1], kind: "count", value: /^\d$/.test(m[1]) ? Number(m[1]) : NUMBER_WORDS[m[1].toLowerCase()], precision: 0, start: s, end: e });
   }
+  // A change of a share in points: "rose 2 points", "20.6 percentage points", "3 pp". Read as
+  // percent; a count reader would otherwise miss single digits and decimals, and the change would
+  // be proved by its direction alone.
+  for (const f of out) if (f.kind === "count" && /^\s+(?:percentage[- ])?points?\b|^\s*pp\b/i.test(piece.slice(f.end))) f.kind = "percent";
+  for (const m of unquoted.matchAll(/(?<![\d$.,])(\d+(?:\.(\d+))?)(?=\s+(?:percentage[- ])?points?\b|\s*pp\b)/gi)) {
+    const s = m.index ?? 0;
+    const e = s + m[1].length;
+    if (!free(s, e)) continue;
+    taken.push([s, e]);
+    const negative = /[−-]\s*$/.test(piece.slice(0, s));
+    out.push({ text: m[1], kind: "percent", value: negative ? -Number(m[1]) : Number(m[1]), precision: m[2]?.length ?? 0, start: s, end: e });
+  }
   // Zero words: "spent nothing", "no paid customers", "none of its spend".
   // "no" only when a metric noun follows ("no paid customers", "no paid media spend"), never "no paid touch".
-  for (const m of piece.matchAll(/\b(none|no)\b(?=\s+(?:(?:[A-Za-z][\w-]*\s+){0,2}?)(?:spend|customers|payments|refunds|prospects|revenue|cash|collections)\b)|\b(nothing)\b/gi)) {
+  for (const m of unquoted.matchAll(/\b(none|no)\b(?=\s+(?:(?:[A-Za-z][\w-]*\s+){0,2}?)(?:spend|customers|payments|refunds|prospects|revenue|cash|collections)\b)|\b(nothing)\b/gi)) {
     const s = m.index ?? 0;
     const word = m[1] ?? m[2];
     const e = s + word.length;
@@ -319,10 +356,11 @@ function figuresOf(piece: string): Fig[] {
 }
 
 function qualifierOf(before: string): Qualifier {
-  if (/\b(?:about|approximately|approx\.?|roughly|around|nearly|almost|close to|some)\s*$|~\s*$/i.test(before)) return "approximately";
+  if (/\b(?:nearly|almost|just under|just shy of)\s*$/i.test(before)) return "almost";
+  if (/\b(?:about|approximately|approx\.?|roughly|around|close to|some)\s*$|~\s*$/i.test(before)) return "approximately";
   if (/\bat least\s*$/i.test(before)) return "at_least";
   if (/\bat most\s*$/i.test(before)) return "at_most";
-  if (/\b(?:more than|over|above|exceeding|exceeds?|in excess of)\s*$/i.test(before)) return "more_than";
+  if (/\b(?:more than|over|above|exceeding|exceed(?:s|ed)?|in excess of)\s*$/i.test(before)) return "more_than";
   if (/\b(?:less than|fewer than|under|below)\s*$/i.test(before)) return "less_than";
   return "exact";
 }
@@ -333,18 +371,31 @@ const sigDigits = (x: number) => {
 };
 
 /** Whether the claimed figure holds for the actual value, at the precision and qualifier written. */
+/**
+ * A figure with a scale suffix ("$0.1M", "$4.8K") is rounded to that scale, but it may not be
+ * off by more than this share of the actual value: "$0M" is not $100,000, however the rounding
+ * is read (review 2026-11-12, AI-claims finding 18).
+ */
+const SCALED_RELATIVE_TOLERANCE = 0.05;
+
 function holds(claimed: number, actual: number, precision: number, q: Qualifier): boolean {
   const eps = 1e-9;
+  const scaledOk = precision >= 0 || (claimed !== 0 && Math.abs(claimed - actual) <= SCALED_RELATIVE_TOLERANCE * Math.abs(actual) + eps);
+  const approximately = () => {
+    if (claimed === 0) return Math.abs(actual) <= 0.5 * 10 ** -precision + eps;
+    // "about $20,000": the figure rounded to at least two significant digits.
+    const mag = Math.floor(Math.log10(Math.abs(claimed)));
+    const sig = Math.max(2, Number.isInteger(claimed) ? sigDigits(claimed) : precision + mag + 1);
+    return Math.abs(claimed - actual) <= Math.max(0.5 * 10 ** (mag - sig + 1), 0.5 * 10 ** -precision) + eps;
+  };
   switch (q) {
     case "exact":
-      return Math.abs(claimed - actual) <= 0.5 * 10 ** -precision + eps;
-    case "approximately": {
-      if (claimed === 0) return Math.abs(actual) <= 0.5 * 10 ** -precision + eps;
-      // "about $20,000": the figure rounded to at least two significant digits.
-      const mag = Math.floor(Math.log10(Math.abs(claimed)));
-      const sig = Math.max(2, Number.isInteger(claimed) ? sigDigits(claimed) : precision + mag + 1);
-      return Math.abs(claimed - actual) <= Math.max(0.5 * 10 ** (mag - sig + 1), 0.5 * 10 ** -precision) + eps;
-    }
+      return Math.abs(claimed - actual) <= 0.5 * 10 ** -precision + eps && scaledOk;
+    case "approximately":
+      return approximately() && scaledOk;
+    case "almost":
+      // "almost $4,800": close to it, and not more ($4,825.80 is over, so it is not "almost").
+      return approximately() && scaledOk && Math.abs(actual) <= Math.abs(claimed) + eps;
     case "more_than": return actual > claimed + eps;
     case "at_least": return actual >= claimed - eps;
     case "less_than": return actual < claimed - eps;
@@ -355,6 +406,7 @@ function holds(claimed: number, actual: number, precision: number, q: Qualifier)
 const ROUNDING: Record<Qualifier, string> = {
   exact: "equal at the precision written (half a unit of the last digit)",
   approximately: "\"about\": equal when rounded to two significant digits",
+  almost: "\"almost\": equal when rounded to two significant digits, and not above the figure",
   more_than: "strictly greater",
   at_least: "greater or equal",
   less_than: "strictly less",
@@ -615,7 +667,14 @@ function channelMentionsIn(piece: string, channels: Channel[]): ChannelMention[]
 function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
   const out: Proof[] = [];
   const modal = MODAL.test(piece);
-  const figs = figuresOf(piece);
+  // A figure is hypothetical only when the conditional or forward-looking word governs it, i.e.
+  // comes before it: "CAC would be $250" is; "CAC was $4,825.80, which will need review" is a
+  // statement of fact followed by a forecast, and the fact is proved (review 2026-11-12, finding 17).
+  const modalAt = piece.search(MODAL);
+  const modalBefore = (at: number) => modalAt !== -1 && modalAt < at;
+  // A count the credited-part reader takes ("10 of them credited to paid media") is not read again.
+  const credited = creditedCountSpans(piece);
+  const figs = figuresOf(piece).filter((f) => !credited.some(([a, b]) => f.start < b && f.end > a));
   const mentions = familyMentions(piece);
   const dirs = directions(piece);
   const branches = [...piece.matchAll(/\bB\d{2}\b/g)].map((m) => ({ id: m[0], at: m.index ?? 0 }));
@@ -632,10 +691,18 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
   const months = [...new Set([...withoutCmp.matchAll(MONTHS)].map((m) => periodOf(m[0])))];
   const multiple = MULTIPLE.exec(piece);
   const subjectBranches = branches.filter((b) => b.id !== entCmp?.[1]);
-  const subject = subjectBranches[0]?.id ?? carry.branch ?? st.subjectBranch;
+  // "Customer 415347 has $50.00 in refunds": that customer's own figures, not the branch's. The
+  // facts hold branch, channel and campaign metrics only, so they are not proved here, and they
+  // never stand in for the branch's (review 2026-11-12, AI-claims finding 19).
+  const customer = /\b[Cc]ustomers?\s+#?(\d{2,})\b/.exec(piece)?.[1] ?? null;
+  const subject = customer ? `customer:${customer}` : subjectBranches[0]?.id ?? carry.branch ?? st.subjectBranch;
   const channelsHere = channelMentionsIn(piece, st.channels.filter((c) => !subject || c.branch === subject));
-  // A channel compared with another: "…less than its Google Search spend".
-  const chanCmp = channelsHere.find((c) => /\b(?:than|vs\.?|versus|compared (?:with|to))\s+(?:its\s+|the\s+|their\s+)?$/i.test(piece.slice(Math.max(0, c.at - 30), c.at))) ?? null;
+  // A channel compared with another: "…less than its Google Search spend", "…1.5 times as much … as Google Search".
+  const chanCmp =
+    channelsHere.find((c) => {
+      const before = piece.slice(Math.max(0, c.at - 30), c.at);
+      return /\b(?:than|vs\.?|versus|compared (?:with|to))\s+(?:its\s+|the\s+|their\s+)?$/i.test(before) || (MULTIPLE.test(piece) && /\bas\s+(?:its\s+|the\s+|their\s+)?$/i.test(before));
+    }) ?? null;
   const isChange = !bothMonths && (dirs.length > 0 || perCmp !== null || entCmp !== null || chanCmp !== null) && !(multiple && dirs.length === 0);
 
   // Several branches as one subject ("B41 and B42", "Joshua's"), or a brand.
@@ -702,12 +769,14 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
 
   out.push(...statusProofs(piece, st, subject, p, channelsHere, blank));
   out.push(...membershipProofs(piece, branches, blank));
+  out.push(...creditedProofs(piece, st, subject, p, channelsHere, blank));
   if (EVALUATIVE.test(piece) && !modal) out.push(unresolved("", "evaluative", "a judgement of effectiveness (better, more effective) is not a metric the evidence measures; attribution is not effectiveness"));
 
   // "…twice its September CAC": the ratio of the two values.
   if (multiple && !modal) {
-    const k = /^twice|^double/i.test(multiple[1]) ? 2 : /^triple/i.test(multiple[1]) ? 3 : /^half/i.test(multiple[1]) ? 0.5 : NUMBER_WORDS[(multiple[2] ?? "").toLowerCase()] ?? Number(multiple[2]);
-    const family = mentions[0]?.family ?? carry.family;
+    const k = factorOf(multiple);
+    // "…cost B06 1.5 times as much per new customer as Google Search": a cost per customer.
+    const family = (/\bcost\w*\b/i.test(piece) && /\bper\s+(?:new |paid |paying |acquired )*customer\b/i.test(piece) ? "cac" : null) ?? mentions[0]?.family ?? carry.family;
     const channel = channelAt(multiple.index, multiple.index);
     const metric = family ? resolve(family, null, channel ? "channel" : "branch") : null;
     if (metric && metric !== "unsupported" && Number.isFinite(k)) {
@@ -751,7 +820,8 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
 
   // A direction with no figure: "October revenue increased".
   if (figs.length === 0) {
-    if (!isChange || modal || dirs.length === 0) return out;
+    if (!isChange || dirs.length === 0) return out;
+    if (modalBefore(dirs[0].at + 1)) return [...out, unresolved("", "hypothetical", "a conditional or forward-looking statement: not a fact the evidence can prove", { claimedDirection: dirs[0].dir })];
     const family = mentions[0]?.family ?? carry.family;
     const channel = channelAt(dirs[0].at, dirs[0].at);
     const metric = family ? resolve(family, null, campaign && (family === "spend" || family === "customers" || family === "paidCustomers") ? "campaign" : channel ? "channel" : "branch") : null;
@@ -795,7 +865,7 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
     const afterCue = /^\s*(?:less|lower|fewer|below|down)\b/i.test(piece.slice(fig.end)) ? "decrease" : /^\s*(?:more|higher|above|up)\b/i.test(piece.slice(fig.end)) ? "increase" : null;
     const claimedDirection: Proof["claimedDirection"] = (preceding[preceding.length - 1] ?? dirs.find((d) => d.at > fig.end))?.dir ?? afterCue;
     const figBase: Partial<Proof> = { qualifier, precision: fig.precision, rounding: ROUNDING[qualifier], claimedDirection, claimed: fig.value };
-    if (modal) {
+    if (modalBefore(fig.start)) {
       out.push(unresolved(fig.text, "hypothetical", "a conditional or forward-looking statement: not a fact the evidence can prove", figBase));
       continue;
     }
@@ -969,12 +1039,80 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
   return out;
 }
 
+// ── Credited parts ───────────────────────────────────────────────────────────
+
+const COUNT_WORD = String.raw`(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)`;
+/** "…, 2 of them credited to Meta", "6 of them credited to paid media". */
+const PART_OF_THEM = new RegExp(String.raw`\b${COUNT_WORD}\s+of\s+(?:them|these|those)\s+(?:were\s+|are\s+)?(?:credited to|attributed to|from|via|through)\s+(paid media|paid channels|a paid channel|paid)?`, "gi");
+/** "Local Services is credited with 4 of B20's 10 October paid-media customers". */
+const CREDITED_WITH = new RegExp(String.raw`\b(?:is|was|are|were|gets|got)\s+credited with\s+${COUNT_WORD}\s+of\b`, "gi");
+
+const countOf = (word: string) => (/^\d+$/.test(word) ? Number(word) : NUMBER_WORDS[word.toLowerCase()]);
+
+/** Where the counts the credited-part reader takes sit in the piece. */
+function creditedCountSpans(piece: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  for (const re of [PART_OF_THEM, CREDITED_WITH]) {
+    for (const m of piece.matchAll(re)) {
+      const at = (m.index ?? 0) + m[0].indexOf(m[1]);
+      spans.push([at, at + m[1].length]);
+    }
+  }
+  return spans;
+}
+
+/**
+ * Customers credited to a channel, or to paid media, stated as a part of a count: each part is
+ * a level of the channel's (or the branch's paid) customers. Without this the part was never read
+ * and the sentence was proved on its whole alone ("5 paid customers, 3 of them credited to Meta"
+ * passed with Meta's true count 2).
+ */
+function creditedProofs(piece: string, st: Statement, subject: string | null, p: PeriodKey | null, channelsHere: ChannelMention[], blank: (figure: string, extra: Partial<Proof>) => Proof): Proof[] {
+  const out: Proof[] = [];
+  if (!subject || MODAL.test(piece)) return out;
+  const level = (figure: string, claimed: number, entity: EntityRef, metric: MetricKey) => {
+    const l = lookup(st.facts, metric, entity, p);
+    if (!("fact" in l)) return out.push(blank(figure, { subject: { metric, entity: entity.id, period: l.period ?? p }, relation: "level", claimed, verdict: "UNRESOLVED", gap: l.gap, reason: l.reason }));
+    const actual = l.fact.value as number;
+    const ok = actual === claimed;
+    return out.push(
+      blank(figure, {
+        subject: { metric, entity: entity.id, period: l.fact.period },
+        relation: "level",
+        formula: `v(${metric}, ${entity.id}, ${l.fact.period})`,
+        inputs: [inputOf(l.fact)],
+        unit: "count",
+        computed: actual,
+        claimed,
+        verdict: ok ? "VERIFIED" : "CONTRADICTED",
+        reason: ok ? "the credited part equals the cited fact" : `the cited fact is ${actual}`,
+      }),
+    );
+  };
+  for (const m of piece.matchAll(PART_OF_THEM)) {
+    const at = (m.index ?? 0) + m[0].length;
+    const n = countOf(m[1]);
+    if (m[2]) level(m[0].trim(), n, { type: "branch", id: subject }, "paidAcquired");
+    else {
+      const channel = channelsHere.find((c) => c.at >= at && c.at - at <= 2);
+      if (channel) level(m[0].trim(), n, { type: "channel", id: channel.id }, "channelAcquired");
+    }
+  }
+  for (const m of piece.matchAll(CREDITED_WITH)) {
+    const channel = [...channelsHere].reverse().find((c) => c.end <= (m.index ?? 0));
+    if (channel) level(m[0].trim(), countOf(m[1]), { type: "channel", id: channel.id }, "channelAcquired");
+  }
+  return out;
+}
+
 // ── Status and membership ────────────────────────────────────────────────────
 
 const READY = /\b(not\s+(?:yet\s+)?)?(?:decision[- ]ready|ready to (?:move|shift|reallocate) (?:the )?budget|ready for (?:a )?budget (?:decisions?|moves?))\b/i;
 const TRUST = /\bbudget signal\b[^.;]{0,40}?\b(not\s+|un)?(trustworthy|reliable|trusted|sound)\b/i;
 const COMPLETE = /\b(?:records?|data|payments?|feeds?|figures?|numbers?|collections?)\b[^.;]{0,40}?\b(?:is|are)\s+(?:(?:now|fully)\s+)?(?:complete|up[- ]to[- ]date|current|fresh)\b|\bfor the (?:whole|entire|full) (?:of )?(?:october|september|month|period)\b/i;
 const ABSENCE = /\b(?:has|have|had)\s+not\s+(?:yet\s+)?(?:paid|been paid)\b|\bnot\s+(?:yet\s+)?paid\b|\bunpaid\b|\bno payments?\b/i;
+/** A feed claimed stale: "the CRM payment feed has not synced successfully since October 15", "the calls feed is stale". */
+const STALE = /\b(?:feeds?|sync|records?|data)\b[^.;]{0,40}?\b(?:has|have)\s+not\s+(?:synced|run|updated|refreshed|arrived)\b|\b(?:feeds?|data|records?)\b[^.;]{0,20}?\b(?:is|are)\s+stale\b/i;
 
 function streamsFor(text: string): RegExp {
   if (/\bpay|collect|revenue|cash|refund/i.test(text)) return /^crm\.payment$/;
@@ -990,13 +1128,19 @@ function statusProofs(piece: string, st: Statement, subject: string | null, p: P
   const ready = READY.exec(piece);
   if (ready && subject) {
     const claimsReady = !ready[1];
-    const channel = channelsHere[0]?.code ?? null;
-    const facts = (status?.readiness ?? []).filter((r) => r.branchId === subject && (!channel || r.channelCode === channel) && (!p || r.period === p));
-    if (!channel || facts.length === 0) out.push(blank("", { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: `no decision-readiness result for ${channel ? `${subject}'s ${channel}` : `a channel of ${subject}`} was returned` }));
-    else {
+    // Every channel the piece names is part of the claim: "Google Search and Meta are
+    // decision-ready" is two propositions (review 2026-11-12, AI-claims finding 13).
+    const codes = [...new Set(channelsHere.map((c) => c.code))];
+    if (codes.length === 0) out.push(blank("", { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: `no decision-readiness result for a channel of ${subject} was returned` }));
+    for (const channel of codes) {
+      const facts = (status?.readiness ?? []).filter((r) => r.branchId === subject && r.channelCode === channel && (!p || r.period === p));
+      if (facts.length === 0) {
+        out.push(blank("", { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: `no decision-readiness result for ${subject}'s ${channel} was returned` }));
+        continue;
+      }
       const isReady = facts.every((f) => f.ready);
       const ok = isReady === claimsReady;
-      out.push(blank("", { relation: "status", formula: `readiness(${subject}, ${channel}) = ${facts[0].status}`, verdict: ok ? "VERIFIED" : "CONTRADICTED", reason: ok ? "the readiness verdict is as stated" : `the readiness verdict is "${facts[0].status}"` }));
+      out.push(blank("", { relation: "status", formula: `readiness(${subject}, ${channel}) = ${facts[0].status}`, verdict: ok ? "VERIFIED" : "CONTRADICTED", reason: ok ? `${channel}'s readiness verdict is as stated` : `${channel}'s readiness verdict is "${facts[0].status}"` }));
     }
   }
   const trust = TRUST.exec(piece);
@@ -1014,6 +1158,11 @@ function statusProofs(piece: string, st: Statement, subject: string | null, p: P
     const stale = relevant.filter((s) => s.stale);
     if (relevant.length === 0) out.push(blank("", { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: "completeness is claimed but no feed-freshness result was returned" }));
     else out.push(blank("", { relation: "status", formula: `fresh(${relevant.map((s) => s.stream).join(", ")})`, verdict: stale.length ? "CONTRADICTED" : "VERIFIED", reason: stale.length ? `the ${stale.map((s) => s.stream).join(", ")} feed is stale (${stale.map((s) => `${s.hoursSinceSuccess ?? "?"} h since a successful run`).join(", ")}): the records are not complete` : "every relevant feed is fresh" }));
+  }
+  if (STALE.test(piece)) {
+    const stale = relevant.filter((s) => s.stale);
+    if (relevant.length === 0) out.push(blank("", { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: "a stale feed is claimed but no feed-freshness result was returned" }));
+    else out.push(blank("", { relation: "status", formula: `stale(${relevant.map((s) => s.stream).join(", ")})`, verdict: stale.length ? "VERIFIED" : "CONTRADICTED", reason: stale.length ? `the ${stale.map((s) => s.stream).join(", ")} feed is stale, as stated` : "every relevant feed is fresh" }));
   }
   if (ABSENCE.test(piece)) {
     const stale = relevant.filter((s) => s.stale);
@@ -1144,8 +1293,9 @@ function extractArithmetic(text: string, st: Statement): { rest: string; proofs:
       }
       // Rounded operands carry their rounding: "$15,193 ÷ 31" means anything from $15,192.50 to
       // $15,193.50 over 31, so $490.11 is consistent with it. The result must fall in that range
-      // at its own precision.
-      const half = (t: Token) => 0.5 * 10 ** -t.precision;
+      // at its own precision. A count is exact: "÷ 20" is twenty, not 19.5 to 20.5 (review
+      // 2026-11-12, AI-claims finding 18: "$4,825.80 ÷ 20 = $247.00" was accepted).
+      const half = (t: Token) => (t.kind === "count" && t.precision === 0 && Number.isInteger(t.value) ? 0 : 0.5 * 10 ** -t.precision);
       const corners: number[] = [];
       for (const av of [a.value - half(a), a.value + half(a)]) {
         for (const bv of [b.value - half(b), b.value + half(b)]) {
@@ -1185,6 +1335,251 @@ function extractArithmetic(text: string, st: Statement): { rest: string; proofs:
   return { rest, proofs };
 }
 
+// ── Closed reading (model text) ──────────────────────────────────────────────
+//
+// Model text is proved only as far as it was READ. The reader above builds propositions from a
+// fixed vocabulary; what a piece says outside it would otherwise be ignored, and the piece
+// certified on the part that was read: "did not fall" proved as "fell", "surged by $20,000"
+// proved by its size alone, "Elm's CAC" proved as the investigation branch's, "300.00 per paid
+// customer" not seen at all (review 2026-11-12, AI-claims findings 1–15). For the model's free
+// text, each such part is an UNRESOLVED proposition with the hard gap "unread", so the statement
+// is not SUPPORTED. The checks are deliberately coarse: a correct sentence in words the checker
+// does not read is rejected, never a wrong one accepted. Templates are the product's own
+// sentences, written from structured results in this vocabulary, and are not held to it.
+
+const NEGATION = /\b(?:not|never|neither|nor|without|cannot|none|no longer|no more|no less|no fewer)\b|n['’]t\b|\bno\b/i;
+/** Negations the reader itself reads: a zero ("no paid customers"), "no evidenced channel", a readiness, trust or payment status. */
+const READ_NEGATION: RegExp[] = [
+  /\b(?:none|no)\b(?=\s+(?:(?:[A-Za-z][\w-]*\s+){0,2}?)(?:spend|customers|payments|refunds|prospects|revenue|cash|collections)\b)/gi,
+  /\bno (?:evidenced |known )?channel\b|\bno paid touch\b/gi,
+  /\bnot\s+(?:yet\s+)?(?:decision[- ]ready|ready to (?:move|shift|reallocate) (?:the )?budget|ready for (?:a )?budget (?:decisions?|moves?))\b/gi,
+  /\bbudget signal\b[^.;]{0,40}?\bnot\s+(?:trustworthy|reliable|trusted|sound)\b/gi,
+  /\b(?:has|have|had)\s+not\s+(?:yet\s+)?(?:paid|been paid)\b|\bnot\s+(?:yet\s+)?paid\b|\bno payments?\b/gi,
+  // A feed that "has not synced": read as a staleness claim (statusProofs).
+  /\b(?:has|have)\s+not\s+(?:synced|run|updated|refreshed|arrived)\b/gi,
+  // Lineage, not a metric: "a campaign mapped to no branch", "a call with no tracking".
+  /\b(?:mapped to|with|has|have|had)\s+no\s+(?:branch|campaign|lead(?: records?)?|tracking|source|mapping|call)\b/gi,
+];
+/** Verbs of change, rank or equality the reader has no direction or relation for. */
+const UNREAD_VERB = /\b(?:surg(?:e|ed|es|ing)|soar\w*|plung\w*|plummet\w*|spik(?:e|ed|es|ing)|tumbl\w*|slipp(?:ed|ing)|slips?|dipp(?:ed|ing)|dips?|edged|ticked|rebound\w*|recover\w*|flat|flatlined|unchanged|steady|stable|stayed|remain(?:s|ed|ing)?|balloon\w*|crash\w*|collaps\w*|skyrocket\w*|rocket\w*|sank|sunk|slid|slump\w*|swell\w*|swollen|widen\w*|narrow\w*|improv\w*|worsen\w*|deteriorat\w*|outpac\w*|trail(?:s|ed)|overt(?:ook|ake\w*)|beat|beats|beating|topp(?:ed|ing)|rank\w*|offset\w*|wiped|erased)\b|\bexceed\w*\b(?!\s*[$\d])/i;
+const RANK = /\b(?:lowest|highest|cheapest|priciest|most expensive|least expensive|largest|smallest|biggest|best|worst|top|bottom|first|last|record (?:high|low)|all[- ]time|most|least|fewest|maximum|minimum|peak|leading|second|third)\b/gi;
+const READ_RANK = /\bat (?:least|most)\b|\blast month\b|\bfirst (?:evidenced )?touch\b/gi;
+const CMP_WORD = /\b(?:than|versus|vs\.?|compared (?:with|to)|relative to|against)\s+/gi;
+const CMP_TARGET = new RegExp(String.raw`^(?:(?:in|for|during|the|its|their|that of|those of|month of|it did in|it was in|they were in|they did in)\s+)*(?:B\d{2}\b|(?:${MONTH_WORD})\b|[$\d−~-]|(?:about|approximately|around|roughly|nearly|almost)\b)`, "i");
+const OTHER_PERIOD = /\b(?:jan(?:uary)?|feb(?:ruary)?|march|apr(?:il)?|june?|july?|aug(?:ust)?|nov(?:ember)?|dec(?:ember)?|Q[1-4]|quarters?|quarterly|years?|yearly|annual\w*|ytd|year[- ]to[- ]date|weeks?|weekly|daily|per day|a day|each day|every day|today|yesterday|tomorrow|mtd|month[- ]to[- ]date|monthly|per month|a month|each month|every month|averag\w*|median|trailing|rolling|run[- ]rate|annuali[sz]ed|fiscal|season\w*|holiday\w*|spring|summer|winter|autumn)\b/i;
+/** "May" the month, not the modal "may": case-sensitive. */
+const MAY = /\bMay\b(?!\s+(?:have|be|not|also|reflect|indicate|explain|mean|suggest)\b)/;
+/** The years the facts are about; any other year names a period they do not hold. */
+const DATA_YEARS = new Set(Object.values(PERIODS).map((p) => String(p.from.getUTCFullYear())));
+const LOWER_BRANCH = /\bb\d{2}\b|\b[Bb]ranch(?:es)?\s+(?:#|[Nn]o\.?\s*|number\s+)?\d{1,2}\b/;
+const BRANCH_NAME = new RegExp(String.raw`\b(${BRANCHES.map((b) => escapeRe(b.name)).join("|")})(?:['’]s|\s+branch)\b`, "g");
+const BRANCH_BY_NAME = new Map(BRANCHES.map((b) => [b.name, b.id]));
+const COMPANY = /\b(?:company[- ]?wide|the (?:whole |entire )?company|across (?:the )?company|all (?:\d+ |of the |the |our )?branches|every branch|each branch|overall|network[- ]wide|nationwide|in total|altogether|combined|together)\b/i;
+/** A brand named in lower case: the reader reads brands as proper nouns only. */
+const LOWER_BRAND = /\b(?:moxie|mission|joshua)(?:['’]?s)?\b/;
+const CUSTOMER_REF = /\b[Cc]ustomers?\s+#?\d{2,}\b/;
+const CAMPAIGN_REF = /\b[Cc]ampaigns?\s+["“'‘]?([A-Za-z0-9][\w-]*\d[\w-]*|[A-Za-z0-9]+-[\w-]+)|\b([A-Z]{1,5}-\d{1,6})\b/g;
+/** Channel names text may use, the cited ones and others: a channel the facts do not cover gets none of the branch's numbers. */
+const CHANNEL_WORDS = [...new Set([
+  ...Object.values(CHANNEL_ALIASES).flat(),
+  "Performance Max", "PMax", "Google Ads", "Google Display", "Display ads", "YouTube", "TikTok", "Yelp", "Nextdoor", "Angi", "Thumbtack", "HomeAdvisor",
+  "LinkedIn", "Pinterest", "Snapchat", "Direct mail", "Door-to-door", "door to door", "D2D", "Referral", "Referrals", "Organic",
+])].sort((a, b) => b.length - a.length);
+const OTHER_CURRENCY = /(?<![A-Za-z])(?!US\$)[A-Z]{1,3}\$|[€£¥₹₩]|\b(?:EUR|GBP|CAD|AUD|NZD|MXN|JPY|CNY|INR|CHF|SEK|NOK|DKK|BRL|ZAR|euros?|pounds?|yen|pesos?|rupees?|francs?)\b/;
+const BIG_NUMBER_WORD = /\b(?:thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|dozens?)\b/gi;
+const SMALL_NUMBER_WORD = /\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi;
+/** Qualifiers that change what is measured: another metric, another base, a part of the period's figure. */
+const MODIFIER = /\b(?:blended|recogni[sz]ed|profits?|profitab\w*|margins?|earnings|income|ebitda|ltv|lifetime value|arpu|aov|excluding|exclusive of|except|other than|apart from|aside from|not counting|ignoring|minus|including|inclusive of|plus|adjusted|normali[sz]ed|weighted|estimated|implied|true|real|actual|underlying|planned|benchmark|industry|per[- ]capita)\b/i;
+const ONLY = /\b(?:from|by|in|at|via|through|on)\s+[^.;,]{1,30}?\s+(?:only|alone)\b|\b(?:only|solely|exclusively)\s+(?:from|by|via|through|on)\b/i;
+/** Money "per customer" with a verb of cash: that is not CAC. */
+const CASH_PER_CUSTOMER = /\b(?:collect\w*|earn\w*|revenue|cash|brought in|refund\w*|received)\b[^.;]{0,40}?\$[\d,.]+\s*(?:per|\/|for each|a|from each)\s+(?:(?:new|paid|paying|acquired)\s+)*customer/i;
+/** A count of customers with a verb that is not acquisition: paying, invoiced, refunded, cancelled, converted. */
+const CUSTOMER_VERB = /\b(?:customers?\s+(?:paid|pay|paying)\b|paying\b|payments?\s+from|paid\s+(?:us|B\d{2}|the branch)\b|invoic\w*|bill(?:ed|ing)\b|refund\w*|cancel\w*|churn\w*|became|become|becoming|convert\w*|conversions?|renew\w*|signed|booked|retain\w*|returning|repeat)\b/i;
+/** The unknown share is a share of ALL new customers, not of spend or of paid customers. */
+const SHARE_BASE = /%\s*(?:\([^)]*\)\s*)?of\s+(?:[\w'’]+\s+){0,4}?(?:paid(?:[- ]media)?\s+(?:spend|customers)|(?:paid |media |ad )?spend|revenue|collections?|cash|calls|leads|prospects|payments)\b/i;
+const PRIMARY = new Set<Family>(["cac", "spend", "collected", "newCollected", "refunds", "gross", "atRisk", "prospects", "unknown"]);
+const FAMILY_OF: Record<MetricKey, Family> = {
+  paidCac: "cac", channelCac: "cac", paidSpend: "spend", campaignSpend: "spend", channelSpend: "spend", collected: "collected", newCollected: "newCollected",
+  refunds: "refunds", grossCollected: "gross", atRisk: "atRisk", prospects: "prospects", unknownShare: "unknown", unknownAcquired: "unknown",
+  paidAcquired: "paidCustomers", acquired: "customers", campaignAcquired: "customers", channelAcquired: "customers",
+};
+const COUNT_METRICS = new Set<MetricKey>(["acquired", "paidAcquired", "campaignAcquired", "channelAcquired", "unknownAcquired", "prospects"]);
+
+/** Blanks every match of each pattern, positions kept. */
+function blankAll(text: string, patterns: RegExp[]): string {
+  return patterns.reduce((t, re) => t.replace(re, blank), text);
+}
+
+/**
+ * What a piece of model text says that its proofs do not cover. `own` are the piece's proofs;
+ * `statement` the proofs of the whole statement (arithmetic is read before the pieces).
+ */
+function closedReading(piece: string, own: Proof[], statement: Proof[], st: Statement): Proof[] {
+  const reasons: string[] = [];
+  const say = (reason: string) => reasons.push(reason);
+  const proposition = (gap: Gap, reason: string): Proof => ({
+    piece,
+    figure: "",
+    subject: { metric: null, entity: null, period: null },
+    against: null,
+    relation: "unknown",
+    formula: "",
+    inputs: [],
+    unit: null,
+    computed: null,
+    claimed: null,
+    qualifier: "exact",
+    direction: null,
+    claimedDirection: null,
+    precision: 0,
+    rounding: ROUNDING.exact,
+    verdict: "UNRESOLVED",
+    gap,
+    reason,
+  });
+  const masked = maskNonQuantities(piece)
+    .replace(/\b(?:campaigns?|raw events?|exceptions?|customers?|leads?|runs?|changes?|cases?|proposals?|payments?|tickets?|investigations?|incidents?|records?|subscriptions?|appointments?)\s+#?\d+\b|#\d+\b|@[\w.]+/gi, blank)
+    .replace(new RegExp(String.raw`\b\d[\d,]*\s+of\s+(?=\d[\d,]*\b[^()]{0,80}\(\s*\d[\d.,]*\s*%)`, "g"), (m) => (own.some((p) => p.relation === "arithmetic") ? blank(m) : m));
+  // A piece with no figure, measure or direction at all (an event, an explanation): nothing to
+  // contradict, nothing proved. A hypothesis, not a finding; not a rejection either.
+  const figs = figuresOf(piece);
+  const substantive = own.length > 0 || figs.length > 0 || familyMentions(piece).length > 0 || directions(piece).length > 0 || /\d/.test(masked);
+  if (!substantive) {
+    return piece.split(/\s+/).length >= 3 ? [proposition("unproved", "model text that states no figure, measure or direction the checker proves: shown as a hypothesis, not a finding")] : [];
+  }
+  const relations = new Set(own.map((p) => p.relation));
+  const extremum = own.some((p) => /^(?:min|max) over/.test(p.formula));
+  const aggregate = own.some((p) => p.relation === "sum") || extremum;
+  const metrics = new Set<MetricKey>([...own, ...statement].flatMap((p) => [...(p.subject.metric ? [p.subject.metric] : []), ...p.inputs.map((i) => i.metric)]));
+  const bound = new Set<string>(
+    [...own, ...statement].flatMap((p) => [
+      ...(p.subject.entity ? p.subject.entity.split("+") : []),
+      ...(p.against ? [p.against.entity] : []),
+      ...p.inputs.map((i) => i.entity),
+    ]),
+  );
+  for (const id of [...bound]) if (/^B\d{2}:/.test(id)) bound.add(id.slice(0, 3));
+  // Read figures: those a proposition took, whole ("1.2 times") or as located. A figure located
+  // but turned into no proposition was not read.
+  const spans: Array<[number, number]> = figs.filter((f) => own.some((p) => p.figure === f.text)).map((f) => [f.start, f.end]);
+  for (const p of own) {
+    const at = p.figure ? piece.indexOf(p.figure) : -1;
+    if (at >= 0) spans.push([at, at + p.figure.length]);
+  }
+  const covered = (s: number, e: number) => spans.some(([a, b]) => s < b && e > a);
+  const status = relations.has("status") || relations.has("membership");
+
+  // Negation the reader does not read inverts what it proved.
+  if (!relations.has("membership") && NEGATION.test(blankAll(piece, READ_NEGATION))) say("a negation (\"not\", \"no\", \"n't\", \"without\") the checker does not read: what it proved may be the opposite of what is said");
+  // Change, rank and comparison wording it has no relation for.
+  const verb = UNREAD_VERB.exec(piece);
+  if (verb) say(`"${verb[0]}" is not a change, rank or comparison the checker reads`);
+  if (!extremum) {
+    const rank = RANK.exec(blankAll(piece, [READ_RANK]));
+    RANK.lastIndex = 0;
+    if (rank) say(`"${rank[0]}" ranks or bounds a figure the checker does not compare`);
+  }
+  for (const m of piece.matchAll(CMP_WORD)) {
+    const target = piece.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 60);
+    const channelTarget = st.channels.some((c) => c.names.some((n) => new RegExp(String.raw`^(?:(?:its|the|their)\s+)?${escapeRe(n)}\b`, "i").test(target)));
+    if (!CMP_TARGET.test(target) && !channelTarget) {
+      say(`compares with "${target.split(/[,;.]/)[0].trim()}", which is not a month, branch, channel or figure the checker reads`);
+      break;
+    }
+  }
+  const multiple = MULTIPLE.exec(piece);
+  // A multiple the reader proved as a ratio named its other side; otherwise it must be a month or branch.
+  if (multiple && !relations.has("ratio")) {
+    const around = piece.slice(multiple.index + multiple[0].length, multiple.index + multiple[0].length + 50);
+    if (!/\bB\d{2}\b/.test(around) && !new RegExp(String.raw`\b(?:${MONTH_WORD})\b`, "i").test(around)) say(`"${multiple[0]}" of something that is not another month or branch`);
+  }
+  // Periods it does not hold.
+  const period = OTHER_PERIOD.exec(piece) ?? MAY.exec(piece);
+  if (period) say(`"${period[0]}" is not a period the cited facts hold (they are September and October ${[...DATA_YEARS].join(", ")} figures)`);
+  for (const y of piece.matchAll(/\b(?:19|20)\d{2}\b/g)) {
+    if (!DATA_YEARS.has(y[0])) {
+      say(`${y[0]} is not a year the cited facts hold`);
+      break;
+    }
+  }
+  // Entities it cannot place, or that no proposition is about.
+  if (LOWER_BRANCH.test(piece)) say("a branch named in a form the checker does not read (branches are B01–B44)");
+  if (LOWER_BRAND.test(piece)) say("a brand named in lower case, which the checker does not read as the brand");
+  if (CUSTOMER_REF.test(piece)) say("names a customer; the cited facts are branch, channel and campaign metrics, not one customer's");
+  if (COMPANY.test(piece) && !aggregate) say("speaks of the company or a total, but no proposition in it is about more than one branch");
+  if (!relations.has("membership")) {
+    const named = new Set<string>([...piece.matchAll(/\bB\d{2}\b/g)].map((m) => m[0]));
+    for (const m of piece.matchAll(BRANCH_NAME)) named.add(BRANCH_BY_NAME.get(m[1]) ?? m[1]);
+    const unbound = [...named].filter((id) => !bound.has(id));
+    if (unbound.length > 0) say(`names ${unbound.join(", ")}, which no proposition in it is about`);
+  }
+  const channelMentions: string[] = [];
+  let rest = piece;
+  for (const name of CHANNEL_WORDS) {
+    const re = new RegExp(String.raw`(?<![\w-])${escapeRe(name)}(?![\w-])`, /[\s-]/.test(name) ? "gi" : "g");
+    if (re.test(rest)) {
+      channelMentions.push(name);
+      rest = rest.replace(re, blank);
+    }
+  }
+  // A readiness claim checks every channel it names itself (statusProofs).
+  for (const name of status ? [] : channelMentions) {
+    const ids = st.channels.filter((c) => c.names.some((n) => n.toLowerCase() === name.toLowerCase())).map((c) => c.id);
+    if (!ids.some((id) => bound.has(id))) {
+      say(`names the ${name} channel, which no proposition in it is about`);
+      break;
+    }
+  }
+  for (const m of piece.matchAll(CAMPAIGN_REF)) {
+    const id = m[1] ?? m[2];
+    if (!st.campaignIds.includes(id) || !bound.has(id)) {
+      say(`names campaign ${id}, which no proposition in it is about`);
+      break;
+    }
+  }
+  // Money in another currency, and figures in a form the reader does not parse.
+  const currency = OTHER_CURRENCY.exec(piece);
+  if (currency) say(`"${currency[0]}" is not US dollars; amounts are never converted`);
+  for (const m of masked.matchAll(/\d[\d,]*(?:\.\d+)?/g)) {
+    const s = m.index ?? 0;
+    if (!covered(s, s + m[0].length)) {
+      say(`"${piece.slice(s, s + m[0].length)}" is a figure in a form the checker does not read`);
+      break;
+    }
+  }
+  for (const re of [BIG_NUMBER_WORD, SMALL_NUMBER_WORD]) {
+    for (const m of piece.matchAll(re)) {
+      const s = m.index ?? 0;
+      if (!covered(s, s + m[0].length)) {
+        say(`"${m[0]}" is a figure in words the checker does not read`);
+        break;
+      }
+    }
+  }
+  // A measure no proposition covers ("its spend and its collections both rose"). A projection's
+  // figures are not proved anyway (hypothetical), so its measure words are not held to this.
+  if (!status && !own.some((p) => p.gap === "hypothetical")) {
+    const proved = new Set<Family>([...metrics].map((k) => FAMILY_OF[k]));
+    // A measure named as a source ("from payments synced through …") is not a second claim.
+    const asSource = (m: Mention) => /\b(?:from|through|via|based on|out of)\s+(?:the\s+|its\s+|their\s+)?$/i.test(piece.slice(Math.max(0, m.start - 20), m.start));
+    const missing = [...new Set(familyMentions(piece).filter((m) => !asSource(m)).map((m) => (m.family === "payments" ? "gross" : m.family)))].filter((f) => PRIMARY.has(f) && !proved.has(f));
+    if (missing.length > 0) say(`mentions ${missing.join(", ")}, which no proposition in it is about`);
+  }
+  // Qualifiers and verbs that change the metric.
+  const modifier = MODIFIER.exec(piece);
+  if (modifier) say(`"${modifier[0]}" changes what is measured; the checker proves the product's own definitions only`);
+  if (ONLY.test(piece)) say("restricts the figure to a part (\"only\", \"alone\") the facts do not break down");
+  if (metrics.has("paidCac") && CASH_PER_CUSTOMER.test(piece)) say("money per customer named with a verb of cash: that is not the acquisition cost");
+  if ([...metrics].some((k) => COUNT_METRICS.has(k)) && CUSTOMER_VERB.test(piece)) say("counts customers with a verb that is not acquisition (paying, invoiced, refunded, cancelled, converted): the facts count acquisitions");
+  if (metrics.has("unknownShare") && SHARE_BASE.test(piece)) say("a share of a base the unknown share does not use (it is a share of all new customers)");
+  // Nothing proved, yet something asserted.
+  if (own.length === 0 && reasons.length === 0) {
+    const asserts = familyMentions(piece).length > 0 || figs.length > 0 || /\d/.test(masked) || directions(piece).length > 0 || READY.test(piece) || TRUST.test(piece) || COMPLETE.test(piece);
+    if (asserts) say("states something about the business that the checker cannot read");
+  }
+  return reasons.slice(0, 4).map((reason) => proposition("unread", `model text: ${reason}; what was not read was not proved`));
+}
+
 // ── Entry points ─────────────────────────────────────────────────────────────
 
 /** The channels the cited facts cover, with every name text may use for them. */
@@ -1209,8 +1604,13 @@ export function proveStatement(text: string, ctx: ProveContext): Proof[] {
     subjectBranch: /\bB\d{2}\b/.exec(text)?.[0] ?? ctx.branchId,
   };
   const { rest, proofs } = extractArithmetic(text, st);
+  const arithmetic = [...proofs];
   const carry: Carry = { family: null, period: null, branch: st.subjectBranch, group: null };
-  for (const piece of splitPieces(rest)) proofs.push(...provePiece(piece, st, carry));
+  for (const piece of splitPieces(rest)) {
+    const own = provePiece(piece, st, carry);
+    proofs.push(...own);
+    if (ctx.origin === "model") proofs.push(...closedReading(piece, own, arithmetic, st));
+  }
   return proofs;
 }
 
@@ -1223,7 +1623,7 @@ export function citedFacts(facts: MetricFact[], evidenceIds: readonly string[]):
 /** Who wrote the sentence: a template filled from structured results, or the model. */
 export type ProofOrigin = "template" | "model";
 
-const HARD_GAPS: ReadonlySet<Gap> = new Set<Gap>(["metric_unsupported", "fact_missing", "period_missing", "period_ambiguous", "comparison_missing", "currency_unresolved", "undefined_value", "operand_missing", "conflicting_facts", "evaluative", "evidence_stale"]);
+const HARD_GAPS: ReadonlySet<Gap> = new Set<Gap>(["metric_unsupported", "fact_missing", "period_missing", "period_ambiguous", "comparison_missing", "currency_unresolved", "undefined_value", "operand_missing", "conflicting_facts", "evaluative", "evidence_stale", "unread"]);
 
 export interface Judgement {
   status: "SUPPORTED" | "PARTIALLY_SUPPORTED" | "UNSUPPORTED";
@@ -1241,10 +1641,15 @@ export interface Judgement {
  *   conditional reading): PARTIALLY_SUPPORTED — shown with its limitation, never as verified.
  * - Template-written (filled from a structured calculation): otherwise kept.
  * - Every proposition verified: SUPPORTED.
- * Null when the statement asserts nothing the checker can test.
+ * - Model-written with nothing to prove: PARTIALLY_SUPPORTED. The model is never the only
+ *   verifier, so its text is SUPPORTED only by a proof (review 2026-11-12, AI-claims shared root:
+ *   a "verified" sentence the checker could not read was certified).
+ * Null when a template asserts nothing the checker can test.
  */
 export function judge(proofs: Proof[], origin: ProofOrigin): Judgement | null {
-  if (proofs.length === 0) return null;
+  if (proofs.length === 0) {
+    return origin === "model" ? { status: "PARTIALLY_SUPPORTED", reason: "nothing in it is a proposition the checker proves, so it is not a finding", decisive: null } : null;
+  }
   const why = (p: Proof) => `${p.figure ? `${p.figure}: ` : ""}${p.reason}`;
   const contradicted = proofs.find((p) => p.verdict === "CONTRADICTED");
   if (contradicted) return { status: "UNSUPPORTED", reason: why(contradicted), decisive: contradicted };

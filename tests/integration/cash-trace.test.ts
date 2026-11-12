@@ -91,3 +91,24 @@ describe("brand rollups", () => {
     await expect(rollupBrand(pool, partner, { brandId: brand, period: PERIODS.oct })).rejects.toThrow(ForbiddenError);
   });
 });
+
+// Last: these break the shared world on purpose.
+describe("invariants that can fail (review 2026-11-12, financial 13)", () => {
+  it("a refund against a voided payment is a refund beyond what was paid", async () => {
+    await ingest(pool, "crm", [crm.payment(9003, 1003, 4003, "B05", "-5.00", at(10, 22), "1", "5003")], { now: NOW });
+    const t = await traceCash(pool, marketing, { branchId: "B05", period: PERIODS.oct });
+    expect(t.invariants.find((i) => i.name === "no payment is refunded beyond what was paid")).toMatchObject({ holds: false });
+  });
+
+  it("cash from a CRM office no branch owns breaks the brand partition", async () => {
+    // A stored payment in an office no branch owns (as a CRM office added before its branch is).
+    await pool.query(
+      `insert into crm_payments (crm_payment_id, crm_customer_id, office_id, amount_cents, status, paid_at, source_updated_at, raw_event_id)
+       values (9100, 1001, 999999, 2000, 'successful', $1, $1, (select min(id) from raw_events))`,
+      [at(10, 23)],
+    );
+    const brand = BRANCH_BY_ID.get("B05")!.brandId;
+    const r = await rollupBrand(pool, marketing, { brandId: brand, period: PERIODS.oct });
+    expect(r.invariants.find((i) => i.name === "the brands partition the company (collected cash)")).toMatchObject({ holds: false });
+  });
+});

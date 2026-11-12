@@ -17,8 +17,9 @@ export function OpenInquiry({ branches, initial }: { branches: Array<{ id: strin
     setError(null);
     try {
       const res = await fetch("/api/inquiries", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "cac_change", branchId: branch }) });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      // A proxy or crash page is not JSON: say so plainly, not "Unexpected token '<'".
+      const json = (await res.json().catch(() => null)) as { error?: string; id?: number } | null;
+      if (!res.ok || !json?.id) throw new Error(json?.error ?? `The request failed (HTTP ${res.status})`);
       router.push(`/investigator/inquiries/${json.id}`);
     } catch (err) {
       setError((err as Error).message);

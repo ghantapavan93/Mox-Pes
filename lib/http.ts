@@ -12,6 +12,11 @@ export function errorResponse(error: unknown): NextResponse {
   if (error instanceof ActionError) return NextResponse.json({ error: error.message }, { status: error.status });
   if (error instanceof SyntaxError) return NextResponse.json({ error: "Body is not valid JSON" }, { status: 400 });
   if (error instanceof PayloadTooLargeError) return NextResponse.json({ error: error.message }, { status: 413 });
+  // A unique constraint lost to a request made at the same moment (two proposals of one rule,
+  // two re-tests of one inquiry): a conflict the caller can retry, not a server fault.
+  if ((error as { code?: unknown } | null)?.code === "23505") {
+    return NextResponse.json({ error: "This conflicts with a change made at the same time. Reload and try again." }, { status: 409 });
+  }
   console.error(JSON.stringify({ level: "error", msg: "unhandled route error", error: (error as Error).message }));
   return NextResponse.json({ error: "Internal error" }, { status: 500 });
 }

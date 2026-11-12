@@ -46,9 +46,11 @@ const STEPS = [
 const FACTS = metricFacts(STEPS);
 const ALL_IDS = ["branch_metrics:B09:oct", "branch_metrics:B09:sep", "branch_metrics:B12:oct"];
 
+/** `proofs` are the template reading; model text is also held to the closed reading (`modelProofs`). */
 function prove(text: string, ids: string[] = ALL_IDS, facts: MetricFact[] = FACTS, branchId = "B09") {
-  const proofs = proveStatement(text, { branchId, facts: citedFacts(facts, ids) });
-  return { proofs, model: judge(proofs, "model"), template: judge(proofs, "template") };
+  const proofs = proveStatement(text, { branchId, facts: citedFacts(facts, ids), origin: "template" });
+  const modelProofs = proveStatement(text, { branchId, facts: citedFacts(facts, ids), origin: "model" });
+  return { proofs, modelProofs, model: judge(modelProofs, "model"), template: judge(proofs, "template") };
 }
 
 const verdicts = (proofs: Proof[]) => proofs.map((p) => p.verdict);
@@ -96,8 +98,8 @@ describe("the fourteen ways a figure can be wrong", () => {
         scope: { branchId: "B09", period: { key: "oct" } },
         value: { reproduced: { paidSpendCents: 482580, paidAcquired: 20, paidCacCents: 24129 }, matches: true },
         campaigns: [
-          { externalCampaignId: "G-100", spendCents: 300000, assumedCurrencyCents: 0 },
-          { externalCampaignId: "M-200", spendCents: 182580, assumedCurrencyCents: 0 },
+          { externalCampaignId: "G-100", evidenceId: "campaign:11", spendCents: 300000, assumedCurrencyCents: 0 },
+          { externalCampaignId: "M-200", evidenceId: "campaign:12", spendCents: 182580, assumedCurrencyCents: 0 },
         ],
         campaignsOmitted: 0,
       },
@@ -194,16 +196,18 @@ describe("the fourteen ways a figure can be wrong", () => {
       output: {
         scope: { branchId: "B09", period: { key: "oct" } },
         value: { reproduced: { paidSpendCents: 482580, paidAcquired: 20, paidCacCents: 24129 }, matches: true },
-        campaigns: [{ externalCampaignId: "G-100", spendCents: 482580, assumedCurrencyCents: 100000 }],
+        campaigns: [{ externalCampaignId: "G-100", evidenceId: "campaign:11", spendCents: 482580, assumedCurrencyCents: 100000 }],
         campaignsOmitted: 0,
       },
     };
-    const r = prove("B09's October paid spend is $4,825.80.", ["campaign:11"], metricFacts([trace]));
+    const r = prove("B09's October paid spend is $4,825.80.", ["branch_metrics:B09:oct"], metricFacts([trace]));
     expect(r.proofs[0].gap).toBe("currency_unresolved");
     expect(r.model?.status).toBe("UNSUPPORTED");
     expect(r.template?.status).toBe("PARTIALLY_SUPPORTED");
     // Paid customers are a count: no currency question.
-    expect(prove("B09 had 20 paid customers in October.", ["campaign:11"], metricFacts([trace])).model?.status).toBe("SUPPORTED");
+    expect(prove("B09 had 20 paid customers in October.", ["branch_metrics:B09:oct"], metricFacts([trace])).model?.status).toBe("SUPPORTED");
+    // Citing a campaign cites that campaign's figures, not the branch's total (review 2026-11-12, finding 16).
+    expect(prove("B09 had 20 paid customers in October.", ["campaign:11"], metricFacts([trace])).proofs[0]).toMatchObject({ verdict: "UNRESOLVED", gap: "fact_missing" });
   });
 });
 
@@ -316,7 +320,7 @@ describe("channels, groups, brands, ratios and status", () => {
     const stale = { kind: "tool_call", status: "ok", tool: "getIngestionFailures", evidenceIds: [], output: { streams: [{ stream: "crm.payment", source: "crm", lastRunStatus: "succeeded", hoursSinceSuccess: 300, staleAfterHours: 48 }] } };
     const status = statusFacts([readiness, stale]);
     const q = (text: string) => {
-      const proofs = proveStatement(text, { branchId: "B05", facts: citedFacts(facts, ids), status });
+      const proofs = proveStatement(text, { branchId: "B05", facts: citedFacts(facts, ids), status, origin: "model" });
       return judge(proofs, "model")?.status;
     };
     expect(q("Google Search is decision-ready at B05 for October.")).toBe("UNSUPPORTED");
@@ -356,9 +360,12 @@ describe("reading statements as people write them", () => {
   });
 
   it("does not certify what it cannot read (model text), but keeps templates", () => {
+    // The count of campaigns is outside the vocabulary, and the spend it names is not proved:
+    // model text saying so is not read, so it is rejected (closed reading); a template keeps it.
     const r = prove("B09's paid spend came from 12 campaigns in October.");
     expect(r.proofs[0].gap).toBe("metric_unknown");
-    expect(r.model?.status).toBe("PARTIALLY_SUPPORTED");
+    expect(r.model?.status).toBe("UNSUPPORTED");
+    expect(r.modelProofs.find((p) => p.gap === "unread")?.reason).toMatch(/mentions spend, which no proposition in it is about/);
     expect(r.template?.status).toBe("SUPPORTED");
   });
 
@@ -388,11 +395,256 @@ describe("reading statements as people write them", () => {
   });
 
   it("states no proof for a sentence without figures or directions", () => {
-    expect(prove("The mapping for G-100 was changed by marketing.").model).toBeNull();
+    // Nothing to prove: a template asserts nothing testable; model text is a hypothesis, never a
+    // finding, because the model is never the only verifier.
+    const r = prove("The mapping for G-100 was changed by marketing.");
+    expect(r.template).toBeNull();
+    expect(r.model).toMatchObject({ status: "PARTIALLY_SUPPORTED" });
+    expect(r.modelProofs.map((p) => p.gap)).toEqual(["unproved"]);
   });
 
   it("derives gross payments from collected plus refunds, to the cent", () => {
     expect(prove("B09 took $100,500.00 in gross payments before refunds in October.").model?.status).toBe("SUPPORTED");
     expect(prove("B09's October net collections after refunds were $100,000.00.").model?.status).toBe("SUPPORTED");
+  });
+});
+
+/**
+ * The adversarial review of the checker (2026-11-12): every wrong statement it found accepted as
+ * SUPPORTED, each now refused, and the product's own sentences it found wrongly rejected, each now
+ * kept. Model text is held to the closed reading: what the checker does not read is not proved.
+ * Facts: B09 October $100,000 collected, $4,825.80 spent, 20 paid of 25 new customers, CAC
+ * $241.29, refunds $500, at risk $1,250, unknown share 12%; September $120,000, $4,000, CAC
+ * $200; B12 October CAC $200, spend $2,000.
+ */
+describe("the AI-claims review, 2026-11-12: wrong statements refused", () => {
+  const refused = (texts: string[], ids: string[] = ALL_IDS, facts: MetricFact[] = FACTS) => {
+    for (const t of texts) expect(prove(t, ids, facts).model?.status, t).toBe("UNSUPPORTED");
+  };
+
+  it("1 · a negation is not read as the statement it negates", () => {
+    refused([
+      "B09's October collections did not fall from September.",
+      "B09's October collected cash did not decrease by $20,000 from September.",
+      "B09's October paid CAC is not higher than B12's.",
+      "There is no evidence that B09's October collections fell from September.",
+      "B09's October paid spend was no more than $4,000.",
+      "B09's October paid spend did not exceed $4,000.",
+    ]);
+  });
+
+  it("2 · a change needs a direction the checker reads; 'down from' is one", () => {
+    refused(["B09's October collected cash surged by $20,000 versus September."]);
+    const r = prove("B09's October paid CAC was $241.29, down from $200.00 in September.");
+    expect(r.proofs.some((p) => p.verdict === "CONTRADICTED")).toBe(true);
+    expect(prove("B09's October paid CAC was $241.29, up from $200.00 in September.").model?.status).toBe("SUPPORTED");
+  });
+
+  it("3 · a statement with no figure and no verb it reads is not certified", () => {
+    refused([
+      "B09's October collected cash was flat versus September.",
+      "B09's October collections were unchanged from September.",
+      "B09's paid spend doubled from September to October.",
+      "B09's October revenue soared compared with September.",
+      "B09 has the lowest paid CAC in October.",
+      "B09 ranks first among branches for October collections.",
+    ]);
+  });
+
+  it("4 · a figure in a form the checker does not parse is not proved", () => {
+    refused([
+      "B09's October paid CAC was 300.00 per paid customer.",
+      "B09's paid spend changed by $-9,999.00 from September.",
+      "B09 collected one hundred fifty thousand dollars in October.",
+      "B09 had thirty paid customers in October.",
+      "B09 collected 9.9 million in October.",
+      "B09 spent 9,999.99 EUR on paid media in October.",
+      "B09's unattributed share increased by 20.6 percentage points from September.",
+    ]);
+  });
+
+  it("5 · a period it does not hold does not fall back to the cited one", () => {
+    const oct = ["branch_metrics:B09:oct"];
+    refused(["B09's November paid CAC is $241.29.", "B09's paid CAC last year was $241.29.", "B09's October 2025 paid CAC was $241.29.", "B09's Q3 paid CAC was $241.29."], oct);
+    expect(prove("B09's October paid CAC is $241.29.", oct).model?.status).toBe("SUPPORTED");
+  });
+
+  it("6 · an entity it does not place does not fall back to the investigation branch", () => {
+    refused([
+      "Elm's October paid CAC is $241.29.",
+      "b12's October paid CAC is $241.29.",
+      "moxie's October paid CAC was $241.29.",
+      "Company-wide, the October paid CAC was $241.29.",
+      "$4,825.80 was spent on paid media by B09 and B12 in October.",
+      "B12's October paid CAC is $200.00; in comparison, b09's is $200.00 too.",
+    ]);
+  });
+
+  it("8 · a comparison needs a target it reads: another month, branch, channel or figure", () => {
+    refused([
+      "B09 spent more on paid media than it collected in October.",
+      "B09's October refunds were higher than its revenue at risk.",
+      "B09's October paid CAC was higher than the company average.",
+      "B09's October paid CAC was higher than planned.",
+    ]);
+  });
+
+  it("9 · every measure a piece names must be proved, not only the first", () => {
+    refused(["B09's paid spend rose in October compared with September, and its collections rose too.", "B09's October paid spend and collected cash both increased from September."]);
+  });
+
+  it("10 · a customer count is not a payment, invoice, refund or churn count", () => {
+    refused([
+      "25 customers paid B09 in October.",
+      "B09 received payments from 25 customers in October.",
+      "B09 invoiced 25 customers in October.",
+      "B09 refunded 20 paid customers in October.",
+      "20 paid customers at B09 cancelled in October.",
+      "60 prospects became customers at B09 in October.",
+      "B09 had 20 paying customers in October.",
+    ]);
+  });
+
+  it("11 · a word that changes the metric is not ignored", () => {
+    refused([
+      "B09's blended October CAC is $241.29.",
+      "B09's October recognized revenue was $100,000.",
+      "B09's October profit was $100,000 in collected revenue.",
+      "B09 collected $241.29 per new paid customer in October.",
+      "B09 collected $100,000 from new customers only in October.",
+      "B09's daily paid spend in October was $4,825.80.",
+      "B09's October paid spend was $4,825.80 per week.",
+      "Excluding Meta, B09's October paid CAC was $241.29.",
+      "12% of B09's October paid spend was unattributed.",
+      "12% of B09's paid customers in October had no evidenced channel.",
+    ]);
+  });
+
+  it("15 · a non-US dollar is not read as US dollars", () => {
+    refused(["B09's October paid spend was CA$4,825.80.", "B09's October paid spend was A$4,825.80."]);
+  });
+
+  it("17 · a forecast after a fact does not hide the fact's contradiction", () => {
+    const r = prove("B09's October paid CAC was $4,825.80, which will need review.");
+    expect(r.proofs.some((p) => p.verdict === "CONTRADICTED")).toBe(true);
+    expect(r.template?.status).toBe("UNSUPPORTED");
+    // A forecast governs what follows it: still a hypothesis.
+    expect(prove("Fixing the mapping would lower B09's CAC to $180.00.").proofs[0].gap).toBe("hypothetical");
+  });
+
+  it("18 · tolerances: a scaled figure within 5%, 'almost' not above, counts exact in arithmetic", () => {
+    refused(["B09 collected $0M in October.", "B09's October paid spend was almost $4,800.", "B09's October paid CAC: $4,825.80 ÷ 20 = $247.00."]);
+    expect(prove("B09 collected $0.1M in October.").model?.status).toBe("SUPPORTED");
+    expect(prove("B09's October paid spend was almost $4,830.").model?.status).toBe("SUPPORTED");
+    expect(prove("B09's October paid CAC: $4,825.80 ÷ 20 = $241.29.").model?.status).toBe("SUPPORTED");
+  });
+});
+
+describe("the AI-claims review, 2026-11-12: channels, campaigns and status", () => {
+  const b05 = branchMetrics("B05", "oct", {
+    paidSpendCents: 200000,
+    paidAcquired: 10,
+    paidCacCents: 20000,
+    acquired: 12,
+    channels: [
+      { channelCode: "google_search", label: "Google Search", isPaid: true, spendCents: 140000, acquired: 7, cacCents: 20000, prospects: 20 },
+      { channelCode: "google_lsa", label: "Google Local Services", isPaid: true, spendCents: 60000, acquired: 3, cacCents: 20000, prospects: 8 },
+      { channelCode: "meta", label: "Meta", isPaid: true, spendCents: 0, acquired: 2, cacCents: null, prospects: 4 },
+    ],
+  });
+  b05.evidenceIds = ["branch_metrics:B05:oct", "channel_metrics:B05:oct:google_search", "channel_metrics:B05:oct:google_lsa", "channel_metrics:B05:oct:meta"];
+  const b05sep = branchMetrics("B05", "sep", { paidSpendCents: 100000, paidAcquired: 10, paidCacCents: 10000 });
+  const facts = metricFacts([b05, b05sep]);
+  const ids = [...b05.evidenceIds, "branch_metrics:B05:sep"];
+
+  it("7 · a channel or campaign the facts do not cover gets none of the branch's figures", () => {
+    for (const t of ["Microsoft Ads spent $2,000.00 at B05 in October.", "Performance Max spend at B05 was $2,000.00 in October."]) expect(prove(t, ids, facts, "B05").model?.status, t).toBe("UNSUPPORTED");
+    const trace = {
+      kind: "tool_call",
+      status: "ok",
+      tool: "getMetricTrace",
+      evidenceIds: ["branch_metrics:B09:oct", "campaign:11", "campaign:12", "raw_event:555"],
+      output: {
+        scope: { branchId: "B09", period: { key: "oct" } },
+        value: { reproduced: { paidSpendCents: 482580, paidAcquired: 20, paidCacCents: 24129 }, matches: true },
+        campaigns: [
+          { externalCampaignId: "G-100", evidenceId: "campaign:11", spendCents: 300000, assumedCurrencyCents: 0 },
+          { externalCampaignId: "M-200", evidenceId: "campaign:12", spendCents: 182580, assumedCurrencyCents: 0 },
+        ],
+        campaignsOmitted: 0,
+      },
+    };
+    const tf = metricFacts([trace]);
+    for (const t of ["Campaign X-999 spent $4,825.80 in October.", "Campaign M-200, not G-100, spent $3,000 in October."]) expect(prove(t, trace.evidenceIds, tf).model?.status, t).toBe("UNSUPPORTED");
+    // 16 · citing a sampled raw event does not cite the trace's figures.
+    expect(prove("B09's October paid CAC is $241.29.", ["raw_event:555"], tf).model?.status).toBe("UNSUPPORTED");
+  });
+
+  it("8 · 'twice the Google Search CAC' is not month on month", () => {
+    expect(prove("At B05, October paid-media CAC was twice the Google Search CAC.", ids, facts, "B05").model?.status).toBe("UNSUPPORTED");
+  });
+
+  it("reads the parts a count is split into, and multiples of another channel, instead of passing them unread", () => {
+    const q = (t: string) => prove(t, ids, facts, "B05").model?.status;
+    // B05 October: 10 paid of 12 new customers; Google Search 7, Local Services 3, Meta 2.
+    expect(q("B05 serviced 10 paid-media new customers in October, 7 of them credited to Google Search.")).toBe("SUPPORTED");
+    expect(q("B05 serviced 10 paid-media new customers in October, 6 of them credited to Google Search.")).toBe("UNSUPPORTED");
+    expect(q("B05 serviced 12 new customers in October, 10 of them credited to paid media.")).toBe("SUPPORTED");
+    expect(q("Local Services is credited with 3 of B05's 10 October paid-media customers.")).toBe("SUPPORTED");
+    expect(q("Local Services is credited with 3 of B05's 11 October paid-media customers.")).toBe("UNSUPPORTED");
+    // Google Search $1,400 vs Local Services $600 of October spend.
+    expect(q("Google Search spent 2.33 times as much as Local Services at B05 in October.")).toBe("SUPPORTED");
+    expect(q("Google Search spent 3 times as much as Local Services at B05 in October.")).toBe("UNSUPPORTED");
+    expect(q("B05's paid-media spend doubled from September to October.")).toBe("SUPPORTED");
+    expect(q("B05's paid-media spend tripled from September to October.")).toBe("UNSUPPORTED");
+  });
+
+  it("reads 'has not synced' as a stale-feed claim, checked against freshness", () => {
+    const stale = statusFacts([{ kind: "tool_call", status: "ok", tool: "getIngestionFailures", evidenceIds: [], output: { streams: [{ stream: "crm.payment", source: "crm", lastRunStatus: "succeeded", hoursSinceSuccess: 300, staleAfterHours: 48 }] } }]);
+    const fresh = statusFacts([{ kind: "tool_call", status: "ok", tool: "getIngestionFailures", evidenceIds: [], output: { streams: [{ stream: "crm.payment", source: "crm", lastRunStatus: "succeeded", hoursSinceSuccess: 2, staleAfterHours: 48 }] } }]);
+    const q = (status: ReturnType<typeof statusFacts>) => judge(proveStatement("B05's CRM payment feed has not synced successfully since October 15.", { branchId: "B05", facts: citedFacts(facts, ids), status, origin: "model" }), "model")?.status;
+    expect(q(stale)).toBe("SUPPORTED");
+    expect(q(fresh)).toBe("UNSUPPORTED");
+  });
+
+  it("13 · status negations are read or refused, and every named channel is checked", () => {
+    const readiness = {
+      kind: "tool_call",
+      status: "ok",
+      tool: "getDecisionReadiness",
+      evidenceIds: ["readiness:B05:oct:google_search", "readiness:B05:oct:meta"],
+      output: {
+        branchId: "B05",
+        period: "oct",
+        budgetSignal: { trustworthy: true },
+        channels: [
+          { channelCode: "google_search", label: "Google Search", readiness: { status: "ready" } },
+          { channelCode: "meta", label: "Meta", readiness: { status: "not_ready" } },
+        ],
+      },
+    };
+    const status = statusFacts([readiness]);
+    const q = (text: string) => judge(proveStatement(text, { branchId: "B05", facts: citedFacts(facts, ids), status, origin: "model" }), "model")?.status;
+    expect(q("Google Search isn't decision-ready at B05 in October.")).toBe("UNSUPPORTED");
+    expect(q("Google Search is no longer decision-ready at B05 in October.")).toBe("UNSUPPORTED");
+    expect(q("B05's budget signal isn't trustworthy.")).toBe("UNSUPPORTED");
+    expect(q("Google Search and Meta are decision-ready at B05 in October.")).toBe("UNSUPPORTED");
+    expect(q("Google Search is decision-ready at B05 in October.")).toBe("SUPPORTED");
+  });
+});
+
+describe("the AI-claims review, 2026-11-12: the product's own sentences kept", () => {
+  it("19 · a customer's figures in a template are not read as the branch's", () => {
+    const text = "B09 refunded $500.00 in Oct 1–30, 2026 (UTC); collected revenue is already net of it. Customer 415347 has $50.00 in refunds; collected $1,200.00.";
+    const r = prove(text);
+    expect(r.proofs.filter((p) => p.verdict === "CONTRADICTED")).toEqual([]);
+    expect(r.template?.status).toBe("SUPPORTED");
+  });
+
+  it("20 · a figure inside a quoted campaign name is a name, not a figure", () => {
+    const text = 'Customer 415347 (B09, active) is credited to Google Search by first evidenced touch (campaign "Spring Promo 20% off").';
+    expect(prove(text).proofs.filter((p) => p.verdict === "CONTRADICTED")).toEqual([]);
+    // Model text cannot hide a figure in quotes: the closed reading still sees it.
+    expect(prove('B09\'s October paid CAC was "$999".').model?.status).toBe("UNSUPPORTED");
   });
 });

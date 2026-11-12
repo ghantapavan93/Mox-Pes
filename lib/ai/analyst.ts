@@ -132,8 +132,45 @@ const CAUSAL_IMPACT = [
 // Negations count too: "is not evidence it causes more customers" denies the claim.
 const HEDGED = /\b(may (?:have|be|not|also)|might|could|possibly|hypothes\w*|unproven|not (?:yet )?measured|cannot (?:yet )?(?:say|show)|not (?:evidence|proof|proven|shown)|no evidence|does not (?:show|prove|mean)|without an experiment)\b/i;
 
+/**
+ * Whether some match of `re` stands without a hedge NEAR it. A hedge elsewhere in the text does
+ * not qualify the claim: "The remap increased B12's revenue by $10,000; no evidence of fraud was
+ * found" is unhedged (review 2026-11-12, AI-claims finding 12).
+ */
+function unhedged(re: RegExp, text: string): boolean {
+  for (const m of text.matchAll(new RegExp(re.source, re.flags.includes("g") ? re.flags : `${re.flags}g`))) {
+    const at = m.index ?? 0;
+    const sentenceStart = Math.max(text.lastIndexOf(".", at - 1), text.lastIndexOf(";", at - 1)) + 1;
+    const window = text.slice(Math.max(sentenceStart, at - 60), at + m[0].length + 20);
+    if (!HEDGED.test(window)) return true;
+  }
+  return false;
+}
+
 export function isCausalImpactClaim(text: string): boolean {
-  return CAUSAL_IMPACT.some((re) => re.test(text)) && !HEDGED.test(text);
+  return CAUSAL_IMPACT.some((re) => unhedged(re, text));
+}
+
+/**
+ * The model's free text is held to a wider net: any movement of a metric, or an outcome,
+ * attributed to a cause ("because", "thanks to", "due to"), a campaign "bringing in" customers,
+ * or spend "returning" cash. Attribution credits a channel; it does not show the channel caused
+ * the customer (review 2026-11-12, AI-claims finding 12). The product's own templates use
+ * "because" for data-quality explanations ("quarantined because of a mapper error"), so this
+ * applies to model text only.
+ */
+const METRIC_WORD = String.raw`(?:revenue|collections?|collected|cash|sales|cac|acquisition cost|cost per (?:new )?(?:customer|acquisition)|spend|customers?|profit|roi|bookings?)`;
+/** A metric MOVING: "revenue fell", "collections rose", "CAC went up". A data-quality explanation ("a campaign mapped to no branch") is not one. */
+const MOVE = String.raw`(?:rose|risen|rises?|fell|fallen|falls?|increased|decreased|grew|grown|dropped|declined|jumped|climbed|improved|worsened|went (?:up|down)|doubled|tripled|halved|surged|soared|plunged|higher|lower)`;
+const CAUSE = String.raw`(?:because(?: of)?|due to|thanks to|as a result of|owing to|driven by|caused by|attributable to|on the back of)`;
+const MODEL_CAUSAL = [
+  new RegExp(String.raw`\b${CAUSE}\b${GAP(80)}\b${METRIC_WORD}\b${GAP(40)}\b${MOVE}\b|\b${METRIC_WORD}\b${GAP(40)}\b${MOVE}\b${GAP(80)}\b${CAUSE}\b`, "i"),
+  new RegExp(String.raw`\b(?:brought in|generated|drove|delivered|won|secured|landed)\b${GAP(40)}\b(?:new |paid |paying )*customers?\b`, "i"),
+  new RegExp(String.raw`\b(?:returned|yielded|paid back|paid for itself|pays for itself|return on)\b${GAP(40)}(?:\$|\b(?:revenue|cash|collections?|sales)\b)`, "i"),
+];
+
+export function isModelCausalClaim(text: string): boolean {
+  return isCausalImpactClaim(text) || MODEL_CAUSAL.some((re) => unhedged(re, text));
 }
 
 export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>, facts?: EvidenceFacts, opts: GroundOptions = { origin: "template", branchId: null }): GroundedDraft {
@@ -148,15 +185,19 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   // Proofs against the typed metric facts the claim cites (all of them for text that cites nothing).
   const prove = (text: string, ids: string[] | null): Proved => {
     if (!facts) return { proofs: [], judgement: null };
-    const proofs = proveStatement(text, { branchId: opts.branchId, facts: ids === null ? facts.metrics : citedFacts(facts.metrics, ids), status: facts.status });
+    const proofs = proveStatement(text, { branchId: opts.branchId, facts: ids === null ? facts.metrics : citedFacts(facts.metrics, ids), status: facts.status, origin: opts.origin });
     return { proofs, judgement: judge(proofs, opts.origin) };
   };
   const proofReason = (j: Judgement) => `does not follow from the facts it cites: ${j.reason}`;
   /** A figure the proofs derive from cited facts (and nothing in the statement contradicts). */
   const derived = (p: Proved, figure: string) =>
     !p.proofs.some((x) => x.verdict === "CONTRADICTED") && p.proofs.some((x) => x.verdict === "VERIFIED" && x.figure.trim() === figure.trim());
-  const staleOf = (text: string, ids: string[]) => {
-    if (!opts.stale || RECORD_HISTORY.test(text)) return null;
+  const staleOf = (text: string, ids: string[], p: Proved) => {
+    if (!opts.stale) return null;
+    // A claim about a record's own history may cite an old revision; one that also states a
+    // business figure may not. "B09's paid CAC, after the correction, is $241.29" switched the
+    // check off with one word (review 2026-11-12, AI-claims finding 14).
+    if (RECORD_HISTORY.test(text) && !p.proofs.some((x) => x.subject.metric !== null || x.inputs.length > 0)) return null;
     const old = ids.find((id) => opts.stale?.has(id) && !ids.includes(opts.stale.get(id) as string));
     return old ? { old, newer: opts.stale.get(old) as string } : null;
   };
@@ -164,8 +205,9 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   const observations: Observation[] = [];
   for (const o of draft.observations) {
     // Stated as fact or as hypothesis, an unhedged claim that something caused a business
-    // outcome is dropped (a "strong hypothesis" is shown as a finding too; review S7).
-    if (isCausalImpactClaim(o.text)) {
+    // outcome is dropped (a "strong hypothesis" is shown as a finding too; review S7). The
+    // model's "verified" findings are held to the wider net.
+    if (isCausalImpactClaim(o.text) || (opts.origin === "model" && o.status === "verified" && isModelCausalClaim(o.text))) {
       dropped.push({ where: "observation", claimStatus: o.status, text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: CAUSAL_REASON });
       continue;
     }
@@ -193,7 +235,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
       continue;
     }
     // A claim about the business resting on a superseded revision of a source record.
-    const stale = staleOf(o.text, o.evidenceIds);
+    const stale = staleOf(o.text, o.evidenceIds, p);
     if (stale) {
       staleDropped++;
       dropped.push({ where: "observation", claimStatus: o.status, text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: `cites ${stale.old}, a source record that a newer revision (${stale.newer}) superseded; a claim must rest on the current revision` });
@@ -284,7 +326,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   const textDropped: DroppedClaim[] = [];
   const checkText = (where: "summary" | "recommendedNextAction" | "expectedEffect" | "risk", text: string | undefined): boolean => {
     if (text === undefined) return true;
-    if (isCausalImpactClaim(text)) {
+    if (isCausalImpactClaim(text) || (opts.origin === "model" && where === "summary" && isModelCausalClaim(text))) {
       textDropped.push({ where, text, evidenceIds: [], unsupported: [], reason: CAUSAL_REASON });
       return false;
     }

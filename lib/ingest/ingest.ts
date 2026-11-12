@@ -5,6 +5,7 @@ import { isExclusion, type MapContext, type MapExclusion, type MapFailure, type 
 import { redactValue } from "@/lib/adapters/redact";
 import { isFailure } from "@/lib/adapters/validation";
 import { recordEvent } from "@/lib/events/outbox";
+import { lockCurrencyShared } from "@/lib/currency/coverage";
 import { projectAll, type ProjectionItem } from "./project";
 
 export interface IngestStats {
@@ -121,6 +122,10 @@ export async function ingestRecords(
   // order cannot deadlock; the table lock it replaced was taken in the opposite order to these
   // inserts and deadlocked on an identical payload (tests/integration/concurrency.test.ts).
   await lockLeadWritesShared(tx, source);
+  // Spend is gated by the currency rules: shared here, before any row lock, exclusive while a
+  // rule is authorized or revoked (lib/currency/rules.ts). Taken late, inside the gate, it could
+  // deadlock against an authorization waiting on a raw event this batch already touched.
+  if (source === "ads") await lockCurrencyShared(tx);
 
   const prepared = new Map<string, Prepared>();
   const repeatsInBatch = new Map<string, number>();
@@ -236,8 +241,13 @@ export async function ingestRecords(
     );
   }
   const failedIds = new Set(failed.map((f) => f.rawEventId));
-  const projected = items.filter((i) => !failedIds.has(i.rawEventId)).length;
-  stats.quarantined += items.length - projected;
+  // The currency gate excludes a record without failing it: counted as excluded, never as
+  // projected, so the run summary matches what the metrics count (review 2026-11-12, A-14).
+  const heldIds = new Set(projection.held);
+  const stored = items.filter((i) => !failedIds.has(i.rawEventId));
+  const projected = stored.filter((i) => !heldIds.has(i.rawEventId)).length;
+  stats.quarantined += items.length - stored.length;
+  stats.excluded = (stats.excluded ?? 0) + (stored.length - projected);
   stats.projected = projected;
   // Published with the batch, in its transaction. An unchanged re-read publishes nothing, so
   // a quiet poll never wakes the consumers; a re-observed version that changed live rows (an
@@ -385,23 +395,26 @@ async function rawEventId(tx: Queryable, source: string, externalId: string): Pr
  * savepoints so one bad record is isolated instead of aborting the whole batch (and, for
  * polling, stalling the stream's cursor forever).
  */
-async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<{ failed: Array<{ rawEventId: number; message: string }>; changed: number }> {
-  if (items.length === 0) return { failed: [], changed: 0 };
+async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<{ failed: Array<{ rawEventId: number; message: string }>; changed: number; held: number[] }> {
+  if (items.length === 0) return { failed: [], changed: 0, held: [] };
+  // Records the currency gate held: excluded, not projected (lib/ingest/project.ts).
+  const report = { held: [] as number[] };
   await tx.query("savepoint project_batch");
   try {
-    const changed = await projectAll(tx, items);
+    const changed = await projectAll(tx, items, report);
     await tx.query("release savepoint project_batch");
-    return { failed: [], changed };
+    return { failed: [], changed, held: report.held };
   } catch (error) {
     await tx.query("rollback to savepoint project_batch");
     if (!isRecordLevelError(error)) throw error;
+    report.held.length = 0;
   }
   const failed: Array<{ rawEventId: number; message: string }> = [];
   let changed = 0;
   for (const item of items) {
     await tx.query("savepoint project_one");
     try {
-      changed += await projectAll(tx, [item]);
+      changed += await projectAll(tx, [item], report);
       await tx.query("release savepoint project_one");
     } catch (error) {
       await tx.query("rollback to savepoint project_one");
@@ -410,7 +423,7 @@ async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<
       console.warn(JSON.stringify({ level: "warn", msg: "projection failed; record quarantined", rawEventId: item.rawEventId }));
     }
   }
-  return { failed, changed };
+  return { failed, changed, held: report.held };
 }
 
 async function recordPayloadConflict(

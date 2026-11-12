@@ -43,7 +43,7 @@ describe("reliability signals", () => {
     await runReconcile(pool, NOW);
     const before = await reliabilitySignals(pool, { period: PERIODS.oct, now: NOW });
     expect(before.map((s) => s.code).sort()).toEqual(["currency_unstated", "held_spend_customers", "refund_integrity"]);
-    expect(before.find((s) => s.code === "currency_unstated")?.text).toMatch(/2 record\(s\), \$80\.00 as written/);
+    expect(before.find((s) => s.code === "currency_unstated")?.text).toMatch(/2 campaign-day\(s\), \$80\.00 as written/);
     await proposeCurrencyRule(pool, VIEWERS.engineer, { platform: "google_ads", adAccountId: "ACC-SIG", reason: "the account settings show USD billing", now: NOW });
     const after = await reliabilitySignals(pool, { period: PERIODS.oct, now: NOW });
     expect(after.find((s) => s.code === "currency_rule_pending")).toMatchObject({ owner: "approver" });

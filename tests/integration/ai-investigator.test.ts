@@ -230,6 +230,17 @@ describe("tool scope enforcement", () => {
     // The question itself names B09: refused before anything runs or is stored (held-out IV-54:
     // an out-of-scope question is refused, not answered about something else).
     await expect(runInvestigation(pool, { question: GOLDEN, branchId: null, viewer: partner, now: NOW })).rejects.toThrow(/cannot view branch B09/);
+    // However the branch or brand is written (review 2026-11-12, authorization 8).
+    for (const [question, refusal] of [
+      ["What is b09's paid CAC in October?", /cannot view branch B09/],
+      ["What is branch 9's paid CAC in October?", /cannot view branch B09/],
+      ["What is B9's paid CAC in October?", /cannot view branch B09/],
+      ["What is Elm's paid CAC in October?", /cannot view branch B12/],
+      ["What did Joshua's spend in October?", /cannot view Joshua's Pest Control as a whole/],
+      ["What did joshuas spend in October?", /cannot view Joshua's Pest Control as a whole/],
+    ] as const) {
+      await expect(runInvestigation(pool, { question, branchId: null, viewer: partner, now: NOW }), question).rejects.toThrow(refusal);
+    }
     expect((await pool.query("select count(*)::int as n from investigations")).rows[0].n).toBe(0);
     // Without a named branch, the partner's own scope is used and nothing about B09 leaks.
     const out = await runInvestigation(pool, { question: "Why is our paid CAC so high?", branchId: null, viewer: partner, now: NOW });

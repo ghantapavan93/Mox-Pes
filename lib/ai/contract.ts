@@ -111,7 +111,7 @@ export const ProofSchema = z.strictObject({
   unit: UNIT.nullable(),
   computed: z.number().nullable(),
   claimed: z.number().nullable(),
-  qualifier: z.enum(["exact", "approximately", "more_than", "at_least", "less_than", "at_most"]),
+  qualifier: z.enum(["exact", "approximately", "almost", "more_than", "at_least", "less_than", "at_most"]),
   direction: z.enum(["increase", "decrease", "unchanged"]).nullable(),
   claimedDirection: z.enum(["increase", "decrease"]).nullable(),
   precision: z.number(),
@@ -120,7 +120,7 @@ export const ProofSchema = z.strictObject({
   gap: z
     .enum([
       "metric_unknown", "metric_unsupported", "fact_missing", "period_missing", "period_ambiguous", "comparison_missing", "currency_unresolved",
-      "undefined_value", "operand_missing", "conflicting_facts", "evaluative", "evidence_stale", "ambiguous", "hypothetical",
+      "undefined_value", "operand_missing", "conflicting_facts", "evaluative", "evidence_stale", "ambiguous", "hypothetical", "unread", "unproved",
     ])
     .nullable(),
   reason: z.string(),

@@ -39,7 +39,8 @@ test("an unexpected CAC is traced, investigated, corrected through ChangeGuard a
   await expect(findings).toContainText("lsa-B44-x", { timeout: 60_000 });
   await expect(findings).toContainText("reproduces exactly from stored records");
   const check = page.getByTestId("claim-check");
-  await check.locator("summary").click();
+  // The panel's own summary: each claim's proof list nests further <details> inside it.
+  await check.locator(":scope > details > summary").click();
   await expect(check).toContainText("Checked by code, not by the model");
   await expect(check).toContainText("0 rejected or conflicted");
 

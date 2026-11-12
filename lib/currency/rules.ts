@@ -4,7 +4,7 @@ import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/regi
 import { withTransaction, type Queryable } from "@/lib/db";
 import { projectAll, type ProjectionItem } from "@/lib/ingest/project";
 import { ForbiddenError, requirePermission, type Viewer } from "@/lib/viewer";
-import { activeCurrencyRules, covered, CURRENCY_UNSTATED } from "./coverage";
+import { activeCurrencyRules, covered, CURRENCY_UNSTATED, lockCurrencyExclusive } from "./coverage";
 
 export { activeCurrencyRules, covered, CURRENCY_UNSTATED };
 
@@ -65,20 +65,33 @@ export async function listCurrencyRules(db: Queryable): Promise<CurrencyRule[]> 
   }));
 }
 
-/** The ad accounts whose spend is held for lacking a stated currency, with no live rule: what a person must decide. */
-export async function accountsAwaitingCurrency(db: Queryable): Promise<Array<{ platform: string; adAccountId: string; records: number; amountCents: number }>> {
+/**
+ * The ad accounts whose spend is held for lacking a stated currency, with no live rule: what a
+ * person must decide. Counted per campaign-day at its newest held version, and only where no
+ * version of that day is counted: platforms restate a day on every fetch, so summing every held
+ * record overstated the money several times over (review 2026-11-12, financial finding 6).
+ */
+export async function accountsAwaitingCurrency(db: Queryable): Promise<Array<{ platform: string; adAccountId: string; campaignDays: number; amountCents: number }>> {
   const { rows } = await db.query(
-    `select re.payload ->> 'platform' as platform, re.payload ->> 'accountId' as account, count(*) as n,
-            coalesce(sum(round(((re.payload ->> 'costMicros')::numeric) / 10000)), 0) as cents
-     from raw_events re
-     where re.source = 'ads' and re.status = 'excluded' and re.exclusion_code = $1
+    `with held as (
+       select distinct on (re.payload ->> 'platform', re.payload ->> 'campaignId', re.payload ->> 'date')
+              re.payload ->> 'platform' as platform, re.payload ->> 'accountId' as account, re.payload ->> 'campaignId' as ext,
+              (re.payload ->> 'date')::date as day, round(((re.payload ->> 'costMicros')::numeric) / 10000) as cents
+       from raw_events re
+       where re.source = 'ads' and re.status = 'excluded' and re.exclusion_code = $1
+       order by re.payload ->> 'platform', re.payload ->> 'campaignId', re.payload ->> 'date', (re.payload ->> 'fetchedAt')::timestamptz desc, re.id desc
+     )
+     select h.platform, h.account, count(*) as n, coalesce(sum(h.cents), 0) as cents
+     from held h
+     where not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
+                       where c.platform = h.platform and c.external_campaign_id = h.ext and s.spend_date = h.day)
        and not exists (select 1 from currency_rules r where r.revoked_at is null
-                         and (r.platform = '*' or r.platform = re.payload ->> 'platform')
-                         and (r.ad_account_id = '*' or r.ad_account_id = re.payload ->> 'accountId'))
+                         and (r.platform = '*' or r.platform = h.platform)
+                         and (r.ad_account_id = '*' or r.ad_account_id = h.account))
      group by 1, 2 order by 4 desc`,
     [CURRENCY_UNSTATED],
   );
-  return rows.map((r) => ({ platform: r.platform, adAccountId: r.account, records: Number(r.n), amountCents: Number(r.cents) }));
+  return rows.map((r) => ({ platform: r.platform, adAccountId: r.account, campaignDays: Number(r.n), amountCents: Number(r.cents) }));
 }
 
 /** An integration engineer proposes "this account reports in USD", with a reason. Nothing counts until another person authorizes it. */
@@ -86,8 +99,11 @@ export async function proposeCurrencyRule(pool: Pool, viewer: Viewer, args: { pl
   requirePermission(viewer, "sync", "propose a currency rule");
   const reason = args.reason.trim();
   if (reason.length < 10) throw new ActionError("Say why this account reports in USD (at least 10 characters)", 400);
-  if (!PLATFORM.test(args.platform)) throw new ActionError(`Unknown ad platform ${args.platform}`, 400);
-  if (!ACCOUNT.test(args.adAccountId)) throw new ActionError("An ad account id is letters, digits, '.', '-' or '_'", 400);
+  // A person vouches for one account they have looked at. A wildcard would make every account of
+  // a platform, including ones nobody has seen yet, count as dollars (review 2026-11-12, A-10);
+  // the company-wide rule exists only in test fixtures, inserted directly and stated as such.
+  if (!PLATFORM.test(args.platform) || args.platform === "*") throw new ActionError(`Unknown ad platform ${args.platform}`, 400);
+  if (!ACCOUNT.test(args.adAccountId) || args.adAccountId.includes("*")) throw new ActionError("An ad account id is letters, digits, '.', '-' or '_', and names one account", 400);
   return withTransaction(pool, async (tx) => {
     const live = await tx.query("select id from currency_rules where platform = $1 and ad_account_id = $2 and revoked_at is null for update", [args.platform, args.adAccountId]);
     if (live.rows.length > 0) throw new ActionError(`A rule for ${args.platform} account ${args.adAccountId} is already proposed or authorized`, 409);
@@ -108,6 +124,9 @@ export async function proposeCurrencyRule(pool: Pool, viewer: Viewer, args: { pl
 export async function authorizeCurrencyRule(pool: Pool, viewer: Viewer, args: { ruleId: number; now: Date }): Promise<{ reprojected: number }> {
   requirePermission(viewer, "approve", "authorize a currency rule");
   return withTransaction(pool, async (tx) => {
+    // Exclusive, first: no intake batch can hold a record between the re-projection's read and
+    // this commit, so none is left excluded under a live rule (review 2026-11-12, A-2).
+    await lockCurrencyExclusive(tx);
     const { rows } = await tx.query<{ platform: string; ad_account_id: string; proposed_by: string; authorized_at: Date | null }>(
       "select platform, ad_account_id, proposed_by, authorized_at from currency_rules where id = $1 and revoked_at is null for update",
       [args.ruleId],
@@ -129,16 +148,22 @@ export async function revokeCurrencyRule(pool: Pool, viewer: Viewer, args: { rul
   const reason = args.reason.trim();
   if (reason.length < 10) throw new ActionError("Say why the rule no longer holds (at least 10 characters)", 400);
   return withTransaction(pool, async (tx) => {
+    // Exclusive, first: an intake batch that read the rule as live cannot commit spend under it
+    // after this revocation (review 2026-11-12, A-1).
+    await lockCurrencyExclusive(tx);
     const { rows } = await tx.query<{ platform: string; ad_account_id: string }>(
       "update currency_rules set revoked_at = $2, revoked_by = $3, revoked_reason = $4 where id = $1 and revoked_at is null returning platform, ad_account_id",
       [args.ruleId, args.now, viewer.subject, reason],
     );
     if (rows.length === 0) throw new ActionError(`No live currency rule ${args.ruleId}`, 404);
     const rules = await activeCurrencyRules(tx);
+    // The account a rule covers is the one the record's own payload names, as at intake, not
+    // the campaign's stored account, which a later record may have changed (review F-11).
     const spend = await tx.query<{ campaign_id: string; spend_date: string; raw_event_id: string; platform: string; ad_account_id: string }>(
-      `select s.campaign_id, s.spend_date::text, s.raw_event_id, c.platform, c.ad_account_id
-       from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
-       where s.currency_basis = 'account_rule_usd' and ($1 = '*' or c.platform = $1) and ($2 = '*' or c.ad_account_id = $2)`,
+      `select s.campaign_id, s.spend_date::text, s.raw_event_id, re.payload ->> 'platform' as platform, re.payload ->> 'accountId' as ad_account_id
+       from ad_spend_daily s join raw_events re on re.id = s.raw_event_id
+       where s.currency_basis = 'account_rule_usd'
+         and ($1 = '*' or re.payload ->> 'platform' = $1) and ($2 = '*' or re.payload ->> 'accountId' = $2)`,
       [rows[0].platform, rows[0].ad_account_id],
     );
     const uncovered = spend.rows.filter((s) => !covered(rules, s.platform, s.ad_account_id));
@@ -178,15 +203,19 @@ export async function reprojectHeld(tx: Queryable, platform: string, adAccountId
     items.push({ projection: result.projection, rawEventId: Number(r.id) });
     ids.push(Number(r.id));
   }
-  // The currency gate in projectAll sees the authorized rule and stores account_rule_usd.
-  await projectAll(tx, items);
-  if (ids.length > 0) {
+  // The currency gate in projectAll sees the authorized rule and stores account_rule_usd. A
+  // record it still holds (a rule scoped to another account, a newer held version) stays excluded.
+  const gate = { held: [] as number[] };
+  await projectAll(tx, items, gate);
+  const heldIds = new Set(gate.held);
+  const projected = ids.filter((id) => !heldIds.has(id));
+  if (projected.length > 0) {
     await tx.query(
       `update raw_events set status = 'projected', exclusion_code = null, exclusion_detail = null, projected_at = $2, adapter_version = $3 where id = any($1::bigint[])`,
-      [ids, now, `ads@${ACTIVE_VERSION.ads}`],
+      [projected, now, `ads@${ACTIVE_VERSION.ads}`],
     );
   }
-  return ids.length;
+  return projected.length;
 }
 
 async function audit(tx: Queryable, now: Date, actor: string, action: string, ruleId: number, detail: Record<string, unknown>) {

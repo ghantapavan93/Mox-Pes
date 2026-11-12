@@ -10,9 +10,12 @@ import { getPool, getViewer } from "@/lib/server";
 
 const TONE: Record<HypothesisStatus, "good" | "bad" | "warn" | "neutral"> = { SUPPORTED: "good", CONTRADICTED: "bad", UNRESOLVED: "warn", NOT_TESTABLE: "neutral" };
 const CONCLUSION: Record<string, { tone: "good" | "warn" | "neutral" | "bad"; label: string }> = {
-  explained: { tone: "good", label: "explained" },
-  partly_explained: { tone: "warn", label: "partly explained" },
-  unexplained: { tone: "bad", label: "not explained" },
+  // "Accounted for", not "explained": CAC = spend ÷ paid customers, so a supported spend or
+  // customer hypothesis decomposes the change; it does not say why it happened (review
+  // 2026-11-12, authorization/usability 7).
+  explained: { tone: "neutral", label: "accounted for" },
+  partly_explained: { tone: "warn", label: "partly accounted for" },
+  unexplained: { tone: "warn", label: "not accounted for" },
   premise_false: { tone: "neutral", label: "premise does not hold" },
   not_testable: { tone: "neutral", label: "not testable" },
 };
@@ -52,7 +55,8 @@ async function Workspace({ params }: { params: Promise<{ id: string }> }) {
         </p>
         {r.decomposition && (
           <p className="mt-2 text-xs text-muted">
-            On a log scale, about {(r.decomposition.spendShare * 100).toFixed(0)}% of the CAC change comes from spend and {(r.decomposition.customerShare * 100).toFixed(0)}% from paid customers (CAC = spend ÷ paid customers).
+            On a log scale, the CAC change decomposes into {(r.decomposition.spendShare * 100).toFixed(1)}% from spend and {(r.decomposition.customerShare * 100).toFixed(1)}% from paid customers, adding to 100% (CAC = spend ÷ paid customers;
+            a negative part pulled CAC the other way). A decomposition, not a measured cause.
           </p>
         )}
         <p className="mt-2 text-xs text-faint">

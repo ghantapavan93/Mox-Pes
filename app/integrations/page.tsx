@@ -113,9 +113,11 @@ async function Studio({ searchParams }: { searchParams: SearchParams }) {
       {view === "mapping" && <MappingView />}
       {view === "pipeline" && (
         <Suspense fallback={<Skeleton lines={8} />}>
-          <Signals now={now} />
+          {/* Signals and currency rules are for the people who act on them, as their APIs are
+              (review 2026-11-12, A-4): engineers and approvers. */}
+          {(viewer.can.sync || viewer.can.approve) && <Signals now={now} />}
           <PipelineSections db={pool} />
-          <CurrencySection canPropose={viewer.can.sync} canApprove={viewer.can.approve} subject={viewer.subject} />
+          {(viewer.can.sync || viewer.can.approve) && <CurrencySection canPropose={viewer.can.sync} canApprove={viewer.can.approve} subject={viewer.subject} />}
         </Suspense>
       )}
     </div>
@@ -133,7 +135,7 @@ async function Signals({ now }: { now: Date }) {
           <li key={s.code} className="flex flex-wrap items-baseline gap-2">
             <Badge tone={s.severity === "high" ? "bad" : "warn"}>{s.severity}</Badge>
             <span className="min-w-0 flex-1 break-words">{s.text}</span>
-            <a href={s.href} className="text-xs text-accent hover:underline">
+            <a href={s.href} className="text-xs text-accent hover:underline" aria-label={`Act on this: ${s.owner}, ${s.href.includes("#currency") ? "ad account currency rules" : "where it is fixed"}`}>
               {s.owner} →
             </a>
           </li>
@@ -149,8 +151,6 @@ async function CurrencySection({ canPropose, canApprove, subject }: { canPropose
   const [rules, awaiting] = await Promise.all([listCurrencyRules(pool), accountsAwaitingCurrency(pool)]);
   return (
     <Card id="currency" title="Ad account currency" subtitle="Spend whose feed states no currency is not counted as dollars until an engineer proposes, and a different approver authorizes, a rule that the account reports in USD. Other currencies are never converted.">
-
-
       <CurrencyRules rules={rules} awaiting={awaiting} canPropose={canPropose} canApprove={canApprove} subject={subject} />
     </Card>
   );

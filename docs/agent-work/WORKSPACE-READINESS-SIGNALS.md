@@ -74,10 +74,27 @@ Five conditions are checked. Each one names its size, the role who acts and the 
 | Ad accounts sending spend with no stated currency, and no decision on them | medium | integration engineer |
 | Currency rules waiting for a second person | medium | approver |
 | Paid customers left out of CAC because their campaign's spend is held | high | integration engineer |
+| Paid customers counted while some days of their campaign's spend are held (CAC understated) | high | integration engineer |
 | Refunds without a stored original payment, or payments refunded beyond their amount | high | integration engineer |
 | A feed with no successful run in 36 h | medium | integration engineer |
 
 They are shown on Integrations → Ingestion pipeline. On the freshly seeded demo, none fires.
+
+Signals and currency rules are shown to engineers and approvers only, as their APIs are.
+
+## After the reviews of 2026-11-12
+
+| Finding | Fix |
+|---|---|
+| H1 and H2 counted as drivers for any move in their direction (a cent of spend) | A driver must account for at least 10% of ln(CAC Oct / CAC Sep) |
+| H3 supported by an open exception of any age | Only an exception inside September–October |
+| H4 supported by a paused campaign or a stale ads feed, which LOWER October CAC | H4 is directional: stale lead or customer feeds, held lead or customer records, and September spend held at intake support it; stopped October spend, a stale ads feed and October spend held at intake are listed as counterevidence |
+| H4 blind to spend held for its currency | Read per month for the branch's mapped campaigns |
+| "Explained" read as a cause; decomposition shares inconsistent and clamped | "Accounted for", in a neutral tone; shares from unrounded parts, adding to 100%, shown unclamped, with "a decomposition, not a measured cause" |
+| Re-test or note on another branch's workspace answered 403, revealing it exists | 404, as for a missing one |
+| The Decision Lab picked a workspace arbitrarily (the business clock is frozen) | Latest tested version, then version, then id; it bears on October only, and links to the workspace |
+| Verified readiness mixed snapshots | One read-only repeatable-read transaction; the collapsed row shows a shortened first reason and "+N more" |
+| Concurrent proposals or re-tests surfaced as 500 | 409, "made at the same time; reload and try again" |
 
 ## Tests
 

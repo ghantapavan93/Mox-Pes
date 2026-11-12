@@ -60,17 +60,36 @@ const QUESTION_MAX = 2000;
  * figure and got an answer about their own branch). Branch ids named in the question must be in
  * scope; a brand-wide question needs every branch of the brand in scope.
  */
+/** Branch ids however written: "B03", "b03", "B3", "B 03", "branch 3", "branch #03". */
+const BRANCH_REF = /\b[Bb]\s?(\d{1,2})\b|\bbranch(?:es)?\s+(?:#|no\.?\s*|number\s+)?(\d{1,2})\b/gi;
+/** A branch by its name: "Elm's", "the Summit branch" (names are common words, so only these forms). */
+const BRANCH_NAME_REF = new RegExp(String.raw`\b(${[...BRANCH_BY_ID.values()].map((b) => b.name).join("|")})(?:['’]s|\s+branch)\b`, "g");
+/** A brand however capitalized: "Joshua's", "joshuas", "MISSION". */
+const BRAND_REF = /\b(moxie|joshua['’]?s?|mission)\b/i;
+const BRAND_OF_WORD: Record<string, string> = { moxie: "moxie", joshua: "joshuas", "joshua's": "joshuas", "joshua’s": "joshuas", joshuas: "joshuas", mission: "mission" };
+
 function assertQuestionInScope(viewer: Viewer, question: string): void {
   if (!viewer.branchIds) return;
-  for (const m of question.matchAll(/\bB(\d{2})\b/g)) {
-    const id = `B${m[1]}`;
+  const named = new Set<string>();
+  for (const m of question.matchAll(BRANCH_REF)) named.add(`B${String(Number(m[1] ?? m[2])).padStart(2, "0")}`);
+  for (const m of question.matchAll(BRANCH_NAME_REF)) {
+    const branch = [...BRANCH_BY_ID.values()].find((b) => b.name === m[1]);
+    if (branch) named.add(branch.id);
+  }
+  for (const id of named) {
     if (BRANCH_BY_ID.has(id) && !viewer.branchIds.includes(id)) throw new ForbiddenError(`${viewer.label} cannot view branch ${id}, which the question names`);
   }
-  const brand = brandNamed(question);
-  if (brand && /\b(?:brand[- ]?wide|brand|across|all (?:of )?(?:its|their|the) branches|every branch|whole|entire|total|branches|best branch|benchmark\w*)\b/i.test(question)) {
+  // A brand named at all, with any of its branches out of scope, is refused unless the question
+  // also names an in-scope branch it is about: "What did Joshua's spend?" from a Moxie branch
+  // partner was answered about the partner's own branch (review 2026-11-12, authorization 8).
+  const word = BRAND_REF.exec(question)?.[1]?.toLowerCase();
+  const brand = brandNamed(question) ?? (word ? (BRAND_OF_WORD[word] as ReturnType<typeof brandNamed>) ?? null : null);
+  if (brand) {
     const ids = branchesOfBrands([brand]);
     const outside = ids.filter((id) => !viewer.branchIds?.includes(id));
-    if (outside.length > 0) throw new ForbiddenError(`${viewer.label} cannot view ${BRAND_BY_ID.get(brand)?.name ?? brand} as a whole (${outside.length} of its ${ids.length} branches are outside the scope)`);
+    const aboutOwnBranch = [...named].some((id) => viewer.branchIds?.includes(id) && ids.includes(id));
+    const brandWide = /\b(?:brand[- ]?wide|brand|across|all (?:of )?(?:its|their|the) branches|every branch|whole|entire|total|branches|best branch|benchmark\w*)\b/i.test(question);
+    if (outside.length > 0 && (brandWide || !aboutOwnBranch)) throw new ForbiddenError(`${viewer.label} cannot view ${BRAND_BY_ID.get(brand)?.name ?? brand} as a whole (${outside.length} of its ${ids.length} branches are outside the scope)`);
   }
 }
 

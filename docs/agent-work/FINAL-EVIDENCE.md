@@ -186,3 +186,29 @@ Full account: `CHANGEGUARD-HELDOUT.md`.
 | Held-out set rerun | 31 / 48 match every expectation, 2 invalid; identical, decision for decision, to `after-fixes.json` |
 
 Log: `changeguard-heldout/evidence/final-regression.log`.
+
+---
+
+# Evidence intelligence (2026-11-12)
+
+Full account: `EVIDENCE-INTELLIGENCE.md`.
+
+| Commit | Content |
+|---|---|
+| `8ce7e62` | M0: outbound and spam calls stop being leads; foreign-currency spend stops being dollars; replay planning fix |
+| `71785eb` | M1: metric evidence trace (API, page, investigator tool) |
+| `949b0f9` | M2: figures checked against tool output outside the model; typed claims with support status |
+| `d6337af` | M3: trace ↔ ChangeGuard journey; four evidence levels; proof journey test |
+| `8e58f7e` | Independent data/finance review: seven fixes, migration `0019` backfill |
+| `dd1353d` | Independent AI/security review: typed facts, uncited text checked, seven fixes |
+
+| Final regression on `dd1353d` | Result |
+|---|---|
+| typecheck, lint, build | pass |
+| vitest | **593 / 593** |
+| Playwright, production, `CI=1 VISUAL=1` | **72 passed, 1 skipped, 0 failed** |
+| Deterministic investigator evaluation (development set) | 15/15, 0 unsupported claims |
+| ChangeGuard blind set rerun | 30/48 (HO-25 now blocks non-USD spend, by design) |
+| Model-backed investigation | **not run** (no key) |
+
+Log: `changeguard-heldout/evidence/final-regression-evidence.log`.

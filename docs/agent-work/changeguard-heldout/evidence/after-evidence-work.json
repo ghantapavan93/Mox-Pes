@@ -1,0 +1,4295 @@
+{
+  "scenarios": "docs/agent-work/changeguard-heldout/scenarios.v1.json",
+  "version": "v1",
+  "author": "independent-reviewer-agent",
+  "ranAt": "2026-11-12T06:03:52.394Z",
+  "results": [
+    {
+      "id": "HO-01",
+      "category": "valid_mapping",
+      "title": "Unmapped Google Search campaign whose calls all land at B12 is mapped to B12, released and verified",
+      "severityIfWrong": "high",
+      "millis": 1868,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B12 (approved: B12); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B12 gained exactly $1,926.00 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "4",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "5",
+          "do": "monitor",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "verified"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-29T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B12 (approved: B12); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B12 gained exactly $1,926.00 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B12 (released: B12).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "4 of 4 lead(s) since the release arrived at B12.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B12"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-02",
+      "category": "valid_mapping",
+      "title": "Microsoft campaign mapped to B33 whose leads were all human-corrected to B34 is remapped to B34",
+      "severityIfWrong": "high",
+      "millis": 1677,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B34 (approved: B34); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B34 gained exactly $801.60 of paid spend; B33 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B34"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-03",
+      "category": "valid_mapping",
+      "title": "Joshua's Meta campaign moved B41 -> B43 inside the Joshua's brand on web-form evidence",
+      "severityIfWrong": "medium",
+      "millis": 1555,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B43 (approved: B43); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B43 gained exactly $543.00 of paid spend; B41 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B43"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-04",
+      "category": "valid_mapping",
+      "title": "Author's blocked mapping to B18 is superseded by a corrected resubmission to B19",
+      "severityIfWrong": "medium",
+      "millis": 1293,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "12 lead(s) carry this campaign's id; 0 arrived at B18 and 12 at B19. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "resubmit",
+          "as": "marketing",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is superseded)"
+        },
+        {
+          "index": "4",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "superseded",
+        "ch2": "approved"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-05",
+      "category": "unsafe_mapping",
+      "title": "Mapping to a branch that does not exist (B99)",
+      "severityIfWrong": "critical",
+      "millis": 936,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "identifier_presence",
+              "status": "fail",
+              "code": "UNKNOWN_BRANCH",
+              "detail": "Branch B99 does not exist"
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is preflight_failed)"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-06",
+      "category": "unsafe_mapping",
+      "title": "Mapping an ad-platform campaign id that does not exist",
+      "severityIfWrong": "high",
+      "millis": 858,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either",
+            "class": "BLOCK"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "identifier_presence",
+              "status": "fail",
+              "code": "UNKNOWN_CAMPAIGN",
+              "detail": "Campaign 999999 does not exist"
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": "B02"
+      },
+      "finalStatuses": {},
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-07",
+      "category": "unsafe_mapping",
+      "title": "Unmapped mosquito campaign with 27 leads all at B08 proposed to B15",
+      "severityIfWrong": "critical",
+      "millis": 1194,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "27 lead(s) carry this campaign's id; 0 arrived at B15 and 27 at B08. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is preflight_failed)"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-08",
+      "category": "unsafe_mapping",
+      "title": "Campaign named 'B12 | ...' whose leads all arrive at B19 proposed to B12",
+      "severityIfWrong": "high",
+      "millis": 1211,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "14 lead(s) carry this campaign's id; 0 arrived at B12 and 14 at B19. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-09",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Meta campaign with spend but no lead carrying its id",
+      "severityIfWrong": "high",
+      "millis": 1196,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "NO_LEAD_EVIDENCE",
+              "detail": "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "approved"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "NO_LEAD_EVIDENCE"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-10",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "LSA campaign whose calls split 6 / 5 between B03 and B04",
+      "severityIfWrong": "high",
+      "millis": 1197,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "LEAD_EVIDENCE_SPLIT",
+              "detail": "6 of 11 lead(s) for this campaign arrived at B03; the rest at B04."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "LEAD_EVIDENCE_SPLIT"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-11",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Brand-search campaign where B10's leads carry no campaign id",
+      "severityIfWrong": "medium",
+      "millis": 1197,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "NO_LEAD_EVIDENCE",
+              "detail": "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "NO_LEAD_EVIDENCE"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-12",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Human corrections turn unanimous B16 evidence into a 4 / 4 split with B17",
+      "severityIfWrong": "high",
+      "millis": 1641,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "LEAD_EVIDENCE_SPLIT",
+              "detail": "4 of 8 lead(s) for this campaign arrived at B16; the rest at B17."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "LEAD_EVIDENCE_SPLIT"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-13",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Joshua's campaign with all leads at B41 proposed to Moxie branch B12",
+      "severityIfWrong": "critical",
+      "millis": 1348,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "17 lead(s) carry this campaign's id; 0 arrived at B12 and 17 at B41. The mapping contradicts the campaign's own leads."
+            },
+            {
+              "id": "mapping_collision",
+              "status": "fail",
+              "code": "CROSS_BRAND",
+              "detail": "B12 belongs to brand \"moxie\", but most of this campaign's leads arrive at brand \"joshuas\"."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B41"
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-14",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Unmapped Meta campaign with leads split between Mission B29 and Moxie B07, proposed to B07",
+      "severityIfWrong": "critical",
+      "millis": 958,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "13 lead(s) carry this campaign's id; 6 arrived at B07 and 7 at B29. The mapping contradicts the campaign's own leads."
+            },
+            {
+              "id": "mapping_collision",
+              "status": "fail",
+              "code": "CROSS_BRAND",
+              "detail": "B07 belongs to brand \"moxie\", but most of this campaign's leads arrive at brand \"mission\"."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [
+        {
+          "type": "false_block",
+          "severity": "high",
+          "step": "1",
+          "detail": "expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES, CROSS_BRAND)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "1",
+          "detail": "expected ready_for_review, got preflight_failed"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected ready_for_review, final preflight_failed"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-15",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Migrated PMax successor of a Joshua's LSA campaign proposed to Moxie branch B02",
+      "severityIfWrong": "critical",
+      "millis": 995,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "9 lead(s) carry this campaign's id; 0 arrived at B02 and 9 at B40. The mapping contradicts the campaign's own leads."
+            },
+            {
+              "id": "mapping_collision",
+              "status": "fail",
+              "code": "CROSS_BRAND",
+              "detail": "B02 belongs to brand \"moxie\", but most of this campaign's leads arrive at brand \"joshuas\". Its predecessor campaign 1 maps to B40."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c0": "B40",
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-16",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Request to split one campaign's spend 60 / 40 across B13 and B14",
+      "severityIfWrong": "high",
+      "millis": 919,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_kind",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either",
+            "class": "UNSUPPORTED"
+          },
+          "error": "ZodError: [\n  {\n    \"code\": \"invalid_union\",\n    \"errors\": [],\n    \"note\": \"No matching discriminator\",\n    \"discriminator\": \"kind\",\n    \"options\": [\n      \"campaign_mapping\",\n      \"source_contract\"\n    ],\n    \"path\": [\n      \"kind\"\n    ],\n    \"message\": \"Invalid discriminator value. Expected 'campaign_mapping' | 'source_contract'\"\n  }\n]",
+          "actualClass": "UNSUPPORTED"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B13"
+      },
+      "finalStatuses": {},
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-17",
+      "category": "historical_mapping_effect",
+      "title": "Effective-dated remap: B12 until Oct 14, B13 from Oct 15",
+      "severityIfWrong": "high",
+      "millis": 1017,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either",
+            "class": "UNSUPPORTED"
+          },
+          "error": "ZodError: [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"effectiveFrom\"\n    ],\n    \"path\": [\n      \"payload\"\n    ],\n    \"message\": \"Unrecognized key: \\\"effectiveFrom\\\"\"\n  }\n]",
+          "actualClass": "UNSUPPORTED"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B12"
+      },
+      "finalStatuses": {},
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-18",
+      "category": "historical_mapping_effect",
+      "title": "Territory handover without an effective date: whole-history remap B22 -> B23",
+      "severityIfWrong": "high",
+      "millis": 963,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "19 lead(s) carry this campaign's id; 9 arrived at B23 and 10 at B22. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B22"
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [
+        {
+          "type": "false_block",
+          "severity": "high",
+          "step": "1",
+          "detail": "expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "1",
+          "detail": "expected ready_for_review, got preflight_failed"
+        },
+        {
+          "type": "false_refusal",
+          "severity": "medium",
+          "step": "2",
+          "detail": "approve as approver was refused: ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected approved, final preflight_failed"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-19",
+      "category": "historical_mapping_effect",
+      "title": "Correcting a long-wrong mapping moves its whole history; a sibling campaign stays put",
+      "severityIfWrong": "high",
+      "millis": 1182,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B11 (approved: B11); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B11 gained exactly $1,082.40 of paid spend; B09 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B11",
+        "c2": "B09"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-20",
+      "category": "historical_mapping_effect",
+      "title": "Mission LSA migrated to PMax: successor mapped to the predecessor's branch on its own evidence",
+      "severityIfWrong": "medium",
+      "millis": 1069,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B28 (approved: B28); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B28 gained exactly $597.10 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c0": "B28",
+        "c1": "B28"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-21",
+      "category": "benign_schema_drift",
+      "title": "Call-tracking account starts sending the caller under caller.number",
+      "severityIfWrong": "medium",
+      "millis": 943,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "sc1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "error": "ActionError: A source contract check stops at review: activating a mapper version is a code deploy"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only campaign mappings can be released here"
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "false_refusal",
+          "severity": "medium",
+          "step": "2",
+          "detail": "approve as approver was refused: ActionError: A source contract check stops at review: activating a mapper version is a code deploy"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "sc1: expected approved, final ready_for_review"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-22",
+      "category": "benign_schema_drift",
+      "title": "Google migrates an LSA campaign into Google Ads as PERFORMANCE_MAX with local services enabled",
+      "severityIfWrong": "medium",
+      "millis": 1101,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "marketing",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "ready_for_review"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-23",
+      "category": "benign_schema_drift",
+      "title": "Website pipeline adds page_url and a context object to lead events",
+      "severityIfWrong": "low",
+      "millis": 1059,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "ready_for_review"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-24",
+      "category": "benign_schema_drift",
+      "title": "Call payloads start carrying direction, spam and lead_status (outbound and spam calls included)",
+      "severityIfWrong": "high",
+      "millis": 1012,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "downstream_completeness",
+              "status": "warn",
+              "code": "RECORDS_EXCLUDED",
+              "detail": "3 of 4 sample(s) are marked by the source as not counted (NOT_INBOUND, SPAM_CALL, NOT_A_LEAD): they would be kept as evidence and left out of prospects, paidCac, unknownShare, acquired (attribution). A person should confirm that is what this shape means."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "RECORDS_EXCLUDED"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-25",
+      "category": "benign_schema_drift",
+      "title": "Ad spend for a newly linked account arrives with currencyCode CAD",
+      "severityIfWrong": "high",
+      "millis": 942,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "marketing",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "schema_compatibility",
+              "status": "fail",
+              "code": "INCOMPATIBLE_SHAPE",
+              "detail": "2 of 2 sample(s) are refused by the deployed mapper ads@1.2 (CURRENCY_UNSUPPORTED)."
+            },
+            {
+              "id": "reporting_impact",
+              "status": "warn",
+              "code": "DEPENDENT_METRICS",
+              "detail": "Metrics reading ads spend_day: paidSpend, paidCac."
+            },
+            {
+              "id": "downstream_completeness",
+              "status": "fail",
+              "code": "RECORDS_WOULD_NOT_ARRIVE",
+              "detail": "2 record(s) of this shape would not reach the ledger's projection; paidSpend, paidCac would be understated until a fix and replay."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "preflight_failed"
+      },
+      "findings": [
+        {
+          "type": "false_block",
+          "severity": "high",
+          "step": "1",
+          "detail": "expected NEEDS_REVIEW, system BLOCK (INCOMPATIBLE_SHAPE, DEPENDENT_METRICS, RECORDS_WOULD_NOT_ARRIVE)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "1",
+          "detail": "expected ready_for_review, got preflight_failed"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "sc1: expected ready_for_review, final preflight_failed"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-26",
+      "category": "benign_schema_drift",
+      "title": "Native CallRail call objects (company_id, no branch_tag) sent straight to intake",
+      "severityIfWrong": "high",
+      "millis": 1189,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "schema_compatibility",
+              "status": "fail",
+              "code": "INCOMPATIBLE_SHAPE",
+              "detail": "3 of 3 sample(s) are refused by the deployed mapper calls@1.2 (SCHEMA_VIOLATION)."
+            },
+            {
+              "id": "reporting_impact",
+              "status": "warn",
+              "code": "DEPENDENT_METRICS",
+              "detail": "Metrics reading calls call: prospects, paidCac, unknownShare, acquired (attribution)."
+            },
+            {
+              "id": "downstream_completeness",
+              "status": "fail",
+              "code": "RECORDS_WOULD_NOT_ARRIVE",
+              "detail": "3 record(s) of this shape would not reach the ledger's projection; prospects, paidCac, unknownShare, acquired (attribution) would be understated until a fix and replay."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-27",
+      "category": "refunds_and_source_corrections",
+      "title": "A partial refund arrives between approval and release of a valid remap",
+      "severityIfWrong": "high",
+      "millis": 1872,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "refund",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "4",
+          "do": "reconcile",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "5",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-27T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B15 (approved: B15); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B15 gained exactly $1,401.60 of paid spend; B14 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B15"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "5",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-28",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM payment feed with a payment, a partial refund referencing it, and a void",
+      "severityIfWrong": "medium",
+      "millis": 1505,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "schema_compatibility",
+              "status": "fail",
+              "code": "INCOMPATIBLE_SHAPE",
+              "detail": "3 of 3 sample(s) are refused by the deployed mapper crm@1.0 (MISSING_IDENTITY)."
+            },
+            {
+              "id": "identifier_presence",
+              "status": "fail",
+              "code": "MISSING_IDENTIFIER",
+              "detail": "Some samples lack a required identifier or field."
+            },
+            {
+              "id": "reporting_impact",
+              "status": "warn",
+              "code": "DEPENDENT_METRICS",
+              "detail": "Metrics reading crm payment: collected, newCollected, atRisk."
+            },
+            {
+              "id": "downstream_completeness",
+              "status": "fail",
+              "code": "RECORDS_WOULD_NOT_ARRIVE",
+              "detail": "3 record(s) of this shape would not reach the ledger's projection; collected, newCollected, atRisk would be understated until a fix and replay."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "preflight_failed"
+      },
+      "findings": [
+        {
+          "type": "false_block",
+          "severity": "medium",
+          "step": "1",
+          "detail": "expected ALLOW, system BLOCK (INCOMPATIBLE_SHAPE, MISSING_IDENTIFIER, DEPENDENT_METRICS, RECORDS_WOULD_NOT_ARRIVE)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "1",
+          "detail": "expected ready_for_review, got preflight_failed"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "sc1: expected ready_for_review, final preflight_failed"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-29",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM payments start arriving with invoiceIDs / paymentApplications instead of ticketID",
+      "severityIfWrong": "high",
+      "millis": 1418,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose_source_contract",
+          "as": "engineer",
+          "ref": "sc1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "schema_compatibility",
+              "status": "fail",
+              "code": "INCOMPATIBLE_SHAPE",
+              "detail": "3 of 3 sample(s) are refused by the deployed mapper crm@1.0 (MISSING_IDENTITY)."
+            },
+            {
+              "id": "identifier_presence",
+              "status": "fail",
+              "code": "MISSING_IDENTIFIER",
+              "detail": "Some samples lack a required identifier or field."
+            },
+            {
+              "id": "reporting_impact",
+              "status": "warn",
+              "code": "DEPENDENT_METRICS",
+              "detail": "Metrics reading crm payment: collected, newCollected, atRisk."
+            },
+            {
+              "id": "downstream_completeness",
+              "status": "fail",
+              "code": "RECORDS_WOULD_NOT_ARRIVE",
+              "detail": "3 record(s) of this shape would not reach the ledger's projection; collected, newCollected, atRisk would be understated until a fix and replay."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {},
+      "finalStatuses": {
+        "sc1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-30",
+      "category": "refunds_and_source_corrections",
+      "title": "Ad platform restates one day's spend between approval and release",
+      "severityIfWrong": "medium",
+      "millis": 1981,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "restate_spend",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:04:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (approved: B05); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B05 gained exactly $587.40 of paid spend; B06 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B05"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "4",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-31",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM moves a customer to another office between approval and release",
+      "severityIfWrong": "medium",
+      "millis": 1792,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "crm_move_customer",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-27T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B36 (approved: B36); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B36 gained exactly $1,056.00 of paid spend; B35 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B36"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "4",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-32",
+      "category": "evidence_changed_after_preflight",
+      "title": "Fifteen contradicting calls arrive at the current branch after approval",
+      "severityIfWrong": "critical",
+      "millis": 1879,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "draft"
+          },
+          "error": "ActionError: The mapping or its evidence changed since review; the approval was invalidated. Re-run the preflight."
+        }
+      ],
+      "finalMapping": {
+        "c1": "B06"
+      },
+      "finalStatuses": {
+        "ch1": "draft"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-33",
+      "category": "evidence_changed_after_preflight",
+      "title": "Incident fix remaps the campaign through the old path after approval; re-preview, re-approve, release",
+      "severityIfWrong": "critical",
+      "millis": 1829,
+      "invalid": true,
+      "invalidReason": "step 3 remap_outside was refused by the system: ActionError: Campaign not found or already mapped",
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "remap_outside",
+          "as": "engineer",
+          "outcome": "world",
+          "invariantFailures": [],
+          "error": "ActionError: Campaign not found or already mapped"
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "draft"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-27T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B25 (approved: B25); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B25 gained exactly $747.60 of paid spend; B24 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "5",
+          "do": "rerun_preflight",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "error": "ActionError: A verified change cannot be preflighted again"
+        },
+        {
+          "index": "6",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is verified)"
+        },
+        {
+          "index": "7",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is verified)"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B25"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "accepted_but_must_refuse",
+          "severity": "critical",
+          "step": "4",
+          "detail": "release as marketing was accepted (status verified)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "4",
+          "detail": "expected draft, got verified"
+        },
+        {
+          "type": "unsupported_mismatch",
+          "severity": "medium",
+          "step": "5",
+          "detail": "expected class ALLOW, but the step produced no change (ActionError: A verified change cannot be preflighted again)"
+        },
+        {
+          "type": "false_refusal",
+          "severity": "medium",
+          "step": "5",
+          "detail": "rerun_preflight as marketing was refused: ActionError: A verified change cannot be preflighted again"
+        },
+        {
+          "type": "false_refusal",
+          "severity": "medium",
+          "step": "6",
+          "detail": "approve as approver2 was refused: ActionError: Only a change ready for review can be decided (this one is verified)"
+        },
+        {
+          "type": "false_refusal",
+          "severity": "medium",
+          "step": "7",
+          "detail": "release as marketing was refused: ActionError: Only an approved change can be released (this one is verified)"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-34",
+      "category": "evidence_changed_after_preflight",
+      "title": "More agreeing calls arrive after approval; the base still points the same way",
+      "severityIfWrong": "medium",
+      "millis": 1974,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-27T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B32 (approved: B32); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B32 gained exactly $841.50 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B32"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "4",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-35",
+      "category": "evidence_changed_after_preflight",
+      "title": "All leads are corrected to another branch after the preview but before approval",
+      "severityIfWrong": "critical",
+      "millis": 2236,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "correct_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: The mapping or its evidence changed since the preflight: re-run it before approving"
+        },
+        {
+          "index": "4",
+          "do": "rerun_preflight",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "6 lead(s) carry this campaign's id; 0 arrived at B20 and 6 at B21. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "preflight_failed"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-36",
+      "category": "concurrency",
+      "title": "A second change for the same campaign while the first is in review, and again while it is approved",
+      "severityIfWrong": "high",
+      "millis": 1311,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either",
+            "class": "BLOCK"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_collision",
+              "status": "fail",
+              "code": "COMPETING_CHANGE",
+              "detail": "Change 1 for this campaign is already in review or approved."
+            }
+          ]
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "4",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch3",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either",
+            "class": "BLOCK"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_collision",
+              "status": "fail",
+              "code": "COMPETING_CHANGE",
+              "detail": "Change 1 for this campaign is already in review or approved."
+            }
+          ]
+        },
+        {
+          "index": "5",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch2",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is preflight_failed)"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "approved"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-37",
+      "category": "concurrency",
+      "title": "Two people release the same approved change at the same moment",
+      "severityIfWrong": "critical",
+      "millis": 1314,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "concurrently",
+          "outcome": "accepted",
+          "invariantFailures": []
+        },
+        {
+          "index": "3.1",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "label": "r-marketing",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B02 (approved: B02); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B02 gained exactly $2,880.00 of paid spend; B01 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "3.2",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "label": "r-engineer",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "either"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is verified)"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B02"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-38",
+      "category": "concurrency",
+      "title": "Approver presents the identity of a different change under review (swap)",
+      "severityIfWrong": "critical",
+      "millis": 1387,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ActionError: What you reviewed is not what is stored: reload the change and review it again"
+        },
+        {
+          "index": "4",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "5",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        }
+      ],
+      "finalMapping": {
+        "c1": null,
+        "c2": null
+      },
+      "finalStatuses": {
+        "ch1": "approved",
+        "ch2": "approved"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-39",
+      "category": "concurrency",
+      "title": "One approver rejects; a second approver then tries to approve and someone tries to release",
+      "severityIfWrong": "high",
+      "millis": 1138,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "reject",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "rejected"
+          },
+          "status": "rejected"
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "rejected"
+          },
+          "error": "ActionError: Only a change ready for review can be decided (this one is rejected)"
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "rejected"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is rejected)"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B37"
+      },
+      "finalStatuses": {
+        "ch1": "rejected"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-40",
+      "category": "unauthorized_action",
+      "title": "Author approves own change; a proposer without approve permission tries too",
+      "severityIfWrong": "critical",
+      "millis": 1214,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ForbiddenError: Integration engineer · all branches cannot approve configuration changes"
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ForbiddenError: Marketing analyst · all branches cannot approve configuration changes"
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ActionError: Only an approved change can be released (this one is ready_for_review)"
+        },
+        {
+          "index": "5",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "approved"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-41",
+      "category": "unauthorized_action",
+      "title": "Guest, B20 partner and Joshua's brand viewer try to propose a B20 mapping",
+      "severityIfWrong": "critical",
+      "millis": 1131,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "guest",
+          "ref": "g1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "class": "ALLOW"
+          },
+          "error": "ForbiddenError: Guest · read-only cannot propose configuration changes",
+          "actualClass": "BLOCK"
+        },
+        {
+          "index": "2",
+          "do": "propose",
+          "as": "partner",
+          "ref": "p1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "class": "ALLOW"
+          },
+          "error": "ForbiddenError: Branch partner · B20 only cannot propose configuration changes",
+          "actualClass": "BLOCK"
+        },
+        {
+          "index": "3",
+          "do": "propose",
+          "as": "brand",
+          "ref": "b1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "class": "ALLOW"
+          },
+          "error": "ForbiddenError: Brand marketing lead · Joshua's Pest Control only cannot propose configuration changes",
+          "actualClass": "BLOCK"
+        },
+        {
+          "index": "4",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "ready_for_review"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-42",
+      "category": "unauthorized_action",
+      "title": "Brand viewer approves a Joshua's change; approver tries to release; a second marketer releases",
+      "severityIfWrong": "critical",
+      "millis": 1601,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "brand",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ForbiddenError: Brand marketing lead · Joshua's Pest Control only cannot approve configuration changes"
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "4",
+          "do": "release",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "approved"
+          },
+          "error": "ForbiddenError: Revenue ops approver · all branches cannot release configuration changes"
+        },
+        {
+          "index": "5",
+          "do": "release",
+          "as": "brand",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "approved"
+          },
+          "error": "ForbiddenError: Brand marketing lead · Joshua's Pest Control only cannot release configuration changes"
+        },
+        {
+          "index": "6",
+          "do": "release",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:06:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B44 (approved: B44); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B44 gained exactly $475.20 of paid spend; B42 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B44"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "6",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected monitoring, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-43",
+      "category": "unauthorized_action",
+      "title": "A different marketer resubmits someone else's blocked change",
+      "severityIfWrong": "high",
+      "millis": 1420,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "BLOCK",
+            "status": "preflight_failed"
+          },
+          "status": "preflight_failed",
+          "actualClass": "BLOCK",
+          "verdict": "fail",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "fail",
+              "code": "LEAD_EVIDENCE_DISAGREES",
+              "detail": "10 lead(s) carry this campaign's id; 0 arrived at B28 and 10 at B27. The mapping contradicts the campaign's own leads."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "resubmit",
+          "as": "marketing2",
+          "ref": "ch2",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "class": "ALLOW"
+          },
+          "error": "ForbiddenError: Only the author can resubmit their own change; propose a new one instead",
+          "actualClass": "BLOCK"
+        },
+        {
+          "index": "3",
+          "do": "resubmit",
+          "as": "marketing",
+          "ref": "ch3",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "superseded",
+        "ch3": "ready_for_review"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-44",
+      "category": "monitoring_and_recovery",
+      "title": "After a verified release, an incident fix remaps the campaign back through the old path",
+      "severityIfWrong": "high",
+      "millis": 1567,
+      "invalid": true,
+      "invalidReason": "step 6 remap_outside was refused by the system: ActionError: Campaign not found or already mapped",
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B22 (approved: B22); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B22 gained exactly $1,771.20 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "4",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "5",
+          "do": "monitor",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "verified"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-26T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B22 (approved: B22); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B22 gained exactly $1,771.20 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B22 (released: B22).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "3 of 3 lead(s) since the release arrived at B22.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "6",
+          "do": "remap_outside",
+          "as": "engineer",
+          "outcome": "world",
+          "invariantFailures": [],
+          "error": "ActionError: Campaign not found or already mapped"
+        },
+        {
+          "index": "7",
+          "do": "monitor",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "recovery_required"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-28T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B22 (approved: B22); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B22 gained exactly $1,771.20 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B22 (released: B22).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "3 of 3 lead(s) since the release arrived at B22.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B22"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "7",
+          "detail": "expected recovery_required, got verified"
+        },
+        {
+          "type": "wrong_live_mapping",
+          "severity": "critical",
+          "detail": "c1: expected B21, live B22"
+        },
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "detail": "ch1: expected recovery_required, final verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-45",
+      "category": "monitoring_and_recovery",
+      "title": "Post-release calls arrive at the old branch; recovery needs a person-made compensating change",
+      "severityIfWrong": "high",
+      "millis": 1747,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (approved: B05); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B05 gained exactly $1,496.40 of paid spend; B04 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "4",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "5",
+          "do": "monitor",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "verified"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-26T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (approved: B05); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B05 gained exactly $1,496.40 of paid spend; B04 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (released: B05).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "2 of 2 lead(s) since the release arrived at B05.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "6",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "7",
+          "do": "monitor",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "recovery_required"
+          },
+          "status": "recovery_required",
+          "verification": {
+            "at": "2026-10-29T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (approved: B05); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B05 gained exactly $1,496.40 of paid spend; B04 lost exactly that.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "0 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B05 (released: B05).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "2 of 14 lead(s) since the release arrived at B05.",
+                "passed": false
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "8",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch2",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "LEAD_EVIDENCE_SPLIT",
+              "detail": "12 of 22 lead(s) for this campaign arrived at B04; the rest at B05."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c1": "B05"
+      },
+      "finalStatuses": {
+        "ch1": "recovery_required",
+        "ch2": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        },
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "8",
+          "detail": "LEAD_EVIDENCE_SPLIT"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-46",
+      "category": "monitoring_and_recovery",
+      "title": "Monitoring right after release with no new leads, then again once agreeing leads arrive",
+      "severityIfWrong": "medium",
+      "millis": 1698,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "3",
+          "do": "release",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "monitoring"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-25T16:03:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B39 (approved: B39); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B39 gained exactly $290.00 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "4",
+          "do": "monitor",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-26T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B39 (approved: B39); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B39 gained exactly $290.00 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B39 (released: B39).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "No lead with this campaign's id has arrived since the release.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        },
+        {
+          "index": "5",
+          "do": "add_leads",
+          "outcome": "world",
+          "invariantFailures": []
+        },
+        {
+          "index": "6",
+          "do": "monitor",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "verified"
+          },
+          "status": "verified",
+          "verification": {
+            "at": "2026-10-29T16:01:00.000Z",
+            "checks": [
+              {
+                "id": "applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B39 (approved: B39); recorded as version 2.",
+                "passed": true
+              },
+              {
+                "id": "spend_moved_exactly",
+                "layer": "data_integrity",
+                "detail": "B39 gained exactly $290.00 of paid spend from unallocated.",
+                "passed": true
+              },
+              {
+                "id": "unrelated_unchanged",
+                "layer": "data_integrity",
+                "detail": "No branch outside the change moved.",
+                "passed": true
+              },
+              {
+                "id": "predicted_exceptions_cleared",
+                "layer": "operational",
+                "detail": "1 exception(s) cleared as the preflight predicted.",
+                "passed": true
+              }
+            ],
+            "monitor": [
+              {
+                "id": "still_applied",
+                "layer": "configuration",
+                "detail": "The live mapping is B39 (released: B39).",
+                "passed": true
+              },
+              {
+                "id": "evidence_since_release",
+                "layer": "operational",
+                "detail": "4 of 4 lead(s) since the release arrived at B39.",
+                "passed": true
+              }
+            ],
+            "businessImprovement": "not measured"
+          }
+        }
+      ],
+      "finalMapping": {
+        "c1": "B39"
+      },
+      "finalStatuses": {
+        "ch1": "verified"
+      },
+      "findings": [
+        {
+          "type": "status_mismatch",
+          "severity": "medium",
+          "step": "3",
+          "detail": "expected monitoring, got verified"
+        }
+      ],
+      "pass": false
+    },
+    {
+      "id": "HO-47",
+      "category": "monitoring_and_recovery",
+      "title": "Monitoring is requested on changes that were never released",
+      "severityIfWrong": "low",
+      "millis": 1164,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "ALLOW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "ALLOW",
+          "verdict": "pass",
+          "evidence": []
+        },
+        {
+          "index": "2",
+          "do": "monitor",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "ready_for_review"
+          },
+          "error": "ActionError: Only a released change can be monitored (this one is ready_for_review)"
+        },
+        {
+          "index": "3",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        },
+        {
+          "index": "4",
+          "do": "monitor",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "refused",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "refused",
+            "status": "approved"
+          },
+          "error": "ActionError: Only a released change can be monitored (this one is approved)"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "approved"
+      },
+      "findings": [],
+      "pass": true
+    },
+    {
+      "id": "HO-48",
+      "category": "human_review_only",
+      "title": "Campaign mapped to Mission B28 whose calls all land at Moxie B05",
+      "severityIfWrong": "critical",
+      "millis": 1144,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_collision",
+              "status": "warn",
+              "code": "CROSS_BRAND_CORRECTION",
+              "detail": "The campaign maps to B28 (brand \"mission\") now, but most of its leads arrive at brand \"moxie\": moving its spend across brands needs a person to confirm which ad account it belongs to."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "approve",
+          "as": "approver",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "approved"
+          },
+          "status": "approved"
+        }
+      ],
+      "finalMapping": {
+        "c1": "B28"
+      },
+      "finalStatuses": {
+        "ch1": "approved"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "CROSS_BRAND_CORRECTION"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-49",
+      "category": "human_review_only",
+      "title": "PMax successor with no leads of its own, proposed to its predecessor's Mission branch",
+      "severityIfWrong": "medium",
+      "millis": 1428,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "engineer",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "NO_LEAD_EVIDENCE",
+              "detail": "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it."
+            }
+          ]
+        }
+      ],
+      "finalMapping": {
+        "c0": "B30",
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "ready_for_review"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "NO_LEAD_EVIDENCE"
+        }
+      ],
+      "pass": true
+    },
+    {
+      "id": "HO-50",
+      "category": "human_review_only",
+      "title": "Mission lead-ads campaign spread three ways across B27, B28 and B29; reviewer rejects",
+      "severityIfWrong": "medium",
+      "millis": 1338,
+      "steps": [
+        {
+          "index": "1",
+          "do": "propose",
+          "as": "marketing2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "class": "NEEDS_REVIEW",
+            "status": "ready_for_review"
+          },
+          "status": "ready_for_review",
+          "actualClass": "NEEDS_REVIEW",
+          "verdict": "warn",
+          "evidence": [
+            {
+              "id": "mapping_coverage",
+              "status": "warn",
+              "code": "LEAD_EVIDENCE_SPLIT",
+              "detail": "5 of 13 lead(s) for this campaign arrived at B27; the rest at B28, B29."
+            }
+          ]
+        },
+        {
+          "index": "2",
+          "do": "reject",
+          "as": "approver2",
+          "ref": "ch1",
+          "outcome": "accepted",
+          "invariantFailures": [],
+          "expect": {
+            "outcome": "accepted",
+            "status": "rejected"
+          },
+          "status": "rejected"
+        }
+      ],
+      "finalMapping": {
+        "c1": null
+      },
+      "finalStatuses": {
+        "ch1": "rejected"
+      },
+      "findings": [
+        {
+          "type": "correct_human_review",
+          "severity": "info",
+          "step": "1",
+          "detail": "LEAD_EVIDENCE_SPLIT"
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

@@ -1,0 +1,484 @@
+=== STEP commit: git log --oneline -1
+dd1353d The figure check knows what kind of number it is checking, and covers every field
+=== END commit rc=0 seconds=0
+=== STEP status: git status --short
+?? .claude/
+=== END status rc=0 seconds=0
+=== STEP typecheck: npm run typecheck
+
+> moxie-revenue-signal@0.1.0 typecheck
+> tsc --noEmit
+
+=== END typecheck rc=0 seconds=5
+=== STEP lint: npm run lint
+
+> moxie-revenue-signal@0.1.0 lint
+> eslint
+
+=== END lint rc=0 seconds=21
+=== STEP vitest: npx vitest run
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v5.0.5 C:/Users/Pavan Kalyan/OneDrive/Documents/Desktop/Moxie pest Control
+
+(node:30860) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+ Test Files  51 passed (51)
+      Tests  593 passed (593)
+   Start at  23:39:04
+   Duration  322.93s (tests 96%, import 3%)
+
+=== END vitest rc=0 seconds=326
+=== STEP build: npm run build
+
+> moxie-revenue-signal@0.1.0 build
+> next build
+
+▲ Next.js 16.4.3 (Turbopack)
+✓ Running next.config.ts took 52ms
+- Cache Components enabled
+- Partial Prefetching enabled
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.0s
+  Running TypeScript ...
+  Finished TypeScript in 10.0s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/42) ...
+  Generating static pages using 15 workers (10/42) 
+  Generating static pages using 15 workers (20/42) 
+  Generating static pages using 15 workers (31/42) 
+✓ Generating static pages using 15 workers (42/42) in 2.2s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ◐ /
+├ ◐ /_not-found
+├ ƒ /api/cases/[id]
+├ ƒ /api/changes
+├ ƒ /api/changes/[id]
+├ ƒ /api/connectors/[id]/compare
+├ ƒ /api/connectors/[id]/jobs
+├ ƒ /api/connectors/[id]/sync
+├ ƒ /api/connectors/faults
+├ ƒ /api/connectors/jobs/[jobId]
+├ ƒ /api/customers
+├ ƒ /api/customers/[id]
+├ ƒ /api/customers/[id]/raw-events/[rawEventId]
+├ ƒ /api/decisions/experiments
+├ ƒ /api/decisions/scenarios
+├ ƒ /api/decisions/verdicts
+├ ƒ /api/exceptions/[id]/actions
+├ ƒ /api/health
+├ ƒ /api/identity/conflicts
+├ ƒ /api/identity/conflicts/[id]/decision
+├ ƒ /api/ingest/[source]
+├ ƒ /api/investigations
+├ ƒ /api/investigations/[id]
+├ ƒ /api/investigations/[id]/evidence
+├ ƒ /api/metrics
+├ ƒ /api/metrics/trace
+├ ƒ /api/mock/fieldroutes/[...path]
+├ ƒ /api/onboarding/mappings/[id]/decision
+├ ƒ /api/onboarding/uploads
+├ ƒ /api/onboarding/uploads/[id]
+├ ƒ /api/onboarding/uploads/[id]/dry-run
+├ ƒ /api/onboarding/uploads/[id]/mappings
+├ ƒ /api/onboarding/uploads/[id]/publish
+├ ƒ /api/onboarding/uploads/[id]/rows
+├ ƒ /api/onboarding/uploads/[id]/values
+├ ƒ /api/opportunities
+├ ƒ /api/proposals
+├ ƒ /api/proposals/[id]
+├ ƒ /api/reconcile
+├ ƒ /api/replays
+├ ƒ /api/role
+├ ƒ /api/search
+├ ◐ /audit
+├   /branches/[id]
+│ └ ◐ /branches/[id]
+├   /branches/[id]/trace
+│ └ ◐ /branches/[id]/trace
+├ ◐ /changes
+├   /changes/[id]
+│ └ ◐ /changes/[id]
+├ ◐ /customers
+├   /customers/[id]
+│ └ ◐ /customers/[id]
+├ ◐ /decisions
+├ ◐ /decisions/opportunities
+├ ◐ /definitions
+├ ◐ /demo
+├ ◐ /exceptions
+├   /exceptions/[id]
+│ └ ◐ /exceptions/[id]
+├ ◐ /feedback
+├ ◐ /integrations
+├   /integrations/jobs/[id]
+│ └ ◐ /integrations/jobs/[id]
+├ ◐ /investigator
+├   /investigator/[id]
+│ └ ◐ /investigator/[id]
+├ ◐ /onboarding
+└   /onboarding/[id]
+  └ ◐ /onboarding/[id]
+
+
+ƒ Proxy (Middleware)
+
+◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+ƒ  (Dynamic)            server-rendered on demand
+
+=== END build rc=0 seconds=22
+=== STEP e2e: env CI=1 VISUAL=1 npx playwright test --reporter=line
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2664 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 51703 ms
+
+Running 73 tests using 1 worker
+
+[1/73] [chromium] › tests\e2e\demo-video.spec.ts:13:5 › demo walkthrough
+[2/73] [chromium] › tests\e2e\golden-path.spec.ts:12:7 › investigate → replay → verify › the overview points at the incident branch
+[3/73] [chromium] › tests\e2e\golden-path.spec.ts:22:7 › investigate → replay → verify › the branch page shows why, and links to the exception
+[4/73] [chromium] › tests\e2e\golden-path.spec.ts:31:7 › investigate → replay → verify › an engineer dry-runs; the panel cannot commit; the fix applies through approval, once
+[5/73] [chromium] › tests\e2e\golden-path.spec.ts:62:7 › investigate → replay → verify › after replay the branch is no longer flagged for unattributed customers
+[6/73] [chromium] › tests\e2e\golden-path.spec.ts:69:7 › investigate → replay → verify › a branch partner cannot read another branch
+[7/73] [chromium] › tests\e2e\golden-path.spec.ts:80:7 › investigate → replay → verify › an out-of-scope incident reads as missing and does not name its branch (audit 2026-11-09, E-6)
+[8/73] [chromium] › tests\e2e\golden-path.spec.ts:92:7 › investigate → replay → verify › the replay API refuses non-engineers
+[9/73] [chromium] › tests\e2e\golden-path.spec.ts:100:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › the B09 budget signal is marked untrustworthy and links to the coverage gap
+[10/73] [chromium] › tests\e2e\golden-path.spec.ts:111:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged
+[11/73] [chromium] › tests\e2e\os-golden-path.spec.ts:40:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › a · the overview and the branch show the channel imbalance and a blocked budget signal
+[chromium] › tests\e2e\os-golden-path.spec.ts:40:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › a · the overview and the branch show the channel imbalance and a blocked budget signal
+[seed] applied 0001_init.sql
+
+[seed] applied 0002_attribution_views.sql
+
+[seed] applied 0003_channel_classification.sql
+
+[seed] applied 0004_identity.sql
+
+[seed] applied 0005_connectors.sql
+
+[seed] applied 0006_action_center.sql
+
+[seed] applied 0007_decision_lab.sql
+
+[seed] applied 0008_investigations.sql
+
+[seed] applied 0009_organization_and_events.sql
+
+[seed] applied 0010_reporting_contract.sql
+
+[seed] applied 0011_sync_requests.sql
+
+[seed] applied 0012_audit_corrections.sql
+
+[seed] applied 0013_onboarding.sql
+
+[seed] applied 0014_subjects_and_append_only_audit.sql
+
+[seed] applied 0015_cross_brand_crm_identity.sql
+
+[seed] applied 0016_opportunity_overrides.sql
+
+[seed] applied 0017_config_changes.sql
+
+[seed] applied 0018_source_semantics.sql
+
+[seed] applied 0019_source_semantics_backfill.sql
+
+[seed] world: 134337 source record versions, 156 campaigns
+
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2372 ms
+
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 57045 ms
+
+[12/73] [chromium] › tests\e2e\os-golden-path.spec.ts:55:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › b · the Decision Lab says not ready and links the blocking incident
+[13/73] [chromium] › tests\e2e\os-golden-path.spec.ts:70:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › c · the incident shows campaign, spend, leads and CRM outcomes evidence
+[14/73] [chromium] › tests\e2e\os-golden-path.spec.ts:86:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › d · Investigate opens the AI investigator scoped to the incident; it cites evidence and proposes a re-map
+[15/73] [chromium] › tests\e2e\os-golden-path.spec.ts:127:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › e · an integration engineer dry-runs it on the server: before/after, rolled back
+[16/73] [chromium] › tests\e2e\os-golden-path.spec.ts:146:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › f · an approver, a different role, approves
+[17/73] [chromium] › tests\e2e\os-golden-path.spec.ts:157:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › g · h · the application executes the re-projection; metrics recompute and the ledger is verified unchanged
+[18/73] [chromium] › tests\e2e\os-golden-path.spec.ts:179:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › i · the audit trail shows proposer, dry run, approver, executed records and verification
+[19/73] [chromium] › tests\e2e\os-golden-path.spec.ts:202:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › j · overview, branch and Decision Lab reflect the new state
+[20/73] [chromium] › tests\e2e\os-golden-path.spec.ts:220:7 › second scenario · B20 call-feed incident through the Action Center › an engineer proposes a replay; the dry run verifies; an approver approves; the app executes
+[21/73] [chromium] › tests\e2e\os-golden-path.spec.ts:251:7 › second scenario · B20 call-feed incident through the Action Center › after the replay B20 is no longer flagged for unattributed customers
+[22/73] [chromium] › tests\e2e\os-modules.spec.ts:22:7 › Customer 360 › search by lead id → journey timeline → stored payload drawer
+[23/73] [chromium] › tests\e2e\os-modules.spec.ts:46:7 › Customer 360 › a branch partner cannot open another branch's customer
+[24/73] [chromium] › tests\e2e\os-modules.spec.ts:57:7 › Integration Studio · rate limit → retry → success › an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":1,"errorKind":"rate_limit","retryInMs":2000}
+
+[25/73] [chromium] › tests\e2e\os-modules.spec.ts:120:7 › identity review permissions › guests, approvers and branch partners can read the conflict but not decide it
+[26/73] [chromium] › tests\e2e\os-modules.spec.ts:144:7 › identity review permissions › a marketing analyst accepts one match; its sibling is rejected automatically
+[27/73] [chromium] › tests\e2e\os-modules.spec.ts:158:7 › identity review permissions › an integration engineer rejects a match
+[28/73] [chromium] › tests\e2e\os-modules.spec.ts:170:7 › command menu › ⌘K finds branch B09 and its incident
+[29/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:29:7 › command menu · combobox semantics (J10) › the input is a combobox that controls the results listbox and tracks the active option
+[30/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:75:7 › proposal card · status region and diff row headers (J8, J12) › an executed proposal keeps a status region, and its before/after rows are row headers
+[31/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:101:7 › weekly bars · data table (J11) › each chart references a visually hidden table of its weekly values
+[32/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:118:7 › paging and parameter validation (J4, J6, J7) › a customers page past the end says so and links to the last page
+[33/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:129:7 › paging and parameter validation (J4, J6, J7) › an inherited property name as ?period= falls back to the default period
+[34/73] [chromium] › tests\e2e\z-a11y-regressions.spec.ts:138:7 › paging and parameter validation (J4, J6, J7) › an exact audit subject does not match longer ids with the same prefix
+[35/73] [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 1440px
+[36/73] [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 1280px
+[37/73] [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 768px
+[38/73] [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 390px
+[39/73] [chromium] › tests\e2e\z-layout.spec.ts:71:7 › shell › the top bar shows the viewer's scope and data freshness
+[40/73] [chromium] › tests\e2e\z-layout.spec.ts:81:7 › shell › the sidebar collapses to an icon rail, keeps link names, and remembers the choice
+[41/73] [chromium] › tests\e2e\z-layout.spec.ts:105:9 › visual regression (VISUAL=1) › overview and incident at 1440px match their baselines
+[chromium] › tests\e2e\z-layout.spec.ts:105:9 › visual regression (VISUAL=1) › overview and incident at 1440px match their baselines
+[seed] applied 0001_init.sql
+
+[seed] applied 0002_attribution_views.sql
+
+[seed] applied 0003_channel_classification.sql
+
+[seed] applied 0004_identity.sql
+
+[seed] applied 0005_connectors.sql
+
+[seed] applied 0006_action_center.sql
+
+[seed] applied 0007_decision_lab.sql
+
+[seed] applied 0008_investigations.sql
+
+[seed] applied 0009_organization_and_events.sql
+
+[seed] applied 0010_reporting_contract.sql
+
+[seed] applied 0011_sync_requests.sql
+
+[seed] applied 0012_audit_corrections.sql
+
+[seed] applied 0013_onboarding.sql
+
+[seed] applied 0014_subjects_and_append_only_audit.sql
+
+[seed] applied 0015_cross_brand_crm_identity.sql
+
+[seed] applied 0016_opportunity_overrides.sql
+
+[seed] applied 0017_config_changes.sql
+
+[seed] applied 0018_source_semantics.sql
+
+[seed] applied 0019_source_semantics_backfill.sql
+
+[seed] world: 134337 source record versions, 156 campaigns
+
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2575 ms
+
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 55448 ms
+
+[42/73] [chromium] › tests\e2e\z-layout.spec.ts:105:9 › visual regression (VISUAL=1) › overview and incident at 390px match their baselines
+[43/73] [chromium] › tests\e2e\z-onboarding.spec.ts:20:5 › an analyst maps an unfamiliar call export, an approver publishes it, and every row is accounted for
+[44/73] [chromium] › tests\e2e\z-onboarding.spec.ts:53:5 › a CRM payments export is compared with the ledger to the cent and can never be published
+[45/73] [chromium] › tests\e2e\z-onboarding.spec.ts:67:5 › branch-scoped and read-only roles cannot see onboarding at all
+[46/73] [chromium] › tests\e2e\z-onboarding.spec.ts:77:5 › a file that fits no dataset is not guessed at
+[chromium] › tests\e2e\z-onboarding.spec.ts:77:5 › a file that fits no dataset is not guessed at
+[seed] applied 0001_init.sql
+
+[seed] applied 0002_attribution_views.sql
+
+[seed] applied 0003_channel_classification.sql
+
+[seed] applied 0004_identity.sql
+
+[seed] applied 0005_connectors.sql
+
+[seed] applied 0006_action_center.sql
+
+[seed] applied 0007_decision_lab.sql
+
+[seed] applied 0008_investigations.sql
+
+[seed] applied 0009_organization_and_events.sql
+
+[seed] applied 0010_reporting_contract.sql
+
+[seed] applied 0011_sync_requests.sql
+
+[seed] applied 0012_audit_corrections.sql
+
+[seed] applied 0013_onboarding.sql
+
+[seed] applied 0014_subjects_and_append_only_audit.sql
+
+[seed] applied 0015_cross_brand_crm_identity.sql
+
+[seed] applied 0016_opportunity_overrides.sql
+
+[seed] applied 0017_config_changes.sql
+
+[seed] applied 0018_source_semantics.sql
+
+[seed] applied 0019_source_semantics_backfill.sql
+
+[seed] world: 134337 source record versions, 156 campaigns
+
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2599 ms
+
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 55949 ms
+
+[47/73] [chromium] › tests\e2e\z-opportunities.spec.ts:15:5 › Decision Lab links to revenue opportunities; both journeys are labelled fact by fact
+[48/73] [chromium] › tests\e2e\z-opportunities.spec.ts:35:5 › an approver is offered an override only where the block is a risk, not a data fault
+[49/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:71:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 1440px
+[50/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:71:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 390px
+[51/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:95:9 › quality gate · layout shift › every page's first load shifts less than 0.1 (CLS) at 1440px
+[52/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:95:9 › quality gate · layout shift › every page's first load shifts less than 0.1 (CLS) at 390px
+[53/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:134:7 › quality gate · hydration › every page hydrates without an error as a non-guest role, and its HTML names that role
+[54/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:180:9 › quality gate · hostile inputs › no hostile query value or path id breaks a page or API · marketing
+[55/73] [chromium] › tests\e2e\z-quality-gates.spec.ts:180:9 › quality gate · hostile inputs › no hostile query value or path id breaks a page or API · partner
+[56/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:12:7 › Incidents › an incident type filters the queue, shows a removable chip, and removing it restores the queue
+[57/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:30:7 › Incidents › the workflow strip links each state to its cases and marks the current one
+[58/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:40:7 › Incidents › a branch partner sees only their branch, and a filter cannot widen it
+[59/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:52:7 › Integrations › the three views live in the URL and each shows its own sections
+[60/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:70:7 › Integrations › an unknown view falls back to the connector view, and a branch role is refused
+[61/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:81:7 › Audit & Health › the health strip comes first and links to the section that explains each number
+[62/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:97:7 › Audit & Health › an audit row opens to its full detail, formatted
+[63/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:108:7 › Audit & Health › a filter shows as a chip that removes it
+[64/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:119:7 › Customers, Decision Lab, Definitions › the identity review queue comes before the customer directory
+[65/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:130:7 › Customers, Decision Lab, Definitions › Decision Lab sections are numbered by the three questions and readiness comes first
+[66/73] [chromium] › tests\e2e\z-redesign-navigation.spec.ts:138:7 › Customers, Decision Lab, Definitions › a KPI's definition links to its dictionary entry
+[67/73] [chromium] › tests\e2e\z-trace.spec.ts:9:5 › a branch's paid CAC opens its trace: reproduced, with campaigns, customers and limits
+[68/73] [chromium] › tests\e2e\z-trace.spec.ts:28:5 › a branch outside the viewer's scope is refused
+[69/73] [chromium] › tests\e2e\zy-evidence-journey.spec.ts:20:5 › an unexpected CAC is traced, investigated, corrected through ChangeGuard and verified, and no improvement is claimed
+[70/73] [chromium] › tests\e2e\zz-b09-four-minute-path.spec.ts:46:5 › the eight steps add up to four minutes, matching the golden fixture
+[chromium] › tests\e2e\zz-b09-four-minute-path.spec.ts:46:5 › the eight steps add up to four minutes, matching the golden fixture
+[seed] applied 0001_init.sql
+
+[seed] applied 0002_attribution_views.sql
+
+[seed] applied 0003_channel_classification.sql
+
+[seed] applied 0004_identity.sql
+
+[seed] applied 0005_connectors.sql
+
+[seed] applied 0006_action_center.sql
+
+[seed] applied 0007_decision_lab.sql
+
+[seed] applied 0008_investigations.sql
+
+[seed] applied 0009_organization_and_events.sql
+
+[seed] applied 0010_reporting_contract.sql
+
+[seed] applied 0011_sync_requests.sql
+
+[seed] applied 0012_audit_corrections.sql
+
+[seed] applied 0013_onboarding.sql
+
+[seed] applied 0014_subjects_and_append_only_audit.sql
+
+[seed] applied 0015_cross_brand_crm_identity.sql
+
+[seed] applied 0016_opportunity_overrides.sql
+
+[seed] applied 0017_config_changes.sql
+
+[seed] applied 0018_source_semantics.sql
+
+[seed] applied 0019_source_semantics_backfill.sql
+
+[seed] world: 134337 source record versions, 156 campaigns
+
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2903 ms
+
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 63284 ms
+
+[71/73] [chromium] › tests\e2e\zz-b09-four-minute-path.spec.ts:52:5 › B09 golden path: overview → incident → evidence → dry run → approval → verified correction → readiness → audit
+[72/73] [chromium] › tests\e2e\zzz-changeguard.spec.ts:21:5 › wrong branch blocked → corrected → approved by a different person → released → verified
+[73/73] [chromium] › tests\e2e\zzz-changeguard.spec.ts:69:5 › a read-only role sees changes but no actions
+  Slow test file: [chromium] › tests\e2e\z-quality-gates.spec.ts (7.5m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 skipped
+  72 passed (17.8m)
+=== END e2e rc=0 seconds=1070
+=== STEP heldout: npx tsx scripts/eval-changeguard.ts docs/agent-work/changeguard-heldout/scenarios.v1.json /c/Temp/heldout-final.json
+FAIL HO-01   valid_mapping                      1.9s [medium] status_mismatch: expected monitoring, got verified
+FAIL HO-02   valid_mapping                      1.7s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-03   valid_mapping                      1.6s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-04   valid_mapping                      1.3s 
+PASS HO-05   unsafe_mapping                     0.9s 
+PASS HO-06   unsafe_mapping                     0.9s 
+PASS HO-07   unsafe_mapping                     1.2s 
+PASS HO-08   unsafe_mapping                     1.2s 
+PASS HO-09   sparse_or_contradictory_evidence   1.2s 
+PASS HO-10   sparse_or_contradictory_evidence   1.2s 
+PASS HO-11   sparse_or_contradictory_evidence   1.2s 
+PASS HO-12   sparse_or_contradictory_evidence   1.6s 
+PASS HO-13   cross_brand_or_branch_conflict     1.3s 
+FAIL HO-14   cross_brand_or_branch_conflict     1.0s [high] false_block: expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES, CROSS_BRAND) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] status_mismatch: ch1: expected ready_for_review, final preflight_failed
+PASS HO-15   cross_brand_or_branch_conflict     1.0s 
+PASS HO-16   cross_brand_or_branch_conflict     0.9s 
+PASS HO-17   historical_mapping_effect          1.0s 
+FAIL HO-18   historical_mapping_effect          1.0s [high] false_block: expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] false_refusal: approve as approver was refused: ActionError: Only a change ready for review can be decided (this one is preflight_failed) | [medium] status_mismatch: ch1: expected approved, final preflight_failed
+FAIL HO-19   historical_mapping_effect          1.2s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-20   historical_mapping_effect          1.1s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-21   benign_schema_drift                0.9s [medium] false_refusal: approve as approver was refused: ActionError: A source contract check stops at review: activating a mapper version is a code deploy | [medium] status_mismatch: sc1: expected approved, final ready_for_review
+PASS HO-22   benign_schema_drift                1.1s 
+PASS HO-23   benign_schema_drift                1.1s 
+PASS HO-24   benign_schema_drift                1.0s 
+FAIL HO-25   benign_schema_drift                0.9s [high] false_block: expected NEEDS_REVIEW, system BLOCK (INCOMPATIBLE_SHAPE, DEPENDENT_METRICS, RECORDS_WOULD_NOT_ARRIVE) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] status_mismatch: sc1: expected ready_for_review, final preflight_failed
+PASS HO-26   benign_schema_drift                1.2s 
+FAIL HO-27   refunds_and_source_corrections     1.9s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-28   refunds_and_source_corrections     1.5s [medium] false_block: expected ALLOW, system BLOCK (INCOMPATIBLE_SHAPE, MISSING_IDENTIFIER, DEPENDENT_METRICS, RECORDS_WOULD_NOT_ARRIVE) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] status_mismatch: sc1: expected ready_for_review, final preflight_failed
+PASS HO-29   refunds_and_source_corrections     1.4s 
+FAIL HO-30   refunds_and_source_corrections     2.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-31   refunds_and_source_corrections     1.8s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-32   evidence_changed_after_preflight   1.9s 
+INVALID HO-33   step 3 remap_outside was refused by the system: ActionError: Campaign not found or already mapped
+FAIL HO-34   evidence_changed_after_preflight   2.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-35   evidence_changed_after_preflight   2.2s 
+PASS HO-36   concurrency                        1.3s 
+FAIL HO-37   concurrency                        1.3s [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-38   concurrency                        1.4s 
+PASS HO-39   concurrency                        1.1s 
+PASS HO-40   unauthorized_action                1.2s 
+PASS HO-41   unauthorized_action                1.1s 
+FAIL HO-42   unauthorized_action                1.6s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-43   unauthorized_action                1.4s 
+INVALID HO-44   step 6 remap_outside was refused by the system: ActionError: Campaign not found or already mapped
+FAIL HO-45   monitoring_and_recovery            1.7s [medium] status_mismatch: expected monitoring, got verified
+FAIL HO-46   monitoring_and_recovery            1.7s [medium] status_mismatch: expected monitoring, got verified
+PASS HO-47   monitoring_and_recovery            1.2s 
+PASS HO-48   human_review_only                  1.1s 
+PASS HO-49   human_review_only                  1.4s 
+PASS HO-50   human_review_only                  1.3s 
+wrote C:/Temp/heldout-final.json
+=== END heldout rc=0 seconds=73
+=== ALL DONE

@@ -1,7 +1,7 @@
 import type { PoolClient } from "pg";
 import { ActionError, mapCampaignToBranchInTransaction } from "@/lib/actions";
-import type { RawRecord, SourceName } from "@/lib/adapters/contract";
-import { ACTIVE_VERSION, mapperFor, mapperVersions, referenceContext } from "@/lib/adapters/registry";
+import { isExclusion, type RawRecord, type SourceName } from "@/lib/adapters/contract";
+import { ACTIVE_VERSION, compareVersions, mapperFor, mapperVersions, referenceContext } from "@/lib/adapters/registry";
 import type { Queryable } from "@/lib/db";
 import { branchRows, paidCac } from "@/lib/metrics/scorecard";
 import { canonicalJson, sha256 } from "@/lib/primitives";
@@ -412,17 +412,6 @@ export async function preflightCampaignMapping(
   return { result, baseHash: baseHashOf(base, target.id), base };
 }
 
-/** Numeric version order ("1.10" after "1.9"). */
-function compareVersions(a: string, b: string): number {
-  const pa = a.split(".").map(Number);
-  const pb = b.split(".").map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
-    if (d !== 0) return d;
-  }
-  return 0;
-}
-
 /** The refusal code a mapper gives a record, or null if it projects it. */
 function misreadBy(mapper: ReturnType<typeof mapperFor>, record: RawRecord): string | null {
   const identity = mapper.identify(record, referenceContext);
@@ -461,6 +450,7 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
     if (seen.has(identity.externalId)) return { index, outcome: "duplicate", detail: "same record version as an earlier sample", addedFields: added, removedFields: removed };
     seen.add(identity.externalId);
     const mapped = mapper.map(record, { ...referenceContext, receivedAt: new Date(0) });
+    if (isExclusion(mapped)) return { index, outcome: `excluded:${mapped.code}`, detail: mapped.detail, addedFields: added, removedFields: removed };
     if (!mapped.ok) return { index, outcome: `refused:${mapped.code}`, detail: mapped.detail, addedFields: added, removedFields: removed };
     // A staged version reads documented vendor fields the deployed one ignores. If it refuses a
     // record the deployed mapper projects, the deployed mapper would count it with no signal
@@ -471,6 +461,7 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
   const misreads = samples.filter((s): s is typeof s & { stagedOutcome: string } => "stagedOutcome" in s && typeof s.stagedOutcome === "string");
   const misreadCodes = [...new Set(misreads.map((s) => s.stagedOutcome))];
   const refused = samples.filter((s) => s.outcome.startsWith("refused:"));
+  const excluded = samples.filter((s) => s.outcome.startsWith("excluded:"));
   const duplicates = samples.filter((s) => s.outcome === "duplicate");
   const codes = [...new Set(refused.map((s) => s.outcome.slice(8)))];
   const added = [...new Set(samples.flatMap((s) => s.addedFields))];
@@ -506,7 +497,14 @@ export async function preflightSourceContract(db: Queryable, args: { payload: So
     { id: "permissions", status: args.viewer.can.propose ? "pass" : "fail", code: args.viewer.can.propose ? undefined : "NOT_PERMITTED", detail: args.viewer.can.propose ? "The author may propose this check." : `${args.viewer.label} cannot propose changes.` },
     refused.length
       ? { id: "downstream_completeness", status: "fail", code: "RECORDS_WOULD_NOT_ARRIVE", detail: `${refused.length} record(s) of this shape would not reach the ledger's projection; ${deps.join(", ")} would be understated until a fix and replay.` }
-      : { id: "downstream_completeness", status: "pass", detail: "Every sample would reach its projection." },
+      : excluded.length
+        ? {
+            id: "downstream_completeness",
+            status: "warn",
+            code: "RECORDS_EXCLUDED",
+            detail: `${excluded.length} of ${samples.length} sample(s) are marked by the source as not counted (${[...new Set(excluded.map((s) => s.outcome.slice(9)))].join(", ")}): they would be kept as evidence and left out of ${deps.join(", ") || "the metrics"}. A person should confirm that is what this shape means.`,
+          }
+        : { id: "downstream_completeness", status: "pass", detail: "Every sample would reach its projection." },
     { id: "quarantine_behaviour", status: "pass", detail: refused.length ? `Refused records are quarantined with their code (${codes.join(", ")}) and stay replayable; nothing is dropped or guessed.` : "Nothing would be quarantined." },
     { id: "recovery", status: "pass", detail: "Preflight only. Activating a mapper version is a code deploy here; held records are recovered by a replay through the Action Center." },
   ];

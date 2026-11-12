@@ -1,6 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import type { SourceName } from "@/lib/adapters/contract";
-import { mapperVersions } from "@/lib/adapters/registry";
+import { compareVersions, mapperVersions } from "@/lib/adapters/registry";
 import { ActionError } from "@/lib/actions";
 import type { ExceptionRow } from "@/lib/queries";
 import { coverageGapRecordIds, quarantineGroupIds, type ReplayRequest } from "./replay";
@@ -35,10 +35,19 @@ export async function planReplay(db: Pool | PoolClient, exception: ExceptionRow,
     if (successors.length === 0) {
       throw new ActionError("No successor campaign in the evidence: there is nothing to re-map. Investigate the source.", 409);
     }
-    // Every shipped version older than the target is a candidate; today that is ads@1.0.
-    const older = mapperVersions("ads").filter((v) => v < mapperVersion);
+    // Re-map from the version the successor's spend is actually STORED under, not "the version
+    // just before the target": with ads@1.2 the misfiled B09 spend is still ads@1.0, and the
+    // old rule looked for ads@1.1 records and found none. The oldest stored older version is the
+    // one that misread the most; records already under a newer version were typed correctly.
+    const older = mapperVersions("ads").filter((v) => compareVersions(v, mapperVersion) < 0);
     if (older.length === 0) throw new ActionError(`ads@${mapperVersion} has no older version to re-map from`, 400);
-    const fromVersion = older[older.length - 1];
+    const stored = await db.query<{ v: string }>(
+      `select distinct substring(adapter_version from 5) as v from raw_events
+        where source = 'ads' and status = 'projected' and payload ->> 'campaignId' = any($1::text[])`,
+      [successors.map((s) => s.externalCampaignId)],
+    );
+    const candidates = older.filter((v) => stored.rows.some((r) => r.v === v));
+    const fromVersion = candidates[0] ?? older[older.length - 1];
     const rawEventIds = await coverageGapRecordIds(db, {
       externalCampaignIds: successors.map((s) => s.externalCampaignId),
       fromVersion,

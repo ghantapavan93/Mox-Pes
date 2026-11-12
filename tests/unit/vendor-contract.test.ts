@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { RawRecord, SourceName } from "@/lib/adapters/contract";
+import { isExclusion, type RawRecord, type SourceName } from "@/lib/adapters/contract";
 import { ACTIVE_VERSION, mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { call, crm } from "../helpers";
 
 /**
  * Vendor contract states (docs/agent-work/VENDOR-CONTRACTS.md). Each case is a state the
  * vendor's own documentation says can occur, fed through the mapper exactly as intake would.
- * The expectation pins today's behaviour, sorted into three outcomes:
+ * The expectation pins today's behaviour, sorted into four outcomes:
  *
  *   projected   the state is understood and stored correctly
+ *   excluded    the source says it is not counted (an outbound or spam call): kept as
+ *               evidence with a code, never a lead, not an error
  *   refused     quarantined with a code: visible, blocks decisions, never silently wrong
  *   SILENT      stored as if it were something else, with no signal: a known defect, pinned
- *               here so a fix (or a regression) changes this test
+ *               here so a fix (or a regression) changes this test. calls@1.1 and ads@1.1 are
+ *               SILENT on the CallRail and currency states below; they are no longer active
+ *               (migration 0018), and the old versions stay pinned so history stays explained.
  *
  * These run against synthetic payloads in the documented shape. None of this is live-verified.
  */
@@ -24,7 +28,7 @@ function outcome(source: SourceName, record: RawRecord, version = ACTIVE_VERSION
   const identity = mapper.identify(record, ctx);
   if (!("entityId" in identity)) return `refused:${identity.code}`;
   const result = mapper.map(record, ctx);
-  return result.ok ? `projected:${result.projection.table}` : `refused:${result.code}`;
+  return result.ok ? `projected:${result.projection.table}` : isExclusion(result) ? `excluded:${result.code}` : `refused:${result.code}`;
 }
 
 const at = new Date("2026-10-14T14:12:33Z");
@@ -43,21 +47,21 @@ describe("CallRail v3 call states", () => {
     expect(outcome("calls", native)).toBe("refused:SCHEMA_VIOLATION");
   });
 
-  it("SILENT on calls@1.1: an outbound call is counted as an inbound lead; calls@1.2 refuses it", () => {
-    expect(outcome("calls", callRail({ direction: "outbound" }))).toBe("projected:leads");
-    expect(outcome("calls", callRail({ direction: "outbound" }), "1.2")).toBe("refused:NOT_INBOUND");
+  it("SILENT on calls@1.1: an outbound call is counted as an inbound lead; the active calls@1.2 excludes it", () => {
+    expect(outcome("calls", callRail({ direction: "outbound" }), "1.1")).toBe("projected:leads");
+    expect(outcome("calls", callRail({ direction: "outbound" }))).toBe("excluded:NOT_INBOUND");
   });
 
-  it("SILENT on calls@1.1: a call marked spam is a lead; calls@1.2 refuses it", () => {
-    expect(outcome("calls", callRail({ spam: true }))).toBe("projected:leads");
-    expect(outcome("calls", callRail({ spam: true }), "1.2")).toBe("refused:SPAM_CALL");
+  it("SILENT on calls@1.1: a call marked spam is a lead; the active calls@1.2 excludes it", () => {
+    expect(outcome("calls", callRail({ spam: true }), "1.1")).toBe("projected:leads");
+    expect(outcome("calls", callRail({ spam: true }))).toBe("excluded:SPAM_CALL");
   });
 
-  it("SILENT on calls@1.1: lead_status not_a_lead is a lead; calls@1.2 refuses it, and keeps good leads", () => {
-    expect(outcome("calls", callRail({ lead_status: "not_a_lead" }))).toBe("projected:leads");
-    expect(outcome("calls", callRail({ lead_status: "not_a_lead" }), "1.2")).toBe("refused:NOT_A_LEAD");
-    expect(outcome("calls", callRail({ lead_status: "good_lead", direction: "inbound", spam: false }), "1.2")).toBe("projected:leads");
-    expect(outcome("calls", callRail({ lead_status: null }), "1.2")).toBe("projected:leads");
+  it("SILENT on calls@1.1: lead_status not_a_lead is a lead; the active calls@1.2 excludes it, and keeps good leads", () => {
+    expect(outcome("calls", callRail({ lead_status: "not_a_lead" }), "1.1")).toBe("projected:leads");
+    expect(outcome("calls", callRail({ lead_status: "not_a_lead" }))).toBe("excluded:NOT_A_LEAD");
+    expect(outcome("calls", callRail({ lead_status: "good_lead", direction: "inbound", spam: false }))).toBe("projected:leads");
+    expect(outcome("calls", callRail({ lead_status: null }))).toBe("projected:leads");
   });
 
   it("Call Modified resends the whole call under the same id: a new version, ordered by receipt", () => {
@@ -73,8 +77,14 @@ describe("CallRail v3 call states", () => {
     expect(modified.versionClock).toBe("received");
   });
 
-  it("calls@1.2 is staged, not active", () => {
-    expect(ACTIVE_VERSION.calls).toBe("1.1");
+  it("calls@1.2 is active and maps every calls@1.1 shape the same way (both caller shapes)", () => {
+    expect(ACTIVE_VERSION.calls).toBe("1.2");
+    const plain = callRail({});
+    const migrated = { entity: "call", payload: { ...(plain.payload as Record<string, unknown>), customer_phone_number: undefined, caller: { number: "+12125550123" } } };
+    for (const record of [plain, migrated]) {
+      const ctx = { ...referenceContext, receivedAt: NOW };
+      expect(mapperFor("calls", "1.2").map(record, ctx)).toEqual(mapperFor("calls", "1.1").map(record, ctx));
+    }
   });
 });
 
@@ -91,14 +101,14 @@ describe("Google Ads API v26 spend states", () => {
   });
 
   it("fractional conversions (metrics.conversions is a double) are refused, never rounded", () => {
-    expect(outcome("ads", day({ conversions: 2.5 }))).toBe("refused:SCHEMA_VIOLATION");
-    expect(outcome("ads", day({ conversions: 2.5 }), "1.2")).toBe("refused:FRACTIONAL_CONVERSIONS");
+    expect(outcome("ads", day({ conversions: 2.5 }), "1.1")).toBe("refused:SCHEMA_VIOLATION");
+    expect(outcome("ads", day({ conversions: 2.5 }))).toBe("refused:FRACTIONAL_CONVERSIONS");
     expect(outcome("ads", day({ conversions: 2 }), "1.2")).toBe("projected:ad_spend_daily");
   });
 
-  it("SILENT on ads@1.1: a non-USD account is summed as dollars; ads@1.2 refuses it", () => {
-    expect(outcome("ads", day({ currencyCode: "CAD" }))).toBe("projected:ad_spend_daily");
-    expect(outcome("ads", day({ currencyCode: "CAD" }), "1.2")).toBe("refused:CURRENCY_UNSUPPORTED");
+  it("SILENT on ads@1.1: a non-USD account is summed as dollars; the active ads@1.2 refuses it", () => {
+    expect(outcome("ads", day({ currencyCode: "CAD" }), "1.1")).toBe("projected:ad_spend_daily");
+    expect(outcome("ads", day({ currencyCode: "CAD" }))).toBe("refused:CURRENCY_UNSUPPORTED");
     expect(outcome("ads", day({ currencyCode: "USD" }), "1.2")).toBe("projected:ad_spend_daily");
   });
 

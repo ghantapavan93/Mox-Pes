@@ -1,7 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { ActionError } from "@/lib/actions";
 import { withRollback, withTransaction } from "@/lib/db";
-import type { SourceName } from "@/lib/adapters/contract";
+import { isExclusion, type SourceName } from "@/lib/adapters/contract";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { recordEvent } from "@/lib/events/outbox";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
@@ -159,6 +159,13 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
       if (result.ok) {
         items.push({ projection: result.projection, rawEventId: Number(row.id) });
         projectedIds.push(Number(row.id));
+      } else if (isExclusion(result) && mode === "quarantined") {
+        // The source says this record is not counted (e.g. an outbound call): it is evidence,
+        // not an error, so it leaves the quarantine as excluded instead of failing again.
+        await tx.query(
+          "update raw_events set status = 'excluded', exclusion_code = $2, exclusion_detail = $3, adapter_version = $4 where id = $1",
+          [Number(row.id), result.code, result.detail, `${req.source}@${req.mapperVersion}`],
+        );
       } else {
         errors.push({ rawEventId: Number(row.id), code: result.code, detail: result.detail });
       }

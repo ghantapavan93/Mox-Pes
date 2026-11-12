@@ -5,6 +5,7 @@ import {
   fail,
   type LeadRow,
   type MapContext,
+  type MapExclusion,
   type MapFailure,
   type MapResult,
   type RawRecord,
@@ -62,12 +63,13 @@ const callV11 = z.union([
 ]);
 
 /**
- * v1.2 (staged, not active): reads the CallRail v3 qualification fields that v1.1 ignores.
- * CallRail sends outbound calls (Outbound Post-Call webhook), spam marking and
+ * v1.2 (active since migration 0018): reads the CallRail v3 qualification fields that v1.1
+ * ignores. CallRail sends outbound calls (Outbound Post-Call webhook), spam marking and
  * lead_status = "not_a_lead" in the same call object (apidocs.callrail.com, 2026-11-11). v1.1
- * strips unknown keys, so each of those would be counted as a new inbound lead without a
- * signal. v1.2 refuses them with their own code instead; it never guesses an exclusion, because
- * the projection has no "excluded lead" state yet (docs/agent-work/VENDOR-CONTRACTS.md, C-3).
+ * strips unknown keys, so each of those was counted as a new inbound lead without a signal.
+ * v1.2 EXCLUDES them with their own code: kept as evidence, never a lead, not an error; a later
+ * revision that marks an existing lead this way takes it out of every lead metric
+ * (docs/agent-work/VENDOR-CONTRACTS.md, C-3). Calls without these fields map as in v1.1.
  */
 const callQualification = {
   direction: z.enum(["inbound", "outbound"]).optional(),
@@ -79,10 +81,17 @@ const callV12 = z.union([
   z.object({ ...callBase, ...callQualification, caller: z.object({ number: z.string().min(1) }) }),
 ]);
 
-function refuseUnqualified(c: z.infer<typeof callV12>): MapFailure | null {
-  if (c.direction === "outbound") return fail("NOT_INBOUND", `call ${c.id}: an outbound call is not a lead`);
-  if (c.spam === true) return fail("SPAM_CALL", `call ${c.id}: marked as spam in the call-tracking platform`);
-  if (c.lead_status === "not_a_lead") return fail("NOT_A_LEAD", `call ${c.id}: marked "not a lead" in the call-tracking platform`);
+function excludeUnqualified(c: z.infer<typeof callV12>, receivedAt: Date): MapExclusion | null {
+  const exclude = (code: string, detail: string): MapExclusion => ({
+    ok: false,
+    excluded: true,
+    code,
+    detail,
+    supersedes: { table: "leads", source: "calls", sourceLeadId: c.id, receivedAt },
+  });
+  if (c.direction === "outbound") return exclude("NOT_INBOUND", `call ${c.id}: an outbound call is not a lead`);
+  if (c.spam === true) return exclude("SPAM_CALL", `call ${c.id}: marked as spam in the call-tracking platform`);
+  if (c.lead_status === "not_a_lead") return exclude("NOT_A_LEAD", `call ${c.id}: marked "not a lead" in the call-tracking platform`);
   return null;
 }
 
@@ -125,8 +134,8 @@ export class CallTrackingMapper implements SourceMapper {
     if (!parsed.success) return schemaFailure("call", parsed.error);
     const c = parsed.data;
     if (this.version === "1.2") {
-      const refused = refuseUnqualified(c as z.infer<typeof callV12>);
-      if (refused) return refused;
+      const excluded = excludeUnqualified(c as z.infer<typeof callV12>, ctx.receivedAt ?? new Date(c.start_time));
+      if (excluded) return excluded;
     }
     const bad = requireBranch(ctx, c.branch_tag, "call.branch_tag");
     if (bad) return bad;
@@ -308,13 +317,14 @@ const spendDay = z.object({
  * v1.1 reads the campaign type and the local-services flag. Same records, corrected meaning.
  */
 /**
- * v1.2 (staged, not active) adds two Google Ads API v26 facts to v1.1's typing:
+ * v1.2 (active since migration 0018) adds two Google Ads API v26 facts to v1.1's typing:
  *   * `metrics.conversions` is a double (fractional under data-driven attribution). The
  *     column is an integer, so a fractional value is refused with its own code instead of a
  *     generic schema error; storing it needs a numeric column and a `_v2` reporting view.
  *   * spend is in the account's `customer.currency_code`. v1.1 has no currency, so a non-USD
- *     account would be summed as dollars without a signal. v1.2 refuses any currency but USD;
- *     a record without `currencyCode` is still ASSUMED to be USD (stated in VENDOR-CONTRACTS.md).
+ *     account would be summed as dollars without a signal. v1.2 refuses any currency but USD
+ *     (never converted). A record without `currencyCode` is ASSUMED to be USD, and the row
+ *     says so (`currency_basis = 'assumed_usd'`), so a trace can show it (VENDOR-CONTRACTS.md).
  */
 const spendDayV12 = spendDay.extend({
   conversions: z.number().nonnegative().max(2_147_483_647),
@@ -348,8 +358,8 @@ export class AdSpendMapper implements SourceMapper {
     const parsed = (this.version === "1.2" ? spendDayV12 : spendDay).safeParse(record.payload);
     if (!parsed.success) return schemaFailure("spend_day", parsed.error);
     const s = parsed.data;
+    const currency = this.version === "1.2" ? (s as z.infer<typeof spendDayV12>).currencyCode : undefined;
     if (this.version === "1.2") {
-      const currency = (s as z.infer<typeof spendDayV12>).currencyCode;
       if (currency !== undefined && currency !== "USD") {
         return fail("CURRENCY_UNSUPPORTED", `spend_day ${s.campaignId}: account currency ${currency}; only USD is summed`);
       }
@@ -381,6 +391,7 @@ export class AdSpendMapper implements SourceMapper {
           channelCode,
           spendDate: s.date,
           costCents: microsToCents(s.costMicros),
+          currencyBasis: currency === "USD" ? "reported_usd" : "assumed_usd",
           clicks: s.clicks,
           platformConversions: s.conversions,
           sourceUpdatedAt: new Date(s.fetchedAt),

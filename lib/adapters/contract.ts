@@ -49,7 +49,25 @@ export interface RecordIdentity {
 
 export type MapFailure = { ok: false; code: string; detail: string };
 export type MapSuccess = { ok: true; projection: Projection };
-export type MapResult = MapSuccess | MapFailure;
+/**
+ * The source itself says this record is not what the projection counts: an outbound call, a
+ * call marked spam or "not a lead". Not an error: it is kept as evidence (raw event status
+ * 'excluded', with its code), never projected, opens no exception and is not replayed. If an
+ * earlier version of the same entity was projected, that row leaves every metric
+ * (`supersedes`); a later qualifying version restores it.
+ */
+export type MapExclusion = {
+  ok: false;
+  excluded: true;
+  code: string;
+  detail: string;
+  supersedes: { table: "leads"; source: SourceName; sourceLeadId: string; receivedAt: Date };
+};
+export type MapResult = MapSuccess | MapFailure | MapExclusion;
+
+export function isExclusion(result: MapResult | MapFailure): result is MapExclusion {
+  return result.ok === false && "excluded" in result && result.excluded === true;
+}
 
 export interface MapContext {
   timezoneForOffice(officeId: number): string | undefined;
@@ -154,6 +172,12 @@ export interface SpendDayRow {
   channelCode: ChannelCode;
   spendDate: string; // YYYY-MM-DD in the ad account's zone
   costCents: number;
+  /**
+   * reported_usd: the platform stated USD. assumed_usd: the feed stated no currency and the
+   * amount is taken as USD (shown wherever the spend is traced). Any other currency is refused
+   * by the mapper; nothing is converted.
+   */
+  currencyBasis: "reported_usd" | "assumed_usd";
   clicks: number;
   platformConversions: number;
   sourceUpdatedAt: Date;

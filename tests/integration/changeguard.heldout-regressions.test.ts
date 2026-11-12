@@ -102,12 +102,14 @@ describe("HO-33 / HO-44 · only ChangeGuard can move a mapped campaign's spend",
   });
 });
 
-describe("HO-24 / HO-25 · a shape the deployed mapper accepts but misreads is not benign", () => {
+describe("HO-24 / HO-25 · a shape whose meaning changes what is counted is not benign", () => {
   const baseCall = { branch_tag: "B03", start_time: "2026-10-20T15:15:00.000Z", tracking_phone_number: "+14805550120", source: "Google Ads", gclid: null, campaign: "21900402", agent_note: null, customer_phone_number: "+14805550171" };
   const sourceCheck = (source: "calls" | "ads", entity: string, samples: unknown[]) =>
     createChange(pool, engineer, { kind: "source_contract", payload: { source, entity, samples }, reason: "Held-out regression fixture" }, NOW);
 
-  it("outbound, spam and not-a-lead calls are flagged with the staged mapper's codes", async () => {
+  // Since migration 0018 the DEPLOYED mappers read these states (calls@1.2, ads@1.2), so the
+  // preview reports what live intake does with them, not a staged/deployed disagreement.
+  it("outbound, spam and not-a-lead calls are reported as excluded evidence a person must confirm", async () => {
     const change = await sourceCheck("calls", "call", [
       { ...baseCall, id: "HR-1", direction: "inbound", spam: false, lead_status: "good_lead" },
       { ...baseCall, id: "HR-2", direction: "outbound", spam: false, lead_status: null },
@@ -115,16 +117,18 @@ describe("HO-24 / HO-25 · a shape the deployed mapper accepts but misreads is n
       { ...baseCall, id: "HR-4", direction: "inbound", spam: false, lead_status: "not_a_lead" },
     ]);
     expect(change.preflight!.verdict).toBe("warn");
-    const schema = check(change, "schema_compatibility");
-    expect(schema).toMatchObject({ status: "warn", code: "DEPLOYED_MAPPER_MISREADS" });
-    expect(schema.detail).toContain("3 of 4");
-    for (const code of ["NOT_INBOUND", "SPAM_CALL", "NOT_A_LEAD"]) expect(schema.detail).toContain(code);
+    const downstream = check(change, "downstream_completeness");
+    expect(downstream).toMatchObject({ status: "warn", code: "RECORDS_EXCLUDED" });
+    expect(downstream.detail).toContain("3 of 4");
+    for (const code of ["NOT_INBOUND", "SPAM_CALL", "NOT_A_LEAD"]) expect(downstream.detail).toContain(code);
+    expect(change.preflight!.samples!.map((s) => s.outcome)).toEqual(["projected:leads", "excluded:NOT_INBOUND", "excluded:SPAM_CALL", "excluded:NOT_A_LEAD"]);
   });
 
-  it("spend in another currency is flagged", async () => {
+  it("spend in another currency is blocked: the deployed mapper refuses it and nothing is converted", async () => {
     const day19 = { platform: "google_ads", accountId: "7734021198", campaignId: "22011870", campaignName: "Search | Termite", date: "2026-10-19", costMicros: "71500000", clicks: 31, conversions: 2, fetchedAt: "2026-10-20T06:00:00Z", campaignType: "SEARCH", localServicesEnabled: false };
     const change = await sourceCheck("ads", "spend_day", [{ ...day19, currencyCode: "CAD" }]);
-    expect(check(change, "schema_compatibility")).toMatchObject({ status: "warn", code: "DEPLOYED_MAPPER_MISREADS" });
+    expect(change.status).toBe("preflight_failed");
+    expect(check(change, "schema_compatibility")).toMatchObject({ status: "fail", code: "INCOMPATIBLE_SHAPE" });
     expect(check(change, "schema_compatibility").detail).toContain("CURRENCY_UNSUPPORTED");
   });
 

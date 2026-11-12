@@ -4,7 +4,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Pool } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
-import { mapperFor } from "@/lib/adapters/registry";
+import { ACTIVE_VERSION, mapperFor } from "@/lib/adapters/registry";
 import { InvestigationResultSchema } from "@/lib/ai/contract";
 import { runInvestigation } from "@/lib/ai/investigate";
 import type { ModelClient } from "@/lib/ai/model";
@@ -260,7 +260,8 @@ describe("deterministic B09 investigation", () => {
 
     // Planner: one AI proposal, pending dry run + approval.
     expect(r.proposals).toHaveLength(1);
-    expect(r.proposals[0]).toMatchObject({ kind: "remap_channel", exceptionId: gapId, status: "created", params: { mapperVersion: "1.1" } });
+    // The deployed version: since migration 0018 that is ads@1.2, which types campaigns as 1.1 does.
+    expect(r.proposals[0]).toMatchObject({ kind: "remap_channel", exceptionId: gapId, status: "created", params: { mapperVersion: ACTIVE_VERSION.ads } });
     expect(r.approvalRequired).toBe(true);
     const proposal = await one(pool, "select * from action_proposals where id = $1", [r.proposals[0].proposalId]);
     expect(proposal).toMatchObject({ source: "ai", status: "draft", kind: "remap_channel", proposed_role: "marketing" });
@@ -290,7 +291,7 @@ describe("deterministic B09 investigation", () => {
     const out = await runInvestigation(pool, { question: "Why is B20's paid CAC so high?", branchId: null, viewer: engineer, now: NOW });
     expect(out.result.intent).toBe("high_cac");
     expect(citedIds(out.result)).toContain(`exception:${qId}`);
-    expect(out.result.proposals[0]).toMatchObject({ kind: "replay_quarantine", status: "created", params: { mapperVersion: "1.1" } });
+    expect(out.result.proposals[0]).toMatchObject({ kind: "replay_quarantine", status: "created", params: { mapperVersion: ACTIVE_VERSION.calls } });
     expect(out.result.grounding.claimsDropped).toBe(0);
   });
 

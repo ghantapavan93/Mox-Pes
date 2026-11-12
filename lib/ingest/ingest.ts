@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { withTransaction, type Queryable } from "@/lib/db";
 import { payloadHash } from "@/lib/primitives";
-import type { MapContext, MapFailure, MapResult, RawRecord, RecordIdentity, SourceClient, SourceMapper, SourceName } from "@/lib/adapters/contract";
+import { isExclusion, type MapContext, type MapExclusion, type MapFailure, type MapResult, type RawRecord, type RecordIdentity, type SourceClient, type SourceMapper, type SourceName } from "@/lib/adapters/contract";
 import { redactValue } from "@/lib/adapters/redact";
 import { isFailure } from "@/lib/adapters/validation";
 import { recordEvent } from "@/lib/events/outbox";
@@ -14,6 +14,8 @@ export interface IngestStats {
   conflicts: number;
   projected: number;
   quarantined: number;
+  /** Records the source itself marks as not counted (e.g. outbound or spam calls); kept as evidence. */
+  excluded?: number;
 }
 
 interface Prepared {
@@ -113,7 +115,7 @@ export async function ingestRecords(
   args: { source: SourceName; records: RawRecord[]; mapper: SourceMapper; ctx: MapContext; runId: number | null; now: Date },
 ): Promise<IngestStats> {
   const { source, records, mapper, runId, now } = args;
-  const stats: IngestStats = { fetched: records.length, inserted: 0, duplicates: 0, conflicts: 0, projected: 0, quarantined: 0 };
+  const stats: IngestStats = { fetched: records.length, inserted: 0, duplicates: 0, conflicts: 0, projected: 0, quarantined: 0, excluded: 0 };
   // Lead writers take the lead-write lock FIRST, before any row lock: shared here (deliveries run
   // side by side), exclusive for a file publication (lib/onboarding/service.ts). One lock in one
   // order cannot deadlock; the table lock it replaced was taken in the opposite order to these
@@ -145,9 +147,11 @@ export async function ingestRecords(
     payload: p.payload,
     payloadHash: p.hash,
     occurredAt: p.identity.occurredAt.toISOString(),
-    status: p.result.ok ? "projected" : "quarantined",
-    errorCode: p.result.ok ? null : p.result.code,
-    errorDetail: p.result.ok ? null : p.result.detail,
+    status: p.result.ok ? "projected" : isExclusion(p.result) ? "excluded" : "quarantined",
+    errorCode: p.result.ok || isExclusion(p.result) ? null : p.result.code,
+    errorDetail: p.result.ok || isExclusion(p.result) ? null : p.result.detail,
+    exclusionCode: isExclusion(p.result) ? p.result.code : null,
+    exclusionDetail: isExclusion(p.result) ? p.result.detail : null,
     deliveryCount: 1 + (repeatsInBatch.get(p.identity.externalId) ?? 0),
     receivedAt: p.receivedAt.toISOString(),
     lastSeenAt: (p.lastSeenAt ?? p.receivedAt).toISOString(),
@@ -165,6 +169,7 @@ export async function ingestRecords(
   // Already-seen versions: duplicate delivery or conflicting content.
   const seen = [...prepared.keys()].filter((id) => !insertedIds.has(id));
   const reobserved: ProjectionItem[] = [];
+  const exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }> = [];
   if (seen.length > 0) {
     const existing = await tx.query<{ id: string; external_id: string; payload_hash: string; status: string }>(
       "select id, external_id, payload_hash, status from raw_events where source = $1 and external_id = any($2::text[])",
@@ -180,6 +185,10 @@ export async function ingestRecords(
           // Upserts skip rows already pointing at this raw event, so an unchanged re-read
           // costs nothing; an A -> B -> A flip restores A.
           reobserved.push({ projection: incoming.result.projection, rawEventId: Number(row.id) });
+        } else if (incoming.identity.versionClock === "received" && isExclusion(incoming.result) && row.status === "excluded") {
+          // An excluded version observed again after a qualifying one (A -> B -> A over B): the
+          // latest observation wins, so the exclusion applies again.
+          exclusions.push({ exclusion: { ...incoming.result, supersedes: { ...incoming.result.supersedes, receivedAt: incoming.lastSeenAt ?? incoming.receivedAt } }, rawEventId: Number(row.id) });
         }
       } else {
         stats.conflicts += 1;
@@ -206,9 +215,16 @@ export async function ingestRecords(
   for (const [externalId, rawEventId] of insertedIds) {
     const p = prepared.get(externalId)!;
     if (p.result.ok) items.push({ projection: p.result.projection, rawEventId });
-    else stats.quarantined += 1;
+    else if (isExclusion(p.result)) {
+      stats.excluded = (stats.excluded ?? 0) + 1;
+      exclusions.push({ exclusion: p.result, rawEventId });
+    } else stats.quarantined += 1;
   }
-  const { failed, changed } = await projectIsolated(tx, [...items, ...reobserved]);
+  const projection = await projectIsolated(tx, [...items, ...reobserved]);
+  const { failed } = projection;
+  // After projection, so an exclusion and a qualifying version in one batch resolve by the
+  // source clock either way round.
+  const changed = projection.changed + (await applyExclusions(tx, exclusions, now));
   for (const f of failed) {
     await tx.query(
       "update raw_events set status = 'quarantined', error_code = 'PROJECTION_FAILED', error_detail = $2, projected_at = null where id = $1",
@@ -228,23 +244,53 @@ export async function ingestRecords(
       type: "intake.records_stored",
       subject: `source:${source}`,
       occurredAt: now,
-      payload: { source, mapperVersion: `${source}@${mapper.version}`, runId, inserted: stats.inserted, projected: stats.projected, quarantined: stats.quarantined, conflicts: stats.conflicts, rowsChanged: changed },
+      payload: { source, mapperVersion: `${source}@${mapper.version}`, runId, inserted: stats.inserted, projected: stats.projected, quarantined: stats.quarantined, excluded: stats.excluded ?? 0, conflicts: stats.conflicts, rowsChanged: changed },
     });
   }
   return stats;
+}
+
+/**
+ * A record the source marks as not counted leaves the projection: if an earlier version
+ * projected the entity (a lead), that row is marked excluded and points at the excluding
+ * version, so v_leads and every metric built on it drop it, and a newer qualifying version
+ * restores it through the ordinary upsert. Guarded by the source clock like every projection:
+ * an exclusion older than the stored version is a no-op. Returns the rows changed.
+ */
+async function applyExclusions(tx: Queryable, exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }>, now: Date): Promise<number> {
+  if (exclusions.length === 0) return 0;
+  const rows = exclusions.map(({ exclusion, rawEventId }) => ({
+    source: exclusion.supersedes.source,
+    sourceLeadId: exclusion.supersedes.sourceLeadId,
+    code: exclusion.code,
+    receivedAt: exclusion.supersedes.receivedAt.toISOString(),
+    rawEventId,
+  }));
+  const result = await tx.query(
+    `update leads t set excluded_code = r."code", excluded_at = $2, raw_event_id = r."rawEventId", source_updated_at = r."receivedAt"
+     from (select distinct on ("source", "sourceLeadId") * from jsonb_to_recordset($1::jsonb)
+             as x("source" text, "sourceLeadId" text, "code" text, "receivedAt" timestamptz, "rawEventId" bigint)
+           order by "source", "sourceLeadId", "receivedAt" desc) r
+     where t.source = r."source" and t.source_lead_id = r."sourceLeadId" and t.source_updated_at <= r."receivedAt"
+       and (t.excluded_code is distinct from r."code" or t.raw_event_id <> r."rawEventId")`,
+    [JSON.stringify(rows), now],
+  );
+  return result.rowCount ?? 0;
 }
 
 type RawRow = Record<string, unknown> & { externalId: string };
 
 const INSERT_RAW = `
   insert into raw_events (source, entity, entity_id, external_id, payload, payload_hash, occurred_at, received_at,
-    ingestion_run_id, adapter_version, status, error_code, error_detail, delivery_count, last_delivered_at, projected_at)
+    ingestion_run_id, adapter_version, status, error_code, error_detail, exclusion_code, exclusion_detail,
+    delivery_count, last_delivered_at, projected_at)
   select $1, r."entity", r."entityId", r."externalId", r."payload", r."payloadHash", r."occurredAt", r."receivedAt",
-    $3, $4, r."status", r."errorCode", r."errorDetail", r."deliveryCount", coalesce(r."lastSeenAt", $2::timestamptz),
+    $3, $4, r."status", r."errorCode", r."errorDetail", r."exclusionCode", r."exclusionDetail",
+    r."deliveryCount", coalesce(r."lastSeenAt", $2::timestamptz),
     case when r."status" = 'projected' then $2::timestamptz end
   from jsonb_to_recordset($5::jsonb) as r("entity" text, "entityId" text, "externalId" text, "payload" jsonb,
     "payloadHash" text, "occurredAt" timestamptz, "receivedAt" timestamptz, "status" text, "errorCode" text,
-    "errorDetail" text, "deliveryCount" int, "lastSeenAt" timestamptz)
+    "errorDetail" text, "exclusionCode" text, "exclusionDetail" text, "deliveryCount" int, "lastSeenAt" timestamptz)
   on conflict (source, external_id) do nothing
   returning id, external_id`;
 
@@ -283,6 +329,8 @@ async function insertRaw(
         status: "quarantined",
         errorCode: "UNSTORABLE_PAYLOAD",
         errorDetail: (error as Error).message.slice(0, 300),
+        exclusionCode: null,
+        exclusionDetail: null,
         occurredAt: args.now.toISOString(),
       };
       out.push(...(await tx.query<{ id: string; external_id: string }>(INSERT_RAW, params([placeholder]))).rows);

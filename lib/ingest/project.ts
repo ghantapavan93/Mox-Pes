@@ -42,7 +42,9 @@ const SQL: Record<Table, string> = {
       attribution_evidence = excluded.attribution_evidence, campaign_external_id = excluded.campaign_external_id,
       click_id = excluded.click_id, phone_hash = excluded.phone_hash, email_hash = excluded.email_hash,
       zip = excluded.zip, heard_about_text = excluded.heard_about_text, occurred_at = excluded.occurred_at,
-      source_updated_at = excluded.source_updated_at, raw_event_id = excluded.raw_event_id
+      source_updated_at = excluded.source_updated_at, raw_event_id = excluded.raw_event_id,
+      -- A newer qualifying version restores a lead an earlier revision excluded (migration 0018).
+      excluded_code = null, excluded_at = null
     where excluded.source_updated_at >= t.source_updated_at and excluded.raw_event_id <> t.raw_event_id`,
 
   crm_customers: `
@@ -127,7 +129,7 @@ const SQL: Record<Table, string> = {
     with rows as (
       select * from jsonb_to_recordset($1::jsonb) as r("platform" text, "adAccountId" text,
         "externalCampaignId" text, "campaignName" text, "campaignType" text, "localServicesEnabled" boolean,
-        "channelCode" text, "spendDate" date, "costCents" bigint, "clicks" int, "platformConversions" int,
+        "channelCode" text, "spendDate" date, "costCents" bigint, "currencyBasis" text, "clicks" int, "platformConversions" int,
         "sourceUpdatedAt" timestamptz, "rawEventId" bigint)
     ), campaigns as (
       insert into ad_campaigns (platform, ad_account_id, external_campaign_id, name, channel_code, first_seen_at,
@@ -144,13 +146,13 @@ const SQL: Record<Table, string> = {
       returning id, platform, external_campaign_id
     )
     insert into ad_spend_daily as t (campaign_id, spend_date, cost_cents, clicks, platform_conversions,
-      source_updated_at, raw_event_id, channel_code)
+      source_updated_at, raw_event_id, channel_code, currency_basis)
     select c.id, r."spendDate", r."costCents", r."clicks", r."platformConversions", r."sourceUpdatedAt", r."rawEventId",
-      r."channelCode"
+      r."channelCode", coalesce(r."currencyBasis", 'assumed_usd')
     from rows r
     join campaigns c on c.platform = r."platform" and c.external_campaign_id = r."externalCampaignId"
     on conflict (campaign_id, spend_date) do update set
-      cost_cents = excluded.cost_cents, clicks = excluded.clicks,
+      cost_cents = excluded.cost_cents, currency_basis = excluded.currency_basis, clicks = excluded.clicks,
       platform_conversions = excluded.platform_conversions, source_updated_at = excluded.source_updated_at,
       raw_event_id = excluded.raw_event_id, channel_code = excluded.channel_code
     where (excluded.source_updated_at >= t.source_updated_at and excluded.raw_event_id <> t.raw_event_id)

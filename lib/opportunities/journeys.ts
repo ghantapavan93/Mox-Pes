@@ -139,7 +139,7 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
   const { rows } = await db.query<{ branch_id: string; units: string; repeated: string; repeat_converted: string; repeat_unconverted: string; single: string; single_converted: string }>(
     `with first_contact as (
        select distinct on (phone_hash) id, branch_id, phone_hash, occurred_at from leads
-       where source in ('calls', 'web') and phone_hash is not null
+       where source in ('calls', 'web') and phone_hash is not null and excluded_code is null
        order by phone_hash, occurred_at, id
      ),
      unit as (
@@ -151,7 +151,7 @@ export async function missedFollowUp(db: Queryable, args: { period: Period; bran
      ),
      u as (
        select unit.branch_id,
-         exists (select 1 from leads r where r.phone_hash = unit.phone_hash and r.source in ('calls', 'web')
+         exists (select 1 from leads r where r.phone_hash = unit.phone_hash and r.source in ('calls', 'web') and r.excluded_code is null
                    and r.occurred_at > unit.occurred_at and r.occurred_at <= unit.occurred_at + make_interval(days => $6)) as repeated,
          exists (select 1 from v_acquisitions a join crm_customers c using (crm_customer_id)
                    where c.phone_hash = unit.phone_hash and a.sold_at between unit.occurred_at - interval '2 hours' and unit.occurred_at + make_interval(days => $4)) as converted

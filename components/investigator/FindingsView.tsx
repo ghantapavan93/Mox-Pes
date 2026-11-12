@@ -79,15 +79,15 @@ function ClaimCheck({ claims }: { claims: NonNullable<InvestigationResult["claim
         <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-faint">
           Claim check · {tally("SUPPORTED")} supported · {tally("PARTIALLY_SUPPORTED")} partly · {tally("UNSUPPORTED") + tally("CONFLICTED")} rejected or conflicted · {tally("NOT_DETERMINABLE")} not determinable
         </summary>
-        <p className="mt-2 text-xs text-muted">Checked by code, not by the model: every cited id must have been returned by a tool in this run, and every dollar amount, percentage and count must appear in those tools&apos; output. A cause of a business outcome is never accepted without a measured experiment.</p>
+        <p className="mt-2 text-xs text-muted">Checked by code, not by the model: every cited id must have been returned by a tool in this run, and every dollar amount, percentage and count written in figures must appear, as the same kind of figure, in those tools&apos; output (the summary, next step and expected effect are checked against everything the tools returned). Figures written as words and bare ratios are not checked. A cause of a business outcome is never accepted without a measured experiment.</p>
         <ul className="mt-2 space-y-2 text-sm">
           {claims.map((c) => (
             <li key={c.id} className="rounded border border-border p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</Badge>
                 <span className="text-[11px] uppercase tracking-wide text-faint">{c.type.toLowerCase()}</span>
-                {c.numbers.map((n) => (
-                  <span key={n.text} className={`font-mono text-[11px] ${n.supported ? "text-good" : "text-bad"}`}>
+                {c.numbers.map((n, i) => (
+                  <span key={`${i}-${n.text}`} className={`font-mono text-[11px] ${n.supported ? "text-good" : "text-bad"}`}>
                     {n.supported ? "✓" : "✗"} {n.text}
                   </span>
                 ))}

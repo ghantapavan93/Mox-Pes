@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import { Pool } from "pg";
 import type { Queryable } from "@/lib/db";
 import { evidence } from "@/lib/ai/evidence";
 import { METRICS } from "@/lib/metrics/definitions";
@@ -104,9 +104,10 @@ const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 export async function traceBranchMetric(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
   // From a pool: every query of the trace reads one snapshot (repeatable read, read only), so an
   // ingest landing between the scorecard and the record queries cannot fake a discrepancy
-  // (independent review F8). A caller's own client or transaction is used as it is.
-  if ("connect" in db && typeof db.connect === "function") {
-    const client = await (db as Pool).connect();
+  // (independent review F8). A caller's own client or transaction (including a pool-shaped
+  // wrapper around one, as the workflow and evaluation use) is used as it is.
+  if (db instanceof Pool) {
+    const client = await db.connect();
     try {
       await client.query("begin isolation level repeatable read read only");
       const trace = await traceIn(client, viewer, args);

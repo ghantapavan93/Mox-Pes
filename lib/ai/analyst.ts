@@ -1,44 +1,51 @@
 import type { Claim, DraftFindings, DroppedClaim, GroundingReport, Observation } from "./contract";
 import { parseEvidenceId } from "./evidence";
-import { checkNumbers, outputNumbers, type NumberCheck } from "./numbers";
+import { checkNumbers, emptyFacts, mergeFacts, outputFacts, type Facts, type NumberCheck } from "./numbers";
 
 /**
- * What the tools of this run actually said, per evidence id: the numbers in the output of every
- * tool call that returned the id, and ids whose output reports it does not reproduce (a metric
- * trace with a discrepancy). Built from the recorded steps, never from the model's text.
+ * What the tools of this run actually said, per evidence id: the TYPED figures (money, percent,
+ * count) in the output of every tool call that returned the id, all of them together (for text
+ * that cites nothing, such as the summary), and the metric figures whose trace reports they do
+ * not reproduce. Built from the recorded steps, never from the model's text.
  */
 export interface EvidenceFacts {
-  numbersById: ReadonlyMap<string, ReadonlySet<number>>;
+  byId: ReadonlyMap<string, Facts>;
+  all: Facts;
+  /** branch_metrics ids whose trace in this run did not reproduce the scorecard. */
   conflicted: ReadonlySet<string>;
 }
 
 export function evidenceFacts(steps: ReadonlyArray<{ kind: string; status: string; output: unknown; evidenceIds: string[] }>): EvidenceFacts {
-  const numbersById = new Map<string, Set<number>>();
+  const byId = new Map<string, Facts>();
+  const all = emptyFacts();
   const conflicted = new Set<string>();
   for (const s of steps) {
     if (s.kind !== "tool_call" || s.status !== "ok") continue;
-    const numbers = outputNumbers(s.output);
+    const facts = outputFacts(s.output);
+    mergeFacts(all, facts);
     const value = (s.output as { value?: { matches?: unknown } } | null)?.value;
     for (const id of s.evidenceIds) {
-      const set = numbersById.get(id) ?? new Set<number>();
-      for (const n of numbers) set.add(n);
-      numbersById.set(id, set);
-      if (value && value.matches === false) conflicted.add(id);
+      byId.set(id, mergeFacts(byId.get(id) ?? emptyFacts(), facts));
+      // Only the metric itself is in conflict, not every record the trace listed.
+      if (value && value.matches === false && id.startsWith("branch_metrics:")) conflicted.add(id);
     }
   }
-  return { numbersById, conflicted };
+  return { byId, all, conflicted };
 }
 
-function factsFor(ids: string[], facts: EvidenceFacts): Set<number> {
-  const out = new Set<number>();
-  for (const id of ids) for (const n of facts.numbersById.get(id) ?? []) out.add(n);
+function factsFor(ids: string[], facts: EvidenceFacts): Facts {
+  const out = emptyFacts();
+  for (const id of ids) {
+    const f = facts.byId.get(id);
+    if (f) mergeFacts(out, f);
+  }
   return out;
 }
 
-/** The figures in a claim that none of its cited tool outputs contains. */
-function unsupportedFigures(text: string, ids: string[], facts: EvidenceFacts | undefined): NumberCheck[] {
+/** The figures in a claim that none of its cited tool outputs contains (all outputs when it cites nothing). */
+function unsupportedFigures(text: string, ids: string[] | null, facts: EvidenceFacts | undefined): NumberCheck[] {
   if (!facts) return [];
-  return checkNumbers(text, factsFor(ids, facts)).filter((c) => !c.supported);
+  return checkNumbers(text, ids === null ? facts.all : factsFor(ids, facts)).filter((c) => !c.supported);
 }
 
 /**
@@ -88,7 +95,8 @@ const CAUSAL_IMPACT = [
   new RegExp(String.raw`\b(cut|reduc|lower|halv|slash)\w*\b${GAP(20)}\b(cac|acquisition cost|cost per (customer|acquisition|lead))\b`, "i"),
 ];
 // Hedges, case-sensitive where a word is also a month ("May").
-const HEDGED = /\b(may (?:have|be|not|also)|might|could|possibly|hypothes\w*|unproven|not (?:yet )?measured|cannot (?:yet )?say)\b/i;
+// Negations count too: "is not evidence it causes more customers" denies the claim.
+const HEDGED = /\b(may (?:have|be|not|also)|might|could|possibly|hypothes\w*|unproven|not (?:yet )?measured|cannot (?:yet )?(?:say|show)|not (?:evidence|proof|proven|shown)|no evidence|does not (?:show|prove|mean)|without an experiment)\b/i;
 
 export function isCausalImpactClaim(text: string): boolean {
   return CAUSAL_IMPACT.some((re) => re.test(text)) && !HEDGED.test(text);
@@ -102,14 +110,17 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
 
   const observations: Observation[] = [];
   for (const o of draft.observations) {
-    if (o.status === "verified" && isCausalImpactClaim(o.text)) {
-      dropped.push({ where: "observation", text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: "claims a business improvement was caused; only a measured experiment can show that, and none exists" });
+    // Stated as fact or as hypothesis, an unhedged claim that something caused a business
+    // outcome is dropped (a "strong hypothesis" is shown as a finding too; review S7).
+    if (isCausalImpactClaim(o.text)) {
+      dropped.push({ where: "observation", claimStatus: o.status, text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: CAUSAL_REASON });
       continue;
     }
     const unsupported = unsupportedIds(o.evidenceIds, returned);
     if (o.evidenceIds.length === 0 || unsupported.length > 0) {
       dropped.push({
         where: "observation",
+        claimStatus: o.status,
         text: o.text,
         evidenceIds: o.evidenceIds,
         unsupported,
@@ -120,7 +131,13 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
     const badFigures = unsupportedFigures(o.text, o.evidenceIds, facts);
     if (badFigures.length > 0) {
       numericDropped++;
-      dropped.push({ where: "observation", text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: figureReason(badFigures) });
+      dropped.push({ where: "observation", claimStatus: o.status, text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: figureReason(badFigures) });
+      continue;
+    }
+    // A figure whose own trace does not reproduce is not a verified fact (review S6).
+    if (o.status === "verified" && facts && o.evidenceIds.some((id) => facts.conflicted.has(id))) {
+      downgraded++;
+      observations.push({ text: o.text, evidenceIds: o.evidenceIds, status: "hypothesis", strength: "weak" });
       continue;
     }
     const recordBacked = o.evidenceIds.some((id) => !NON_RECORD_KINDS.has(parseEvidenceId(id)?.kind ?? ""));
@@ -134,7 +151,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
 
   let suspectedCause = draft.suspectedCause;
   if (suspectedCause && isCausalImpactClaim(suspectedCause.text)) {
-    dropped.push({ where: "suspectedCause", text: suspectedCause.text, evidenceIds: suspectedCause.evidenceIds, unsupported: [], reason: "claims a business improvement was caused; only a measured experiment can show that, and none exists" });
+    dropped.push({ where: "suspectedCause", text: suspectedCause.text, evidenceIds: suspectedCause.evidenceIds, unsupported: [], reason: CAUSAL_REASON });
     suspectedCause = null;
   }
   if (suspectedCause) {
@@ -166,6 +183,29 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
     return false;
   });
 
+  // Text that cites nothing (summary, next step, expected effect, risks) is still shown, so it
+  // gets the same two checks against everything the tools returned: no figure the tools did not
+  // return, no unhedged claim of a caused business outcome. A failing field is WITHHELD with a
+  // notice, never silently rewritten (review S5).
+  const textDropped: DroppedClaim[] = [];
+  const checkText = (where: "summary" | "recommendedNextAction" | "expectedEffect" | "risk", text: string | undefined): boolean => {
+    if (text === undefined) return true;
+    if (isCausalImpactClaim(text)) {
+      textDropped.push({ where, text, evidenceIds: [], unsupported: [], reason: CAUSAL_REASON });
+      return false;
+    }
+    const bad = unsupportedFigures(text, null, facts);
+    if (bad.length > 0) {
+      textDropped.push({ where, text, evidenceIds: [], unsupported: [], reason: `states ${bad.map((b) => b.text).join(", ")}, which no tool output in this run contains` });
+      return false;
+    }
+    return true;
+  };
+  const summary = checkText("summary", draft.summary) ? draft.summary : "The investigator's summary stated a figure or a cause no tool supports, so it was withheld. The verified findings below stand on their own.";
+  const recommendedNextAction = checkText("recommendedNextAction", draft.recommendedNextAction) ? draft.recommendedNextAction : "Withheld: the suggested next step stated a figure or a cause no tool supports. Review the verified findings.";
+  const expectedEffect = checkText("expectedEffect", draft.expectedEffect) ? draft.expectedEffect : "Withheld: the expected effect stated a figure or a cause no tool supports.";
+  const risks = (draft.risks ?? []).filter((r) => checkText("risk", r));
+
   // Confidence cannot outlive its evidence: no kept facts → low; a cause that was drafted but
   // failed grounding → at most medium. (A descriptive answer that never claimed a cause keeps
   // its confidence.)
@@ -179,7 +219,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   const claimsIn = draft.observations.length + (draft.suspectedCause ? 1 : 0) + draft.proposals.length;
   const claimsDropped = dropped.length;
   return {
-    draft: { ...draft, observations, suspectedCause, proposals, confidence },
+    draft: { ...draft, summary, observations, suspectedCause, proposals, confidence, recommendedNextAction, expectedEffect, risks },
     report: {
       returnedEvidence: returned.size,
       claimsIn,
@@ -187,10 +227,13 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
       claimsDropped,
       downgraded,
       ...(facts ? { numericDropped } : {}),
-      dropped,
+      ...(textDropped.length ? { textWithheld: textDropped.length } : {}),
+      dropped: [...dropped, ...textDropped],
     },
   };
 }
+
+const CAUSAL_REASON = "claims a business improvement was caused; only a measured experiment can show that, and none exists";
 
 const DERIVED = /[÷=]|\breproduc|\bper (?:(?:new|paid) )*customer\b|\bCAC\b|\bshare\b|\bratio\b/i;
 
@@ -221,6 +264,9 @@ export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | unde
         status: conflict ? "CONFLICTED" : "SUPPORTED",
         reason: conflict ? "its evidence reports the number does not reproduce from the records" : nums.length ? "cited records returned by tools in this run; every figure appears in their output" : "cited records returned by tools in this run",
       });
+    } else if (conflicted(o.evidenceIds)) {
+      // A verified figure the analyst downgraded because its own trace does not reproduce.
+      add({ type: DERIVED.test(o.text) ? "DERIVATION" : "OBSERVATION", text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "CONFLICTED", reason: "its metric's trace in this run does not reproduce the scorecard; shown as a hypothesis, not a finding" });
     } else {
       add({ type: "HYPOTHESIS", text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "PARTIALLY_SUPPORTED", reason: `consistent with the cited evidence (${o.strength ?? "weak"}), not proof` });
     }
@@ -229,13 +275,19 @@ export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | unde
     add({ type: "HYPOTHESIS", text: d.suspectedCause.text, evidenceIds: d.suspectedCause.evidenceIds, numbers: numbers(d.suspectedCause.text, d.suspectedCause.evidenceIds), status: "PARTIALLY_SUPPORTED", reason: "the most likely explanation of the evidence; an investigation does not prove a cause" });
   }
   for (const x of grounded.report.dropped) {
+    const type: Claim["type"] =
+      x.reason === CAUSAL_REASON ? "CAUSAL"
+      : x.where === "proposal" || x.where === "recommendedNextAction" ? "RECOMMENDATION"
+      : x.where === "suspectedCause" || x.where === "expectedEffect" || x.claimStatus === "hypothesis" ? "HYPOTHESIS"
+      : "OBSERVATION";
     add({
-      type: x.reason.startsWith("claims a business improvement") ? "CAUSAL" : x.where === "proposal" ? "RECOMMENDATION" : "OBSERVATION",
+      type,
       text: x.text,
       evidenceIds: x.evidenceIds,
-      numbers: [],
+      // Which figure failed, so the reader sees it (empty for a claim dropped for its evidence ids).
+      numbers: facts ? checkNumbers(x.text, x.evidenceIds.length ? factsFor(x.evidenceIds, facts) : facts.all) : [],
       status: "UNSUPPORTED",
-      reason: x.reason,
+      reason: x.where === "summary" || x.where === "recommendedNextAction" || x.where === "expectedEffect" ? `${x.reason} (withheld from the ${x.where === "summary" ? "summary" : x.where === "expectedEffect" ? "expected effect" : "next step"})` : x.reason,
     });
   }
   add({ type: "RECOMMENDATION", text: d.recommendedNextAction, evidenceIds: [], numbers: [], status: "PARTIALLY_SUPPORTED", reason: "a suggested next step, not a fact; any change it leads to goes through dry run and approval" });

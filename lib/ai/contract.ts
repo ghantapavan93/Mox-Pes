@@ -80,7 +80,10 @@ export const PlannedProposalSchema = z.strictObject({
 export type PlannedProposal = z.infer<typeof PlannedProposalSchema>;
 
 export const DroppedClaimSchema = z.strictObject({
-  where: z.enum(["observation", "suspectedCause", "proposal"]),
+  /** summary / recommendedNextAction / expectedEffect / risk: free text withheld by the analyst. */
+  where: z.enum(["observation", "suspectedCause", "proposal", "summary", "recommendedNextAction", "expectedEffect", "risk"]),
+  /** What the investigator called it before it was dropped (observations only). */
+  claimStatus: z.enum(["verified", "hypothesis"]).optional(),
   text: z.string(),
   evidenceIds: z.array(z.string()),
   /** Ids the claim cited that no tool returned in this run. */
@@ -100,6 +103,8 @@ export const GroundingReportSchema = z.strictObject({
   downgraded: z.number().int().nonnegative(),
   /** Claims dropped because a figure they state appears in no cited tool output (subset of claimsDropped). */
   numericDropped: z.number().int().nonnegative().optional(),
+  /** Free-text fields (summary, next step, expected effect, risks) withheld for an unsupported figure or cause. */
+  textWithheld: z.number().int().nonnegative().optional(),
   dropped: z.array(DroppedClaimSchema),
 });
 export type GroundingReport = z.infer<typeof GroundingReportSchema>;

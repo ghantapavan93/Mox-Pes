@@ -1025,6 +1025,12 @@ export const getMetricTrace = defineTool({
       })),
       campaignsOmitted: Math.max(0, trace.numerator.campaigns.length - 10),
       customersCounted: trace.denominator.count,
+      // The denominator's customers per channel, counted from every listed customer (null for a
+      // spend trace, or when the list was capped): a channel's share of the CAC's customers.
+      customersByChannel:
+        trace.metric.key !== "paid_cac" || trace.denominator.truncated
+          ? null
+          : trace.denominator.customers.reduce<Record<string, number>>((acc, k) => ({ ...acc, [k.channelCode]: (acc[k.channelCode] ?? 0) + 1 }), {}),
       sampleCustomerIds: trace.denominator.customers.slice(0, 10).map((k) => k.evidenceId),
       excluded: trace.excluded,
       sourceRecords: trace.sourceRecords,

@@ -264,6 +264,16 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
           facts.push({ metric: "channelSpend", entity: { type: "channel", id: `${branchId}:${code}`, label }, period, value: v.cents, unit: "usd_cents", currencyResolved: v.resolved, definitionVersion: version("paidSpend"), evidenceIds: ownIds, tool: s.tool });
         }
       }
+      // A channel's customers in the CAC denominator, counted from the full customer list (a CAC
+      // trace that was not capped): "Local Services is credited with 4 of B20's 10 paid-media
+      // customers" is provable from the trace it cites (held-out IV-35).
+      const byChannelCustomers = d.customersByChannel as Record<string, number> | null | undefined;
+      if (byChannelCustomers && typeof byChannelCustomers === "object") {
+        for (const [code, n] of Object.entries(byChannelCustomers)) {
+          const label = CHANNEL_BY_CODE.get(code as ChannelCode)?.label ?? code;
+          facts.push({ metric: "channelAcquired", entity: { type: "channel", id: `${branchId}:${code}`, label }, period, value: n, unit: "count", currencyResolved: true, definitionVersion: version("paidCac"), evidenceIds: ownIds, tool: s.tool });
+        }
+      }
     }
   }
   return facts;

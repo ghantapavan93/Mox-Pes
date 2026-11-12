@@ -36,6 +36,8 @@ function parseView(value: string | string[] | undefined): View {
   return v && Object.hasOwn(VIEWS, v) ? (v as View) : "connector";
 }
 
+export const metadata = { title: "Integrations" };
+
 export default function IntegrationsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">

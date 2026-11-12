@@ -15,7 +15,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Revenue Signal OS",
+  // Each page names itself, so tabs, history and screen readers can tell pages apart.
+  title: { default: "Revenue Signal OS", template: "%s · Revenue Signal OS" },
   description:
     "Independent concept: an operational layer that traces customers from marketing touch to collected revenue, investigates disagreements and repairs them safely. Synthetic data.",
 };

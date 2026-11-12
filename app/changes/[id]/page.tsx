@@ -15,6 +15,8 @@ import { STATUS_TONE } from "../status";
 
 type Params = Promise<{ id: string }>;
 
+export const metadata = { title: "Change" };
+
 export default function ChangePage({ params }: { params: Params }) {
   return (
     <Suspense fallback={<Skeleton lines={14} />}>

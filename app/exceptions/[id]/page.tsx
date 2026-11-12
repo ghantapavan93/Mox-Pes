@@ -24,6 +24,8 @@ type Props = { params: Promise<{ id: string }> };
 /** Exception kinds that gate a budget decision: their page links to the Decision Lab. */
 const DECISION_KINDS: ReadonlySet<string> = new Set(DECISION_BLOCKING_KINDS);
 
+export const metadata = { title: "Incident" };
+
 export default function ExceptionPage(props: Props) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>

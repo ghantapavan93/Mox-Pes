@@ -20,6 +20,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
+export const metadata = { title: "Decision Lab" };
+
 export default function DecisionsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={12} />}>

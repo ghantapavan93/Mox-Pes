@@ -450,7 +450,8 @@ export function Skeleton({ lines = 6 }: { lines?: number }) {
 export function Forbidden({ message }: { message: string }) {
   return (
     <div role="alert" className="rounded-lg border border-bad/30 bg-bad-soft p-6 text-sm text-bad">
-      <p className="font-semibold">403 — not in your scope</p>
+      {/* Every page returns this in place of its own header, so it is the page's one h1. */}
+      <h1 className="font-semibold">403 — not in your scope</h1>
       <p className="mt-1">{message}</p>
     </div>
   );

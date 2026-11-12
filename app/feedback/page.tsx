@@ -25,6 +25,8 @@ const GROUPS: Array<{ title: string; note: string; decisions: FeedbackDecision[]
 
 const VALUE_TONE = { good: "text-good", bad: "text-bad", warn: "text-warn", neutral: "text-text" } as const;
 
+export const metadata = { title: "Feedback" };
+
 export default function FeedbackPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={8} />}>

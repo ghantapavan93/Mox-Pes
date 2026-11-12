@@ -16,6 +16,8 @@ import type { Viewer } from "@/lib/viewer";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
+export const metadata = { title: "Data upload" };
+
 export default function OnboardingUploadPage(props: Props) {
   return (
     <Suspense fallback={<Skeleton lines={12} />}>

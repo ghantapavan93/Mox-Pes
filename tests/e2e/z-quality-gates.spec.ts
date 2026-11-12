@@ -66,12 +66,35 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["onboarding-upload", upload, "approver"],
     ["branch", "/branches/B09?period=oct", "marketing"],
     ["trace", "/branches/B09/trace?period=oct&metric=paid_cac", "marketing"],
+    ["cash-trace", "/branches/B09/trace?period=oct&metric=collected", "approver"],
+    // The refusal a branch partner sees for another branch's guided path.
+    ["forbidden", "/demo", "partner"],
     ["demo", "/demo", "marketing"],
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],
     ["inquiry", inquiry, "marketing"],
   ];
 }
+
+test("a keyboard-only user skips the navigation and opens the trace's primary action", async ({ page }) => {
+  await setRole(page, "approver");
+  await page.goto("/branches/B09/trace?period=oct&metric=collected");
+  await expect(page.getByTestId("cash-reproduced")).toBeVisible();
+
+  // The first Tab lands on the skip link; Enter moves focus into the page's main region.
+  await page.keyboard.press("Tab");
+  await expect(page.getByTestId("skip-link")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("main#main")).toBeFocused();
+
+  // From there the primary action is a few Tabs away (breadcrumbs first), never behind the sidebar.
+  const action = page.getByRole("link", { name: "Investigate this number" });
+  for (let i = 0; i < 8 && !(await action.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press("Tab");
+  await expect(action).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/investigator\?branch=B09&q=/);
+  await expect(page.getByRole("textbox", { name: "Question" })).toHaveValue(/collected/i);
+});
 
 test.describe("quality gate · accessibility (axe, WCAG 2.2 AA)", () => {
   for (const width of [1440, 1280, 768, 390] as const) {
@@ -94,6 +117,9 @@ test.describe("quality gate · accessibility (axe, WCAG 2.2 AA)", () => {
         // Long ids and figures must wrap, not push the page sideways.
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         if (overflow > 1) failures.push(`${name} ${url}: the page scrolls sideways by ${overflow}px`);
+        // WCAG 2.4.2: each page names itself; a tab list of identical titles cannot be told apart.
+        const title = await page.title();
+        if (!/^.+ · Revenue Signal OS$/.test(title)) failures.push(`${name} ${url}: the title "${title}" does not name the page`);
       }
       expect(failures, failures.join("\n")).toEqual([]);
     });

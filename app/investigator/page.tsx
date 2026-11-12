@@ -17,6 +17,8 @@ import { canSeeBranch, type Viewer } from "@/lib/viewer";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
+export const metadata = { title: "AI Investigator" };
+
 export default function InvestigatorPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">

@@ -11,6 +11,8 @@ import { getPool, getViewer } from "@/lib/server";
 
 type Props = { params: Promise<{ id: string }> };
 
+export const metadata = { title: "Customer journey" };
+
 export default function CustomerJourneyPage(props: Props) {
   return (
     <Suspense fallback={<JourneySkeleton />}>

@@ -38,6 +38,8 @@ function scopeLabel(viewer: Viewer, branchIds: string[] | null): string {
   return "All 44 branches";
 }
 
+export const metadata = { title: "Incidents" };
+
 export default function IncidentsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>

@@ -7,6 +7,8 @@ import { listUploads } from "@/lib/onboarding/service";
 import { DATASETS } from "@/lib/onboarding/targets";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 
+export const metadata = { title: "Data onboarding" };
+
 export default function OnboardingPage() {
   return (
     <div className="space-y-6">

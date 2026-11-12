@@ -5,6 +5,8 @@ import { B09_STEPS, PATH_SECONDS, ROLE_LABEL, stepHref } from "@/lib/demo/b09-pa
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch } from "@/lib/viewer";
 
+export const metadata = { title: "Guided path" };
+
 /**
  * /demo — the presenter page for the four-minute B09 golden path (lib/demo/b09-path.ts).
  * Resolves the incident's exception id from the database (ids are not stable across seeds) and

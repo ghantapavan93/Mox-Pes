@@ -20,6 +20,8 @@ const CONCLUSION: Record<string, { tone: "good" | "warn" | "neutral" | "bad"; la
   not_testable: { tone: "neutral", label: "not testable" },
 };
 
+export const metadata = { title: "Investigation workspace" };
+
 export default function InquiryPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>

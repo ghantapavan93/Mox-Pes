@@ -10,6 +10,8 @@ import { STATUS_TONE } from "./status";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+export const metadata = { title: "ChangeGuard" };
+
 export default function ChangesPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">

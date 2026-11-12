@@ -13,6 +13,8 @@ import { ForbiddenError, type Viewer } from "@/lib/viewer";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
+export const metadata = { title: "Number trace" };
+
 /**
  * /branches/[id]/trace — where a branch's paid-media CAC (or spend) comes from. The page shows
  * the number, the same number reproduced from the records below it, the definition and its

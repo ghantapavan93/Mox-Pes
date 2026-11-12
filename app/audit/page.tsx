@@ -26,6 +26,8 @@ function parseDay(value: string | undefined): Date | null | "invalid" {
   return Number.isNaN(d.getTime()) ? "invalid" : d;
 }
 
+export const metadata = { title: "Audit log" };
+
 export default function AuditPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">

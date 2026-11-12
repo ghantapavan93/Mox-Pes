@@ -16,6 +16,8 @@ import { ForbiddenError, resolveScope } from "@/lib/viewer";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
+export const metadata = { title: "Branch scorecard" };
+
 export default function BranchPage(props: Props) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>

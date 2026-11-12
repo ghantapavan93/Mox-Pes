@@ -13,6 +13,8 @@ import { ForbiddenError, type Viewer } from "@/lib/viewer";
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
+export const metadata = { title: "Opportunities" };
+
 export default function OpportunitiesPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={12} />}>

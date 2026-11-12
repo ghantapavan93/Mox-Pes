@@ -18,6 +18,9 @@ import { ForbiddenError, resolveBrandScope, type Viewer } from "@/lib/viewer";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+// The root page shares the layout's segment, where the title template does not apply.
+export const metadata = { title: { absolute: "Overview · Revenue Signal OS" } };
+
 export default function OverviewPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={10} />}>

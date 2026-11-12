@@ -30,6 +30,8 @@ const LIFECYCLE_LABEL: Record<string, string> = {
   unknown: "Subscription not delivered",
 };
 
+export const metadata = { title: "Customers" };
+
 export default function CustomersPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<Skeleton lines={12} />}>

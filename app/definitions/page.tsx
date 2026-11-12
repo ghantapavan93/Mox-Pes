@@ -12,6 +12,8 @@ const POLICY: Array<[string, string]> = [
   ["Time", "Spend by spend date; acquisitions by initial-service date; revenue by payment date. Periods are calendar periods, not cohorts."],
 ];
 
+export const metadata = { title: "Definitions" };
+
 /**
  * The dictionary: the attribution policy every number obeys, then one entry per metric
  * (formula, source, caveat) from lib/metrics/definitions.ts, the same object every KPI tile

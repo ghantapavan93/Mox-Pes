@@ -15,6 +15,8 @@ import { parseRecordId } from "@/lib/record-id";
 
 type Props = { params: Promise<{ id: string }> };
 
+export const metadata = { title: "Investigation" };
+
 export default function InvestigationPage(props: Props) {
   return (
     <Suspense fallback={<Skeleton lines={12} />}>

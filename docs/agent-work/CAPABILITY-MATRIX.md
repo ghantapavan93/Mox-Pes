@@ -16,7 +16,7 @@ Evidence columns name the test or document; the latest run's numbers are in
 | Milestone | State | Existing module to extend (no duplicates) |
 |---|---|---|
 | M0 Verified state | VERIFIED EXISTING (re-run each milestone) | `C:/Temp/final-regression-m5.sh`, `rso-verify-run.sh` (clean worktree, fresh databases) |
-| **M1 Shadow Mode + AI Answer Assurance** | **MISSING** — the next slice | Proof engine `lib/ai/proof.ts` (`proveStatement`, `judge`), typed facts `lib/ai/facts.ts`, read-only tools `lib/ai/tools.ts`, traces `lib/lineage/*`, scenario runner `scripts/eval-acceptance.ts` |
+| **M1 Shadow Mode + AI Answer Assurance** | **VERIFIED EXISTING (bounded), 2026-11-12** — `lib/shadow/*`, `/assurance`, `SHADOW-MODE.md`; blind pack first contact 5/320 failed (2 critical), fixed, regression 320/320; browser journey J9. Limits: R-40 | Built on the proof engine, typed facts, read-only tools, traces and the scenario runner; no new ledger, metric code or agent |
 | M2 Reliability Twin | PARTIAL | ChangeGuard (`lib/changeguard/*`): preflight on the real write path, hash-bound approval, release under lock, on-demand monitoring. Scenario runner: fresh database per scenario, manifest, `--twice`. Missing: branch rollout stages, scheduled monitoring (R-30), 429/503 + backfill and crash-before-ack families in the pack |
 | M3 Source lifecycle and money | PARTIAL, strong | Intake + raw ledger (`lib/ingest/*`), mappers with versions, currency gate (`lib/currency/*`), refunds, spam reclassification, newest-version-wins, metamorphic and property tests. Missing: CRM merge/delete (R-4), CRM account namespacing (R-3), effective-dated rules (R-28) |
 | M4 Proof-carrying investigation | VERIFIED EXISTING (deterministic) | `lib/ai/*`, `lib/inquiry/*` (six hypotheses, versions, notes). Model mode UNTESTED (no key, R-10) |
@@ -42,8 +42,9 @@ Evidence columns name the test or document; the latest run's numbers are in
 | Investigation workspace (six hypotheses, versions) | VERIFIED EXISTING | J3, VP-01, VP-04 | Ageing (R-29) |
 | Decision Lab: verified readiness, scenarios | VERIFIED EXISTING | J8, VP-09 | Slow load (R-34) |
 | Server-enforced role and branch scope | VERIFIED EXISTING | J6, VP-07, hostile-input gate | Demo auth (R-2); 403 as HTTP 200 (R-33) |
-| **Independent check of another system's metric snapshot** | **MISSING** | — | M1 |
-| **Checking a conversational answer claim by claim against evidence** | **PARTIAL** — only for the investigator's own text | proof engine | M1: external answers, scope of mentioned branches, definition mismatch |
+| Independent check of another system's metric snapshot | VERIFIED EXISTING (bounded) | `shadow-mode.test.ts` (16), Shadow pack, J9 | Synthetic other system; UTC, Sep–Oct, USD (R-40) |
+| Checking a conversational answer claim by claim against evidence | VERIFIED EXISTING (deterministic) | Shadow pack answers (31 claims), J9 | No model run (R-10) |
+| A lead credits at most one customer | VERIFIED EXISTING | `shared-phone-credit.test.ts`, investigator held-out IV-44/46 | Reservation corner case (R-39) |
 | Correlation ids and spans | MISSING | — | M5 |
 | Incident recurrence | MISSING | — | M6 |
 | Branch rollout simulation (1 → 5 → 44) | MISSING | — | M2 |

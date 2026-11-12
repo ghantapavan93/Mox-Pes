@@ -77,7 +77,7 @@ one unauthorized release would outweigh everything that passes.
 | | |
 |---|---|
 | Tests performed | VP-07 (a branch partner and a brand user probe across scope); J6 (out-of-scope reads and writes, then a database check that nothing was stored); fault test 2 (two releases of one approved change at the same moment, with a row lock held and the second waiter observed); the ChangeGuard held-out set; self-authorization of a currency rule (VP-10) |
-| Passed | VP-07 51/51; J6; fault test 2 (applied once, money moved once); ChangeGuard held-out: ⟨final⟩ |
+| Passed | VP-07 51/51; J6; fault test 2 (applied once, money moved once); ChangeGuard held-out (a regression suite now): 30 of 50 match every expectation, 0 false approvals, 18 adjudicated disagreements (mostly `monitoring` vs `verified` and false blocks HO-14/18/25), 2 invalid scenarios (HO-33, HO-44: they depend on a remap the older path refuses; `CHANGEGUARD-HELDOUT.md`) |
 | Failed (open) | None |
 | Critical findings | UX red team P0-1: `/demo` showed B09's incident figures to roles outside B09. Fixed and now covered by J6 and the accessibility gate |
 | Known limitations | Demo authentication: any visitor can pick any role (R-2, R-22); a refused page returns HTTP 200 with a 403 body (R-33) |
@@ -90,7 +90,7 @@ model-backed quality is unverified** (R-10).
 | | |
 |---|---|
 | Tests performed | Investigator held-out set (62 cases; now a regression suite); proof engine and claim reading; VP pack AI steps (VP-01, VP-04, VP-09, VP-12: false premises, hostile text, requests to act) |
-| Passed | ⟨final⟩ |
+| Passed | Held-out set (regression now): 32/32 outcomes; claims 136/138 judged correctly, 75/75 wrong claims rejected, 0/60 false accepts in critical cases (the two misses are IV-16's definition paraphrases, rejected by design). `eval-ai`: 15/15. Shadow Mode answer checks: 31/31 labelled claims after fixes (see the Shadow Mode section) |
 | First contact (held out) | 20/30 correct outcomes; 26 of 57 critical claims falsely accepted |
 | Failed (open) | IV-16, rejected by design (claims 136/138 at the last run) |
 | Unsupported | Model text is designed to be rejected when any part is unread, but no model ran, so that path is tested only on fixed strings |
@@ -131,7 +131,7 @@ Demo database on one laptop, `fsync` off unless stated, medians of repeated call
 
 | Path | Median |
 |---|---|
-| Branch rows (all 44) | 588 ms |
+| Branch rows (all 44) | 588 ms before migration 0024; **769 ms after** (the one-lead-one-customer rule adds indexed lookups per candidate lead; 7 runs) |
 | Company totals | 933 ms |
 | Paid-CAC / cash / attribution trace | 727 / 684 / 671 ms |
 | Reliability signals | 903 ms |
@@ -168,6 +168,23 @@ this was measured on production-class hardware.
 | UX P0 findings open | 1 | 0 (plus P0-2, by design in the demo) |
 | UX P1 findings open | 9 | 1 open, 1 partly fixed |
 | Pages in the accessibility gate | 21 | 23, 0 violations |
+
+## Shadow Mode: checking another system's figures and answers (governing mission, M1)
+
+The next slice the governing mission asked for, built on the existing proof engine, traces and
+scenario runner (`SHADOW-MODE.md`; capability map in `CAPABILITY-MATRIX.md`). Another reporting
+system ("Atlas BI", synthetic) publishes a metric snapshot or a conversational answer; the
+product says whether it holds, with proof references, and changes nothing in either system.
+
+| | |
+|---|---|
+| What it decides | For a figure: NOT_DETERMINABLE, INCOMPATIBLE_DEFINITION (not an error: a different measure), INCOMPLETE_EVIDENCE (even when values agree, since both may miss the same records), then MATCH or MISMATCH to the cent, naming the numerator, denominator or a later revision. For an answer: each claim SUPPORTED, CONTRADICTED, UNSUPPORTED (causes, invoiced amounts, other months) or OUT_OF_SCOPE (not read) |
+| Independent oracle | A blind 12-scenario pack written from the contract alone (`shadow-acceptance/`), frozen before the runner could execute it: 80 snapshots and 31 labelled claims; 37 expected MATCH and 17 expected SUPPORTED, so refusing everything fails it |
+| First contact | **5 of 320 checks failed, 2 critical**: unreadable ad records dated inside the window were missed because intake stores them with their receipt time, so agreeing figures were certified MATCH. Also a month outside Sep–Oct read as October, and a dimension misnamed. All fixed with tests that failed first (`shadow-acceptance/evidence/ADJUDICATION.md`) |
+| After the fixes (regression) | 320/320; every scenario repeated with the same fingerprint |
+| Browser | J9: the figure entered right and a dollar off gives MATCH and MISMATCH; an answer's three claims get three verdicts; three append-only rows with actor and audit; a partner gets 404. Both pages in the accessibility gate |
+| What else it caught | The proof engine's month blind spot (shared with the investigator) and a raw-number reason ("the cited fact is 17515" for $17,515.00) |
+| Limits | The contract and the code have one author; the designer followed it literally and listed ten assumptions. UTC days, September–October 2026 and USD only. Deterministic reading only; no model. The "other system" is synthetic; nothing here touches MoxieBI or any real report (R-40) |
 
 ## The 14 questions (Phase 10)
 

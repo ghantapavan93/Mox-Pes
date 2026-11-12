@@ -1,25 +1,34 @@
-# Roadmap
+# Roadmap: one backlog
 
-Ordered by the brief's execution order. Status as of 2026-11-11 (end of this session).
+Reconciled 2026-11-12 against the governing mission (kept local as `MASTER-MISSION.md`) and
+`CAPABILITY-MATRIX.md`. Earlier milestone tables (M-0 to M-9 of 2026-11-11) are history in
+`PROGRESS.md`. Ordered by the mission's priorities: money and safety first, then semantics,
+then effort and polish. Each item names the module it extends; none adds a parallel system.
 
-| Milestone | Brief phase | Status | Evidence / what is left |
-|---|---|---|---|
-| M-0 Preserve and baseline | 0 | **Done** | Backup `Moxie-backups/worktree-2026-11-11/` (tarball + diff); baseline typecheck, lint, vitest 332/332 |
-| M-1 Adversarial tests of the current system | 1 | **Done** | 36 intake cases; 8 defects found (ADVERSARIAL-MATRIX §1) |
-| M-2 Repair high-severity defects | 2 | **Done** | All 8 fixed, red-proven on `HEAD`, regression-tested |
-| M-3 Staging-first data onboarding | 3 | **Done (bounded)** | CSV/XLSX/JSON → profile → mapping versions → dry run → quarantine → approval → publication / reconciliation; UI; API; 4 browser tests. Limits: 5 MB / 50k rows; four datasets |
-| M-4 AI-assisted mapping with evaluation | 4 | **Done (deterministic)** | Assistant + 3 independent sets (184 cases); held-out wrong-suggestion rate 2.2%; regression gate. Model mode: not evaluated |
-| M-4b Independent review and repair | 25/7 | **Done** | 21 reviewer findings, all fixed with tests (REVIEW-FINDINGS) |
-| M-5 Revenue opportunity workflows (Scenario B missed follow-up, C retention) | 5 | **Partly done (2026-11-11)** | `/decisions/opportunities`: both journeys on stored data, every statement labelled (fact / inference / hypothesis / recommendation / measured outcome), readiness policy with audited one-step overrides (docs/agent-work/OPPORTUNITIES.md). Open: outbound follow-up data, lead qualification, cancellation reasons, post-service retention signals, a measured intervention |
-| M-6 Decision readiness by policy (materiality, scope, overrides) | 13 | **Not started** | Today: per-channel verdicts with reasons. Needs materiality thresholds, partial decisions, documented overrides, false-positive tracking |
-| M-7 Integration contracts | 6/10 | **Documented** | INTEGRATION-CONTRACT; no live system |
-| M-8 Held-out adversarial, performance, security | 7 | **Partly** | Held-out exports and eval sets; benchmark to 50k rows (`fsync=off`); two reviews. Not done: 1M/10M, load concurrency |
-| M-9 Executive and technical demos | 8 | **Done (written + browser-verified flow)** | EXECUTIVE-WALKTHROUGH, TECHNICAL-DEEP-DIVE; demo exports generated from the seed |
+## Done in this program (evidence in the linked documents)
+
+| Slice | Evidence |
+|---|---|
+| Proof-carrying claims, financial evidence graph, currency rules, workspaces | `PROOF-CARRYING-REPORT.md` |
+| VP war room: blind 12-scenario pack, browser journeys, UX red team, scorecard, independent review | `VP-ACCEPTANCE-REPORT.md` |
+| A lead credits at most one customer (P0 found by the review) | R-39; migration 0024 |
+| Shadow Mode + answer assurance (mission M1) | `SHADOW-MODE.md`; `shadow-acceptance/` |
 
 ## Next, in order
 
-1. Commit decision for this work (nothing is committed; see PROGRESS).
-2. M-6 before M-5: a readiness policy that does not block a whole budget decision for one
-   unrelated record changes what the existing product says every day.
-3. A v4 evaluation set written after this session's changes, and a small human-labelled set.
-4. R-3 (CRM account namespacing) before any multi-brand real data.
+| # | Item | Why now | Extends |
+|---|---|---|---|
+| 1 | Template claims held to the same reading as model text, or labelled "from a calculation" (R-38) | A sentence with an unproved part can read as verified | `lib/ai/proof.ts` `judge` |
+| 2 | Payment version ordering: treat a voided state as terminal unless the vendor re-sends after it (R-37) | A late duplicate can resurrect a voided payment as cash | `lib/ingest/ingest.ts` |
+| 3 | Reliability Twin rollout stages (1 → 5 → 44 branches) and the missing fault families: 429/503 with backfill, crash after commit before ack (mission M2) | Release safety is tested per change, not per rollout | `scripts/eval-acceptance.ts`, ChangeGuard |
+| 4 | Scheduled post-release monitoring; status "verified at release" (R-30) | A released mapping is never re-checked unless someone clicks | `lib/changeguard/service.ts` |
+| 5 | Correlation ids across upload → monitor; latency and freshness measured per step (mission M5) | Operators cannot follow one record end to end | intake, `lib/events/*`, `audit_log` |
+| 6 | Recurrence and ownership on incidents: owner, due/age, recurrence rule (mission M6) | Closing a case is not preventing it again | Action Center cases |
+| 7 | One approval vocabulary for incidents and ChangeGuard (R-32); dry-run scope labels (R-31) | Two flows confuse approvers | `components/changes`, Action Center |
+| 8 | Decision Lab and Overview load time (R-34) | 3–4 s first loads | the A/A self-check cache |
+| 9 | Read-only shadow run against one real office (needs Moxie's approval and data agreement) | R-1 is the largest unproven assumption | Shadow Mode + the mappers |
+
+## Deliberately not built
+
+A conversational BI tool, a CRM or lead router, an agent framework, FX conversion, automatic
+rollback, model authority over money or approvals (`CAPABILITY-MATRIX.md`).

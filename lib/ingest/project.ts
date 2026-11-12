@@ -156,7 +156,8 @@ const SQL: Record<Table, string> = {
       platform_conversions = excluded.platform_conversions, source_updated_at = excluded.source_updated_at,
       raw_event_id = excluded.raw_event_id, channel_code = excluded.channel_code
     where (excluded.source_updated_at >= t.source_updated_at and excluded.raw_event_id <> t.raw_event_id)
-       or (excluded.raw_event_id = t.raw_event_id and excluded.channel_code is distinct from t.channel_code)`,
+       or (excluded.raw_event_id = t.raw_event_id and (excluded.channel_code is distinct from t.channel_code
+                                                       or excluded.currency_basis is distinct from t.currency_basis))`,
 };
 
 export async function projectAll(db: Queryable, items: ProjectionItem[]): Promise<number> {

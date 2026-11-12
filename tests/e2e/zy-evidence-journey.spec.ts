@@ -25,7 +25,7 @@ test("an unexpected CAC is traced, investigated, corrected through ChangeGuard a
   await page.goto("/branches/B44?period=oct");
   await page.getByTestId("trace-link-paidCac").click();
   await expect(page).toHaveURL(/\/branches\/B44\/trace\?period=oct&metric=paid_cac/);
-  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard to the cent");
+  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard: spend to the cent, customers exactly");
   const before = (await page.getByRole("heading", { level: 1 }).textContent())!;
   const unmapped = page.getByTestId("trace-missing").locator("li", { hasText: "lsa-B44-x" });
   await expect(unmapped).toContainText("is mapped to no branch");
@@ -78,7 +78,7 @@ test("an unexpected CAC is traced, investigated, corrected through ChangeGuard a
 
   // 6 · The same trace now counts the campaign, linked to the change that mapped it.
   await page.goto(TRACE);
-  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard to the cent");
+  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard: spend to the cent, customers exactly");
   const row = page.getByTestId("trace-campaigns").locator("tr", { hasText: "lsa-B44-x" });
   await expect(row).toContainText("version 2");
   await expect(row.getByRole("link", { name: /^change \d+$/ })).toBeVisible();

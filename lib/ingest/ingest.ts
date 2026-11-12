@@ -185,9 +185,10 @@ export async function ingestRecords(
           // Upserts skip rows already pointing at this raw event, so an unchanged re-read
           // costs nothing; an A -> B -> A flip restores A.
           reobserved.push({ projection: incoming.result.projection, rawEventId: Number(row.id) });
-        } else if (incoming.identity.versionClock === "received" && isExclusion(incoming.result) && row.status === "excluded") {
-          // An excluded version observed again after a qualifying one (A -> B -> A over B): the
-          // latest observation wins, so the exclusion applies again.
+        } else if (incoming.identity.versionClock === "received" && isExclusion(incoming.result)) {
+          // An excluded version observed again (A -> B -> A over B), or a version stored as
+          // projected by an older mapper that the active one excludes (a spam call stored under
+          // calls@1.1, re-delivered): the latest observation wins, so the exclusion applies.
           exclusions.push({ exclusion: { ...incoming.result, supersedes: { ...incoming.result.supersedes, receivedAt: incoming.lastSeenAt ?? incoming.receivedAt } }, rawEventId: Number(row.id) });
         }
       } else {
@@ -224,7 +225,10 @@ export async function ingestRecords(
   const { failed } = projection;
   // After projection, so an exclusion and a qualifying version in one batch resolve by the
   // source clock either way round.
-  const changed = projection.changed + (await applyExclusions(tx, exclusions, now));
+  const changed =
+    projection.changed +
+    (await applyExclusions(tx, exclusions, now)) +
+    (await reapplyNewerExclusions(tx, leadKeysOf([...items, ...reobserved]), now));
   for (const f of failed) {
     await tx.query(
       "update raw_events set status = 'quarantined', error_code = 'PROJECTION_FAILED', error_detail = $2, projected_at = null where id = $1",
@@ -257,7 +261,7 @@ export async function ingestRecords(
  * restores it through the ordinary upsert. Guarded by the source clock like every projection:
  * an exclusion older than the stored version is a no-op. Returns the rows changed.
  */
-async function applyExclusions(tx: Queryable, exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }>, now: Date): Promise<number> {
+export async function applyExclusions(tx: Queryable, exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }>, now: Date): Promise<number> {
   if (exclusions.length === 0) return 0;
   const rows = exclusions.map(({ exclusion, rawEventId }) => ({
     source: exclusion.supersedes.source,
@@ -274,6 +278,36 @@ async function applyExclusions(tx: Queryable, exclusions: Array<{ exclusion: Map
      where t.source = r."source" and t.source_lead_id = r."sourceLeadId" and t.source_updated_at <= r."receivedAt"
        and (t.excluded_code is distinct from r."code" or t.raw_event_id <> r."rawEventId")`,
     [JSON.stringify(rows), now],
+  );
+  return result.rowCount ?? 0;
+}
+
+/** The (source, source lead id) of every lead projection in a batch. */
+export function leadKeysOf(items: ProjectionItem[]): Array<{ source: string; sourceLeadId: string }> {
+  return items
+    .filter((i) => i.projection.table === "leads")
+    .map((i) => {
+      const row = i.projection.row as { source: string; sourceLeadId: string };
+      return { source: row.source, sourceLeadId: row.sourceLeadId };
+    });
+}
+
+/**
+ * A lead just projected from a version OLDER than an excluded version of the same call (a held
+ * record replayed with its original receipt time, after the source had marked the call spam)
+ * must not count: the newest stored version decides. Applies that newer exclusion. Returns the
+ * rows changed.
+ */
+export async function reapplyNewerExclusions(tx: Queryable, keys: Array<{ source: string; sourceLeadId: string }>, now: Date): Promise<number> {
+  const calls = keys.filter((k) => k.source === "calls").map((k) => k.sourceLeadId);
+  if (calls.length === 0) return 0;
+  const result = await tx.query(
+    `update leads l set excluded_code = x.exclusion_code, excluded_at = $2, raw_event_id = x.id, source_updated_at = x.received_at
+     from (select distinct on (entity_id) entity_id, id, exclusion_code, received_at from raw_events
+           where source = 'calls' and status = 'excluded' and entity_id = any($1::text[])
+           order by entity_id, received_at desc, id desc) x
+     where l.source = 'calls' and l.source_lead_id = x.entity_id and x.received_at > l.source_updated_at`,
+    [calls, now],
   );
   return result.rowCount ?? 0;
 }

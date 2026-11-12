@@ -320,10 +320,18 @@ export async function resolveInTransaction(tx: PoolClient, now: Date, opts: Reso
      where t.outcome <> 'pending'`,
   );
 
-  const removed = await tx.query(
+  const removedPending = await tx.query(
     `delete from identity_links k using _ir_target t
      where t.outcome = 'pending' and k.source = t.source and k.source_record_id = t.source_lead_id`,
   );
+  // A lead the source has since marked as not a lead (outbound, spam: migration 0018) is not in
+  // v_leads, so it never reaches the target set above; its link must still go, or the person it
+  // tied together stays a prospect and its journey keeps a touch that never was one.
+  const removedExcluded = await tx.query(
+    `delete from identity_links k using leads l
+     where k.record_table = 'leads' and k.record_id = l.id and l.excluded_code is not null`,
+  );
+  const removed = { rowCount: (removedPending.rowCount ?? 0) + (removedExcluded.rowCount ?? 0) };
   const upserted = await tx.query<{ inserted: boolean }>(
     `insert into identity_links (identity_id, source, source_record_id, record_table, record_id, rule, confidence, evidence, linked_at)
      select d.identity_id, d.source, d.source_lead_id, 'leads', d.lead_id, d.rule, 1, d.evidence, $1

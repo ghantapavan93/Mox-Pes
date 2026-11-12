@@ -1,3 +1,4 @@
+import type { Pool } from "pg";
 import type { Queryable } from "@/lib/db";
 import { evidence } from "@/lib/ai/evidence";
 import { METRICS } from "@/lib/metrics/definitions";
@@ -100,7 +101,28 @@ export const exactDollars = (cents: number) => `${cents < 0 ? "−" : ""}$${Math
 const iso = (d: Date | string | null) => (d === null ? null : new Date(d).toISOString());
 const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 
-export async function traceBranchMetric(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
+export async function traceBranchMetric(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
+  // From a pool: every query of the trace reads one snapshot (repeatable read, read only), so an
+  // ingest landing between the scorecard and the record queries cannot fake a discrepancy
+  // (independent review F8). A caller's own client or transaction is used as it is.
+  if ("connect" in db && typeof db.connect === "function") {
+    const client = await (db as Pool).connect();
+    try {
+      await client.query("begin isolation level repeatable read read only");
+      const trace = await traceIn(client, viewer, args);
+      await client.query("commit");
+      return trace;
+    } catch (error) {
+      await client.query("rollback").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return traceIn(db as Queryable, viewer, args);
+}
+
+async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
   const branch = BRANCH_BY_ID.get(args.branchId);
   if (!branch) throw new TraceError(`Unknown branch ${args.branchId}`, 404);
   if (!(TRACEABLE as readonly string[]).includes(args.metric)) throw new TraceError(`Metric ${args.metric} cannot be traced yet`, 400);
@@ -155,18 +177,23 @@ export async function traceBranchMetric(db: Queryable, viewer: Viewer, args: { b
             (array_agg(re.id order by re.id desc))[1:3] as sample
      from raw_events re
      where re.status in ('excluded', 'quarantined') and re.occurred_at >= $1 and re.occurred_at < $2
-       and (re.payload ->> 'branch_tag' = $3 or re.payload -> 'properties' ->> 'branch_id' = $3
-            or re.payload ->> 'officeID' = $4)
+       -- The same branch rule as the investigator's tools: the branch the payload names (call tag,
+       -- web branch, D2D branch, CRM office), else for spend the branch its campaign maps to
+       -- (independent review F6: held spend was invisible here).
+       and coalesce(payload_branch(re.payload), (
+             select m.branch_id from ad_campaigns c join campaign_branch_map m on m.campaign_id = c.id
+             where c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId')) = $3
      group by re.source, re.status, coalesce(re.exclusion_code, re.error_code)
      order by count(*) desc`,
-    [from, to, branch.id, String(branch.crmOfficeId)],
+    params,
   );
   const unmapped = await db.query(
     `select c.id, c.external_campaign_id, count(*) as leads,
             (select coalesce(sum(s.cost_cents), 0) from ad_spend_daily s where s.campaign_id = c.id
               and s.spend_date >= ($1::timestamptz at time zone 'UTC')::date and s.spend_date < ($2::timestamptz at time zone 'UTC')::date) as spend
      from v_leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
-     where l.effective_branch_id = $3 and not exists (select 1 from campaign_branch_map m where m.campaign_id = c.id)
+     where l.effective_branch_id = $3 and l.occurred_at >= $1 and l.occurred_at < $2
+       and not exists (select 1 from campaign_branch_map m where m.campaign_id = c.id)
      group by c.id, c.external_campaign_id order by count(*) desc limit 20`,
     params,
   );

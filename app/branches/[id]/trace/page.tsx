@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge, ButtonLink, Callout, Card, Forbidden, KV, PageHeader, PeriodTabs, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { count, dateTime, money } from "@/lib/format";
-import { compareTraces, traceBranchMetric, TRACEABLE, type MetricTrace, type TraceableMetric } from "@/lib/lineage/trace";
+import { compareTraces, exactDollars, traceBranchMetric, TRACEABLE, type MetricTrace, type TraceableMetric } from "@/lib/lineage/trace";
 import { PERIODS, parsePeriod } from "@/lib/period";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
@@ -68,8 +68,8 @@ async function Trace({ params, searchParams }: Props) {
       {v.matches ? (
         <Callout tone="good" title="Reproduced from the records below" testId="trace-reproduced">
           {isCac
-            ? `${money(v.reproduced.paidSpendCents)} of paid media spend ÷ ${count(v.reproduced.paidAcquired)} new paid customers = ${money(v.reproduced.paidCacCents)}, the same as the scorecard to the cent.`
-            : `${money(v.reproduced.paidSpendCents)} of paid media spend, the same as the scorecard to the cent.`}
+            ? `${exactDollars(v.reproduced.paidSpendCents)} of paid media spend ÷ ${count(v.reproduced.paidAcquired)} new paid customers = ${v.reproduced.paidCacCents === null ? "n/a" : exactDollars(v.reproduced.paidCacCents)} (rounded to the cent), the same as the scorecard: spend to the cent, customers exactly.`
+            : `${exactDollars(v.reproduced.paidSpendCents)} of paid media spend, the same as the scorecard to the cent.`}
         </Callout>
       ) : (
         <Callout tone="bad" title="The records do not add up to the scorecard" testId="trace-discrepancy">

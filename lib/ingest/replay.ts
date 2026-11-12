@@ -1,13 +1,13 @@
 import type { Pool, PoolClient } from "pg";
 import { ActionError } from "@/lib/actions";
 import { withRollback, withTransaction } from "@/lib/db";
-import { isExclusion, type SourceName } from "@/lib/adapters/contract";
+import { isExclusion, type MapExclusion, type SourceName } from "@/lib/adapters/contract";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { recordEvent } from "@/lib/events/outbox";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
 import { branchRows, channelRows, paidCac, type Scope } from "@/lib/metrics/scorecard";
 import { feedbackSummary } from "@/lib/feedback";
-import { lockLeadWritesShared } from "./ingest";
+import { applyExclusions, leadKeysOf, lockLeadWritesShared, reapplyNewerExclusions } from "./ingest";
 import { projectAll, type ProjectionItem } from "./project";
 
 export interface ReplayRequest {
@@ -152,6 +152,7 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
     const items: ProjectionItem[] = [];
     const errors: ReplayResult["errors"] = [];
     const projectedIds: number[] = [];
+    const exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }> = [];
     for (const row of claimed.rows) {
       // A replayed record keeps its ORIGINAL receipt time: it was received then and only
       // failed to map. It must not beat a version received after it.
@@ -159,18 +160,24 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
       if (result.ok) {
         items.push({ projection: result.projection, rawEventId: Number(row.id) });
         projectedIds.push(Number(row.id));
-      } else if (isExclusion(result) && mode === "quarantined") {
-        // The source says this record is not counted (e.g. an outbound call): it is evidence,
-        // not an error, so it leaves the quarantine as excluded instead of failing again.
+      } else if (isExclusion(result)) {
+        // The source says this record is not counted (e.g. an outbound or spam call): evidence,
+        // not an error. In either mode it is marked excluded, and the lead an earlier version
+        // projected leaves the metrics (held-out review F2).
         await tx.query(
-          "update raw_events set status = 'excluded', exclusion_code = $2, exclusion_detail = $3, adapter_version = $4 where id = $1",
+          "update raw_events set status = 'excluded', error_code = null, error_detail = null, exclusion_code = $2, exclusion_detail = $3, adapter_version = $4 where id = $1",
           [Number(row.id), result.code, result.detail, `${req.source}@${req.mapperVersion}`],
         );
+        exclusions.push({ exclusion: result, rawEventId: Number(row.id) });
       } else {
         errors.push({ rawEventId: Number(row.id), code: result.code, detail: result.detail });
       }
     }
     await projectAll(tx, items);
+    // After projection: a replayed version keeps its original receipt time, so a newer excluded
+    // version of the same call still wins (held-out review F3), and exclusions found here apply.
+    await applyExclusions(tx, exclusions, req.now);
+    await reapplyNewerExclusions(tx, leadKeysOf(items), req.now);
     if (projectedIds.length > 0) {
       await tx.query(
         `update raw_events set status = 'projected', projected_at = $2, adapter_version = $3 where id = any($1::bigint[])`,

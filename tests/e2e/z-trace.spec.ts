@@ -12,7 +12,7 @@ test("a branch's paid CAC opens its trace: reproduced, with campaigns, customers
   await page.getByTestId("trace-link-paidCac").click();
   await expect(page).toHaveURL(/\/branches\/B09\/trace\?period=oct&metric=paid_cac/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Where does $");
-  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard to the cent");
+  await expect(page.getByTestId("trace-reproduced")).toContainText("the same as the scorecard: spend to the cent, customers exactly");
   // The incident's mechanism is visible without any AI: the migrated campaign's spend, filed as search by ads@1.0.
   const campaigns = page.getByTestId("trace-campaigns");
   await expect(campaigns).toContainText("pmax-lsa-B09");

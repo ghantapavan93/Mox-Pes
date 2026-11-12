@@ -149,11 +149,25 @@ describe("metric trace · paid CAC for one branch", () => {
     expect(t.value.discrepancies[0]).toContain("40001");
   });
 
+  it("counts an unmapped campaign's leads in the period only (independent review F7)", async () => {
+    const sep = await traceBranchMetric(pool, marketing, { branchId: "B12", period: SEP, metric: "paid_cac" });
+    expect(sep.missing.some((m) => m.kind === "unmapped_campaign")).toBe(false); // lsa-new's leads are all in October
+  });
+
   it("explains what changed between two periods, campaign by campaign", async () => {
     const sep = await traceBranchMetric(pool, marketing, { branchId: "B12", period: SEP, metric: "paid_cac" });
     const oct = await traceBranchMetric(pool, marketing, { branchId: "B12", period: OCT, metric: "paid_cac" });
     const diff = compareTraces(sep, oct);
     expect(diff).toMatchObject({ spendDeltaCents: 30_000, customersDelta: 2 });
     expect(diff.campaigns).toEqual([expect.objectContaining({ externalCampaignId: "gs-B12", beforeCents: 10_000, afterCents: 40_000, deltaCents: 30_000 })]);
+  });
+
+  // Last: it adds a held record to the shared fixture.
+  it("shows spend held at intake for a campaign mapped to the branch (independent review F6)", async () => {
+    await ingest(pool, "ads", [spend("gs-B12", "google_ads", 10, 6, 500, { currencyCode: "CAD" })], { now: NOW });
+    const t = await traceBranchMetric(pool, marketing, { branchId: "B12", period: OCT, metric: "paid_cac" });
+    expect(t.sourceRecords).toEqual(expect.arrayContaining([expect.objectContaining({ source: "ads", status: "quarantined", code: "CURRENCY_UNSUPPORTED", count: 1 })]));
+    expect(t.missing.some((m) => m.kind === "quarantined_records")).toBe(true);
+    expect(t.value.reproduced.paidSpendCents).toBe(40_000); // never summed
   });
 });

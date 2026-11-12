@@ -28,6 +28,14 @@ beforeAll(async () => {
 afterAll(async () => pool.end());
 
 describe("seeded demo scenario", () => {
+  it("leaves planner statistics on every table it filled, without waiting for autovacuum (R-20)", async () => {
+    // last_analyze is set only by an explicit ANALYZE; autovacuum sets last_autoanalyze.
+    const { rows } = await pool.query<{ relname: string }>(
+      `select relname from pg_stat_user_tables where schemaname = 'public' and n_live_tup > 0 and last_analyze is null order by relname`,
+    );
+    expect(rows.map((r) => r.relname)).toEqual([]);
+  });
+
   it("ingests everything once: every delivery beyond the first is absorbed", async () => {
     const r = await one(pool, "select count(*) as versions, sum(delivery_count) as deliveries from raw_events");
     expect(Number(r.deliveries) - Number(r.versions)).toBe(report.duplicates);

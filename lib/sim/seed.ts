@@ -121,6 +121,12 @@ export async function seed(pool: Pool, opts: SeedOptions = {}): Promise<SeedRepo
   // Every event the seed published is covered by the runs above: this marks them delivered
   // without re-running anything, so a fresh demo starts with no consumer backlog.
   await dispatchEvents(pool);
+  // The schema was dropped and rebuilt, so no table has planner statistics yet. Left alone,
+  // autovacuum analyzes the tables one at a time over the next minute or so, and a query
+  // planned mid-way sees statistics for some tables and not others. That produced plans that
+  // ran the Overview's conversion bridge for 20+ seconds instead of about one, and the
+  // four-minute browser path stalled on its first page (R-20). A bulk load ends with ANALYZE.
+  await pool.query("analyze");
 
   const stats = await pool.query(
     `select count(*) as raw, count(*) filter (where status = 'quarantined') as quarantined,

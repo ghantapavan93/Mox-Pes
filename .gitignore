@@ -51,6 +51,8 @@ next-env.d.ts
 # private interview research: notes on real people and outreach drafts stay off the public repo
 /research/
 /docs/outreach.md
+# the governing mission text quotes public profiles of real people: kept local like research/
+/docs/agent-work/MASTER-MISSION.md
 
 # full screenshot sets from scripts/capture-screens.ts (about 25 MB each); the committed
 # screenshots are the pixel baselines in tests/e2e/__screenshots__/

@@ -149,4 +149,40 @@ resolved".
 | B09 four-minute path alone, production server, reseeded each run | **10 / 10 passed** |
 | Playwright, production server (`CI=1`), pixel baselines (`VISUAL=1`) | **69 passed, 1 skipped, 0 failed, no retries**, 17.7 min. The skip is the demo-video recording |
 
-Not done here: a clean-checkout run of these commits (`bash C:/Temp/rso-verify-run.sh`).
+Clean checkout of `518ec0d` (done later the same evening, fresh worktree and freshly created
+databases): `npm ci`, migrate, seed, typecheck, lint, **vitest 551 / 551**, build, **Playwright
+`CI=1 VISUAL=1` 69 passed, 1 skipped, 0 failed** (14.3 min).
+Log: `changeguard-heldout/evidence/clean-checkout-518ec0d.log`.
+
+---
+
+# Held-out evaluation (same night)
+
+Full account: `CHANGEGUARD-HELDOUT.md`.
+
+| Commit | Content |
+|---|---|
+| `151badb` | Blind brief, format, scoring rules, 50 scenarios by an independent agent, runner: all frozen before any run |
+| `ea93e5a` | First contact, kept as it ran |
+| `b7fa221` | Three preflight fixes, each with a regression test that failed first |
+| `768a8ba` | Runner reports refused world steps as invalid scenarios; the rerun after fixes |
+
+| First contact (48 valid scenarios, 55 scored decisions) | Result |
+|---|---|
+| False approvals of unsafe changes | **0** |
+| Critical financial or authorization failures | **0** |
+| Required refusals refused | **25 / 25** |
+| Invariant violations | 0 |
+| Correct human reviews | 6 |
+| Missed reviews | 2 (fixed) |
+| False blocks | 5 (2 fixed, 2 label disagreements, 1 author data error) |
+| Blocks and reviews with stated evidence | 24 / 24 |
+
+| Final regression (code at `768a8ba`, nothing edited during the runs) | Result |
+|---|---|
+| `npm run typecheck`, `npm run lint`, `npm run build` | pass |
+| `vitest run` | **560 / 560**, 47 files, 301 s |
+| Playwright, production server, `CI=1 VISUAL=1` | **69 passed, 1 skipped, 0 failed**, 16.1 min |
+| Held-out set rerun | 31 / 48 match every expectation, 2 invalid; identical, decision for decision, to `after-fixes.json` |
+
+Log: `changeguard-heldout/evidence/final-regression.log`.

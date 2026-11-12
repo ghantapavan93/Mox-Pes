@@ -159,6 +159,20 @@ Verified by `tests/e2e/zzz-changeguard.spec.ts` on the production build.
 | 2:10 | Marketing | **Release** → **verified**: configuration applied, B44 gained exactly $4,539.34 from unallocated, no other branch moved, the exception cleared; **business improvement: not measured** | "Configuration success is not revenue." |
 | 2:40 | — | **Safe refusal:** a later flood of leads elsewhere turns it to recovery required, with no automatic rollback. Or try approving your own change | — |
 
+### Ninety-second cut
+
+The same path, shortened. Every beat is asserted by the first test in
+`tests/e2e/zzz-changeguard.spec.ts` on the production build. Start from a fresh seed, as
+Marketing, at `/changes`.
+
+| Time | Role | Action | Say |
+|---|---|---|---|
+| 0:00 | Marketing | Propose `lsa-B44-x` → **B04** | "Someone maps a new Local Services campaign to Briar." |
+| 0:15 | — | **Preflight failed**: `LEAD_EVIDENCE_DISAGREES`, `CROSS_BRAND`; B04 proposed, B44 lead evidence, other branches changed: none | "It ran the real write, measured every branch, rolled it back. The campaign's own leads are at Willow." |
+| 0:40 | Marketing | **Resubmit corrected change** (B44) → ready for review; "a different person must decide it" | "One click to the fix. And I can't approve my own change." |
+| 0:55 | Approver | Approve (bound to the configuration and preflight hashes) | "If the mapping or its evidence moves before release, this approval stops counting." |
+| 1:10 | Marketing | **Release** → **verified**: B44 gained exactly $4,539.34 from unallocated; **business improvement: not measured** | "Money moved, not created, and configuration success is not revenue." |
+
 ## Acceptance gates
 
 | Gate | Status |
@@ -185,8 +199,11 @@ Verified by `tests/e2e/zzz-changeguard.spec.ts` on the production build.
 - **Preview drift.** The preview is a snapshot. Release re-checks the base (mapping and
   evidence direction), not every number; other new data between preview and release shows up
   in verification, not as a block.
-- **No held-out scenarios.** The scenario set was written alongside the code. An independent
-  set (like the assistant's v3) is the next honest measurement.
+- **Held-out scenarios: one blind set, now used.** The 7 cases above were written alongside the
+  code. A 50-scenario blind set was then written by an independent agent and run once before any
+  fix (`CHANGEGUARD-HELDOUT.md`): 0 false approvals, 25 / 25 required refusals, 2 missed reviews,
+  5 false blocks. Four defects were fixed, so that set is no longer held out; a v2 is the next
+  honest measurement.
 - **Source contracts stop at review**, because mapper activation is a code deploy.
 
 ## The VP's question

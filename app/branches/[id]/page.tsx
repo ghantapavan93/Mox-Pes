@@ -73,8 +73,9 @@ async function Branch({ params, searchParams }: Props) {
         toolbar={<PeriodTabs current={period.key} base={`/branches/${branch.id}`} />}
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_spend`} />
+        <Stat metric="collected" value={money(t.collectedCents, true)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=collected`} sub={`${money(t.refundsCents, true)} refunded`} />
         <Stat metric="prospects" value={count(t.prospects)} sub={`${count(t.paidProspects)} paid`} />
         <Stat metric="acquired" value={count(t.acquired)} sub={`${count(t.sold)} sold in period`} />
         <Stat metric="paidCac" value={money(t.paidCacCents)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_cac`} sub={company ? `company ${money(company.paidCacCents)}` : undefined} tone={company?.paidCacCents && t.paidCacCents && t.paidCacCents > company.paidCacCents * 1.4 ? "bad" : "neutral"} />

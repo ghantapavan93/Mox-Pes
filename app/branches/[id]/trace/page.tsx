@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Badge, ButtonLink, Callout, Card, Forbidden, KV, PageHeader, PeriodTabs, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { count, dateTime, money } from "@/lib/format";
+import { CashTraceView } from "@/components/trace/CashTraceView";
+import { traceCash, type CashTrace } from "@/lib/lineage/cash";
 import { compareTraces, exactDollars, traceBranchMetric, TRACEABLE, type MetricTrace, type TraceableMetric } from "@/lib/lineage/trace";
-import { PERIODS, parsePeriod } from "@/lib/period";
-import { BRANCH_BY_ID } from "@/lib/reference";
+import { PERIODS, parsePeriod, type Period } from "@/lib/period";
+import { BRANCH_BY_ID, type Branch } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
-import { ForbiddenError } from "@/lib/viewer";
+import { ForbiddenError, type Viewer } from "@/lib/viewer";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -31,9 +33,10 @@ async function Trace({ params, searchParams }: Props) {
   const branch = BRANCH_BY_ID.get(id);
   if (!branch) notFound();
   const period = parsePeriod(sp.period);
-  const metric: TraceableMetric = typeof sp.metric === "string" && (TRACEABLE as readonly string[]).includes(sp.metric) ? (sp.metric as TraceableMetric) : "paid_cac";
   const viewer = await getViewer();
   const pool = getPool();
+  if (sp.metric === "collected") return <CashTracePage branch={branch} period={period} viewer={viewer} />;
+  const metric: TraceableMetric = typeof sp.metric === "string" && (TRACEABLE as readonly string[]).includes(sp.metric) ? (sp.metric as TraceableMetric) : "paid_cac";
   let trace: MetricTrace;
   let previous: MetricTrace | null = null;
   try {
@@ -276,6 +279,35 @@ function CustomerTable({ customers, label, testId }: { customers: MetricTrace["d
 const signed = (cents: number) => `${cents >= 0 ? "+" : "−"}${money(Math.abs(cents))}`;
 
 /** Opens the record behind an evidence id where the product has a page for it. */
+/** Collected cash, its refunds and the payments behind it (lib/lineage/cash.ts). */
+async function CashTracePage({ branch, period, viewer }: { branch: Branch; period: Period; viewer: Viewer }) {
+  let trace: CashTrace;
+  try {
+    trace = await traceCash(getPool(), viewer, { branchId: branch.id, period });
+  } catch (error) {
+    if (error instanceof ForbiddenError) return <Forbidden message={error.message} />;
+    throw error;
+  }
+  const question = `Why is collected cash ${exactDollars(trace.value.scorecard.collectedCents)} for ${branch.id} in ${period.label}?`;
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        crumbs={[{ href: `/?period=${period.key}`, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Cash trace" }]}
+        eyebrow={`Trace · ${branch.id} ${branch.name} · ${period.label}`}
+        title={`Where does ${exactDollars(trace.value.scorecard.collectedCents)} of collected cash come from?`}
+        description="Successful payments minus refunds, each by its own payment date, in this branch's CRM office. Every record below is stored; the figure is recomputed from them and checked against the scorecard."
+        actions={
+          <ButtonLink href={`/investigator?branch=${branch.id}&q=${encodeURIComponent(question)}`} variant="primary" testId="trace-investigate">
+            Investigate this number
+          </ButtonLink>
+        }
+      />
+      <PeriodTabs base={`/branches/${branch.id}/trace`} current={period.key} extra="&metric=collected" />
+      <CashTraceView trace={trace} branchLabel={`${branch.id} ${branch.name}`} />
+    </div>
+  );
+}
+
 function EvidenceLink({ id }: { id: string }) {
   const [kind, key] = id.split(":");
   const href = kind === "customer" ? `/customers/${key}` : kind === "exception" ? `/exceptions/${key}` : null;

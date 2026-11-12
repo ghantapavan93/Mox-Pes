@@ -98,6 +98,8 @@ export const GroundingReportSchema = z.strictObject({
   claimsDropped: z.number().int().nonnegative(),
   /** Verified claims downgraded to hypotheses (cited only definitions, not records). */
   downgraded: z.number().int().nonnegative(),
+  /** Claims dropped because a figure they state appears in no cited tool output (subset of claimsDropped). */
+  numericDropped: z.number().int().nonnegative().optional(),
   dropped: z.array(DroppedClaimSchema),
 });
 export type GroundingReport = z.infer<typeof GroundingReportSchema>;
@@ -109,6 +111,36 @@ export const InjectionWarningSchema = z.strictObject({
   pattern: z.string(),
 });
 export type InjectionWarning = z.infer<typeof InjectionWarningSchema>;
+
+/**
+ * The claim check (lib/ai/analyst.ts): every statement the investigation makes, typed, with its
+ * support decided OUTSIDE the model.
+ *
+ *   type     OBSERVATION  a fact read from a record;
+ *            DERIVATION   a figure computed by a deterministic tool (a CAC, a share, a sum it returned);
+ *            HYPOTHESIS   an explanation the evidence is consistent with, not proof;
+ *            RECOMMENDATION a suggested next step;
+ *            CAUSAL       a claim that something caused a business outcome.
+ *   status   SUPPORTED          cites ids a tool returned in this run, and every figure it states
+ *                               appears in those tools' output;
+ *            PARTIALLY_SUPPORTED evidence is real but does not prove it (hypotheses, recommendations);
+ *            CONFLICTED         its evidence disagrees with itself (e.g. a trace that does not reproduce);
+ *            UNSUPPORTED        dropped: invented evidence, a figure no tool returned, or an unmeasured cause;
+ *            NOT_DETERMINABLE   what the investigation says it could not establish.
+ */
+export const CLAIM_TYPES = ["OBSERVATION", "DERIVATION", "HYPOTHESIS", "RECOMMENDATION", "CAUSAL"] as const;
+export const SUPPORT_STATUSES = ["SUPPORTED", "PARTIALLY_SUPPORTED", "CONFLICTED", "UNSUPPORTED", "NOT_DETERMINABLE"] as const;
+
+export const ClaimSchema = z.strictObject({
+  id: z.string(),
+  type: z.enum(CLAIM_TYPES),
+  text: z.string(),
+  evidenceIds: z.array(z.string()),
+  numbers: z.array(z.strictObject({ text: z.string(), kind: z.enum(["money", "percent", "count"]), supported: z.boolean() })),
+  status: z.enum(SUPPORT_STATUSES),
+  reason: z.string(),
+});
+export type Claim = z.infer<typeof ClaimSchema>;
 
 export const InvestigationResultSchema = z.strictObject({
   mode: z.enum(["deterministic", "model"]),
@@ -130,6 +162,8 @@ export const InvestigationResultSchema = z.strictObject({
   refusal: z.strictObject({ reason: z.string() }).nullable(),
   grounding: GroundingReportSchema,
   warnings: z.array(InjectionWarningSchema),
+  /** Absent on investigations stored before the claim check existed. */
+  claims: z.array(ClaimSchema).optional(),
 });
 export type InvestigationResult = z.infer<typeof InvestigationResultSchema>;
 

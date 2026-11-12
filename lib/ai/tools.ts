@@ -3,7 +3,7 @@ import { ActionError } from "@/lib/actions";
 import type { SourceName } from "@/lib/adapters/contract";
 import { ACTIVE_VERSION, mapperFor, mapperVersions, referenceContext } from "@/lib/adapters/registry";
 import type { Queryable } from "@/lib/db";
-import { decisionVerdicts } from "@/lib/decision/verdicts";
+import { decisionVerdicts, FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import { getCustomerJourney } from "@/lib/identity";
 import { METRICS } from "@/lib/metrics/definitions";
 import { branchRows, channelRows, freshness, paidCac } from "@/lib/metrics/scorecard";
@@ -489,7 +489,8 @@ export interface IngestionFailures {
   }>;
   duplicates: Array<{ source: string; recordsRedelivered: number; duplicateDeliveries: number; storedEvents: number | null; sampleRawEventIds: number[] }>;
   payloadConflicts: Array<{ exceptionId: number; summary: string; status: string }>;
-  streams: Array<{ stream: string; source: string; lastRunStatus: string | null; lastSuccessAt: string | null; hoursSinceSuccess: number | null; lastSuccessRunId: number | null; latestEventAt: string | null }>;
+  /** staleAfterHours: the freshness policy applied (decision readiness), returned so a claim can quote it. */
+  streams: Array<{ stream: string; source: string; lastRunStatus: string | null; lastSuccessAt: string | null; hoursSinceSuccess: number | null; staleAfterHours: number; lastSuccessRunId: number | null; latestEventAt: string | null }>;
   failedRuns: Array<{ id: number; stream: string; startedAt: string | null; error: string | null; recoveredByRunId: number | null }>;
 }
 
@@ -575,6 +576,7 @@ export const getIngestionFailures = defineTool({
           lastRunStatus: s.lastRunStatus,
           lastSuccessAt: iso(s.lastSuccessAt),
           hoursSinceSuccess: hours(s.lastSuccessAt),
+          staleAfterHours: FRESHNESS_MAX_AGE_HOURS,
           lastSuccessRunId: lastSuccessByStream.get(s.stream) ?? null,
           latestEventAt: iso(s.latestEventAt),
         })),

@@ -56,9 +56,49 @@ export function FindingsView({ investigationId, result, returnedIds }: { investi
           </ul>
         )}
       </section>
+      {result.claims && result.claims.length > 0 && <ClaimCheck claims={result.claims} />}
       {/* Keyed by the id: picking a related record remounts the drawer in its loading state. */}
       {open && <EvidenceDrawer key={open} investigationId={investigationId} evidenceId={open} returned={returnedIds} onClose={close} onPick={setOpen} />}
     </div>
+  );
+}
+
+const STATUS_TONE = { SUPPORTED: "good", PARTIALLY_SUPPORTED: "accent", CONFLICTED: "bad", UNSUPPORTED: "bad", NOT_DETERMINABLE: "neutral" } as const;
+const STATUS_LABEL = { SUPPORTED: "supported", PARTIALLY_SUPPORTED: "partly supported", CONFLICTED: "conflicted", UNSUPPORTED: "unsupported", NOT_DETERMINABLE: "not determinable" } as const;
+
+/**
+ * The claim check, decided outside the model (lib/ai/analyst.ts): every statement, its type,
+ * whether its evidence and each figure it states were found in this run's tool outputs, and
+ * why anything was rejected. Collapsed to one line of counts by default.
+ */
+function ClaimCheck({ claims }: { claims: NonNullable<InvestigationResult["claims"]> }) {
+  const tally = (s: keyof typeof STATUS_TONE) => claims.filter((c) => c.status === s).length;
+  return (
+    <section data-testid="claim-check">
+      <details>
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-faint">
+          Claim check · {tally("SUPPORTED")} supported · {tally("PARTIALLY_SUPPORTED")} partly · {tally("UNSUPPORTED") + tally("CONFLICTED")} rejected or conflicted · {tally("NOT_DETERMINABLE")} not determinable
+        </summary>
+        <p className="mt-2 text-xs text-muted">Checked by code, not by the model: every cited id must have been returned by a tool in this run, and every dollar amount, percentage and count must appear in those tools&apos; output. A cause of a business outcome is never accepted without a measured experiment.</p>
+        <ul className="mt-2 space-y-2 text-sm">
+          {claims.map((c) => (
+            <li key={c.id} className="rounded border border-border p-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</Badge>
+                <span className="text-[11px] uppercase tracking-wide text-faint">{c.type.toLowerCase()}</span>
+                {c.numbers.map((n) => (
+                  <span key={n.text} className={`font-mono text-[11px] ${n.supported ? "text-good" : "text-bad"}`}>
+                    {n.supported ? "✓" : "✗"} {n.text}
+                  </span>
+                ))}
+              </div>
+              <p className={`mt-1 ${c.status === "UNSUPPORTED" ? "text-muted line-through decoration-bad/50" : ""}`}>{c.text}</p>
+              <p className="mt-0.5 text-xs text-muted">{c.reason}</p>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
   );
 }
 

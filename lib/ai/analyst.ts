@@ -1,5 +1,45 @@
-import type { DraftFindings, DroppedClaim, GroundingReport, Observation } from "./contract";
+import type { Claim, DraftFindings, DroppedClaim, GroundingReport, Observation } from "./contract";
 import { parseEvidenceId } from "./evidence";
+import { checkNumbers, outputNumbers, type NumberCheck } from "./numbers";
+
+/**
+ * What the tools of this run actually said, per evidence id: the numbers in the output of every
+ * tool call that returned the id, and ids whose output reports it does not reproduce (a metric
+ * trace with a discrepancy). Built from the recorded steps, never from the model's text.
+ */
+export interface EvidenceFacts {
+  numbersById: ReadonlyMap<string, ReadonlySet<number>>;
+  conflicted: ReadonlySet<string>;
+}
+
+export function evidenceFacts(steps: ReadonlyArray<{ kind: string; status: string; output: unknown; evidenceIds: string[] }>): EvidenceFacts {
+  const numbersById = new Map<string, Set<number>>();
+  const conflicted = new Set<string>();
+  for (const s of steps) {
+    if (s.kind !== "tool_call" || s.status !== "ok") continue;
+    const numbers = outputNumbers(s.output);
+    const value = (s.output as { value?: { matches?: unknown } } | null)?.value;
+    for (const id of s.evidenceIds) {
+      const set = numbersById.get(id) ?? new Set<number>();
+      for (const n of numbers) set.add(n);
+      numbersById.set(id, set);
+      if (value && value.matches === false) conflicted.add(id);
+    }
+  }
+  return { numbersById, conflicted };
+}
+
+function factsFor(ids: string[], facts: EvidenceFacts): Set<number> {
+  const out = new Set<number>();
+  for (const id of ids) for (const n of facts.numbersById.get(id) ?? []) out.add(n);
+  return out;
+}
+
+/** The figures in a claim that none of its cited tool outputs contains. */
+function unsupportedFigures(text: string, ids: string[], facts: EvidenceFacts | undefined): NumberCheck[] {
+  if (!facts) return [];
+  return checkNumbers(text, factsFor(ids, facts)).filter((c) => !c.supported);
+}
 
 /**
  * The analyst stage: grounding and classification, the same for both investigators.
@@ -54,9 +94,11 @@ export function isCausalImpactClaim(text: string): boolean {
   return CAUSAL_IMPACT.some((re) => re.test(text)) && !HEDGED.test(text);
 }
 
-export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>): GroundedDraft {
+export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>, facts?: EvidenceFacts): GroundedDraft {
   const dropped: DroppedClaim[] = [];
   let downgraded = 0;
+  let numericDropped = 0;
+  const figureReason = (bad: NumberCheck[]) => `states ${bad.map((b) => b.text).join(", ")}, which no tool output it cites contains; figures must come from the tools`;
 
   const observations: Observation[] = [];
   for (const o of draft.observations) {
@@ -73,6 +115,12 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>)
         unsupported,
         reason: o.evidenceIds.length === 0 ? "cites no evidence" : "cites evidence no tool returned in this run",
       });
+      continue;
+    }
+    const badFigures = unsupportedFigures(o.text, o.evidenceIds, facts);
+    if (badFigures.length > 0) {
+      numericDropped++;
+      dropped.push({ where: "observation", text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: figureReason(badFigures) });
       continue;
     }
     const recordBacked = o.evidenceIds.some((id) => !NON_RECORD_KINDS.has(parseEvidenceId(id)?.kind ?? ""));
@@ -99,6 +147,14 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>)
         unsupported,
         reason: suspectedCause.evidenceIds.length === 0 ? "cites no evidence" : "cites evidence no tool returned in this run",
       });
+      suspectedCause = null;
+    }
+  }
+  if (suspectedCause) {
+    const badFigures = unsupportedFigures(suspectedCause.text, suspectedCause.evidenceIds, facts);
+    if (badFigures.length > 0) {
+      numericDropped++;
+      dropped.push({ where: "suspectedCause", text: suspectedCause.text, evidenceIds: suspectedCause.evidenceIds, unsupported: [], reason: figureReason(badFigures) });
       suspectedCause = null;
     }
   }
@@ -130,9 +186,61 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>)
       claimsKept: claimsIn - claimsDropped,
       claimsDropped,
       downgraded,
+      ...(facts ? { numericDropped } : {}),
       dropped,
     },
   };
+}
+
+const DERIVED = /[÷=]|\breproduc|\bper (?:(?:new|paid) )*customer\b|\bCAC\b|\bshare\b|\bratio\b/i;
+
+/**
+ * Every statement of a grounded result, typed and with its support status (see ClaimSchema).
+ * Kept observations are SUPPORTED (verified) or PARTIALLY_SUPPORTED (hypotheses); anything the
+ * grounding dropped is UNSUPPORTED with its reason; a claim whose cited evidence reports it does
+ * not reproduce is CONFLICTED; missing information is NOT_DETERMINABLE.
+ */
+export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | undefined): Claim[] {
+  const claims: Claim[] = [];
+  const add = (c: Omit<Claim, "id">) => claims.push({ id: `c${claims.length + 1}`, ...c });
+  const numbers = (text: string, ids: string[]) => (facts ? checkNumbers(text, factsFor(ids, facts)) : []);
+  const conflicted = (ids: string[]) => facts !== undefined && ids.some((id) => facts.conflicted.has(id));
+  const d = grounded.draft;
+
+  for (const o of d.observations) {
+    const nums = numbers(o.text, o.evidenceIds);
+    if (o.status === "verified") {
+      const conflict = conflicted(o.evidenceIds);
+      add({
+        // A computed figure (a ratio, a share, a reproduction) is a derivation; a count or amount
+        // read from a record is an observation, even though it contains a number.
+        type: DERIVED.test(o.text) ? "DERIVATION" : "OBSERVATION",
+        text: o.text,
+        evidenceIds: o.evidenceIds,
+        numbers: nums,
+        status: conflict ? "CONFLICTED" : "SUPPORTED",
+        reason: conflict ? "its evidence reports the number does not reproduce from the records" : nums.length ? "cited records returned by tools in this run; every figure appears in their output" : "cited records returned by tools in this run",
+      });
+    } else {
+      add({ type: "HYPOTHESIS", text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "PARTIALLY_SUPPORTED", reason: `consistent with the cited evidence (${o.strength ?? "weak"}), not proof` });
+    }
+  }
+  if (d.suspectedCause) {
+    add({ type: "HYPOTHESIS", text: d.suspectedCause.text, evidenceIds: d.suspectedCause.evidenceIds, numbers: numbers(d.suspectedCause.text, d.suspectedCause.evidenceIds), status: "PARTIALLY_SUPPORTED", reason: "the most likely explanation of the evidence; an investigation does not prove a cause" });
+  }
+  for (const x of grounded.report.dropped) {
+    add({
+      type: x.reason.startsWith("claims a business improvement") ? "CAUSAL" : x.where === "proposal" ? "RECOMMENDATION" : "OBSERVATION",
+      text: x.text,
+      evidenceIds: x.evidenceIds,
+      numbers: [],
+      status: "UNSUPPORTED",
+      reason: x.reason,
+    });
+  }
+  add({ type: "RECOMMENDATION", text: d.recommendedNextAction, evidenceIds: [], numbers: [], status: "PARTIALLY_SUPPORTED", reason: "a suggested next step, not a fact; any change it leads to goes through dry run and approval" });
+  for (const m of d.missingInformation) add({ type: "OBSERVATION", text: m, evidenceIds: [], numbers: [], status: "NOT_DETERMINABLE", reason: "the investigation could not establish this from the records it may read" });
+  return claims;
 }
 
 /** Observations grouped the way the analyst reports them. */

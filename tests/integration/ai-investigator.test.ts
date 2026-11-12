@@ -12,6 +12,8 @@ import { getInvestigation, listInvestigations, resolveEvidence } from "@/lib/ai/
 import { StepRecorder, executeTool } from "@/lib/ai/steps";
 import { resolveIdentities } from "@/lib/identity";
 import { ActionError } from "@/lib/actions";
+import { traceBranchMetric } from "@/lib/lineage/trace";
+import { PERIODS } from "@/lib/period";
 import { ForbiddenError, VIEWERS, type Viewer } from "@/lib/viewer";
 import { bindWorkflowPorts } from "@/lib/workflow/ports";
 import { approveProposal, dryRunProposal, executeProposal } from "@/lib/workflow/proposals";
@@ -495,6 +497,44 @@ describe("model tool loop (mocked client)", () => {
     expect(kinds.filter((k) => k === "tool_call")).toHaveLength(2);
     const row = await one(pool, "select mode, model, input_tokens, output_tokens, cost_micros from investigations where id = $1", [out.id]);
     expect(row).toMatchObject({ mode: "model", model: "claude-opus-5-5", input_tokens: 3000, output_tokens: 600, cost_micros: "24000" });
+  });
+
+  it("a figure the tools never returned is dropped even when it cites a real evidence id; every statement is typed and its support stated", async () => {
+    await seedB09();
+    const trace = await traceBranchMetric(pool, marketing, { branchId: B09, period: PERIODS.oct, metric: "paid_cac" });
+    const cac = trace.value.reproduced.paidCacCents!;
+    const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const bm = `branch_metrics:${B09}:oct`;
+    const client = scriptedClient([
+      [toolUse("a", "getMetricTrace", { branchId: B09, period: "oct" })],
+      [
+        toolUse("b", "submit_findings", {
+          summary: "B09's paid CAC, traced.",
+          observations: [
+            { text: `Paid-media CAC at B09 is ${dollars(cac)} per new paid customer.`, evidenceIds: [bm], status: "verified" },
+            { text: `Paid-media CAC at B09 is ${dollars(cac + 6871)} per new paid customer.`, evidenceIds: [bm], status: "verified" },
+            { text: "The campaign re-map increased revenue at B09.", evidenceIds: [bm], status: "verified" },
+          ],
+          suspectedCause: null,
+          confidence: { level: "medium", why: "Traced." },
+          recommendedNextAction: "Review the mapping of the B09 Local Services campaign.",
+          expectedEffect: "None until reviewed.",
+          risks: [],
+          missingInformation: ["Whether the campaign's leads would have converted without the ad."],
+          proposals: [],
+        }),
+      ],
+    ]);
+    const out = await runInvestigation(pool, { question: "Why is B09's paid CAC what it is?", branchId: B09, viewer: marketing, now: NOW, client });
+    expect(out.mode).toBe("model");
+    expect(out.result.observations.map((o) => o.text)).toEqual([`Paid-media CAC at B09 is ${dollars(cac)} per new paid customer.`]);
+    expect(out.result.grounding).toMatchObject({ claimsDropped: 2, numericDropped: 1 });
+    const claims = out.result.claims!;
+    expect(claims.find((c) => c.text.includes(dollars(cac)) && c.status === "SUPPORTED")).toMatchObject({ type: "DERIVATION", numbers: [{ text: dollars(cac), kind: "money", supported: true }] });
+    expect(claims.find((c) => c.text.includes(dollars(cac + 6871)))).toMatchObject({ status: "UNSUPPORTED", reason: expect.stringContaining(dollars(cac + 6871)) });
+    expect(claims.find((c) => c.text.includes("increased revenue"))).toMatchObject({ type: "CAUSAL", status: "UNSUPPORTED" });
+    expect(claims.find((c) => c.type === "RECOMMENDATION")).toMatchObject({ status: "PARTIALLY_SUPPORTED" });
+    expect(claims.find((c) => c.status === "NOT_DETERMINABLE")?.text).toContain("would have converted");
   });
 
   it("a model that never submits hits the turn budget and the deterministic investigator answers, labelled as such", async () => {

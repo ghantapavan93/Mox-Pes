@@ -3,7 +3,7 @@ import { ActionError } from "@/lib/actions";
 import { getNow } from "@/lib/db";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
-import { groundDraft } from "./analyst";
+import { buildClaims, evidenceFacts, groundDraft } from "./analyst";
 import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
 import { ACTION_REFUSAL, detectIntent, runDeterministic, type PlanContext } from "./deterministic";
 import { MODEL_ID, anthropicModelClient, costMicros, runModelInvestigator, type ModelClient, type TokenUsage } from "./model";
@@ -117,10 +117,13 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
 
     // Analyst: ground every claim in this run's tool evidence, classify, adjust confidence.
     const analystStarted = performance.now();
-    const grounded = groundDraft(draft, recorder.returnedEvidence);
+    // Numbers are checked against what the tools returned, outside the model (lib/ai/numbers.ts).
+    const facts = evidenceFacts(recorder.steps);
+    const grounded = groundDraft(draft, recorder.returnedEvidence, facts);
+    const claims = buildClaims(grounded, facts);
     await recorder.record({
       stage: "analyst", kind: "analysis", tool: null, input: { claims: grounded.report.claimsIn },
-      outputSummary: `Kept ${grounded.report.claimsKept} of ${grounded.report.claimsIn} claim(s); dropped ${grounded.report.claimsDropped} unsupported; downgraded ${grounded.report.downgraded}; ${recorder.returnedEvidence.size} evidence id(s) returned by tools`,
+      outputSummary: `Kept ${grounded.report.claimsKept} of ${grounded.report.claimsIn} claim(s); dropped ${grounded.report.claimsDropped} unsupported (${grounded.report.numericDropped ?? 0} for a figure no tool returned); downgraded ${grounded.report.downgraded}; ${recorder.returnedEvidence.size} evidence id(s) returned by tools`,
       output: grounded.report, evidenceIds: [], status: "ok", error: null, ms: performance.now() - analystStarted,
     });
 
@@ -147,6 +150,7 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
       refusal: refusal ? { reason: refusal } : null,
       grounding: grounded.report,
       warnings: recorder.warnings,
+      claims,
     });
     const latencyMs = Math.round(performance.now() - started);
     const cost = mode === "model" || usage.input + usage.output > 0 ? costMicros(usage) : 0;

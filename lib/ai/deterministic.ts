@@ -743,8 +743,15 @@ async function branchMismatchPlan(ctx: PlanContext, d: DetectedIntent): Promise<
     entry.ids.push(e.id);
     pairs.set(key, entry);
   }
+  // The list is a bounded sample: state the true total from the tool's counts, and how many of
+  // them were read, so a sample size is never presented as the whole (found by the numeric
+  // claim check: "25 lead(s)" at a branch with 58 open mismatches).
+  const openTotal = list.counts.find((c) => c.kind === "branch_mismatch")?.open ?? rows.length;
+  const sampled = rows.length < openTotal;
   const observations: Observation[] = [...pairs.values()].slice(0, 4).map((p) => ({
-    text: `${p.ids.length} lead(s) captured for ${p.lead} belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`,
+    text: sampled
+      ? `${openTotal} branch-mismatch exception(s) are open${d.branchId ? ` at ${d.branchId}` : ""}; of the ${rows.length} read, ${p.ids.length} are leads captured for ${p.lead} that belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`
+      : `${p.ids.length} lead(s) captured for ${p.lead} belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`,
     evidenceIds: p.ids.slice(0, 5).map(evidence.exception),
     status: "verified" as const,
   }));

@@ -179,6 +179,7 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
   await lockCurrencyShared(db);
   const rules = items.some(unstated) ? await activeCurrencyRules(db) : new Set<string>();
   const held: Array<{ rawEventId: number; platform: string; externalCampaignId: string; spendDate: string; sourceUpdatedAt: string; adAccountId: string }> = [];
+  const heldRows: Array<Record<string, unknown>> = [];
   const kept: ProjectionItem[] = [];
   for (const item of items) {
     if (!unstated(item) || item.projection.table !== "ad_spend_daily") {
@@ -190,6 +191,7 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
       kept.push({ ...item, projection: { ...item.projection, row: { ...row, currencyBasis: "account_rule_usd" } } });
     } else {
       held.push({ rawEventId: item.rawEventId, platform: row.platform, externalCampaignId: row.externalCampaignId, spendDate: row.spendDate, sourceUpdatedAt: row.sourceUpdatedAt.toISOString(), adAccountId: row.adAccountId });
+      heldRows.push(row as unknown as Record<string, unknown>);
     }
   }
   // The newest observation decides: a spend version older than a held one is not counted, whether
@@ -226,6 +228,20 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
     return newer === undefined || row.sourceUpdatedAt.getTime() > newer;
   });
   if (held.length > 0) {
+    // The campaign exists whatever its money's currency: its identity is recorded (no spend), so it
+    // can be mapped, reviewed and attributed before the spend is authorized. Before 2026-11-12 a
+    // campaign whose spend was all held had no record and could not be mapped at all (VP
+    // acceptance, first contact: VP-10). An existing record is never changed by a held version.
+    await db.query(
+      `insert into ad_campaigns (platform, ad_account_id, external_campaign_id, name, channel_code, first_seen_at, campaign_type, local_services_enabled)
+       select distinct on (r."platform", r."externalCampaignId")
+         r."platform", r."adAccountId", r."externalCampaignId", r."campaignName", r."channelCode", r."sourceUpdatedAt", r."campaignType", r."localServicesEnabled"
+       from jsonb_to_recordset($1::jsonb) as r("platform" text, "adAccountId" text, "externalCampaignId" text, "campaignName" text, "channelCode" text,
+         "sourceUpdatedAt" timestamptz, "campaignType" text, "localServicesEnabled" boolean)
+       order by r."platform", r."externalCampaignId", r."sourceUpdatedAt"
+       on conflict (platform, external_campaign_id) do nothing`,
+      [JSON.stringify(heldRows)],
+    );
     await db.query(
       `update raw_events set status = 'excluded', error_code = null, error_detail = null, exclusion_code = $2,
          exclusion_detail = 'the feed stated no currency and no authorized rule says this ad account reports in USD; not counted', projected_at = null

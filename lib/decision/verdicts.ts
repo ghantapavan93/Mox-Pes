@@ -293,9 +293,35 @@ function integrityVerdict(
 
 // ── readiness ────────────────────────────────────────────────────────────────
 
+/**
+ * A feed's freshness, by the same rule as the investigation workspace and the reliability signals:
+ * a stream with sync runs is stale when its latest run failed or it has had no successful run
+ * within FRESHNESS_MAX_AGE_HOURS; a push source with no runs falls back to its latest received
+ * record. Before 2026-11-12 readiness used only the latest received record, so a feed whose syncs
+ * had been failing for eleven days, with records received earlier, read as fresh (VP acceptance,
+ * first contact: VP-01, VP-08, VP-09).
+ */
 interface FeedState {
   source: string;
+  /** The sync stream (e.g. crm.payment), or null for a source judged by its received records. */
+  stream: string | null;
   lastReceivedAt: Date | null;
+  lastSuccessAt: Date | null;
+  lastRunFailed: boolean;
+}
+
+function staleReason(f: FeedState, now: Date): string | null {
+  const limit = FRESHNESS_MAX_AGE_HOURS * 3_600_000;
+  const hours = (d: Date) => Math.round((now.getTime() - d.getTime()) / 3_600_000);
+  if (f.stream) {
+    if (f.lastRunFailed) return `The ${f.stream} sync's latest run failed${f.lastSuccessAt ? ` (last success ${hours(f.lastSuccessAt)} h ago)` : ""}.`;
+    if (!f.lastSuccessAt) return `The ${f.stream} sync has never succeeded.`;
+    if (now.getTime() - f.lastSuccessAt.getTime() > limit) return `The ${f.stream} sync last succeeded ${hours(f.lastSuccessAt)} h ago (limit ${FRESHNESS_MAX_AGE_HOURS} h).`;
+    return null;
+  }
+  if (!f.lastReceivedAt) return (REQUIRED_SOURCES as readonly string[]).includes(f.source) ? `The ${f.source} feed has never delivered a record.` : null;
+  if (now.getTime() - f.lastReceivedAt.getTime() > limit) return `The ${f.source} feed last delivered ${hours(f.lastReceivedAt)} h ago (limit ${FRESHNESS_MAX_AGE_HOURS} h).`;
+  return null;
 }
 
 function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: BudgetSignal, feeds: FeedState[], now: Date): ReadinessVerdict {
@@ -339,23 +365,11 @@ function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: Bu
         },
   );
 
-  const stale = feeds.filter((f) => {
-    if (!f.lastReceivedAt) return (REQUIRED_SOURCES as readonly string[]).includes(f.source);
-    return now.getTime() - f.lastReceivedAt.getTime() > FRESHNESS_MAX_AGE_HOURS * 3_600_000;
-  });
+  const stale = feeds.map((f) => staleReason(f, now)).filter((r): r is string => r !== null);
   if (stale.length === 0) {
-    reasons.push({ code: "freshness", status: "pass", text: `Every feed delivered within ${FRESHNESS_MAX_AGE_HOURS} h of the business clock.` });
+    reasons.push({ code: "freshness", status: "pass", text: `Every feed synced successfully within ${FRESHNESS_MAX_AGE_HOURS} h of the business clock, and no latest sync failed.` });
   }
-  for (const f of stale) {
-    reasons.push({
-      code: "freshness",
-      status: "fail",
-      text: f.lastReceivedAt
-        ? `The ${f.source} feed last delivered ${Math.round((now.getTime() - f.lastReceivedAt.getTime()) / 3_600_000)} h ago (limit ${FRESHNESS_MAX_AGE_HOURS} h).`
-        : `The ${f.source} feed has never delivered a record.`,
-      href: "/audit",
-    });
-  }
+  for (const text of stale) reasons.push({ code: "freshness", status: "fail", text, href: "/integrations?view=pipeline" });
 
   const blockers = reasons.filter((r) => r.status === "fail");
   return { status: blockers.length === 0 ? "ready" : "not_ready", reasons, blockers };
@@ -499,15 +513,30 @@ async function spendDaysByChannel(db: Queryable, branchId: string, period: Perio
 }
 
 async function feedFreshness(db: Queryable): Promise<FeedState[]> {
+  const sources = [...REQUIRED_SOURCES, ...LEAD_SOURCES];
   // One indexed max() per source (raw_events_received_idx), not a scan of the event log.
-  const { rows } = await db.query<{ source: string; last: Date | null }>(
+  const received = await db.query<{ source: string; last: Date | null }>(
     `select s as source, (select max(received_at) from raw_events where source = s) as last
      from unnest($1::text[]) as s`,
-    [[...REQUIRED_SOURCES, ...LEAD_SOURCES]],
+    [sources],
   );
-  return rows
-    .filter((r) => r.last !== null || (REQUIRED_SOURCES as readonly string[]).includes(r.source))
-    .map((r) => ({ source: r.source, lastReceivedAt: r.last }));
+  // Every sync stream's latest run and latest success (the rule shared with lib/health/signals.ts).
+  const runs = await db.query<{ source: string; stream: string; last_status: string | null; last_ok: Date | null }>(
+    `select source, stream, (array_agg(status order by started_at desc))[1] as last_status,
+            max(finished_at) filter (where status = 'succeeded') as last_ok
+     from ingestion_runs where source = any($1::text[]) group by source, stream`,
+    [sources],
+  );
+  const out: FeedState[] = [];
+  for (const r of received.rows) {
+    const streams = runs.rows.filter((x) => x.source === r.source);
+    if (streams.length > 0) {
+      for (const s of streams) out.push({ source: r.source, stream: s.stream, lastReceivedAt: r.last, lastSuccessAt: s.last_ok, lastRunFailed: s.last_status === "failed" });
+    } else if (r.last !== null || (REQUIRED_SOURCES as readonly string[]).includes(r.source)) {
+      out.push({ source: r.source, stream: null, lastReceivedAt: r.last, lastSuccessAt: null, lastRunFailed: false });
+    }
+  }
+  return out;
 }
 
 async function holdoutExperiments(db: Queryable, branchId: string, period: Period): Promise<HoldoutRow[]> {

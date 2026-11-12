@@ -79,6 +79,8 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
             const key = `${a.platform}:${a.adAccountId}`;
             const reason = reasons[key] ?? "";
             const inputId = `currency-reason-${key.replace(/[^\w-]/g, "_")}`;
+            // A rule already proposed for this account waits for a second person: no second proposal.
+            const pendingRule = pending.find((r) => r.platform === a.platform && r.adAccountId === a.adAccountId);
             return (
               <li key={key} className="rounded border border-border p-2">
                 <div className="flex flex-wrap items-center gap-2">
@@ -90,7 +92,8 @@ export function CurrencyRules({ rules, awaiting, canPropose, canApprove, subject
                     {a.campaignDays} campaign-day{a.campaignDays === 1 ? "" : "s"} of spend, {dollars(a.amountCents)} as written, not counted: the feed states no currency
                   </span>
                 </div>
-                {canPropose && (
+                {pendingRule && <p className="mt-1 text-xs text-muted">A rule for this account is proposed by {pendingRule.proposedBy} and waits for a different approver; the spend stays held until then.</p>}
+                {canPropose && !pendingRule && (
                   <div className="mt-2 flex flex-wrap items-end gap-2">
                     <label htmlFor={inputId} className="flex min-w-0 flex-1 flex-col gap-1">
                       <span className="text-xs text-muted">Why {a.adAccountId} reports in USD</span>

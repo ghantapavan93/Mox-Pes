@@ -47,7 +47,9 @@ describe("reliability signals", () => {
     await proposeCurrencyRule(pool, VIEWERS.engineer, { platform: "google_ads", adAccountId: "ACC-SIG", reason: "the account settings show USD billing", now: NOW });
     const after = await reliabilitySignals(pool, { period: PERIODS.oct, now: NOW });
     expect(after.find((s) => s.code === "currency_rule_pending")).toMatchObject({ owner: "approver" });
-    // A proposal is not yet a rule: the account is no longer "awaiting a decision", but still not counted.
-    expect(after.find((s) => s.code === "currency_unstated")).toBeUndefined();
+    // A proposal is not yet a rule: the spend is still held and still awaits a decision, so both
+    // signals stand until a different approver authorizes it (VP acceptance, first contact: the
+    // proposal used to hide the held money).
+    expect(after.find((s) => s.code === "currency_unstated")?.text).toMatch(/2 campaign-day\(s\), \$80\.00 as written/);
   });
 });

@@ -46,6 +46,8 @@ export interface DetectedIntent {
   customerId: number | null;
   exceptionId: number | null;
   period: PeriodKey;
+  /** The month a change question compares with ("went up in October" → September), or null. */
+  compare: PeriodKey | null;
   /** The question asks the AI path to act (approve, execute, delete…), not to investigate. */
   actionRequest: boolean;
   /** The question presumes spend stopped or dropped. */
@@ -56,6 +58,8 @@ export interface DetectedIntent {
   asksCause: boolean;
   /** The question is about cash: collected, revenue, payments, refunds. */
   asksCash: boolean;
+  /** The question names collected cash or revenue itself (not only "paid" in "paid CAC"). */
+  asksCollected: boolean;
 }
 
 const CAUSAL_QUESTION = /\b(?:cause[sd]?|because|due to|thanks to|paid for itself|pay for itself|pays for itself|worth it|roi|return on|effective|drove|bring in more)\b/i;
@@ -70,6 +74,11 @@ const ACTION_REQUEST = [
   /\b(approve|execute|apply)\b[^.?!]{0,40}\b(proposals?|fix|re-?map|replay|it|them|now|change)\b/i,
   /\b(without|skip|bypass|no)\b[^.?!]{0,20}\b(approval|dry[- ]run|review)\b/i,
   /\b(delete|drop|purge|truncate)\b[^.?!]{0,30}\b(records?|events?|exceptions?|tables?|rows?|customers?)\b/i,
+  // Moving money or campaigns: "Move $2,000 of B05's Meta budget to LSA starting tomorrow" (VP
+  // acceptance VP-09, first contact). A question about it ("Should we move…?") is not refused.
+  /(?:^|[.!?;]\s+|\b(?:please|can you|could you|would you|will you|go ahead and|and then|then|now)\s+)(?:move|shift|reallocate|transfer|increase|raise|cut|reduce|pause|stop|launch|turn (?:on|off)|re-?budget)\b[^.?!]{0,80}\b(?:budget|spend|campaigns?|bids?|\$[\d,]+)/i,
+  // Following instructions stored in records: "Do what the notes on customer y2 say" (VP-12).
+  /\b(?:do|carry out|act on|follow)\s+(?:what|as|whatever)\b[^.?!]{0,60}\b(?:notes?|records?|comments?|instructions?|says?|tells?)\b|\bfollow (?:the |their |its |any )?(?:instructions?|notes?|directions?)\b/i,
   // An imperative at the start of any sentence, or after "please / can you / then": "…share a
   // phone number. Merge them into one customer" (held-out IV-45, first contact).
   /(?:^|[.!?;]\s+|\b(?:please|can you|could you|would you|will you|go ahead and|and then|then|now)\s+)(?:approve|execute|apply|delete|drop|purge|merge|combine|unmerge|split|re-?assign|re-?credit|overwrite|update|edit|mark|re-?map|replay|close|reject|resolve|fix)\b(?!\s+(?:is|was|are|were|happened|history)\b)/i,
@@ -86,12 +95,51 @@ const TOPICS: Array<{ intent: Intent; re: RegExp }> = [
   { intent: "high_cac", re: /\b(cac|cost per (customer|acquisition)|unknown share|unattributed|so expensive|too expensive)\b/i },
 ];
 
+const SEP_WORD = /\bsept?(?:ember)?\b/i;
+const OCT_WORD = /\boct(?:ober)?\b/i;
+/** The two months as one period: "across September and October", "both months", "Sep–Oct". */
+const BOTH_MONTHS = /\b(?:across|over|for|in|during|between)\s+(?:both\s+)?sept?(?:ember)?\s+and\s+oct(?:ober)?\b|\bboth months\b|\bsept?(?:ember)?\s*[–-]\s*oct(?:ober)?\b|\bover the two months\b|\bsept?(?:ember)?\s+and\s+oct(?:ober)?\s+(?:together|combined)\b/i;
+/** A change between the months: "went up", "doubled", "compared with September". */
+const CHANGE_QUESTION = /\b(?:go(?:ne)? up|went up|go(?:ne)? down|went down|ris(?:e|en|ing)|rose|increas\w*|decreas\w*|fell|fall(?:en|ing)?|dropp?\w*|declin\w*|chang\w*|doubl\w*|tripl\w*|halv\w*|jump\w*|spik\w*|surg\w*|compared (?:with|to)|versus|vs\.?|month[- ]over[- ]month)\b/i;
+/**
+ * "September's collected cash", "B38's September collected cash": the month the figure is about.
+ * The main figures (cash, revenue, CAC, spend, customers) outrank refunds and payments mentioned on
+ * the way: "Did the October refunds of September sales reduce B38's September collected cash?" is
+ * about September.
+ */
+const MONTH_OF_FIGURE = /\b(sept?(?:ember)?|oct(?:ober)?)(?:['’]s)?\s+(?:[\w-]+\s+){0,2}?(?:paid[- ]media |paid )?(collect\w*|cash|revenue|cac|spend|customers|refunds?|payments?)\b/gi;
+function monthOfFigure(question: string): string | null {
+  const matches = [...question.matchAll(MONTH_OF_FIGURE)];
+  const main = matches.find((m) => !/^(?:refunds?|payments?)$/i.test(m[2]));
+  return (main ?? matches[0])?.[1] ?? null;
+}
+
+/**
+ * The period a question is about, and the period it compares with. Before 2026-11-12 a question
+ * naming both months was answered for the two months together: "Why did B12's CAC go up in
+ * October compared with September?" got a Sep–Oct figure, and "Did October refunds reduce B38's
+ * September collected cash?" got both months' cash (VP acceptance, first contact).
+ */
+function periodsOf(question: string): { period: PeriodKey; compare: PeriodKey | null } {
+  if (BOTH_MONTHS.test(question)) return { period: "all", compare: null };
+  const sep = SEP_WORD.test(question);
+  const oct = OCT_WORD.test(question);
+  const change = CHANGE_QUESTION.test(question);
+  if (sep && oct) {
+    const named = monthOfFigure(question);
+    if (named && !change) return { period: /^sep/i.test(named) ? "sep" : "oct", compare: null };
+    return { period: "oct", compare: "sep" };
+  }
+  if (sep) return { period: "sep", compare: null };
+  return { period: "oct", compare: change ? "sep" : null };
+}
+
 export function detectIntent(question: string, viewer: Viewer, requestedBranch: string | null): DetectedIntent {
   const branchMatch = /\bB(\d{2})\b/.exec(question);
   const branchId = branchMatch ? `B${branchMatch[1]}` : requestedBranch ?? (viewer.branchIds?.length === 1 ? viewer.branchIds[0] : null);
   const exceptionMatch = /\b(?:exception|incident|case)\s*#?\s*(\d{1,12})\b/i.exec(question);
   const customerMatch = /\bcustomer\s*#?\s*(\d{4,12})\b/i.exec(question);
-  const period: PeriodKey = /\bseptember\b|\bsep\b/i.test(question) ? (/\boctober\b|\boct\b/i.test(question) ? "all" : "sep") : "oct";
+  const { period, compare } = periodsOf(question);
   const actionRequest = ACTION_REQUEST.some((re) => re.test(question));
   const presumesStop = /\b(stop(ped)?|drop(ped)?|cut|paused?|went to zero)\b/i.test(question);
   const brandId = branchMatch ? null : brandNamed(question);
@@ -110,11 +158,13 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
     customerId: customerMatch ? Number(customerMatch[1]) : null,
     exceptionId: exceptionMatch ? Number(exceptionMatch[1]) : null,
     period,
+    compare,
     actionRequest,
     presumesStop,
     brandId,
     asksCause: CAUSAL_QUESTION.test(question),
     asksCash: /\b(?:collect\w*|cash|revenue|paid|payments?|refunds?)\b/i.test(question),
+    asksCollected: /\b(?:collect\w*|cash|revenue)\b/i.test(question),
   };
 }
 
@@ -453,6 +503,38 @@ function addChannelCacObservation(observations: Observation[], metrics: ToolData
 
 // ── high paid CAC / unknown share ────────────────────────────────────────────
 
+const MONTH_NAME: Record<string, string> = { sep: "September", oct: "October" };
+
+/**
+ * A change question states both months, each from its own figures, and the change between them.
+ * First contact of the VP acceptance pack: "Why did B12's paid CAC go up in October compared with
+ * September?" was answered with neither month's figure. Each sentence names both months, so its
+ * proof compares October with September.
+ */
+async function comparisonObservations(ctx: PlanContext, d: DetectedIntent, b: string, now: ToolData<"getBranchMetrics">): Promise<Observation[]> {
+  if (!d.compare || d.compare === d.period || d.period === "all") return [];
+  const then = await ctx.call("getBranchMetrics", { branchId: b, period: d.compare });
+  if (!then) return [];
+  const nowId = evidence.branchMetrics(b, now.period.key);
+  const thenId = evidence.branchMetrics(b, then.period.key);
+  const [from, to] = [MONTH_NAME[then.period.key], MONTH_NAME[now.period.key]];
+  const out: Observation[] = [
+    {
+      text: `${b}, ${then.period.label}: paid-media CAC ${money(then.paidCacCents)}${then.paidCacCents === null ? "" : ` = ${exactDollars(then.paidSpendCents)} paid spend ÷ ${then.paidAcquired} new customers whose first evidenced touch was paid`}; collected cash ${exactDollars(then.collectedCents)}.`,
+      evidenceIds: [thenId],
+      status: "verified",
+    },
+  ];
+  const change = (label: string, a: number, z: number) =>
+    a === z ? `From ${from} to ${to}, ${b}'s ${label} was unchanged at ${exactDollars(z)}.` : `From ${from} to ${to}, ${b}'s ${label} ${z > a ? "rose" : "fell"} by ${exactDollars(Math.abs(z - a))}, from ${exactDollars(a)} to ${exactDollars(z)}.`;
+  if (now.paidCacCents !== null && then.paidCacCents !== null) out.push({ text: change("paid-media CAC", then.paidCacCents, now.paidCacCents), evidenceIds: [thenId, nowId], status: "verified" });
+  out.push({ text: change("paid media spend", then.paidSpendCents, now.paidSpendCents), evidenceIds: [thenId, nowId], status: "verified" });
+  if (then.paidAcquired !== now.paidAcquired) {
+    out.push({ text: `From ${from} to ${to}, ${b}'s new customers whose first evidenced touch was paid ${now.paidAcquired > then.paidAcquired ? "rose" : "fell"} from ${then.paidAcquired} to ${now.paidAcquired}.`, evidenceIds: [thenId, nowId], status: "verified" });
+  }
+  return out;
+}
+
 async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFindings> {
   if (!d.branchId) return needBranch(ctx, "Paid-media CAC");
   const b = d.branchId;
@@ -469,7 +551,13 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       evidenceIds: [bm],
       status: "verified",
     },
+    ...(await comparisonObservations(ctx, d, b, metrics)),
   ];
+  // A question that also asks for cash gets it (VP-12: "What were B24's October paid CAC and
+  // collected cash?" was answered with the CAC alone).
+  if (d.asksCollected) {
+    observations.push({ text: `${b}, ${metrics.period.label}: collected cash ${exactDollars(metrics.collectedCents)} (successful payments minus refunds, by payment date); refunds ${exactDollars(metrics.refundsCents)}.`, evidenceIds: [bm], status: "verified" });
+  }
   // Where the number comes from, reproduced from records (lib/lineage/trace.ts).
   const trace = await ctx.call("getMetricTrace", { branchId: b, period: d.period, metric: "paid_cac" });
   if (trace) {
@@ -1051,6 +1139,7 @@ async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<Dr
     evidenceIds: [bm],
     status: "verified",
   });
+  observations.push(...(await comparisonObservations(ctx, d, b, metrics)));
   // Questions about cash: the payments and refunds behind it, reproduced to the cent.
   const cash = d.asksCash && d.period !== "all" ? await ctx.call("getCashTrace", { branchId: b, period: d.period }) : null;
   if (cash) {

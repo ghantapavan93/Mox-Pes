@@ -143,6 +143,10 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   const h2Counter: EvidenceLine[] = [];
   if (unknownUp) h2Counter.push({ label: "Unknown-channel share rose", value: `${pct(sRow.unknownAcquired / sRow.acquired)} → ${pct(oRow.unknownAcquired / oRow.acquired)}: some paid customers may have lost their evidence, not stopped coming`, evidenceIds: bmIds });
   if (oRow.heldCampaignAcquired > 0) h2Counter.push({ label: "Customers left out with held spend", value: `${oRow.heldCampaignAcquired} paid customer(s) credited to campaigns whose spend is held at intake`, evidenceIds: [evidence.branchMetrics(b, "oct")] });
+  // Customers who came through a paid campaign that is mapped to no branch: they arrived, they are
+  // only outside the measured count (VP acceptance VP-01).
+  const unmappedOct = traceOct.excluded.find((e) => e.code === "CAMPAIGN_UNMAPPED");
+  if (unmappedOct) h2Counter.push({ label: "Customers of an unmapped campaign", value: `${unmappedOct.count} paid customer(s) serviced here are credited to a campaign mapped to no branch, so they are outside the count`, evidenceIds: unmappedOct.evidenceIds.slice(0, 5) });
   const customersMaterial = paidDelta < 0 && (decomposition === null || decomposition.customerShare >= MATERIAL_SHARE);
   const h2: HypothesisResult = {
     code: "H2",
@@ -177,18 +181,42 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
     ),
   );
   const oldCount = Number(oldMapper.rows[0].n);
+  // Paid figures split across branch rows: October customers this branch serviced whose campaign is
+  // mapped to no branch, and October customers of this branch's campaigns serviced at another
+  // branch (cost on one row, customers on another). Both are misassignment, whatever exception
+  // reconciliation has opened (VP acceptance, first contact: VP-01 had both and H3 said none).
+  const crossBranch = await read(
+    db.query<{ branch_id: string; n: string }>(
+      `select a.branch_id, count(*) as n
+       from v_acquisitions a
+       join ad_campaigns c on c.external_campaign_id = a.campaign_external_id
+       join campaign_branch_map m on m.campaign_id = c.id
+       join channels ch on ch.code = a.channel_code
+       where m.branch_id = $1 and a.branch_id <> $1 and ch.is_paid
+         and a.initial_status = 'completed' and a.initial_completed_at >= $2 and a.initial_completed_at < $3
+       group by a.branch_id order by a.branch_id`,
+      [b, oct.from, oct.to],
+    ),
+  );
+  const splits: EvidenceLine[] = [
+    ...(unmappedOct ? [{ label: "Customers credited to an unmapped campaign", value: `${unmappedOct.count} October customer(s) serviced at ${b}: their campaign's cost is in no branch`, evidenceIds: unmappedOct.evidenceIds.slice(0, 5) }] : []),
+    ...crossBranch.rows.map((r) => ({ label: `${b}'s campaigns' customers serviced at ${r.branch_id}`, value: `${r.n} October customer(s): the cost is on ${b}'s row, the customers on ${r.branch_id}'s`, evidenceIds: [evidence.branchMetrics(r.branch_id, "oct")] })),
+  ];
+  const h3Supported = gaps.rows.length > 0 || splits.length > 0;
   const h3: HypothesisResult = {
     code: "H3",
     statement: "Spend or leads are misclassified (wrong channel or branch), so the paid figures are wrong.",
-    status: gaps.rows.length > 0 ? "SUPPORTED" : oldCount > 0 ? "UNRESOLVED" : "CONTRADICTED",
-    summary:
-      gaps.rows.length > 0
-        ? `${gaps.rows.length} open classification exception(s) at ${b} (${[...new Set(gaps.rows.map((g) => g.kind))].join(", ")}).`
-        : oldCount > 0
-          ? `No open classification exception, but ${oldCount} spend day(s) were classified by an older mapper than ads@${ACTIVE_VERSION.ads}.`
-          : `No open classification exception, and every spend day in both months was classified by the active mapper ads@${ACTIVE_VERSION.ads}.`,
-    test: "SUPPORTED if an open coverage-gap, branch-mismatch or channel-conflict exception at the branch falls in September–October; UNRESOLVED if none but some spend was classified by an older mapper; CONTRADICTED otherwise.",
-    evidence: gaps.rows.map((g) => ({ label: g.kind, value: `exception ${g.id}`, evidenceIds: [evidence.exception(Number(g.id))] })),
+    status: h3Supported ? "SUPPORTED" : oldCount > 0 ? "UNRESOLVED" : "CONTRADICTED",
+    summary: h3Supported
+      ? [
+          gaps.rows.length > 0 ? `${gaps.rows.length} open classification exception(s) at ${b} (${[...new Set(gaps.rows.map((g) => g.kind))].join(", ")}).` : "",
+          splits.length > 0 ? `Paid figures are split across branch rows: ${splits.map((s) => `${s.label} (${s.value})`).join("; ")}.` : "",
+        ].filter(Boolean).join(" ")
+      : oldCount > 0
+        ? `No open classification exception, but ${oldCount} spend day(s) were classified by an older mapper than ads@${ACTIVE_VERSION.ads}.`
+        : `No open classification exception, no October customer credited to an unmapped campaign or serviced away from its campaign's branch, and every spend day in both months was classified by the active mapper ads@${ACTIVE_VERSION.ads}.`,
+    test: "SUPPORTED if an open coverage-gap, branch-mismatch or channel-conflict exception at the branch falls in September–October, or October paid customers are split across branch rows (credited to an unmapped campaign, or serviced away from their campaign's branch); UNRESOLVED if none but some spend was classified by an older mapper; CONTRADICTED otherwise.",
+    evidence: [...gaps.rows.map((g) => ({ label: g.kind, value: `exception ${g.id}`, evidenceIds: [evidence.exception(Number(g.id))] })), ...splits],
     counterevidence: [],
     wouldChange: "A new reconciliation run finding a coverage gap or a mismatch, or a mapper comparison showing a different channel.",
   };

@@ -238,8 +238,10 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
   const nonMedia: number[] = [];
   for (const r of acquired.rows) {
     if (r.cost_basis !== "media") nonMedia.push(Number(r.crm_customer_id));
-    else if (r.unmapped_campaign) unmappedCustomers.push(Number(r.crm_customer_id));
+    // Held first, as the scorecard counts them: a campaign whose spend is all held has no cost in
+    // any figure, mapped or not (its record exists so it can be mapped before authorization).
     else if (r.held_campaign) heldCustomers.push(Number(r.crm_customer_id));
+    else if (r.unmapped_campaign) unmappedCustomers.push(Number(r.crm_customer_id));
     else
       counted.push({
         evidenceId: evidence.customer(Number(r.crm_customer_id)),

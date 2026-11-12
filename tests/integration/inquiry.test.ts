@@ -79,7 +79,7 @@ describe("why did paid CAC increase: six hypotheses", () => {
       expect(h.test.length).toBeGreaterThan(20);
       expect(h.wouldChange.length).toBeGreaterThan(10);
     }
-    expect(r.reads).toBeLessThanOrEqual(12);
+    expect(r.reads).toBeLessThanOrEqual(13);
   });
 
   it("supports missing data only in the direction that raises CAC: stale customer feeds; stopped spend points the other way", async () => {

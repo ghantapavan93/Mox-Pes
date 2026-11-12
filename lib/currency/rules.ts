@@ -66,8 +66,8 @@ export async function listCurrencyRules(db: Queryable): Promise<CurrencyRule[]> 
 }
 
 /**
- * The ad accounts whose spend is held for lacking a stated currency, with no live rule: what a
- * person must decide. Counted per campaign-day at its newest held version, and only where no
+ * The ad accounts whose spend is held for lacking a stated currency, with no authorized rule: what
+ * a person must decide (a pending proposal is shown with it). Counted per campaign-day at its newest held version, and only where no
  * version of that day is counted: platforms restate a day on every fetch, so summing every held
  * record overstated the money several times over (review 2026-11-12, financial finding 6).
  */
@@ -85,7 +85,9 @@ export async function accountsAwaitingCurrency(db: Queryable): Promise<Array<{ p
      from held h
      where not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
                        where c.platform = h.platform and c.external_campaign_id = h.ext and s.spend_date = h.day)
-       and not exists (select 1 from currency_rules r where r.revoked_at is null
+       -- Only an AUTHORIZED rule settles it: while a rule is merely proposed the money is still
+       -- held and still awaits a decision (VP acceptance, first contact: a proposal hid it).
+       and not exists (select 1 from currency_rules r where r.revoked_at is null and r.authorized_at is not null
                          and (r.platform = '*' or r.platform = h.platform)
                          and (r.ad_account_id = '*' or r.ad_account_id = h.account))
      group by 1, 2 order by 4 desc`,

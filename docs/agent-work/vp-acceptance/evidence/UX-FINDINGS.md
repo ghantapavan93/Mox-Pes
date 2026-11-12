@@ -44,7 +44,7 @@ other "Partly" rows are unchanged as evidence.
 | P2 | P2 | Raw error text ("Internal Server Error", "Failed to fetch") with no next step | **Open** | R-34 |
 | P2 | P2 | ChangeGuard Approve with no reason failed with "Invalid request"; the 10-character rule was only a placeholder | **Fixed** | Label "Why do you decide this? (at least 10 characters)"; Approve/Reject disabled below 10 characters |
 | P2 | P2 | ChangeGuard "Map to branch" defaults to B01; a mistaken change cannot be withdrawn | **Open** | R-34 |
-| P2 | P2 | A claim check showed "supported" beside "0 of 2 propositions follow" | **Open, not reproduced since** | Investigation #16 on the shared demo data |
+| P2 | P2 | A claim check showed "supported" beside "0 of 2 propositions follow" | **Fixed 2026-11-12 (R-38)**: designed behaviour, not a one-off (135 of 391 supported demo claims). A claim is supported only when every proposition is proved; the browser journey `zy-evidence-journey` asserts it on every supported claim | Investigation #16 on the shared demo data |
 | P2 | P2 | Jargon shown to business users (β, "gated", "evidenced touch", internal ids) | **Open** | R-34 |
 | P2 | P2 | Walls of text and raw JSON on incident and audit pages | **Open** | R-34 |
 | P2 | P2 | Conflicting "start here" pointers; Overview shows 12 of 44 branches with no way to see the rest | **Open** | R-34 |

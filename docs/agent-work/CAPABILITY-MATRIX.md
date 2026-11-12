@@ -35,7 +35,9 @@ Evidence columns name the test or document; the latest run's numbers are in
 | Cent-exact traces: paid CAC, spend, cash, refunds, attribution | VERIFIED EXISTING | `z-trace`, J2 against raw payloads, property tests | Real data (R-1) |
 | Unknown currency held; two-person account rule | VERIFIED EXISTING | VP-10; regression tests | Undated rules (R-28) |
 | Non-USD amounts | UNSUPPORTED (refused at intake) | adapter tests | FX deliberately not built |
-| Identity resolution with conflicts | PARTIAL | identity tests; VP-01 | Shared-phone credit case seen in a smoke run, not yet a test |
+| Identity resolution with conflicts | PARTIAL | identity tests; VP-01; `shared-phone-credit.test.ts` | Reservation corner case (R-39); office transfers not flagged (R-42) |
+| Payment versions without a source clock: a stale copy never adds cash back | VERIFIED EXISTING (bounded), 2026-11-12 | `payment-revisions.test.ts` (12), connector stale-replica case, 24-seed ledger model | A real void reversal is held for a person; a stale void lowers cash (R-37) |
+| A claim is SUPPORTED only when every proposition is proved, template or model | VERIFIED EXISTING, 2026-11-12 | `ai-template-trust.test.ts` (18), held-out 336 claims unchanged, browser journey | Templates are not held to the closed reading (R-38) |
 | ChangeGuard: preflight, hash-bound approval, release, monitor | VERIFIED EXISTING | `zzz-changeguard`, held-out set, fault test 2 | Scheduled monitoring (R-30); rollout stages |
 | Action Center: dry run → approve → execute | VERIFIED EXISTING | `os-golden-path`, `zz-b09` | Mixed scopes in dry-run evidence (R-31); two approval models (R-32) |
 | Investigator: tools, proofs, refusals, injection resistance | VERIFIED EXISTING (deterministic) | held-out set (regression), VP-12 | Model mode (R-10); closed reading is patterns (R-27) |

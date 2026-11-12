@@ -1,0 +1,51 @@
+FAIL HO-01   valid_mapping                      1.0s [medium] status_mismatch: expected monitoring, got verified
+FAIL HO-02   valid_mapping                      1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-03   valid_mapping                      0.8s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-04   valid_mapping                      0.9s 
+PASS HO-05   unsafe_mapping                     0.9s 
+PASS HO-06   unsafe_mapping                     0.8s 
+PASS HO-07   unsafe_mapping                     0.9s 
+PASS HO-08   unsafe_mapping                     0.8s 
+PASS HO-09   sparse_or_contradictory_evidence   0.8s 
+PASS HO-10   sparse_or_contradictory_evidence   0.9s 
+PASS HO-11   sparse_or_contradictory_evidence   0.9s 
+PASS HO-12   sparse_or_contradictory_evidence   1.0s 
+PASS HO-13   cross_brand_or_branch_conflict     1.0s 
+FAIL HO-14   cross_brand_or_branch_conflict     0.8s [high] false_block: expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES, CROSS_BRAND) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] status_mismatch: ch1: expected ready_for_review, final preflight_failed
+PASS HO-15   cross_brand_or_branch_conflict     0.9s 
+PASS HO-16   cross_brand_or_branch_conflict     0.9s 
+PASS HO-17   historical_mapping_effect          0.8s 
+FAIL HO-18   historical_mapping_effect          0.9s [high] false_block: expected NEEDS_REVIEW, system BLOCK (LEAD_EVIDENCE_DISAGREES) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] false_refusal: approve as approver was refused: ActionError: Only a change ready for review can be decided (this one is preflight_failed) | [medium] status_mismatch: ch1: expected approved, final preflight_failed
+FAIL HO-19   historical_mapping_effect          1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-20   historical_mapping_effect          1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-21   benign_schema_drift                0.8s [medium] false_refusal: approve as approver was refused: ActionError: A source contract check stops at review: activating a mapper version is a code deploy | [medium] status_mismatch: sc1: expected approved, final ready_for_review
+PASS HO-22   benign_schema_drift                0.8s 
+PASS HO-23   benign_schema_drift                0.8s 
+PASS HO-24   benign_schema_drift                0.7s 
+PASS HO-25   benign_schema_drift                0.7s 
+PASS HO-26   benign_schema_drift                0.7s 
+FAIL HO-27   refunds_and_source_corrections     1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-28   refunds_and_source_corrections     0.7s [medium] false_block: expected ALLOW, system BLOCK (INCOMPATIBLE_SHAPE, MISSING_IDENTIFIER, DEPENDENT_METRICS, RECORDS_WOULD_NOT_ARRIVE) | [medium] status_mismatch: expected ready_for_review, got preflight_failed | [medium] status_mismatch: sc1: expected ready_for_review, final preflight_failed
+PASS HO-29   refunds_and_source_corrections     0.7s 
+FAIL HO-30   refunds_and_source_corrections     0.9s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+FAIL HO-31   refunds_and_source_corrections     1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-32   evidence_changed_after_preflight   1.0s 
+INVALID HO-33   step 3 remap_outside was refused by the system: ActionError: Campaign not found or already mapped
+FAIL HO-34   evidence_changed_after_preflight   0.9s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-35   evidence_changed_after_preflight   1.0s 
+PASS HO-36   concurrency                        1.0s 
+FAIL HO-37   concurrency                        0.9s [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-38   concurrency                        0.9s 
+PASS HO-39   concurrency                        0.9s 
+PASS HO-40   unauthorized_action                0.9s 
+PASS HO-41   unauthorized_action                0.9s 
+FAIL HO-42   unauthorized_action                1.0s [medium] status_mismatch: expected monitoring, got verified | [medium] status_mismatch: ch1: expected monitoring, final verified
+PASS HO-43   unauthorized_action                1.0s 
+INVALID HO-44   step 6 remap_outside was refused by the system: ActionError: Campaign not found or already mapped
+FAIL HO-45   monitoring_and_recovery            1.0s [medium] status_mismatch: expected monitoring, got verified
+FAIL HO-46   monitoring_and_recovery            1.0s [medium] status_mismatch: expected monitoring, got verified
+PASS HO-47   monitoring_and_recovery            0.9s 
+PASS HO-48   human_review_only                  0.9s 
+PASS HO-49   human_review_only                  0.9s 
+PASS HO-50   human_review_only                  0.9s 
+wrote docs/agent-work/changeguard-heldout/evidence/after-fixes.json

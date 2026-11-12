@@ -557,6 +557,13 @@ async function runScenario(pool: Pool, sc: Scenario) {
   for (const [ref, want] of Object.entries(sc.expectFinal?.statuses ?? {})) {
     if (finalStatuses[ref] !== want) out(findings, "medium", "status_mismatch", `${ref}: expected ${want}, final ${finalStatuses[ref] ?? "not created"}`);
   }
+  // A world step the system refused means the scenario's premise never happened: it cannot be
+  // executed as written, so it is invalid (SCORING.md), whatever the later steps did. The first
+  // run recorded these errors without saying so; the refusal itself is listed for the report.
+  const premise = results.filter((r) => r.outcome === "world" && r.error);
+  if (premise.length > 0) {
+    return { id: sc.id, category: sc.category, title: sc.title, severityIfWrong: sc.severityIfWrong, millis: Date.now() - started, invalid: true, invalidReason: premise.map((r) => `step ${r.index} ${r.do} was refused by the system: ${r.error}`).join("; "), steps: results, finalMapping, finalStatuses, findings, pass: false };
+  }
   for (const group of sc.expectFinal?.exactlyOneOf ?? []) {
     const accepted = results.filter((r) => r.label && group.includes(r.label) && r.outcome === "accepted").length;
     if (accepted !== 1) out(findings, "critical", "exactly_one_violated", `${group.join(" / ")}: ${accepted} accepted`);
@@ -584,6 +591,10 @@ async function main() {
       try {
         const r = await runScenario(pool, sc);
         report.push(r);
+        if ("invalid" in r && r.invalid) {
+          console.log(`INVALID ${sc.id.padEnd(7)} ${r.invalidReason}`);
+          continue;
+        }
         const bad = r.findings.filter((f) => f.severity !== "info");
         console.log(`${r.pass ? "PASS" : "FAIL"} ${sc.id.padEnd(7)} ${sc.category.padEnd(34)} ${(r.millis / 1000).toFixed(1)}s ${bad.map((f) => `[${f.severity}] ${f.type}: ${f.detail}`).join(" | ").slice(0, 400)}`);
       } catch (error) {

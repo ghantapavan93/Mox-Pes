@@ -142,9 +142,10 @@ async function cashIn(db: Queryable, viewer: Viewer, args: { branchId: string; p
   cmp("Collected from new customers", scorecard.newCollectedCents, reproduced.newCollectedCents);
   cmp("Revenue in open exceptions", scorecard.atRiskCents, reproduced.atRiskCents);
 
+  // Only invariants that can fail. "net = gross − refunds" (an identity over the same rows) and
+  // "whole cents" (a bigint column) were removed: they could never fail (independent review
+  // 2026-11-12, finding 4).
   const invariants: Invariant[] = [
-    { name: "net = gross − refunds", holds: net === gross - refunds, detail: `${exactDollars(gross)} − ${exactDollars(refunds)} = ${exactDollars(gross - refunds)}; net ${exactDollars(net)}` },
-    { name: "every amount is whole cents", holds: payments.rows.every((p) => Number.isInteger(num(p.amount_cents))), detail: "amounts are stored as integer cents" },
     { name: "every refund names a stored original payment", holds: orphanRefunds.length === 0, detail: orphanRefunds.length ? `${orphanRefunds.length} refund(s) whose original payment is not stored` : "all refunds reference a stored payment" },
     { name: "no payment is refunded beyond what was paid", holds: over.rows.length === 0, detail: over.rows.length ? `${over.rows.length} payment(s) refunded beyond their amount, or refunded although they did not succeed` : "cumulative refunds never exceed a successful original" },
     // (A "counts each customer once" check was removed: a set is never larger than its list, so it
@@ -210,7 +211,15 @@ export function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { b
       byChannel.set(r.channel_code, c);
     }
     const share = rows.length ? unknown.length / rows.length : null;
-    const channelSum = [...byChannel.values()].reduce((t, c) => t + c.customers, 0);
+    const ambiguousRows = await q.query<{ n: string }>(
+      `select count(*) as n from v_acquisitions a join leads l on l.id = a.lead_id
+       where a.branch_id = $3 and a.initial_status = 'completed' and a.initial_completed_at >= $1 and a.initial_completed_at < $2
+         and not exists (select 1 from identity_conflicts k where k.lead_id = a.lead_id and k.crm_customer_id = a.crm_customer_id and k.status = 'accepted')
+         and (exists (select 1 from crm_customers o where l.phone_hash is not null and o.phone_hash = l.phone_hash and o.crm_customer_id <> a.crm_customer_id)
+              or exists (select 1 from crm_customers o where l.email_hash is not null and o.email_hash = l.email_hash and o.crm_customer_id <> a.crm_customer_id))`,
+      [args.period.from, args.period.to, branch.id],
+    );
+    const ambiguous = Number(ambiguousRows.rows[0].n);
     return {
       scope: { branchId: branch.id, period: { key: args.period.key, label: args.period.label } },
       value: {
@@ -220,9 +229,11 @@ export function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { b
       },
       byChannel: [...byChannel.entries()].map(([channelCode, c]) => ({ channelCode, ...c })).sort((a, b) => b.customers - a.customers),
       unknownSample: unknown.slice(0, 10).map((r) => evidence.customer(Number(r.crm_customer_id))),
+      // "Channels partition the customers" and "share + coverage = 100%" were removed: both held
+      // by construction (independent review 2026-11-12, finding 4). This one reads the view's
+      // output and fails if a credited lead is ambiguous (migration 0022's rule).
       invariants: [
-        { name: "channels partition the new customers", holds: channelSum === rows.length, detail: `${channelSum} across channels, ${rows.length} new customers` },
-        { name: "share + coverage = 100%", holds: share === null || Math.abs(share + (1 - share) - 1) < 1e-12, detail: share === null ? "no new customers" : `${(share * 100).toFixed(1)}% unknown, ${((1 - share) * 100).toFixed(1)}% evidenced` },
+        { name: "no credited lead also matches another customer", holds: ambiguous === 0, detail: ambiguous ? `${ambiguous} customer(s) credited to a lead whose phone or email also matches another customer, with no reviewer accepting the pair` : "every credited lead matches only its own customer, or a reviewer accepted the pair" },
       ],
     };
   });

@@ -1,7 +1,13 @@
 /**
  * VP acceptance runner (docs/agent-work/vp-acceptance/SCHEMA.md, SCORING.md).
  *
- *   npx tsx scripts/eval-acceptance.ts <scenarios.json> <out.json> [--only VP-01,VP-03]
+ *   npx tsx scripts/eval-acceptance.ts <scenarios.json> <out.json> [--only VP-01,VP-03] [--twice]
+ *
+ * The output opens with a manifest that names everything a re-run must hold fixed: the
+ * scenario file's hash and each scenario's canonical hash, the code commit (and whether the
+ * tree was dirty), the active mapper versions, Node and Postgres. `--twice` runs every scenario
+ * a second time in a fresh database and compares outcome fingerprints: a difference is a
+ * determinism failure, reported per scenario.
  *
  * One fresh database per scenario (EVAL_DATABASE_URL, default revenue_signal_eval), with no
  * currency rule. The world is delivered through the real intake pipeline (the deployed mappers);
@@ -11,6 +17,8 @@
  * Where the product enforces a permission only in its HTTP route, the runner applies that same
  * check and says so (marked ROUTE CHECK).
  */
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import type { Pool } from "pg";
 import { z, ZodError } from "zod";
@@ -691,21 +699,73 @@ async function runScenario(pool: Pool, sc: Scenario) {
   return { id: sc.id, title: sc.title, centre: sc.centre, severityIfWrong: sc.severityIfWrong, checks, failed: findings.filter((f) => f.severity !== "info").length, critical: findings.filter((f) => f.severity === "critical").length, millis: Date.now() - t0, findings, steps: results };
 }
 
+const sha256 = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
+
+/** JSON with keys sorted at every level: its hash names the content, not the file's layout. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).filter(([, v]) => v !== undefined);
+    return `{${entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function git(args: string[]): string | null {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What a scenario's outcome is, without its timing: the findings and the check count. Ids and
+ * times inside details come from a fresh database and the frozen business clock, so two runs
+ * of the same inputs on the same code must give the same fingerprint.
+ */
+function outcomeFingerprint(r: Awaited<ReturnType<typeof runScenario>>): string {
+  return sha256(canonical({ checks: r.checks, findings: r.findings.map((f) => ({ step: f.step, type: f.type, severity: f.severity, detail: f.detail })) }));
+}
+
 async function main() {
   const [file, outFile] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-  if (!file || !outFile) throw new Error("usage: eval-acceptance.ts <scenarios.json> <out.json> [--only ID,ID]");
+  if (!file || !outFile) throw new Error("usage: eval-acceptance.ts <scenarios.json> <out.json> [--only ID,ID] [--twice]");
   const onlyAt = process.argv.indexOf("--only");
   const only = onlyAt > 0 ? new Set(process.argv[onlyAt + 1].split(",")) : null;
-  const doc = JSON.parse(readFileSync(file, "utf8")) as { version: string; author: string; scenarios: Scenario[] };
+  const twice = process.argv.includes("--twice");
+  const raw = readFileSync(file);
+  const doc = JSON.parse(raw.toString("utf8")) as { version: string; author: string; scenarios: Scenario[] };
   const pool = createPool(process.env.EVAL_DATABASE_URL ?? "postgres://postgres@127.0.0.1:54333/revenue_signal_eval");
   const out: Array<Record<string, unknown>> = [];
+  let manifest: Record<string, unknown> = {};
   try {
+    manifest = {
+      scenarioFile: { path: file, sha256: sha256(raw), version: doc.version, author: doc.author },
+      scenarioHashes: Object.fromEntries(doc.scenarios.map((s) => [s.id, sha256(canonical(s))])),
+      code: { commit: git(["rev-parse", "HEAD"]), dirty: (git(["status", "--porcelain", "--untracked-files=no"]) ?? "") !== "" },
+      mappers: ACTIVE_VERSION,
+      environment: {
+        node: process.version,
+        platform: process.platform,
+        postgres: String((await pool.query("show server_version")).rows[0].server_version),
+      },
+      randomness: "none drawn: every input is stated in the scenario, each fresh database fixes the business clock (tests/helpers.ts freshDb), and the runner draws no random numbers; --twice tests the claim",
+      repeated: twice,
+    };
     for (const sc of doc.scenarios) {
       if (only && !only.has(sc.id)) continue;
       try {
         const r = await runScenario(pool, sc);
-        out.push(r);
-        console.log(`${r.critical ? "CRIT" : r.failed ? "FAIL" : "PASS"} ${sc.id.padEnd(6)} ${String(r.checks).padStart(3)} checks, ${r.failed} failed (${r.critical} critical) · ${r.millis} ms · ${sc.title.slice(0, 70)}`);
+        const fingerprint = outcomeFingerprint(r);
+        let determinism: { repeatFingerprint: string; same: boolean } | undefined;
+        if (twice) {
+          const again = outcomeFingerprint(await runScenario(pool, sc));
+          determinism = { repeatFingerprint: again, same: again === fingerprint };
+        }
+        out.push({ ...r, scenarioHash: sha256(canonical(sc)), fingerprint, ...(determinism ? { determinism } : {}) });
+        const repeat = determinism ? (determinism.same ? " · repeat identical" : " · REPEAT DIFFERS") : "";
+        console.log(`${r.critical ? "CRIT" : r.failed ? "FAIL" : "PASS"} ${sc.id.padEnd(6)} ${String(r.checks).padStart(3)} checks, ${r.failed} failed (${r.critical} critical) · ${r.millis} ms${repeat} · ${sc.title.slice(0, 70)}`);
         for (const f of r.findings.filter((x) => x.severity !== "info")) console.log(`       [${f.severity}] step ${f.step} ${f.type}: ${f.detail.slice(0, 260)}`);
       } catch (e) {
         const invalid = e instanceof InvalidScenario;
@@ -716,7 +776,9 @@ async function main() {
   } finally {
     await pool.end();
   }
-  writeFileSync(outFile, `${JSON.stringify({ scenarios: file, version: doc.version, author: doc.author, ranAt: new Date().toISOString(), results: out }, null, 2)}\n`);
+  writeFileSync(outFile, `${JSON.stringify({ scenarios: file, version: doc.version, author: doc.author, ranAt: new Date().toISOString(), manifest, results: out }, null, 2)}\n`);
+  const differs = out.filter((r) => (r.determinism as { same: boolean } | undefined)?.same === false).map((r) => r.id);
+  if (twice) console.log(differs.length ? `determinism: ${differs.length} scenario(s) differ on repeat: ${differs.join(", ")}` : "determinism: every scenario repeated identically");
   console.log(`wrote ${outFile}`);
 }
 

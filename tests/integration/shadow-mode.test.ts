@@ -96,6 +96,24 @@ describe("metric snapshots, in the contract's verdict order", () => {
     expect(r.limitations[0]).toMatch(/both could be missing the same records/);
   });
 
+  it("an unreadable ad record dated in the window makes agreeing spend INCOMPLETE, though intake stored it with its receipt time", async () => {
+    // Shadow pack first contact, SH-07 (critical): no campaign id, so intake cannot identify it and
+    // stores the time it arrived (Oct 31); its own date is Oct 12.
+    const unreadable: RawRecord = { entity: "spend_day", payload: { platform: "google_ads", accountId: "ACC-SH", campaignName: "sh-gs search", date: "2026-10-12", costMicros: String(40 * 1_000_000), clicks: 2, conversions: 1, fetchedAt: "2026-10-12T23:00:00Z", campaignType: "SEARCH", currencyCode: "USD" } };
+    await ingest(pool, "ads", [unreadable], { now: NOW });
+    const spend = snap({ definition: { id: "atlas.paid_spend", version: "1", family: "spend", numerator: "paid_media_spend_mapped_to_branch", periodBasis: "utc_day", branchBasis: "campaign_mapping" }, value: "1200.00", numerator: undefined, denominator: undefined });
+    const r = await check(spend);
+    expect(r.verdict).toBe("INCOMPLETE_EVIDENCE");
+    expect(r.dimensions).toContain("evidence.unreadable");
+    // A September window does not include it.
+    expect((await check({ ...spend, period: { from: "2026-09-01", to: "2026-09-30" }, value: "0.00" })).verdict).toBe("MATCH");
+  });
+
+  it("office-local days are named as the definition's day basis", async () => {
+    const r = await check(snap({ definition: { ...CAC_DEF, periodBasis: "office_local_day" } }));
+    expect(r.dimensions).toContain("definition.periodBasis");
+  });
+
   it("a refund delivered after the snapshot makes it MISMATCH, with the revision named", async () => {
     const cash = snap({ definition: CASH_DEF, value: "745.00", numerator: undefined, denominator: undefined });
     expect((await check(cash)).verdict).toBe("MATCH");
@@ -123,6 +141,17 @@ describe("conversational answers, claim by claim", () => {
     expect(by("collected $900.00")).toBe("CONTRADICTED");
     expect(by("because")).toBe("UNSUPPORTED");
     expect(r.overall).toBe("PARTLY_SUPPORTED");
+  });
+
+  it("a month the evidence does not hold is not checked against October", async () => {
+    // Shadow pack first contact, SH-11: after a sentence about October, "August 2026" was read
+    // as October (the period carries from piece to piece) and judged against October's figure.
+    for (const second of ["B12's paid CAC in August 2026 was $300.00.", "B12's paid CAC in August 2026 was $240.00.", "B12's paid CAC in October 2025 was $240.00."]) {
+      const r = await answer(`B12 collected $745.00 in October. ${second}`);
+      expect(r.claims.find((c) => c.text.includes("paid CAC"))?.verdict, second).toBe("UNSUPPORTED");
+    }
+    // A figure that merely looks like a year is still a figure.
+    expect((await answer("B12 collected $745.00 in October.")).claims[0]?.verdict).toBe("SUPPORTED");
   });
 
   it("invoiced amounts are not collected cash", async () => {

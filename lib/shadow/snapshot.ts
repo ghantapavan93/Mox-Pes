@@ -185,13 +185,26 @@ async function incompleteness(db: Queryable, family: Family, branchIds: string[]
     const why = staleReason(f, now);
     if (why) out.push({ dim: "evidence.feed_stale", text: `${f.stream ?? f.source}: ${why}` });
   }
+  // An unreadable record is dated by the date in its own payload: intake stores an unidentifiable
+  // record with its RECEIPT time (lib/ingest/ingest.ts), which put ad records dated inside the
+  // window outside it (Shadow pack first contact, SH-07: agreeing figures certified MATCH). A
+  // record with no readable date at all cannot be ruled out of the window, so it counts.
   const { rows: unread } = await db.query<{ source: string; n: string }>(
-    `select re.source, count(*) as n from raw_events re
+    `select re.source, count(*) as n
+     from raw_events re
+     cross join lateral (
+       select substring(coalesce(re.payload ->> 'date', re.payload ->> 'start_time', re.payload ->> 'dateUpdated',
+                                 re.payload ->> 'dateAdded', re.payload ->> 'submitted_at', re.payload ->> 'created_at', '')
+                        from '^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])') as day) d
      where re.status = 'quarantined' and re.source = any($1::text[]) and (re.source <> 'crm' or ${crmEntityFilter(family)})
-       and re.occurred_at >= $2 and re.occurred_at < $3
+       and (case
+              when d.day is not null then d.day >= $5 and d.day < $6
+              when re.external_id like '%:unidentified:%' then true
+              else re.occurred_at >= $2 and re.occurred_at < $3
+            end)
        and ($4::text[] is null or ${EVENT_BRANCH} is null or ${EVENT_BRANCH} = any($4::text[]))
      group by re.source order by re.source`,
-    [sources, from, to, branchIds],
+    [sources, from, to, branchIds, fromDay, toDay],
   );
   for (const u of unread) out.push({ dim: "evidence.unreadable", text: `${u.n} ${u.source} record(s) dated in the window could not be read, so the figure cannot include them` });
   return out;
@@ -264,7 +277,8 @@ export async function compareSnapshot(db: Queryable, viewer: Viewer, snapshot: S
   if (!definition) missing.push({ dim: "definition", text: snapshot.definition === undefined ? "The snapshot does not say what its number means (no definition)" : "The snapshot's definition is outside the shared vocabulary" });
   if (!window || to.getTime() <= from.getTime()) missing.push({ dim: "period", text: "The window ends before it starts" });
   else if (from < HELD_FROM || to > HELD_TO) missing.push({ dim: "period", text: "The product holds September and October 2026 only" });
-  if (definition?.periodBasis === "office_local_day") missing.push({ dim: "period", text: "The figure is by office-local day; the product's figures are by UTC day and it does not recompute on local days" });
+  // The day basis is an attribute of the definition, so it is named as one (first contact, SH-04).
+  if (definition?.periodBasis === "office_local_day") missing.push({ dim: "definition.periodBasis", text: "The figure is by office-local day; the product's figures are by UTC day and it does not recompute on local days" });
   if (snapshot.currency === null) missing.push({ dim: "currency", text: "The snapshot does not state its currency" });
   if (missing.length > 0 || !definition || !window) return undetermined([...new Set(missing.map((m) => m.dim))], missing.map((m) => m.text), scope, window);
 

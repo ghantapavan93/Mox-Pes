@@ -1594,6 +1594,22 @@ function channelsOf(facts: MetricFact[]): Channel[] {
   return [...out.values()];
 }
 
+/**
+ * A period the evidence cannot hold: a month other than September or October, or a year other
+ * than 2026, named outside quotes. The reading below only knows September and October; before
+ * this check, "B03's CAC in August 2026 was $140.00" fell back to October and was judged
+ * against October's figure (Shadow pack first contact, SH-11). "May" counts only with a year
+ * ("may be" is not a month).
+ */
+const FOREIGN_MONTH = /\b(?:january|february|march|april|june|july|august|november|december|jan|feb|mar|apr|jun|jul|aug|nov|dec)\b\.?|\bmay\s+(?:19|20)\d{2}\b/i;
+/** A year other than 2026, only where it reads as a year ("in 2025", "October 2025"), never a bare figure like "$2050". */
+const FOREIGN_YEAR = /\b(?:in|of|for|during|since|from|september|sept|sep|october|oct)\s+(?:19|20)(?!26\b)\d{2}\b/i;
+
+export function foreignPeriod(piece: string): string | null {
+  const text = maskQuoted(piece);
+  return FOREIGN_MONTH.exec(text)?.[0].trim() ?? FOREIGN_YEAR.exec(text)?.[0] ?? null;
+}
+
 /** Proves every figure, direction, status and membership a statement asserts against the facts it cites. */
 export function proveStatement(text: string, ctx: ProveContext): Proof[] {
   const st: Statement = {
@@ -1607,7 +1623,14 @@ export function proveStatement(text: string, ctx: ProveContext): Proof[] {
   const arithmetic = [...proofs];
   const carry: Carry = { family: null, period: null, branch: st.subjectBranch, group: null };
   for (const piece of splitPieces(rest)) {
-    const own = provePiece(piece, st, carry);
+    const foreign = foreignPeriod(piece);
+    // A piece about a period the evidence does not hold proves nothing and contradicts nothing:
+    // whatever its figures were read against, it was not that period.
+    const own = provePiece(piece, st, carry).map((p): Proof =>
+      foreign && p.verdict !== "UNRESOLVED"
+        ? { ...p, verdict: "UNRESOLVED", gap: "period_missing", reason: `it names ${foreign}; the evidence holds September and October 2026 only, so this cannot be checked` }
+        : p,
+    );
     proofs.push(...own);
     if (ctx.origin === "model") proofs.push(...closedReading(piece, own, arithmetic, st));
   }

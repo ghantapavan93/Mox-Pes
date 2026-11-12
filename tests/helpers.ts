@@ -16,9 +16,25 @@ export function testPool(): Pool {
 }
 
 /** Empty schema + reference data. Fast enough to run before every test. */
-export async function freshDb(pool: Pool): Promise<void> {
+/**
+ * A fresh, migrated test database with the reference data.
+ *
+ * `currencyRule` (default true): a company-wide "every ad account reports in USD" rule, authorized
+ * as the test fixture's onboarding. Without any rule, spend whose feed states no currency is
+ * excluded at intake (lib/currency/rules.ts), and most fixtures' spend records state none. Tests
+ * of the currency rule itself, and the held-out evaluation worlds (which state each campaign's
+ * currency), pass `currencyRule: false`.
+ */
+export async function freshDb(pool: Pool, opts: { currencyRule?: boolean } = {}): Promise<void> {
   await resetSchema(pool);
   await migrate(pool);
+  if (opts.currencyRule !== false) {
+    await pool.query(
+      `insert into currency_rules (platform, ad_account_id, currency, proposed_by, proposed_at, reason, authorized_by, authorized_at)
+       values ('*', '*', 'USD', 'test-fixture:onboarding', '2026-08-01T00:00:00Z', 'test fixture: every synthetic ad account reports in USD',
+               'test-fixture:approver', '2026-08-01T00:00:00Z')`,
+    );
+  }
   await pool.query(
     `insert into branches (id, name, region, timezone, crm_office_id, brand_id)
      select r."id", r."name", r."region", r."timezone", r."crmOfficeId", r."brandId"

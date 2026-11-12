@@ -144,11 +144,12 @@ describe("ad spend: money is never converted or assumed silently", () => {
     expect(await one(pool, "select status, error_code from raw_events where source = 'ads'")).toEqual({ status: "quarantined", error_code: "CURRENCY_UNSUPPORTED" });
   });
 
-  it("a stated USD amount is recorded as reported; an unstated one is recorded as an assumption", async () => {
+  it("a stated USD amount is recorded as reported; an unstated one counts only under an authorized rule, and says so", async () => {
+    // freshDb's fixture rule says every account reports in USD (tests/helpers.ts).
     await ingest(pool, "ads", [spendDay("sem-usd", { currencyCode: "USD" }), spendDay("sem-none", {})], { now: NOW });
     const rows = await pool.query("select c.external_campaign_id, s.cost_cents, s.currency_basis from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id order by 1");
     expect(rows.rows).toEqual([
-      { external_campaign_id: "sem-none", cost_cents: "7150", currency_basis: "assumed_usd" },
+      { external_campaign_id: "sem-none", cost_cents: "7150", currency_basis: "account_rule_usd" },
       { external_campaign_id: "sem-usd", cost_cents: "7150", currency_basis: "reported_usd" },
     ]);
   });

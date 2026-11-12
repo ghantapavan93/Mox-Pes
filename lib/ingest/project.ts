@@ -1,5 +1,6 @@
 import type { Queryable } from "@/lib/db";
 import type { Projection } from "@/lib/adapters/contract";
+import { activeCurrencyRules, covered, CURRENCY_UNSTATED } from "@/lib/currency/coverage";
 
 /**
  * Set-based projection: one statement per target table per batch.
@@ -148,7 +149,8 @@ const SQL: Record<Table, string> = {
     insert into ad_spend_daily as t (campaign_id, spend_date, cost_cents, clicks, platform_conversions,
       source_updated_at, raw_event_id, channel_code, currency_basis)
     select c.id, r."spendDate", r."costCents", r."clicks", r."platformConversions", r."sourceUpdatedAt", r."rawEventId",
-      r."channelCode", coalesce(r."currencyBasis", 'assumed_usd')
+      -- Set by the currency gate: reported_usd or account_rule_usd, never a default.
+      r."channelCode", r."currencyBasis"
     from rows r
     join campaigns c on c.platform = r."platform" and c.external_campaign_id = r."externalCampaignId"
     on conflict (campaign_id, spend_date) do update set
@@ -160,7 +162,52 @@ const SQL: Record<Table, string> = {
                                                        or excluded.currency_basis is distinct from t.currency_basis))`,
 };
 
-export async function projectAll(db: Queryable, items: ProjectionItem[]): Promise<number> {
+/**
+ * The currency gate (lib/currency/rules.ts). A spend row whose feed stated no currency counts as
+ * dollars only under an authorized account rule: then it is stored as account_rule_usd. Without
+ * one it is NOT projected: its raw event is marked excluded (CURRENCY_UNSTATED), visible wherever
+ * held records are, and a projected older version of the same campaign-day leaves the metrics too
+ * (the newest observation decides). Every path that projects (intake, replay, re-projection after
+ * a rule) goes through here, so none can count unstated money as USD.
+ */
+async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<ProjectionItem[]> {
+  const unstated = (i: ProjectionItem) => i.projection.table === "ad_spend_daily" && i.projection.row.currencyBasis !== "reported_usd" && i.projection.row.currencyBasis !== "account_rule_usd";
+  if (!items.some(unstated)) return items;
+  const rules = await activeCurrencyRules(db);
+  const held: Array<{ rawEventId: number; platform: string; externalCampaignId: string; spendDate: string; sourceUpdatedAt: string; adAccountId: string }> = [];
+  const kept: ProjectionItem[] = [];
+  for (const item of items) {
+    if (!unstated(item) || item.projection.table !== "ad_spend_daily") {
+      kept.push(item);
+      continue;
+    }
+    const row = item.projection.row;
+    if (covered(rules, row.platform, row.adAccountId)) {
+      kept.push({ ...item, projection: { ...item.projection, row: { ...row, currencyBasis: "account_rule_usd" } } });
+    } else {
+      held.push({ rawEventId: item.rawEventId, platform: row.platform, externalCampaignId: row.externalCampaignId, spendDate: row.spendDate, sourceUpdatedAt: row.sourceUpdatedAt.toISOString(), adAccountId: row.adAccountId });
+    }
+  }
+  if (held.length > 0) {
+    await db.query(
+      `update raw_events set status = 'excluded', error_code = null, error_detail = null, exclusion_code = $2,
+         exclusion_detail = 'the feed stated no currency and no authorized rule says this ad account reports in USD; not counted', projected_at = null
+       where id = any($1::bigint[])`,
+      [held.map((h) => h.rawEventId), CURRENCY_UNSTATED],
+    );
+    await db.query(
+      `delete from ad_spend_daily s
+       using ad_campaigns c, jsonb_to_recordset($1::jsonb) as r("platform" text, "externalCampaignId" text, "spendDate" date, "sourceUpdatedAt" timestamptz)
+       where c.id = s.campaign_id and c.platform = r."platform" and c.external_campaign_id = r."externalCampaignId"
+         and s.spend_date = r."spendDate" and s.source_updated_at <= r."sourceUpdatedAt"`,
+      [JSON.stringify(held)],
+    );
+  }
+  return kept;
+}
+
+export async function projectAll(db: Queryable, all: ProjectionItem[]): Promise<number> {
+  const items = await currencyGate(db, all);
   const byTable = new Map<Table, Map<string, ProjectionItem>>();
   for (const item of items) {
     const { table, row } = item.projection;

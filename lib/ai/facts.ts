@@ -21,6 +21,7 @@ export type MetricKey =
   | "collected"
   | "refunds"
   | "grossCollected"
+  | "newCollected"
   | "atRisk"
   | "prospects"
   | "campaignSpend"
@@ -41,6 +42,7 @@ export const METRIC_UNIT: Record<MetricKey, Unit> = {
   collected: "usd_cents",
   refunds: "usd_cents",
   grossCollected: "usd_cents",
+  newCollected: "usd_cents",
   atRisk: "usd_cents",
   prospects: "count",
   campaignSpend: "usd_cents",
@@ -61,6 +63,7 @@ export const METRIC_NAME: Record<MetricKey, string> = {
   collected: "collected cash (payments − refunds)",
   refunds: "refunds",
   grossCollected: "gross payments (before refunds)",
+  newCollected: "collected to date from the period's new customers",
   atRisk: "revenue in open exceptions",
   prospects: "unique prospects",
   campaignSpend: "campaign media spend",
@@ -80,6 +83,8 @@ export interface MetricFact {
   unit: Unit;
   /** False when some of the money behind it came from a feed that did not state its currency. */
   currencyResolved: boolean;
+  /** Why the figure, though correct as stored, leaves something out (records held at intake), or null. */
+  incompleteReason?: string | null;
   definitionVersion: string | null;
   evidenceIds: string[];
   tool: string;
@@ -104,6 +109,13 @@ function branchMetricFacts(d: Record<string, unknown>, evidenceIds: string[], to
   add("acquired", num(d.acquired), "acquired");
   add("unknownAcquired", num(d.unknownAcquired), "unknownShare");
   add("paidCac", d.paidCacCents === null ? null : num(d.paidCacCents), "paidCac");
+  // Customers whose campaign's spend is held at intake are out of the CAC, and so is their cost:
+  // the figures are right as stored but leave that campaign out.
+  const heldOut = num(d.paidAcquiredHeldOut) ?? 0;
+  if (heldOut > 0) {
+    const reason = `${heldOut} paid customer(s) credited to campaigns whose spend is held at intake (another or no stated currency) are left out, with their cost`;
+    for (const f of out) if (f.metric === "paidSpend" || f.metric === "paidAcquired" || f.metric === "paidCac") f.incompleteReason = reason;
+  }
   add("unknownShare", d.unknownShare === null ? null : num(d.unknownShare), "unknownShare");
   // Collected money comes from the CRM in USD; the currency question applies to ad spend.
   out.push({ metric: "collected", entity: { type: "branch", id: branchId }, period, value: collected, unit: "usd_cents", currencyResolved: true, definitionVersion: version("collected"), evidenceIds, tool });
@@ -170,6 +182,21 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
     if (s.kind !== "tool_call" || s.status !== "ok" || !s.output || typeof s.output !== "object") continue;
     const d = s.output as Record<string, unknown>;
     if (s.tool === "getBranchMetrics") facts.push(...branchMetricFacts(d, s.evidenceIds, s.tool, d.currencyResolved !== false));
+    if (s.tool === "getCashTrace") {
+      // Reproduced from payment records; a trace that does not reproduce is a conflict, not a fact.
+      const scope = d.scope as { branchId?: string; period?: { key?: unknown } } | undefined;
+      const value = d.value as { reproduced?: Record<string, unknown>; matches?: unknown } | undefined;
+      const period = scope?.period?.key;
+      if (typeof scope?.branchId === "string" && isPeriod(period) && value?.reproduced && value.matches === true) {
+        const entity = { type: "branch" as const, id: scope.branchId };
+        const cash = (metric: MetricKey, v: unknown, def: string) => facts.push({ metric, entity, period, value: num(v), unit: "usd_cents", currencyResolved: true, definitionVersion: version(def), evidenceIds: s.evidenceIds, tool: s.tool as string });
+        cash("collected", value.reproduced.collectedCents, "collected");
+        cash("refunds", value.reproduced.refundsCents, "collected");
+        cash("grossCollected", value.reproduced.grossCents, "collected");
+        cash("newCollected", value.reproduced.newCollectedCents, "newCollected");
+        cash("atRisk", value.reproduced.atRiskCents, "atRisk");
+      }
+    }
     if (s.tool === "getBrandMetrics") {
       // Each branch of the brand is its own fact, cited by its own id; totals are proved as sums.
       for (const row of (d.branches as Array<Record<string, unknown>> | undefined) ?? []) {
@@ -188,10 +215,15 @@ export function metricFacts(steps: ReadonlyArray<{ kind: string; status: string;
       const campaigns = (d.campaigns as Array<Record<string, unknown>> | undefined) ?? [];
       if (!branchId || !isPeriod(period) || !reproduced) continue;
       const resolved = campaigns.every((c) => !num(c.assumedCurrencyCents)) && Number(d.campaignsOmitted ?? 0) === 0;
-      const base = { entity: { type: "branch" as const, id: branchId }, period, evidenceIds: s.evidenceIds, tool: s.tool };
+      const held = ((d.excluded as Array<{ code?: string; count?: number }> | undefined) ?? []).find((e) => e.code === "CAMPAIGN_SPEND_HELD");
+      const incompleteReason = held ? `${held.count} paid customer(s) credited to campaigns whose spend is held at intake (another or no stated currency) are left out, with their cost` : null;
+      const base = { entity: { type: "branch" as const, id: branchId }, period, evidenceIds: s.evidenceIds, tool: s.tool, incompleteReason };
       facts.push({ ...base, metric: "paidSpend", value: num(reproduced.paidSpendCents), unit: "usd_cents", currencyResolved: resolved, definitionVersion: version("paidSpend") });
-      facts.push({ ...base, metric: "paidAcquired", value: num(reproduced.paidAcquired), unit: "count", currencyResolved: true, definitionVersion: version("paidCac") });
-      facts.push({ ...base, metric: "paidCac", value: reproduced.paidCacCents === null ? null : num(reproduced.paidCacCents), unit: "usd_cents", currencyResolved: resolved, definitionVersion: version("paidCac") });
+      // A spend trace does not trace the denominator: only a CAC trace states paid customers and CAC.
+      if ((d.metric as { key?: unknown } | undefined)?.key !== "paid_spend") {
+        facts.push({ ...base, metric: "paidAcquired", value: num(reproduced.paidAcquired), unit: "count", currencyResolved: true, definitionVersion: version("paidCac") });
+        facts.push({ ...base, metric: "paidCac", value: reproduced.paidCacCents === null ? null : num(reproduced.paidCacCents), unit: "usd_cents", currencyResolved: resolved, definitionVersion: version("paidCac") });
+      }
       for (const c of campaigns) {
         if (typeof c.externalCampaignId !== "string") continue;
         facts.push({ metric: "campaignSpend", entity: { type: "campaign", id: c.externalCampaignId }, period, value: num(c.spendCents), unit: "usd_cents", currencyResolved: !num(c.assumedCurrencyCents), definitionVersion: version("paidSpend"), evidenceIds: s.evidenceIds, tool: s.tool });

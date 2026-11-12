@@ -152,7 +152,15 @@ async function Trace({ params, searchParams }: Props) {
                   <span className="text-xs">{Object.entries(c.mapperVersions).map(([k, n]) => `${k} ×${n}`).join(", ")}</span>
                   <span className="block font-mono text-[11px] text-faint">{c.sampleRawEventIds.join(" ")}</span>
                 </Td>
-                <Td>{c.assumedCurrencyCents > 0 ? <Badge tone="warn">{money(c.assumedCurrencyCents)} assumed USD</Badge> : <Badge tone="good">stated</Badge>}</Td>
+                <Td>
+                  {c.assumedCurrencyCents > 0 ? (
+                    <Badge tone="warn">{money(c.assumedCurrencyCents)} not established</Badge>
+                  ) : c.ruleCurrencyCents > 0 ? (
+                    <Badge tone="neutral">{c.ruleCurrencyCents === c.spendCents ? "USD by account rule" : `${money(c.ruleCurrencyCents)} USD by account rule`}</Badge>
+                  ) : (
+                    <Badge tone="good">stated</Badge>
+                  )}
+                </Td>
               </tr>
             ))}
           </tbody>

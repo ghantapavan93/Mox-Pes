@@ -100,6 +100,21 @@ async function seedB09(opts: { usd?: boolean } = {}): Promise<number> {
   return Number(rows[0]?.id ?? Number.NaN);
 }
 
+/** A USD-stated Search campaign at B09 with two paid customers: some counted spend beside held spend. */
+async function seedUsdSearch(): Promise<{ spendCents: number; cacCents: number }> {
+  const ads: RawRecord[] = [];
+  for (let d = 1; d <= 10; d++) {
+    const r = spend("search", d, 50);
+    Object.assign(r.payload as Record<string, unknown>, { campaignId: `gs-usd-${B09}`, currencyCode: "USD", accountId: "GA-USD" });
+    ads.push(r);
+  }
+  await ingest(pool, "ads", ads, { now: NOW });
+  const { rows } = await pool.query<{ id: string }>("select id from ad_campaigns where external_campaign_id = $1", [`gs-usd-${B09}`]);
+  await pool.query("insert into campaign_branch_map (campaign_id, branch_id, mapped_by, mapped_at) values ($1, $2, 'marketing-ops', $3) on conflict do nothing", [Number(rows[0].id), B09, NOW]);
+  const trace = await traceBranchMetric(pool, VIEWERS.marketing, { branchId: B09, period: PERIODS.oct, metric: "paid_cac" });
+  return { spendCents: trace.value.reproduced.paidSpendCents, cacCents: trace.value.reproduced.paidCacCents ?? 0 };
+}
+
 /** B20 sells customers who called in; calls@1.0 quarantined every call (new caller shape). */
 async function seedB20(count = 8, offset = 100): Promise<number> {
   for (let n = offset + 1; n <= offset + count; n++) {
@@ -551,12 +566,13 @@ describe("model tool loop (mocked client)", () => {
     expect(claims.find((c) => c.status === "NOT_DETERMINABLE")?.text).toContain("would have converted");
   });
 
-  it("proof-carrying claims: a true figure on spend of unstated currency, a reversed change and a wrong metric are all rejected", async () => {
-    // ads@1.0 reads no currency: the spend is assumed USD, not established.
+  it("proof-carrying claims: assumed-USD spend, a figure under the wrong metric and a change with no comparison are all rejected", async () => {
+    // No currency rule: ads@1.0 reads no currency, so B09's spend records are excluded at intake,
+    // not assumed to be dollars (rule M). The feed sent 30 days × ($300 + $100) = $12,000.00.
+    await pool.query("delete from currency_rules");
     await seedB09();
-    const trace = await traceBranchMetric(pool, marketing, { branchId: B09, period: PERIODS.oct, metric: "paid_cac" });
-    const cac = trace.value.reproduced.paidCacCents!;
-    const spendCents = trace.value.reproduced.paidSpendCents;
+    expect((await pool.query("select count(*)::int as n from raw_events where exclusion_code = 'CURRENCY_UNSTATED'")).rows[0].n).toBe(60);
+    const usd = await seedUsdSearch();
     const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const bm = `branch_metrics:${B09}:oct`;
     const client = scriptedClient([
@@ -565,12 +581,12 @@ describe("model tool loop (mocked client)", () => {
         toolUse("c", "submit_findings", {
           summary: "B09's paid CAC, traced.",
           observations: [
-            // The figure is right, but the money's currency is not established (rule M).
-            { text: `Paid-media CAC at B09 is ${dollars(cac)} per new paid customer.`, evidenceIds: [bm], status: "verified" },
+            // The amount the feed sent, taken as dollars: nothing establishes it (rule M).
+            { text: "B09's October paid spend is $12,000.00.", evidenceIds: [bm], status: "verified" },
             // The CAC figure stated as the paid spend (wrong metric, D): the number is in the output, the meaning is wrong.
-            { text: `B09's October paid spend totals ${dollars(cac)}.`, evidenceIds: [bm], status: "verified" },
+            { text: `B09's October paid spend totals ${dollars(usd.cacCents)}.`, evidenceIds: [bm], status: "verified" },
             // September has no B09 activity in this world; a change against it is not in the cited facts.
-            { text: `B09's paid spend rose by ${dollars(spendCents)} from September.`, evidenceIds: [bm], status: "verified" },
+            { text: `B09's paid spend rose by ${dollars(usd.spendCents)} from September.`, evidenceIds: [bm], status: "verified" },
           ],
           suspectedCause: null,
           confidence: { level: "medium", why: "Traced." },
@@ -585,12 +601,12 @@ describe("model tool loop (mocked client)", () => {
     const out = await runInvestigation(pool, { question: "Why is B09's paid CAC what it is?", branchId: B09, viewer: marketing, now: NOW, client });
     expect(out.mode).toBe("model");
     expect(out.result.observations).toEqual([]);
-    expect(out.result.grounding.proofDropped).toBe(3);
     const claims = out.result.claims!;
-    const currency = claims.find((c) => c.text.includes(dollars(cac)));
-    expect(currency).toMatchObject({ status: "UNSUPPORTED", reason: expect.stringMatching(/did not state its currency/) });
-    expect(currency?.proofs?.[0]).toMatchObject({ gap: "currency_unresolved", verdict: "UNRESOLVED" });
-    expect(claims.find((c) => c.text.includes("spend totals"))?.status).toBe("UNSUPPORTED");
+    // $12,000.00 appears in no output: dropped before its proof (the numeric check), as it should be.
+    expect(claims.find((c) => c.text.includes("$12,000.00"))?.status).toBe("UNSUPPORTED");
+    const wrongMetric = claims.find((c) => c.text.includes("spend totals"));
+    expect(wrongMetric).toMatchObject({ status: "UNSUPPORTED", reason: expect.stringMatching(/does not follow/) });
+    expect(wrongMetric?.proofs?.[0]).toMatchObject({ verdict: "CONTRADICTED", subject: { metric: "paidSpend" } });
     expect(claims.find((c) => c.text.includes("from September"))?.status).toBe("UNSUPPORTED");
   });
 

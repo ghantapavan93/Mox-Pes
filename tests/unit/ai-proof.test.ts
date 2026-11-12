@@ -296,6 +296,15 @@ describe("channels, groups, brands, ratios and status", () => {
     expect(r.model?.status).toBe("UNSUPPORTED");
   });
 
+  it("a figure right as stored but leaving held records out is a limitation in model text, kept in a template", () => {
+    const held = branchMetrics("B05", "oct", { paidSpendCents: 60000, paidAcquired: 2, paidCacCents: 30000, paidAcquiredHeldOut: 3 });
+    const r = prove("B05's October paid-media CAC is $300.00.", ["branch_metrics:B05:oct"], metricFacts([held]));
+    expect(r.proofs[0]).toMatchObject({ verdict: "VERIFIED" });
+    expect(r.proofs[0].inputs[0].incompleteReason).toMatch(/3 paid customer\(s\) credited to campaigns whose spend is held/);
+    expect(r.model).toMatchObject({ status: "PARTIALLY_SUPPORTED", reason: expect.stringMatching(/correct as stored, but 3 paid customer/) });
+    expect(r.template?.status).toBe("SUPPORTED");
+  });
+
   it("checks readiness, the budget signal and completeness against what the tools said", () => {
     const readiness = {
       kind: "tool_call",

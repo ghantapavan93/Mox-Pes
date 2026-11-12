@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { CurrencyRules } from "@/components/integrations/CurrencyRules";
 import { FaultPanel } from "@/components/integrations/FaultPanel";
 import { JobsLive } from "@/components/integrations/JobsLive";
 import { PipelineSections } from "@/components/integrations/PipelineSections";
@@ -12,6 +13,7 @@ import { listFaults } from "@/lib/connectors/faults";
 import { FIELDROUTES_FIELD_MAP } from "@/lib/connectors/fieldroutes-mapping";
 import { connectorSummaries, listJobs, mapperUsage, officeGrid } from "@/lib/connectors/studio";
 import { CRM_ENTITIES } from "@/lib/connectors/types";
+import { accountsAwaitingCurrency, listCurrencyRules } from "@/lib/currency/rules";
 import { toJobView } from "@/lib/connectors/views";
 import { count } from "@/lib/format";
 import { failedRunsWithRecovery, streamTotals } from "@/lib/queries";
@@ -110,9 +112,23 @@ async function Studio({ searchParams }: { searchParams: SearchParams }) {
       {view === "pipeline" && (
         <Suspense fallback={<Skeleton lines={8} />}>
           <PipelineSections db={pool} />
+          <CurrencySection canPropose={viewer.can.sync} canApprove={viewer.can.approve} subject={viewer.subject} />
         </Suspense>
       )}
     </div>
+  );
+}
+
+/** Ad accounts whose feed states no currency: held until two people say the account reports in USD. */
+async function CurrencySection({ canPropose, canApprove, subject }: { canPropose: boolean; canApprove: boolean; subject: string }) {
+  const pool = getPool();
+  const [rules, awaiting] = await Promise.all([listCurrencyRules(pool), accountsAwaitingCurrency(pool)]);
+  return (
+    <Card id="currency" title="Ad account currency" subtitle="Spend whose feed states no currency is not counted as dollars until an engineer proposes, and a different approver authorizes, a rule that the account reports in USD. Other currencies are never converted.">
+
+
+      <CurrencyRules rules={rules} awaiting={awaiting} canPropose={canPropose} canApprove={canApprove} subject={subject} />
+    </Card>
   );
 }
 

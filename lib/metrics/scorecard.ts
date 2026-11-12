@@ -25,6 +25,8 @@ export interface BranchRow {
   sold: number;
   acquired: number;
   paidAcquired: number;
+  /** Paid-media customers left out of the CAC because their campaign's spend is all held at intake. */
+  heldCampaignAcquired: number;
   unknownAcquired: number;
   channelConflicts: number;
   /** Collected to date from customers first serviced in the period. */
@@ -65,10 +67,23 @@ const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 
 const scopeParams = (s: Scope) => [s.from, s.to, s.branchIds];
 
+/**
+ * Campaigns whose spend is all held at intake: records exist in the ads feed (quarantined, e.g.
+ * CURRENCY_UNSUPPORTED, or excluded, e.g. CURRENCY_UNSTATED) but none was ever counted, so the
+ * campaign has no ad_campaigns row. Customers credited to one leave the CAC denominator, as
+ * customers of an unmapped campaign do: their cost is in no figure. A CTE for `with` lists.
+ */
+export const HELD_CAMPAIGNS = `held_campaigns as (
+       select distinct re.payload ->> 'campaignId' as external_campaign_id
+       from raw_events re
+       where re.source = 'ads' and re.status in ('quarantined', 'excluded') and re.payload ->> 'campaignId' is not null
+         and not exists (select 1 from ad_campaigns c where c.external_campaign_id = re.payload ->> 'campaignId'))`;
+
 export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow[]> {
   const { rows } = await db.query(
     `with p as (select $1::timestamptz as t0, $2::timestamptz as t1),
      b as (select id from branches where $3::text[] is null or id = any($3::text[])),
+     ${HELD_CAMPAIGNS},
      spend as (
        select m.branch_id, sum(s.cost_cents) as cost, sum(s.platform_conversions) as claimed
        from ad_spend_daily s
@@ -89,10 +104,15 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
        select a.branch_id, count(*) as acquired,
               -- Paid MEDIA customers whose spend the numerator can see: the CAC denominator.
               -- Sponsorship is paid but not media spend; a customer credited to a campaign no branch
-              -- is mapped to has its cost in unallocated spend, not here (audit 2026-11-09, D-3).
+              -- is mapped to has its cost in unallocated spend, not here (audit 2026-11-09, D-3);
+              -- nor one credited to a campaign whose spend was all held at intake (another currency,
+              -- no stated currency), whose cost no figure contains (definition v3, held-out IV-26).
               count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
                 and not exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
-                                  and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id))) as paid_acquired,
+                                  and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id))
+                and not exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as paid_acquired,
+              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
+                and exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as held_acquired,
               count(*) filter (where a.channel_code = 'unknown') as unknown_acquired,
               count(*) filter (where a.channel_conflict) as conflicts,
               coalesce(sum(r.collected_cents), 0) as new_collected,
@@ -118,7 +138,7 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
        group by 1)
      select br.id, br.name, br.region,
             spend.cost, spend.claimed, leadagg.raw_leads, leadagg.prospects, leadagg.paid_prospects, sold.sold,
-            acq.acquired, acq.paid_acquired, acq.unknown_acquired, acq.conflicts, acq.new_collected, acq.new_acv,
+            acq.acquired, acq.paid_acquired, acq.held_acquired, acq.unknown_acquired, acq.conflicts, acq.new_collected, acq.new_acv,
             rev.net, rev.refunds,
             exc.open_exceptions, risk.at_risk
      from b join branches br on br.id = b.id
@@ -144,6 +164,7 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
     sold: num(r.sold),
     acquired: num(r.acquired),
     paidAcquired: num(r.paid_acquired),
+    heldCampaignAcquired: num(r.held_acquired),
     unknownAcquired: num(r.unknown_acquired),
     channelConflicts: num(r.conflicts),
     newCustomerCollectedCents: num(r.new_collected),
@@ -205,6 +226,7 @@ export async function totals(db: Queryable, scope: Scope, rows?: BranchRow[]): P
   const unknownAcquired = sum("unknownAcquired");
   return {
     paidSpendCents,
+    heldCampaignAcquired: sum("heldCampaignAcquired"),
     platformClaimed: sum("platformClaimed"),
     rawLeads: sum("rawLeads"),
     prospects: num(distinct.rows[0].prospects),

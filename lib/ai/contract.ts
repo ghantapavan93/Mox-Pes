@@ -102,6 +102,8 @@ export const ProofSchema = z.strictObject({
       unit: UNIT,
       definitionVersion: z.string().nullable(),
       currencyResolved: z.boolean(),
+      /** Completeness: why the fact, right as stored, leaves records out (null when complete). */
+      incompleteReason: z.string().nullable().optional(),
       evidenceIds: z.array(z.string()),
       tool: z.string(),
     }),

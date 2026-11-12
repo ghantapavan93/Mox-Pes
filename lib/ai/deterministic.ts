@@ -54,6 +54,8 @@ export interface DetectedIntent {
   brandId: BrandId | null;
   /** The question asks whether something caused an outcome: answered with figures, never with a cause. */
   asksCause: boolean;
+  /** The question is about cash: collected, revenue, payments, refunds. */
+  asksCash: boolean;
 }
 
 const CAUSAL_QUESTION = /\b(?:cause[sd]?|because|due to|thanks to|paid for itself|pay for itself|pays for itself|worth it|roi|return on|effective|drove|bring in more)\b/i;
@@ -112,6 +114,7 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
     presumesStop,
     brandId,
     asksCause: CAUSAL_QUESTION.test(question),
+    asksCash: /\b(?:collect\w*|cash|revenue|paid|payments?|refunds?)\b/i.test(question),
   };
 }
 
@@ -1048,6 +1051,22 @@ async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<Dr
     evidenceIds: [bm],
     status: "verified",
   });
+  // Questions about cash: the payments and refunds behind it, reproduced to the cent.
+  const cash = d.asksCash && d.period !== "all" ? await ctx.call("getCashTrace", { branchId: b, period: d.period }) : null;
+  if (cash) {
+    const r = cash.value.reproduced;
+    const broken = cash.invariants.filter((i) => !i.holds);
+    observations.push({
+      text: cash.value.matches
+        ? `${b}, ${label}: collected cash ${exactDollars(r.collectedCents)} = ${exactDollars(r.grossCents)} paid − ${exactDollars(r.refundsCents)} refunded, from ${cash.payments.count} stored payment record(s), ${cash.payments.refunds} of them refunds${broken.length ? `; ${broken.length} invariant(s) broken: ${broken.map((i) => i.name).join("; ")}` : ""}.`
+        : `The stored payment records do NOT reproduce ${b}'s collected cash: ${cash.value.discrepancies.join(" ")}`,
+      evidenceIds: [bm, ...cash.payments.sample.slice(0, 5).map((p) => p.evidenceId)],
+      status: "verified",
+    });
+    for (const e of cash.excluded) {
+      observations.push({ text: `${e.count} payment record(s) at ${b} are not in collected cash (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+    }
+  }
   const channels = metrics.channels.filter((c) => c.spendCents > 0 || c.acquired > 0);
   if (channels.length > 0) {
     observations.push({

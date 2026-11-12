@@ -78,21 +78,23 @@ describe("metric trace · paid CAC for one branch", () => {
     expect(t.value.reproduced).toEqual(t.value.scorecard);
     expect(t.value.scorecard).toMatchObject({ paidSpendCents: row.paidSpendCents, paidAcquired: row.paidAcquired });
     expect(t.value.reproduced).toEqual({ paidSpendCents: 40_000, paidAcquired: 2, paidCacCents: 20_000 });
-    expect(t.metric.definitionVersion).toMatch(/^v2/);
+    expect(t.metric.definitionVersion).toMatch(/^v3/);
   });
 
   it("names each campaign's mapping, the mapper versions and raw events behind its spend, and the currency basis", async () => {
     const t = await traceBranchMetric(pool, marketing, { branchId: "B12", period: OCT, metric: "paid_cac" });
     expect(t.numerator.campaigns.map((c) => c.externalCampaignId)).toEqual(["gs-B12"]); // gs-B13 is another branch's
     const c = t.numerator.campaigns[0];
-    expect(c).toMatchObject({ spendCents: 40_000, spendDays: 5, firstDay: "2026-10-01", lastDay: "2026-10-05", assumedCurrencyCents: 24_000, mapping: { branchId: "B12", mappedBy: "setup" } });
+    // Three of the five days state no currency: they count as USD because the fixture's
+    // authorized rule says the account reports in USD, and the trace says so (none is "assumed").
+    expect(c).toMatchObject({ spendCents: 40_000, spendDays: 5, firstDay: "2026-10-01", lastDay: "2026-10-05", assumedCurrencyCents: 0, ruleCurrencyCents: 24_000, mapping: { branchId: "B12", mappedBy: "setup" } });
     expect(c.mapperVersions).toEqual({ "ads@1.2": 5 });
     expect(c.sampleRawEventIds).toHaveLength(3);
     for (const ref of c.sampleRawEventIds) {
       const raw = await one<{ source: string; status: string }>(pool, "select source, status from raw_events where id = $1", [Number(ref.split(":")[1])]);
       expect(raw).toEqual({ source: "ads", status: "projected" });
     }
-    expect(t.limitations.some((l) => l.includes("$240.00") && l.includes("taken as USD"))).toBe(true);
+    expect(t.limitations.some((l) => l.includes("$240.00") && l.includes("authorized rule"))).toBe(true);
   });
 
   it("lists each counted customer with the lead that credits them, and what the definition leaves out", async () => {

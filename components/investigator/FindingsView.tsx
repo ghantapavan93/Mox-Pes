@@ -155,6 +155,7 @@ function ProofList({ proofs }: { proofs: ProofItem[] }) {
                       <li key={j} className="break-words text-muted">
                         <span className="font-mono">{f.metric}</span> · {f.entity} · {f.period} = <span className="font-mono">{factValue(f.value, f.unit)}</span>
                         {f.unit === "usd_cents" && !f.currencyResolved ? " · currency not established" : ""}
+                        {f.incompleteReason ? ` · incomplete: ${f.incompleteReason}` : ""}
                         {f.definitionVersion ? ` · definition ${f.definitionVersion.split(" ")[0]}` : ""} · from {f.tool} · <span className="font-mono">{f.evidenceIds.slice(0, 2).join(", ")}</span>
                       </li>
                     ))}

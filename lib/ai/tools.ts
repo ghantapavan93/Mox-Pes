@@ -12,6 +12,7 @@ import { exceptionSummary, getException, listExceptions, type ExceptionRow } fro
 import { BRANCH_BY_ID, BRANDS, branchesOfBrands, type BrandId } from "@/lib/reference";
 import { ForbiddenError, canSeeBranch, resolveScope, type Viewer } from "@/lib/viewer";
 import { auditFeed, caseAudit, caseForException } from "@/lib/workflow/queries";
+import { traceCash } from "@/lib/lineage/cash";
 import { TRACEABLE, traceBranchMetric } from "@/lib/lineage/trace";
 import { evidence, uniqueIds } from "./evidence";
 
@@ -125,6 +126,8 @@ export interface BranchMetrics {
   paidAcquired: number;
   unknownAcquired: number;
   paidCacCents: number | null;
+  /** Paid-media customers left out of the CAC because their campaign's spend is all held at intake (another or no stated currency). */
+  paidAcquiredHeldOut: number;
   unknownShare: number | null;
   rawLeads: number;
   prospects: number;
@@ -157,6 +160,7 @@ export const getBranchMetrics = defineTool({
       paidAcquired: row.paidAcquired,
       unknownAcquired: row.unknownAcquired,
       paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
+      paidAcquiredHeldOut: row.heldCampaignAcquired,
       unknownShare: row.acquired > 0 ? row.unknownAcquired / row.acquired : null,
       rawLeads: row.rawLeads,
       prospects: row.prospects,
@@ -1010,6 +1014,7 @@ export const getMetricTrace = defineTool({
         mappingVersion: c.mapping.version,
         mapperVersions: c.mapperVersions,
         assumedCurrencyCents: c.assumedCurrencyCents,
+        ruleCurrencyCents: c.ruleCurrencyCents,
         // Paid customers in the denominator credited to this campaign (null when the list was capped).
         paidCustomersCredited: trace.denominator.truncated ? null : trace.denominator.customers.filter((k) => k.campaignExternalId === c.externalCampaignId).length,
       })),
@@ -1035,6 +1040,41 @@ export const getMetricTrace = defineTool({
       data,
       evidenceIds: ids,
       summary: `${input.branchId} ${input.period}: ${v.paidSpendCents} cents ÷ ${v.paidAcquired} = ${v.paidCacCents ?? "n/a"} cents per paid customer; ${trace.value.matches ? "reproduced exactly" : "DOES NOT reproduce"}; ${trace.missing.length} missing-evidence item(s)`,
+    };
+  },
+});
+
+// ── getCashTrace ─────────────────────────────────────────────────────────────
+
+/**
+ * Where a branch's collected cash comes from (lib/lineage/cash.ts): the payments and refunds by
+ * payment date, reproduced to the cent against the scorecard, with the invariants that must hold
+ * (net = gross − refunds; every refund names its payment; no payment refunded beyond its amount),
+ * new-customer collections and revenue in open exceptions.
+ */
+export const getCashTrace = defineTool({
+  name: "getCashTrace",
+  description:
+    "Where a branch's collected cash comes from for a period: successful payments and refunds by payment date in the CRM office's branch, reproduced to the cent and checked against the scorecard, failed or voided payments left out, collections from the period's new customers, revenue in open exceptions, and the invariants that must hold. Read-only, scoped. Money is integer cents.",
+  input: z.strictObject({ branchId, period: z.enum(["oct", "sep"]).default("oct") }),
+  async run(ctx, input) {
+    knownBranch(input.branchId);
+    const t = await traceCash(ctx.db, ctx.viewer, { branchId: input.branchId, period: PERIODS[input.period as PeriodKey] });
+    const data = {
+      scope: { branchId: t.scope.branchId, period: t.scope.period },
+      value: t.value,
+      payments: { count: t.payments.count, refunds: t.payments.refunds, truncated: t.payments.truncated, sample: t.payments.rows.slice(0, 10).map((r) => ({ evidenceId: r.evidenceId, amountCents: r.amountCents, kind: r.kind, paidAt: r.paidAt })) },
+      excluded: t.excluded,
+      newCustomers: t.newCustomers,
+      atRisk: { customers: t.atRisk.customers, collectedCents: t.atRisk.collectedCents, exceptions: t.atRisk.exceptions.slice(0, 10) },
+      invariants: t.invariants,
+    };
+    const ids = uniqueIds([...t.evidenceIds, ...data.payments.sample.map((r) => r.evidenceId), ...t.excluded.flatMap((e) => e.evidenceIds), ...data.atRisk.exceptions.map((e) => e.evidenceId)]);
+    const r = t.value.reproduced;
+    return {
+      data,
+      evidenceIds: ids,
+      summary: `${input.branchId} ${input.period}: collected ${r.collectedCents} cents = ${r.grossCents} paid − ${r.refundsCents} refunded; ${t.value.matches ? "reproduces the scorecard" : "DOES NOT reproduce the scorecard"}; ${t.invariants.filter((i) => !i.holds).length} invariant(s) broken`,
     };
   },
 });
@@ -1184,6 +1224,7 @@ export const getBrandMetrics = defineTool({
       paidAcquired: row.paidAcquired,
       unknownAcquired: row.unknownAcquired,
       paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
+      paidAcquiredHeldOut: row.heldCampaignAcquired,
       unknownShare: row.acquired > 0 ? row.unknownAcquired / row.acquired : null,
       rawLeads: row.rawLeads,
       prospects: row.prospects,
@@ -1224,6 +1265,7 @@ export const TOOLS = {
   inspectCampaignClassification,
   getMetricDefinition,
   getMetricTrace,
+  getCashTrace,
   getAuditHistory,
   getDecisionReadiness,
 } as const;

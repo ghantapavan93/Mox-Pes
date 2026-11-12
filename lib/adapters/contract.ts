@@ -173,11 +173,13 @@ export interface SpendDayRow {
   spendDate: string; // YYYY-MM-DD in the ad account's zone
   costCents: number;
   /**
-   * reported_usd: the platform stated USD. assumed_usd: the feed stated no currency and the
-   * amount is taken as USD (shown wherever the spend is traced). Any other currency is refused
-   * by the mapper; nothing is converted.
+   * reported_usd: the feed stated USD. Any other stated currency is refused by the mapper;
+   * nothing is converted. assumed_usd: the feed stated nothing (what a mapper emits);
+   * projection then counts it only under an authorized account rule, as account_rule_usd, and
+   * otherwise excludes it (lib/ingest/project.ts, lib/currency/rules.ts). Stored assumed_usd rows
+   * are legacy only (before migration 0020).
    */
-  currencyBasis: "reported_usd" | "assumed_usd";
+  currencyBasis: "reported_usd" | "assumed_usd" | "account_rule_usd";
   clicks: number;
   platformConversions: number;
   sourceUpdatedAt: Date;

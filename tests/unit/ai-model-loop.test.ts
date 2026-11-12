@@ -129,6 +129,7 @@ describe("model tool loop", () => {
       "inspectCampaignClassification",
       "getMetricDefinition",
       "getMetricTrace",
+      "getCashTrace",
       "getAuditHistory",
       "getDecisionReadiness",
       "submit_findings",

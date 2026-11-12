@@ -81,6 +81,8 @@ export interface ProofInput {
   unit: Unit;
   definitionVersion: string | null;
   currencyResolved: boolean;
+  /** Why the fact, correct as stored, leaves records out (e.g. spend held at intake), or null: its completeness. */
+  incompleteReason: string | null;
   evidenceIds: string[];
   tool: string;
 }
@@ -128,7 +130,7 @@ export interface ProveContext {
 // ── Vocabulary ───────────────────────────────────────────────────────────────
 
 /** "portion": "$1,800 of its spend", a part of a metric, not (necessarily) its level. */
-type Family = "cac" | "unknown" | "paidCustomers" | "customers" | "spend" | "collected" | "refunds" | "gross" | "payments" | "atRisk" | "prospects" | "unsupported" | "portion" | "none";
+type Family = "cac" | "unknown" | "paidCustomers" | "customers" | "spend" | "collected" | "newCollected" | "refunds" | "gross" | "payments" | "atRisk" | "prospects" | "unsupported" | "portion" | "none";
 type EntityType = "branch" | "campaign" | "channel";
 interface EntityRef { type: EntityType; id: string }
 
@@ -137,6 +139,7 @@ const FAMILY_WORDS: Array<[RegExp, Family]> = [
   [/\b(?:paid[- ](?:media )?)?CAC\b|\bcost per (?:new |paying |paid |acquired )*customers?\b|\bcustomer acquisition cost\b|\bcost per acquisition\b|\bspend per (?:new |paid |paying )*customers?\b/gi, "cac"],
   [/\b(?:invoic\w*|billed|billings?|gross sales|contract(?:ed)? value|booked|bookings|pipeline value|quoted)\b/gi, "unsupported"],
   [/\b(?:revenue |cash |money )?(?:at[- ]risk|in open exceptions|tied up in (?:open )?exceptions)(?: revenue| cash)?/gi, "atRisk"],
+  [/\b(?:collected|collections?|cash|revenue) from (?:its |the )?(?:period's |october's |september's )?new customers\b|\bnew[- ]customer (?:collections?|revenue|cash)\b/gi, "newCollected"],
   [/\b(?:refund[- ]adjusted|net) (?:collections|collected|cash|revenue)\b|\bnet of refunds\b|\bafter refunds\b/gi, "collected"],
   [/\bgross (?:payments|collections|collected|cash)\b|\bbefore refunds\b/gi, "gross"],
   [/\brefund\w*/gi, "refunds"],
@@ -170,6 +173,7 @@ function resolve(family: Family, kind: ClaimNumber["kind"] | null, entity: Entit
     case "customers": return "acquired";
     case "spend": return entity === "campaign" ? "campaignSpend" : "paidSpend";
     case "collected": return "collected";
+    case "newCollected": return "newCollected";
     case "refunds": return kind === "count" ? "unsupported" : "refunds";
     case "gross": return "grossCollected";
     case "payments": return kind === "count" ? "unsupported" : "grossCollected";
@@ -455,6 +459,7 @@ const inputOf = (f: MetricFact): ProofInput => ({
   unit: f.unit,
   definitionVersion: f.definitionVersion,
   currencyResolved: f.currencyResolved,
+  incompleteReason: f.incompleteReason ?? null,
   evidenceIds: f.evidenceIds.slice(0, 5),
   tool: f.tool,
 });
@@ -474,7 +479,8 @@ function lookup(facts: MetricFact[], metric: MetricKey, entity: EntityRef, perio
   if (values.length > 1) {
     return { gap: "conflicting_facts", reason: `the cited tools disagree about ${entity.id}'s ${p} ${METRIC_NAME[metric]} (${at.map((f) => `${f.tool}: ${f.value === null ? "n/a" : fmt(shown(f.value, f.unit))}`).join(" vs ")})`, period: p, inputs: at.map(inputOf) };
   }
-  const fact = at[0];
+  // Tools that agree: one fact, with the strictest currency and completeness any of them states.
+  const fact: MetricFact = { ...at[0], incompleteReason: at.find((f) => f.incompleteReason)?.incompleteReason ?? null };
   if (fact.unit === "usd_cents" && at.some((f) => !f.currencyResolved)) {
     return { gap: "currency_unresolved", reason: `some of ${entity.id}'s ${p} ${METRIC_NAME[metric]} came from a feed that did not state its currency, and no authorized account rule applies: it is not comparable money`, period: p, inputs: [inputOf(fact)] };
   }
@@ -1216,6 +1222,10 @@ export function judge(proofs: Proof[], origin: ProofOrigin): Judgement | null {
   if (doubtful) return { status: "PARTIALLY_SUPPORTED", reason: why(doubtful), decisive: doubtful };
   const soft = proofs.find((p) => p.verdict === "UNRESOLVED");
   if (soft && origin === "model") return { status: "PARTIALLY_SUPPORTED", reason: why(soft), decisive: soft };
+  // Right as stored, but the facts leave records out: model text stating it plainly is a
+  // limitation, not a finding (templates state the held records in their own sentence).
+  const incomplete = proofs.find((p) => p.verdict === "VERIFIED" && p.inputs.some((i) => i.incompleteReason));
+  if (incomplete && origin === "model") return { status: "PARTIALLY_SUPPORTED", reason: `${incomplete.figure ? `${incomplete.figure}: ` : ""}correct as stored, but ${incomplete.inputs.find((i) => i.incompleteReason)?.incompleteReason}`, decisive: incomplete };
   if (!soft) return { status: "SUPPORTED", reason: "every proposition follows from the cited facts", decisive: null };
   return { status: "SUPPORTED", reason: "written from a structured calculation; propositions outside the checker's vocabulary are not separately proved", decisive: soft };
 }

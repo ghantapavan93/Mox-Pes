@@ -75,6 +75,17 @@ export async function seed(pool: Pool, opts: SeedOptions = {}): Promise<SeedRepo
   const world = generateWorld();
   log(`world: ${world.records.length} source record versions, ${world.campaigns.length} campaigns`);
   await insertReference(pool, world, DEMO_NOW);
+  // The synthetic ad feeds do not state a currency. Onboarding recorded each account's currency
+  // as USD, one authorized rule per account (lib/currency/rules.ts); without these the spend
+  // would be excluded at intake, not assumed to be dollars.
+  const accounts = [...new Map(world.campaigns.map((c) => [`${c.platform}:${c.accountId}`, c])).values()];
+  await pool.query(
+    `insert into currency_rules (platform, ad_account_id, currency, proposed_by, proposed_at, reason, authorized_by, authorized_at)
+     select r."platform", r."accountId", 'USD', 'demo:onboarding', $2, 'synthetic demo: account currency recorded as USD at onboarding; the feed does not state it',
+            'demo:approver', $2
+     from jsonb_to_recordset($1::jsonb) as r("platform" text, "accountId" text)`,
+    [JSON.stringify(accounts.map((c) => ({ platform: c.platform, accountId: c.accountId }))), SIM_START],
+  );
 
   const clients = STREAMS.map((s) => ({
     spec: s,

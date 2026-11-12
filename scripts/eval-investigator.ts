@@ -272,7 +272,9 @@ function close(fact: { kind: string; value: number }, n: { kind: string; value: 
 async function runCase(pool: Pool, c: Case) {
   const ctx: Ctx = { pool, c, ext: (k) => `${c.id}-${k}`, platforms: new Map(), phones: new Map(), customers: new Map(), n: 0 };
   const started = Date.now();
-  await freshDb(pool);
+  // No currency rule: each case's campaigns state their currency, and one that states none must
+  // not be taken as USD (IR-8). Before currency rules existed, unstated spend was assumed USD.
+  await freshDb(pool, { currencyRule: false });
   await buildWorld(ctx);
   const viewer: Viewer | undefined = (VIEWERS as Record<string, Viewer>)[c.ask.as];
   if (!viewer) throw new InvalidCase(`unknown actor ${c.ask.as}`);

@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import type { Queryable } from "@/lib/db";
 import { evidence } from "@/lib/ai/evidence";
 import { METRICS } from "@/lib/metrics/definitions";
-import { branchRows, freshness, paidCac, type BranchRow, type StreamFreshness } from "@/lib/metrics/scorecard";
+import { branchRows, freshness, HELD_CAMPAIGNS, paidCac, type BranchRow, type StreamFreshness } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
@@ -48,8 +48,14 @@ export interface CampaignContribution {
   spendDays: number;
   firstDay: string;
   lastDay: string;
-  /** Spend whose currency the feed did not state (taken as USD). */
+  /**
+   * Spend counted as USD with nothing establishing it. Zero since currency rules (migration
+   * 0020): unstated spend is counted only under an authorized rule, else excluded at intake. A
+   * non-zero value would mean money nobody established as dollars, and claims on it are not certified.
+   */
   assumedCurrencyCents: number;
+  /** Spend whose feed stated no currency, counted as USD under an authorized account rule. */
+  ruleCurrencyCents: number;
   lastFetchedAt: string | null;
   mapping: { branchId: string; mappedBy: string; mappedAt: string; version: number | null; changeId: number | null; recordedBy: string | null };
   /** Mapper versions that produced the stored spend rows, with counts. */
@@ -137,7 +143,8 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
     `with p as (select $1::timestamptz as t0, $2::timestamptz as t1)
      select c.id, c.external_campaign_id, c.name, c.platform, s.channel_code,
             sum(s.cost_cents) as cost, count(*) as days, min(s.spend_date)::text as first_day, max(s.spend_date)::text as last_day,
-            coalesce(sum(s.cost_cents) filter (where s.currency_basis = 'assumed_usd'), 0) as assumed,
+            coalesce(sum(s.cost_cents) filter (where s.currency_basis not in ('reported_usd', 'account_rule_usd')), 0) as assumed,
+            coalesce(sum(s.cost_cents) filter (where s.currency_basis = 'account_rule_usd'), 0) as by_rule,
             max(s.source_updated_at) as last_fetched,
             m.branch_id, m.mapped_by, m.mapped_at, v.version, v.change_id, v.recorded_by,
             (array_agg(s.raw_event_id order by s.spend_date desc))[1:3] as sample_raw,
@@ -161,10 +168,12 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
     params,
   );
   const acquired = await db.query(
-    `select a.crm_customer_id, a.sold_at, a.initial_completed_at, a.channel_code, a.campaign_external_id, a.lead_id,
+    `with ${HELD_CAMPAIGNS}
+     select a.crm_customer_id, a.sold_at, a.initial_completed_at, a.channel_code, a.campaign_external_id, a.lead_id,
             a.attribution_basis, l.raw_event_id as lead_raw_event_id, ch.is_paid, ch.cost_basis,
             exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
-                    and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id)) as unmapped_campaign
+                    and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id)) as unmapped_campaign,
+            exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id) as held_campaign
      from v_acquisitions a
      join channels ch on ch.code = a.channel_code
      left join leads l on l.id = a.lead_id
@@ -216,6 +225,7 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
     firstDay: r.first_day,
     lastDay: r.last_day,
     assumedCurrencyCents: num(r.assumed),
+    ruleCurrencyCents: num(r.by_rule),
     lastFetchedAt: iso(r.last_fetched),
     mapping: { branchId: r.branch_id, mappedBy: r.mapped_by, mappedAt: iso(r.mapped_at)!, version: r.version === null ? null : Number(r.version), changeId: r.change_id === null ? null : Number(r.change_id), recordedBy: r.recorded_by },
     mapperVersions: Object.fromEntries(Object.entries((r.version_counts ?? {}) as Record<string, unknown>).map(([k, v]) => [k, Number(v)])),
@@ -224,10 +234,12 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
 
   const counted: CustomerContribution[] = [];
   const unmappedCustomers: number[] = [];
+  const heldCustomers: number[] = [];
   const nonMedia: number[] = [];
   for (const r of acquired.rows) {
     if (r.cost_basis !== "media") nonMedia.push(Number(r.crm_customer_id));
     else if (r.unmapped_campaign) unmappedCustomers.push(Number(r.crm_customer_id));
+    else if (r.held_campaign) heldCustomers.push(Number(r.crm_customer_id));
     else
       counted.push({
         evidenceId: evidence.customer(Number(r.crm_customer_id)),
@@ -250,9 +262,11 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
   if (args.metric === "paid_cac" && reproduced.paidAcquired !== scorecard.paidAcquired) discrepancies.push(`Paid customers: the scorecard counts ${scorecard.paidAcquired}; ${reproduced.paidAcquired} are listed.`);
 
   const assumed = contributions.reduce((t, c) => t + c.assumedCurrencyCents, 0);
+  const byRule = contributions.reduce((t, c) => t + c.ruleCurrencyCents, 0);
   const excluded: MetricTrace["excluded"] = [];
   if (args.metric === "paid_cac") {
     if (unmappedCustomers.length) excluded.push({ reason: "New paid customers whose crediting campaign is mapped to no branch: its spend is unallocated, so they are left out of the denominator too", code: "CAMPAIGN_UNMAPPED", count: unmappedCustomers.length, amountCents: null, evidenceIds: unmappedCustomers.slice(0, 10).map(evidence.customer) });
+    if (heldCustomers.length) excluded.push({ reason: "New paid customers whose crediting campaign's spend was all held at intake (another currency, or no stated currency without a rule): its cost is in no figure, so they are left out of the denominator too", code: "CAMPAIGN_SPEND_HELD", count: heldCustomers.length, amountCents: null, evidenceIds: heldCustomers.slice(0, 10).map(evidence.customer) });
     if (nonMedia.length) excluded.push({ reason: "New customers credited to a paid channel that is not media spend (e.g. sponsorship): not in paid-media CAC", code: "NOT_MEDIA", count: nonMedia.length, amountCents: null, evidenceIds: nonMedia.slice(0, 10).map(evidence.customer) });
   }
 
@@ -285,7 +299,8 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
     def.caveat,
     "Attribution credits a customer to the first lead with evidence. That is an association, not proof that the advertising caused the sale.",
     "A campaign mapping applies to the campaign's whole history (mappings are not effective-dated).",
-    ...(assumed > 0 ? [`${exactDollars(assumed)} of this spend came from a feed that did not state its currency and is taken as USD.`] : []),
+    ...(assumed > 0 ? [`${exactDollars(assumed)} of this spend came from a feed that did not state its currency and nothing establishes it as USD.`] : []),
+    ...(byRule > 0 ? [`${exactDollars(byRule)} of this spend came from a feed that did not state its currency; it counts as USD because an authorized rule says the account reports in USD.`] : []),
   ];
 
   const evidenceIds = [

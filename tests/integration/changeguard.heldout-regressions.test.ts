@@ -2,7 +2,7 @@ import type { Pool } from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { mapCampaignToBranch } from "@/lib/actions";
-import { createChange, type ChangeRow } from "@/lib/changeguard/service";
+import { createChange, decideChange, releaseChange, type ChangeRow } from "@/lib/changeguard/service";
 import { VIEWERS } from "@/lib/viewer";
 import { call, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
@@ -136,5 +136,21 @@ describe("HO-24 / HO-25 · a shape whose meaning changes what is counted is not 
     const change = await sourceCheck("calls", "call", [{ ...baseCall, id: "HR-5", call_score: 80 }]);
     expect(change.preflight!.verdict).toBe("pass");
     expect(check(change, "schema_compatibility")).toMatchObject({ status: "pass" });
+  });
+});
+
+describe("VP-05 · 8 · a mapping to a branch that does not exist", () => {
+  // The VP pack labels this "refused at input, UNSUPPORTED"; the product records it and blocks it
+  // at the preview. Adjudicated as a design disagreement, safe only if the blocked change can
+  // never be decided or released: pinned here (docs/agent-work/vp-acceptance/evidence/ADJUDICATION.md).
+  it("is blocked at the preview and can never be approved or released", async () => {
+    const id = await campaignWithLeads("vp05-b47", { B28: 3 });
+    const change = await propose(id, "B47");
+    expect(change.status).toBe("preflight_failed");
+    expect(check(change, "identifier_presence")).toMatchObject({ status: "fail" });
+    const approve = { decision: "approve" as const, reason: "approving a mapping to a branch that does not exist", configHash: change.configHash, preflightHash: change.preflightHash! };
+    await expect(decideChange(pool, VIEWERS.approver, change.id, approve, NOW)).rejects.toThrow(/Only a change ready for review can be decided/);
+    await expect(releaseChange(pool, marketing, change.id, NOW)).rejects.toThrow(/Only an approved change can be released/);
+    expect(await one(pool, "select count(*)::int as n from campaign_branch_map where branch_id = 'B47'")).toEqual({ n: 0 });
   });
 });

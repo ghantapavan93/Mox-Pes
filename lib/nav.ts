@@ -14,6 +14,7 @@ export const NAV: NavItem[] = [
   { href: "/", label: "Overview", keywords: "command center scorecard branches cac revenue", group: "Operate" },
   { href: "/exceptions", label: "Incidents", keywords: "action center cases exceptions approvals replay", group: "Operate" },
   { href: "/investigator", label: "AI Investigator", keywords: "ai investigate why evidence tools", group: "Operate" },
+  { href: "/assurance", label: "Answer check", keywords: "shadow mode verify check another system bi report answer snapshot figure compare assurance", group: "Operate" },
   { href: "/customers", label: "Customer Journeys", keywords: "customer 360 identity timeline crm", group: "Understand" },
   { href: "/decisions", label: "Decision Lab", keywords: "budget scenario readiness experiment forecast", group: "Understand" },
   { href: "/feedback", label: "Google feedback", keywords: "conversions upload gclid", group: "Understand" },

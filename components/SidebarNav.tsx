@@ -17,6 +17,7 @@ import {
   Plug,
   ScrollText,
   Send,
+  ShieldCheck,
   Siren,
   Users,
 } from "lucide-react";
@@ -28,6 +29,7 @@ const ICON: Record<string, LucideIcon> = {
   "/": LayoutDashboard,
   "/exceptions": Siren,
   "/investigator": Bot,
+  "/assurance": ShieldCheck,
   "/customers": Users,
   "/decisions": FlaskConical,
   "/feedback": Send,

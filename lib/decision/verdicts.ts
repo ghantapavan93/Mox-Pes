@@ -302,7 +302,7 @@ function integrityVerdict(
  * had been failing for eleven days, with records received earlier, read as fresh (VP acceptance,
  * first contact: VP-01, VP-08, VP-09).
  */
-interface FeedState {
+export interface FeedState {
   source: string;
   /** The sync stream (e.g. crm.payment), or null for a source judged by its received records. */
   stream: string | null;
@@ -311,7 +311,8 @@ interface FeedState {
   lastRunFailed: boolean;
 }
 
-function staleReason(f: FeedState, now: Date): string | null {
+/** Why a feed is stale at `now`, or null. Shared with Shadow Mode's completeness check (lib/shadow). */
+export function staleReason(f: FeedState, now: Date): string | null {
   const limit = FRESHNESS_MAX_AGE_HOURS * 3_600_000;
   const hours = (d: Date) => Math.round((now.getTime() - d.getTime()) / 3_600_000);
   if (f.stream) {
@@ -513,7 +514,7 @@ async function spendDaysByChannel(db: Queryable, branchId: string, period: Perio
   };
 }
 
-async function feedFreshness(db: Queryable): Promise<FeedState[]> {
+export async function feedFreshness(db: Queryable): Promise<FeedState[]> {
   const sources = [...REQUIRED_SOURCES, ...LEAD_SOURCES];
   // One indexed max() per source (raw_events_received_idx), not a scan of the event log.
   const received = await db.query<{ source: string; last: Date | null }>(

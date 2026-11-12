@@ -13,13 +13,15 @@ import { VIEWERS } from "@/lib/viewer";
 import { call, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
 /**
- * Failure boundaries, with CONTROLLED synchronization: a race is forced by holding the lock or
- * the open transaction the contenders must pass, and checking in pg_stat_activity that both are
- * actually waiting, not by launching two requests and hoping they overlap.
+ * Failure boundaries. Where two operations race, the race is forced, not hoped for:
  *
- *   1  the database connection is killed in the middle of an ingest
- *   2  the same approved mapping is released twice at the same moment
- *   3  a source revision arrives while reconciliation is running
+ *   1  the database connection is killed in the middle of an ingest (the ingest's own
+ *      transaction is held open, then its backend is terminated)
+ *   2  the same approved mapping is released twice at the same moment: the row lock is held and
+ *      pg_stat_activity must show both releases waiting before it is let go
+ *   3  a source revision arrives while a reconciliation transaction is open. No waiter is
+ *      observed here: the test shows that the next reconciliation reflects the revision, not
+ *      that the two interleave in a particular order
  *   4  extremely long hostile text inside a record
  */
 const NOW = new Date("2026-10-31T13:00:00Z");

@@ -602,7 +602,9 @@ async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<Ste
       r.outcome = "accepted";
       r.observed = c ? { state: c.state, because: c.because } : { channels: v.channels.map((x) => x.channelCode) };
       if (e.outcome === "refused") fail("critical", "readiness_not_refused", "readiness was shown for a branch the viewer may not see");
-      if (e.state && e.state !== c?.state) fail(severity === "critical" ? "high" : severity, "wrong_readiness", `expected ${String(e.state)}, system ${c?.state ?? "no such channel"}${c ? ` (${c.because[0] ?? ""})` : ""}`);
+      // SCORING.md: a failed check takes the scenario's severity; readiness is not on the
+      // "medium at most" list (the cap to "high" here was a runner defect, independent review 2026-11-12).
+      if (e.state && e.state !== c?.state) fail(severity, "wrong_readiness", `expected ${String(e.state)}, system ${c?.state ?? "no such channel"}${c ? ` (${c.because[0] ?? ""})` : ""}`);
     } catch (error) {
       if (!isRefusal(error)) throw error;
       r.outcome = "refused";
@@ -641,6 +643,10 @@ async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<Ste
   const changeStep = ["propose", "rerun_preflight", "approve", "reject", "release", "monitor"].includes(s.do);
   const before = changeStep ? await snap(ctx.pool) : null;
   let change: ChangeRow | undefined;
+  // A proposal the schema refuses outright is UNSUPPORTED, any other refusal BLOCK — the
+  // ChangeGuard held-out runner's rule. Before, every refusal scored BLOCK, so an expected
+  // UNSUPPORTED could never pass (a runner defect, independent review 2026-11-12).
+  let schemaRefused = false;
   try {
     const out = await perform(ctx, s, now);
     change = out.change;
@@ -650,6 +656,7 @@ async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<Ste
     if (error instanceof InvalidScenario) throw error;
     r.outcome = "refused";
     r.error = error instanceof Error ? `${error.constructor.name}: ${error.message}`.slice(0, 400) : String(error);
+    schemaRefused = error instanceof ZodError;
     if (!isRefusal(error)) fail("high", "unhandled_error", r.error);
   }
   if (change) {
@@ -660,13 +667,13 @@ async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<Ste
     fail(wronglyAccepted && /approve|release|authorize/.test(s.do) ? "critical" : wronglyAccepted ? severity : "medium", wronglyAccepted ? "accepted_should_refuse" : "refused_should_accept", `expected ${String(e.outcome)}, got ${r.outcome}${r.error ? ` (${r.error})` : ""}`);
   }
   if (e.class && PREVIEW.has(s.do)) {
-    const got = change ? classify(change) : r.outcome === "refused" ? "BLOCK" : "none";
+    const got = change ? classify(change) : r.outcome === "refused" ? (schemaRefused ? "UNSUPPORTED" : "BLOCK") : "none";
     if (got !== e.class) {
       const unsafe = e.class === "BLOCK" && got === "ALLOW";
       fail(unsafe ? "critical" : e.class === "NEEDS_REVIEW" && got === "ALLOW" ? "high" : "medium", "wrong_class", `expected ${String(e.class)}, system ${got}`);
     }
   }
-  if (e.status && change && change.status !== e.status) fail(severity === "critical" ? "high" : severity, "wrong_status", `expected ${String(e.status)}, system ${change.status}`);
+  if (e.status && change && change.status !== e.status) fail(severity, "wrong_status", `expected ${String(e.status)}, system ${change.status}`);
   if (before) {
     const after = await snap(ctx.pool);
     if (before.spendCents !== after.spendCents) fail("critical", "FI-1", `company spend ${before.spendCents} → ${after.spendCents}`);
@@ -720,12 +727,18 @@ function git(args: string[]): string | null {
 }
 
 /**
- * What a scenario's outcome is, without its timing: the findings and the check count. Ids and
- * times inside details come from a fresh database and the frozen business clock, so two runs
- * of the same inputs on the same code must give the same fingerprint.
+ * What a scenario's outcome is, without its timing: every step's outcome and everything it
+ * observed (figures, states, answer text, preview checks), the findings and the check count. Ids
+ * and times come from a fresh database and the frozen business clock, so two runs of the same
+ * inputs on the same code must give the same fingerprint. It shows repeatability on one
+ * machine; it does not vary the OS, Node, Postgres or time zone.
  */
 function outcomeFingerprint(r: Awaited<ReturnType<typeof runScenario>>): string {
-  return sha256(canonical({ checks: r.checks, findings: r.findings.map((f) => ({ step: f.step, type: f.type, severity: f.severity, detail: f.detail })) }));
+  return sha256(canonical({
+    checks: r.checks,
+    steps: r.steps.map((s) => ({ index: s.index, do: s.do, outcome: s.outcome, error: s.error ?? null, observed: s.observed ?? null })),
+    findings: r.findings.map((f) => ({ step: f.step, type: f.type, severity: f.severity, detail: f.detail })),
+  }));
 }
 
 async function main() {

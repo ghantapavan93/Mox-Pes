@@ -1,14 +1,30 @@
 # Adjudication of first contact
 
 First contact (`first-contact.*`, run once on the frozen code at `601e349`): **35 of 509 checks
-failed, 17 of them labelled critical.** Each failure was read against the brief, the designer's
-reference and the system's own output. No runner defect was found: every step ran as written.
+failed, 17 of them labelled critical by the runner — 22 under SCORING.md** (see "Runner defects"
+below). Each failure was read against the brief, the designer's reference and the system's own
+output.
+
+> **Correction (2026-11-12, after an independent review).** This page first said "No runner
+> defect was found". That was wrong: the runner had two defects, listed below. Neither changed
+> which checks failed; one changed severities, the other made one expectation impossible to meet.
+
+## Runner defects (found by the independent review)
+
+| Defect | Effect | Fix |
+|---|---|---|
+| Readiness and change-status failures in critical scenarios were capped at "high". SCORING.md gives a failed check the scenario's severity unless it is on its "medium at most" list, and these are not | Under-reported severity. Restated from the frozen results: first contact **22 critical** (not 17): VP-01 · 14 and VP-08 · 2 (readiness while a feed was failing — the defect most likely to mislead a budget decision), VP-01 · 21, VP-05 · 13, VP-12 · 9 (release state). After the fixes: **11 critical** (not 8): the three release-state checks | The cap is removed (`scripts/eval-acceptance.ts`) |
+| A refused proposal always scored as class BLOCK, so an expected `UNSUPPORTED` could never pass | VP-05 · 8 could not pass whatever the product did. The product actually records the B47 proposal and blocks it at preview, so the disagreement itself remains (BLOCK vs UNSUPPORTED) | A schema refusal now scores UNSUPPORTED, as in the ChangeGuard held-out runner |
+
+The `--twice` fingerprint also covered only the check count and the failures; it now hashes
+every step's observed output. It shows repeatability on one machine, not determinism across
+environments.
 
 | Verdict | Failures | Of them critical-labelled |
 |---|---|---|
 | Product defect, fixed (with a regression test) | 19 | 9 |
 | Labelling or brief disagreement, product kept | 16 | 8 |
-| Runner defect | 0 | 0 |
+| Runner defect (severity only; no check changed outcome) | 0 | — |
 
 After the fixes (`after-changes-1.*`, a **regression** run, no longer held out): 16 of 509 fail.
 They are exactly the 16 disagreements below.

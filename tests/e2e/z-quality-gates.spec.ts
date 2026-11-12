@@ -48,6 +48,12 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
   const inquiryRes = await page.request.post("/api/inquiries", { data: { kind: "cac_change", branchId: "B09" } });
   expect(inquiryRes.status()).toBe(201);
   const inquiry = `/investigator/inquiries/${(await inquiryRes.json()).id}`;
+  // A Shadow Mode check of another system's answer (claims, verdicts, disclosures).
+  const shadowRes = await page.request.post("/api/shadow", {
+    data: { kind: "answer", input: { system: "Atlas BI (synthetic)", asOf: "2026-10-31T06:00:00Z", question: "", answer: "B09's paid CAC rose in October. That is because Google Search spend doubled." } },
+  });
+  expect(shadowRes.status()).toBe(201);
+  const shadow = `/assurance/${(await shadowRes.json()).check.id}`;
   return [
     ["overview", "/?period=oct", "marketing"],
     ["incidents", "/exceptions", "marketing"],
@@ -73,6 +79,8 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],
     ["inquiry", inquiry, "marketing"],
+    ["assurance", "/assurance", "marketing"],
+    ["assurance-check", shadow, "marketing"],
   ];
 }
 

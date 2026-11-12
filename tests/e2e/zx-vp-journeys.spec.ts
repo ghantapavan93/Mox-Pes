@@ -199,6 +199,57 @@ test("J6 · out-of-scope reads and writes are refused, and nothing is stored", a
   expect(await count("select count(*) as n from action_approvals")).toBe(approvals);
 });
 
+test("J9 · another system's figure and answer are checked against the records, and each check is stored and scoped", async ({ page }) => {
+  test.setTimeout(120_000);
+  await setRole(page, "marketing");
+  // B09's October collected cash from the independent raw-payload reference (J2), entered as
+  // another system would report it: once right, once a dollar off.
+  const reference = (await referenceCollectedCents("B09")).cents;
+  const asReported = (c: number) => (c / 100).toFixed(2);
+  const checkFigure = async (value: string) => {
+    await page.goto("/assurance?branch=B09&measure=collected");
+    const form = page.getByTestId("shadow-form");
+    await form.getByLabel("Value as reported (dollars, or a count)").fill(value);
+    await form.getByRole("button", { name: "Check it" }).click();
+    await expect(page).toHaveURL(/\/assurance\/\d+$/, { timeout: 30_000 });
+    return Number(page.url().split("/").pop());
+  };
+
+  const right = await checkFigure(asReported(reference));
+  await expect(page.locator("[data-verdict]").first()).toHaveAttribute("data-verdict", "MATCH");
+  const wrong = await checkFigure(asReported(reference + 100));
+  await expect(page.locator("[data-verdict]").first()).toHaveAttribute("data-verdict", "MISMATCH");
+  await expect(page.getByTestId("shadow-findings")).toContainText("value: theirs is");
+  await expect(page.getByTestId("shadow-trace")).toHaveAttribute("href", "/branches/B09/trace?period=oct&metric=collected");
+
+  // An answer: one right claim, one wrong one, one cause. Read, never followed.
+  await page.goto("/assurance?kind=answer");
+  const form = page.getByTestId("shadow-form");
+  await form.getByRole("textbox").last().fill(`B09 collected $${(reference / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })} in October. B09 collected $1.00 in September. That is because the October campaigns worked better.`);
+  await form.getByRole("button", { name: "Check it" }).click();
+  await expect(page).toHaveURL(/\/assurance\/\d+$/, { timeout: 60_000 });
+  const answerId = Number(page.url().split("/").pop());
+  const claims = page.getByTestId("shadow-claims");
+  await expect(claims.locator("li[data-verdict='SUPPORTED']")).toHaveCount(1);
+  await expect(claims.locator("li[data-verdict='CONTRADICTED']")).toHaveCount(1);
+  await expect(claims.locator("li[data-verdict='UNSUPPORTED']")).toContainText("because");
+
+  // Persisted: three append-only checks with their verdicts, actor and audit rows.
+  const stored = await withPool(async (pool) => (await pool.query("select id, verdict, actor from shadow_checks where id = any($1::bigint[]) order by id", [[right, wrong, answerId]])).rows);
+  expect(stored.map((r) => [Number(r.id), r.verdict, r.actor])).toEqual([
+    [right, "MATCH", "demo:marketing"],
+    [wrong, "MISMATCH", "demo:marketing"],
+    [answerId, "PARTLY_SUPPORTED", "demo:marketing"],
+  ]);
+  expect(await count("select count(*) as n from audit_log where action = 'shadow_check' and subject = any($1::text[])", [[right, wrong, answerId].map((id) => `shadow_check:${id}`)])).toBe(3);
+
+  // A branch partner who cannot see B09 cannot open the check, by page or by API.
+  await setRole(page, "partner");
+  expect((await page.request.get(`/api/shadow/${wrong}`)).status()).toBe(404);
+  await page.goto(`/assurance/${wrong}`);
+  await expect(page.getByText("value: theirs is")).toHaveCount(0);
+});
+
 test("J8 · an executive reads verified readiness, projects without storing, then saves an audited scenario", async ({ page }) => {
   test.setTimeout(120_000);
   await setRole(page, "marketing");

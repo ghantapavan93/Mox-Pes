@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { runProposalAction } from "./action-center";
 import { reseedDemo } from "./db";
 
 /**
@@ -127,7 +128,7 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     await setRole(page, "engineer");
     await page.goto(`/exceptions/${gapId}`);
     const card = page.getByTestId("proposal").first();
-    await card.getByRole("button", { name: "Run dry run (rolled back)" }).click();
+    await runProposalAction(page, card, "Run dry run (rolled back)");
     await expect(card.getByRole("status")).toContainText("Dry run verified and rolled back");
     await expect(card).toContainText("Awaiting approval");
     await expect(card).toContainText("rolled back");
@@ -157,7 +158,7 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     await setRole(page, "approver");
     await page.goto(`/exceptions/${gapId}`);
     const card = page.getByTestId("proposal").first();
-    await card.getByRole("button", { name: "Execute (application, once)" }).click();
+    await runProposalAction(page, card, "Execute (application, once)");
     const execution = card.getByTestId("execution-result");
     await expect(execution).toContainText("Execution succeeded and verified");
     await expect(execution).toContainText("revenue-signal-app on behalf of approver");
@@ -232,7 +233,7 @@ test.describe.serial("second scenario · B20 call-feed incident through the Acti
     await expect(card).toContainText("Replay quarantine");
     await expect(card).toContainText("proposed by engineer");
 
-    await card.getByRole("button", { name: "Run dry run (rolled back)" }).click();
+    await runProposalAction(page, card, "Run dry run (rolled back)");
     await expect(card).toContainText("Awaiting approval");
     await expect(card.getByText("conserved")).toHaveCount(5);
 
@@ -242,7 +243,7 @@ test.describe.serial("second scenario · B20 call-feed incident through the Acti
     await approverCard.getByRole("textbox", { name: "Decision reason" }).fill("Dry run projects every held record and conserves the ledger");
     await approverCard.getByRole("button", { name: "Approve" }).click();
     await expect(approverCard).toContainText("Approved · ready to execute");
-    await approverCard.getByRole("button", { name: "Execute (application, once)" }).click();
+    await runProposalAction(page, approverCard, "Execute (application, once)");
     await expect(approverCard.getByTestId("execution-result")).toContainText("Execution succeeded and verified");
     await expect(approverCard.getByTestId("execution-result").locator("tr", { hasText: "Exception" }).first()).toContainText("resolved");
   });

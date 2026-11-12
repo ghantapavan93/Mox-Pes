@@ -580,8 +580,8 @@ describe("execution", () => {
     bindWorkflowPorts({ identity: undefined });
     // A lead captured for B06 whose customer was serviced by B07 (a branch mismatch), and a
     // second B06 call whose phone two B07 customers share: an ambiguous identity for the resolver.
-    // Since migration 0022 an ambiguous lead credits neither customer, so the mismatch needs a
-    // lead of its own (before, the shared-phone call credited both customers and made it).
+    // Since migrations 0022/0024 a lead credits at most one customer, so the mismatch is built
+    // from a lead of its own rather than from the shared-phone call.
     const own = "+12125550187";
     const shared = "+12125550188";
     const a = acquisition(1, "B07", own, T0);

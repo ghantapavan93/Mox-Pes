@@ -211,15 +211,19 @@ export function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { b
       byChannel.set(r.channel_code, c);
     }
     const share = rows.length ? unknown.length / rows.length : null;
-    const ambiguousRows = await q.query<{ n: string }>(
+    // Customers of this branch whose first touch is ALSO another customer's first touch. Only
+    // customers sharing the lead's phone or email can share it, so those are the ones looked up
+    // (v_acquisitions filtered by customer id stays an indexed lookup).
+    const sharedRows = await q.query<{ n: string }>(
       `select count(*) as n from v_acquisitions a join leads l on l.id = a.lead_id
        where a.branch_id = $3 and a.initial_status = 'completed' and a.initial_completed_at >= $1 and a.initial_completed_at < $2
-         and not exists (select 1 from identity_conflicts k where k.lead_id = a.lead_id and k.crm_customer_id = a.crm_customer_id and k.status = 'accepted')
-         and (exists (select 1 from crm_customers o where l.phone_hash is not null and o.phone_hash = l.phone_hash and o.crm_customer_id <> a.crm_customer_id)
-              or exists (select 1 from crm_customers o where l.email_hash is not null and o.email_hash = l.email_hash and o.crm_customer_id <> a.crm_customer_id))`,
+         and exists (select 1 from crm_customers o
+                     where o.crm_customer_id <> a.crm_customer_id
+                       and ((l.phone_hash is not null and o.phone_hash = l.phone_hash) or (l.email_hash is not null and o.email_hash = l.email_hash))
+                       and exists (select 1 from v_acquisitions v where v.crm_customer_id = o.crm_customer_id and v.lead_id = a.lead_id))`,
       [args.period.from, args.period.to, branch.id],
     );
-    const ambiguous = Number(ambiguousRows.rows[0].n);
+    const shared = Number(sharedRows.rows[0].n);
     return {
       scope: { branchId: branch.id, period: { key: args.period.key, label: args.period.label } },
       value: {
@@ -231,9 +235,9 @@ export function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { b
       unknownSample: unknown.slice(0, 10).map((r) => evidence.customer(Number(r.crm_customer_id))),
       // "Channels partition the customers" and "share + coverage = 100%" were removed: both held
       // by construction (independent review 2026-11-12, finding 4). This one reads the view's
-      // output and fails if a credited lead is ambiguous (migration 0022's rule).
+      // output and fails if one lead is the first touch of two customers (migration 0024's rule).
       invariants: [
-        { name: "no credited lead also matches another customer", holds: ambiguous === 0, detail: ambiguous ? `${ambiguous} customer(s) credited to a lead whose phone or email also matches another customer, with no reviewer accepting the pair` : "every credited lead matches only its own customer, or a reviewer accepted the pair" },
+        { name: "no lead is the first touch of two customers", holds: shared === 0, detail: shared ? `${shared} customer(s) share their first touch with another customer` : "every credited lead credits one customer only" },
       ],
     };
   });

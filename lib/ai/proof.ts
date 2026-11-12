@@ -418,6 +418,9 @@ const shown = (value: number, unit: Unit) => (unit === "usd_cents" ? value / 100
 const unitWord = (u: Unit) => (u === "usd_cents" ? "dollars" : u === "ratio" ? "percent" : "a count");
 const compatible = (kind: Fig["kind"], unit: Unit) => (kind === "money" && unit === "usd_cents") || (kind === "count" && unit === "count") || (kind === "percent" && unit === "ratio");
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(Math.min(6, Math.max(2, String(n).split(".")[1]?.length ?? 2))).replace(/0+$/, "").replace(/\.$/, ""));
+/** A value in the claim's terms, in the reader's words: "$17,515.00", "12.5%", "69" (a reason once read "the cited fact is 17515"). */
+const fmtIn = (unit: Unit | null, n: number) =>
+  unit === "usd_cents" ? `${n < 0 ? "−" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : unit === "ratio" ? `${fmt(n)}%` : fmt(n);
 const dirWord = (d: "increase" | "decrease" | "unchanged") => (d === "unchanged" ? "no change" : d === "increase" ? "an increase" : "a decrease");
 
 // ── Pieces ───────────────────────────────────────────────────────────────────
@@ -962,7 +965,7 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
         out.push(unresolved(fig.text, "metric_unknown", "a part of a metric (\"$1,800 of its spend\") is not the metric's level, so it is not proved here", { ...figBase, subject: subjectOf(v.ok.period), unit, inputs: v.ok.inputs }));
         continue;
       }
-      out.push(blank(fig.text, { ...figBase, subject: { metric, entity: groupIds ? groupIds.join("+") : entity.id, period: v.ok.period }, relation: aggregate ? "sum" : "level", formula: v.ok.formula, inputs: v.ok.inputs, unit, computed: actual, verdict: ok ? "VERIFIED" : "CONTRADICTED", reason: ok ? (aggregate ? "the total over every part equals the figure" : "equals the cited fact at the precision written") : `the cited ${aggregate ? "total" : "fact"} is ${fmt(actual)}` }));
+      out.push(blank(fig.text, { ...figBase, subject: { metric, entity: groupIds ? groupIds.join("+") : entity.id, period: v.ok.period }, relation: aggregate ? "sum" : "level", formula: v.ok.formula, inputs: v.ok.inputs, unit, computed: actual, verdict: ok ? "VERIFIED" : "CONTRADICTED", reason: ok ? (aggregate ? "the total over every part equals the figure" : "equals the cited fact at the precision written") : `the cited ${aggregate ? "total" : "fact"} is ${fmtIn(unit, actual)}` }));
       continue;
     }
 

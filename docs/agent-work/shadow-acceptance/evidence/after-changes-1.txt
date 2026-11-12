@@ -1,0 +1,14 @@
+PASS SH-01   27 checks, 0 failed (0 critical) · 1313 ms · repeat identical · B07's correct September and October figures all match, and a fully cor
+PASS SH-02   26 checks, 0 failed (0 critical) · 1127 ms · repeat identical · B15: wrong upstream values are mismatches, including a CAC whose only 
+PASS SH-03   29 checks, 0 failed (0 critical) · 1353 ms · repeat identical · B09 and B10: blended CAC, customers sold, invoice-date cash and lead-b
+PASS SH-04   28 checks, 0 failed (0 critical) · 1012 ms · repeat identical · B22: inputs that cannot be compared are not determinable, a CAD figure
+PASS SH-05   28 checks, 0 failed (0 critical) · 1330 ms · repeat identical · B11 and B16: spend held for an unstated currency makes agreeing figure
+PASS SH-06   17 checks, 0 failed (0 critical) · 1093 ms · repeat identical · B25: a stale CRM payment feed makes agreeing cash incomplete until it 
+PASS SH-07   21 checks, 0 failed (0 critical) · 1146 ms · repeat identical · B33: unreadable ad records and a stale web feed make agreeing figures 
+PASS SH-08   31 checks, 0 failed (0 critical) · 1181 ms · repeat identical · B36: Atlas's Oct 25 snapshots stop matching after a partial refund and
+PASS SH-09   35 checks, 0 failed (0 critical) · 1638 ms · repeat identical · B05: a late spam reclassification removes a paid customer that Atlas r
+PASS SH-10   35 checks, 0 failed (0 critical) · 1610 ms · repeat identical · Scope: the B20 partner and the joshuas brand user see only their own b
+PASS SH-11   25 checks, 0 failed (0 critical) · 1658 ms · repeat identical · B03 and B04: Atlas answers with a wrong direction, a swapped branch an
+PASS SH-12   18 checks, 0 failed (0 critical) · 1304 ms · repeat identical · B38: figures and instructions planted in a campaign name, a CRM note, 
+determinism: every scenario repeated identically
+wrote C:/Temp/shadow-after-1.json

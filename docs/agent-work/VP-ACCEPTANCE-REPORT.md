@@ -102,7 +102,7 @@ model-backed quality is unverified** (R-10).
 | | |
 |---|---|
 | Tests performed | The full Playwright suite on a production build; eight journeys (below) |
-| Passed / failed / skipped | ⟨final⟩ |
+| Passed / failed / skipped | Clean checkout of `fb06e57` (fresh worktree and databases, production build, pixel baselines on): **111 passed, 0 failed, 1 skipped** in 26 min. An earlier run in the working copy had 4 failures: two Overview baselines (the intended headline change; regenerated) and two timeouts while other suites loaded the machine (R-41) |
 | Journeys | J1 CAC trace → investigation → ChangeGuard → verified (`zy-evidence-journey`); J2 finance cash against raw payloads; J3 a false premise answered as one, every re-test kept; J4 a wrong mapping blocked, corrected, approved by another demo role, released (`zzz-changeguard`); J5 a new refund delivered through library intake, and its duplicate absorbed (not a corrected existing record, not a late older version); J6 scope and permission, with database checks; J7 incident dry run → approve → execute (`os-golden-path`, `zz-b09-four-minute-path`); J8 executive: readiness → a projection that stores nothing → a saved, audited scenario |
 | Persona completion | 3 completed, 3 partly, 1 found a leak (first walkthrough; not repeated after fixes) |
 
@@ -148,7 +148,7 @@ this was measured on production-class hardware.
 | | |
 |---|---|
 | Tests performed | The pack's hash freeze; a manifest per run (scenario hashes, commit, mapper versions, Node, Postgres); `--twice`: every scenario re-run in a fresh database and its outcome fingerprint compared; a clean checkout of the final commit into a new worktree with new databases |
-| Passed | 12/12 scenarios repeated with the same outcome, in one process on one machine (repeatability, not determinism across environments; the fingerprint now covers every step's observed output); clean checkout: ⟨final⟩ |
+| Passed | 12/12 scenarios repeated with the same outcome, in one process on one machine (repeatability, not determinism across environments; the fingerprint now covers every step's observed output); clean checkout of `fb06e57`: install, migrations, seed, typecheck, lint, vitest 751/751, build and the browser suite (111 passed, 1 skipped) all passed, on the same machine |
 | Known limitations | One AI designer wrote the pack, and the runner and the system share an author (R-36). Five disagreement groups need a human ruling. The run needs a local Postgres; no second machine was used |
 
 ### 10. Business decision usefulness

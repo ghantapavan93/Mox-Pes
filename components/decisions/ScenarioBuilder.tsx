@@ -51,7 +51,9 @@ export function ScenarioBuilder({
   const fromChannel = channels.find((c) => c.channelCode === from);
   const dollars = Number(amount);
   const localProblem =
-    from === to
+    !from || !to
+      ? "Choose the two channels to compare. Nothing is preselected while this branch's budget signal is gated."
+      : from === to
       ? "Choose two different channels."
       : !Number.isFinite(dollars) || dollars <= 0
         ? "Enter a positive amount."
@@ -108,6 +110,7 @@ export function ScenarioBuilder({
           <label className="space-y-1">
             <span className="block text-xs text-muted">Move budget from</span>
             <select value={from} onChange={(e) => setFrom(e.target.value)} className={field}>
+              {!defaultFrom && <option value="">Choose a channel</option>}
               {channels.map((c) => (
                 <option key={c.channelCode} value={c.channelCode}>
                   {c.label} ({usd(c.monthlySpendCents)}/mo)
@@ -118,6 +121,7 @@ export function ScenarioBuilder({
           <label className="space-y-1">
             <span className="block text-xs text-muted">To</span>
             <select value={to} onChange={(e) => setTo(e.target.value)} className={field}>
+              {!defaultTo && <option value="">Choose a channel</option>}
               {channels.map((c) => (
                 <option key={c.channelCode} value={c.channelCode}>
                   {c.label} ({usd(c.monthlySpendCents)}/mo)

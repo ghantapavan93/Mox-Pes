@@ -153,7 +153,7 @@ export function InvestigateForm({
         </div>
         <p id={ids.help} className="text-xs text-muted">
           {canInvestigate
-            ? "Read-only: tools run with your role and branch scope. Fixes are proposed to the Action Center, never applied here."
+            ? "Reads with your role and branch scope. It can draft a fix as a proposal in Incidents for a person to review and approve; it never applies one."
             : denyReason}
         </p>
       </form>

@@ -52,7 +52,7 @@ test("wrong branch blocked → corrected → approved by a different person → 
 
   await setRole(page, "approver");
   await page.goto(correctedUrl);
-  await page.getByLabel(/Your decision is bound to configuration/).fill("Leads and brand agree with B44; spend conserved");
+  await page.getByLabel(/Why do you decide this/).fill("Leads and brand agree with B44; spend conserved");
   await page.getByRole("button", { name: "Approve" }).click();
   await expect(shown(page, "change-status")).toContainText("approved");
 

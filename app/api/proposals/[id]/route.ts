@@ -43,7 +43,9 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       }
       case "approve": {
         const proposal = await approveProposal(pool, { proposalId, actor: viewer, reason: input.reason });
-        return NextResponse.json({ proposal, message: "Approved. The application can now execute it." });
+        // Says what has NOT happened yet and who acts next: the case stays awaiting until the
+        // approved fix is executed (UX red team 2026-11-12: "can now execute it" read as done).
+        return NextResponse.json({ proposal, message: "Approved, not yet applied. Next: an approver executes it once (Execute); until then nothing has changed and the case stays awaiting." });
       }
       case "reject": {
         const proposal = await rejectProposal(pool, { proposalId, actor: viewer, reason: input.reason });

@@ -30,7 +30,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       return NextResponse.json({ case: kase, message: input.owner ? `Owned by ${input.owner}.` : "Unassigned." });
     }
     const kase = await closeCase(getPool(), { caseId, outcome: input.outcome, reason: input.reason, actor: viewer });
-    return NextResponse.json({ case: kase, message: "Case closed." });
+    // Closing a case stops asking anyone to act; it does not change the data. The exception stays
+    // open in reconciliation until its records change (UX red team 2026-11-12: "Case closed" next
+    // to counts that still listed it open).
+    return NextResponse.json({ case: kase, message: "Case closed. The exception itself stays open until its records change; no data was changed." });
   } catch (error) {
     return errorResponse(error);
   }

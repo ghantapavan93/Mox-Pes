@@ -21,7 +21,7 @@ export default function InvestigatorPage({ searchParams }: { searchParams: Searc
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operate · read-only"
+        eyebrow="Operate · reads data, never applies changes"
         title="AI Investigator"
         description={
           <p className="max-w-3xl">

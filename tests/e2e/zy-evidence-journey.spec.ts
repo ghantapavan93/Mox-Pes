@@ -60,7 +60,7 @@ test("an unexpected CAC is traced, investigated, corrected through ChangeGuard a
   // 4 · A different person approves exactly what was previewed.
   await setRole(page, "approver");
   await page.reload();
-  await page.getByLabel(/Your decision is bound to configuration/).fill("Leads and brand agree with B44; spend conserved in the preview");
+  await page.getByLabel(/Why do you decide this/).fill("Leads and brand agree with B44; spend conserved in the preview");
   await page.getByRole("button", { name: "Approve" }).click();
   await expect(shown(page, "change-status")).toContainText("approved");
 

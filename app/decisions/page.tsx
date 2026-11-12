@@ -301,11 +301,13 @@ function Builder({ verdicts, period }: { verdicts: DecisionVerdicts; period: Per
   if (withSpend.length < 2) {
     return <p className="text-sm text-muted">Fewer than two paid channels have spend at {verdicts.branchId} in this period: there is nothing to shift between.</p>;
   }
-  // Default to the move the budget signal would suggest; otherwise the two biggest channels.
+  // Default to the move the budget signal would suggest; otherwise the two biggest channels. While
+  // the signal is not trustworthy (an open incident gates it) nothing is preselected: a default
+  // would read as a recommendation of the very move the incident distorts (UX red team 2026-11-12).
   const bySpend = [...withSpend].sort((a, b) => b.monthlySpendCents - a.monthlySpendCents);
   const s = verdicts.budgetSignal;
-  const defaultFrom = s.signal === "shift" && s.from ? s.from.channelCode : bySpend[0].channelCode;
-  const defaultTo = s.signal === "shift" && s.to ? s.to.channelCode : bySpend[1].channelCode;
+  const defaultFrom = !s.trustworthy ? "" : s.signal === "shift" && s.from ? s.from.channelCode : bySpend[0].channelCode;
+  const defaultTo = !s.trustworthy ? "" : s.signal === "shift" && s.to ? s.to.channelCode : bySpend[1].channelCode;
   return (
     <div className="space-y-3">
       <p className="text-xs text-faint">

@@ -81,7 +81,10 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           <p className="max-w-3xl" data-testid="headline-answer">
             Ad platforms claimed <strong className="text-text">{count(bridge.platformClaimed)}</strong> conversions. We received{" "}
             <strong className="text-text">{count(bridge.paidProspects)}</strong> unique paid prospects; <strong className="text-text">{count(bridge.serviced)}</strong> are
-            serviced customers so far. Paid-media CAC is <strong className="text-text">{money(t.paidCacCents)}</strong>.{" "}
+            serviced customers so far. Paid-media CAC is <strong className="text-text">{money(t.paidCacCents)}</strong>{" "}
+            {/* Name the CAC's own denominator: the serviced count above is a different number (UX
+                red team 2026-11-12: spend ÷ the serviced count did not give the CAC shown). */}
+            ({money(t.paidSpendCents, true)} of paid media spend ÷ {count(t.paidAcquired)} new customers whose first evidenced touch was paid).{" "}
             {t.openExceptions > 0 ? (
               <>
                 <strong className="text-text">{count(t.openExceptions)}</strong> open exceptions involve{" "}

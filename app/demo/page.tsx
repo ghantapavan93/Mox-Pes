@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Badge, Card, Skeleton, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, Card, Forbidden, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { B09_STEPS, PATH_SECONDS, ROLE_LABEL, stepHref } from "@/lib/demo/b09-path";
-import { getPool } from "@/lib/server";
+import { getPool, getViewer } from "@/lib/server";
+import { canSeeBranch } from "@/lib/viewer";
 
 /**
  * /demo — the presenter page for the four-minute B09 golden path (lib/demo/b09-path.ts).
@@ -18,6 +19,11 @@ export default function DemoPage() {
 }
 
 async function Demo() {
+  // The path is about B09 and quotes its figures: a viewer who may not see B09 does not see it
+  // (UX red team 2026-11-12, P0: a branch partner and a brand lead read B09's incident here while
+  // /branches/B09 refused them).
+  const viewer = await getViewer();
+  if (!canSeeBranch(viewer, "B09")) return <Forbidden message={`The guided path is about branch B09, which is outside your scope (${viewer.label}).`} />;
   const { rows } = await getPool().query<{ id: string; status: string }>(
     "select id, status from exceptions where kind = 'channel_coverage_gap' and branch_id = 'B09' order by id desc limit 1",
   );

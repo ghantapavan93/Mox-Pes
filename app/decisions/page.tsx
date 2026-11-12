@@ -9,7 +9,7 @@ import { Badge, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } 
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
-import { verifiedReadinessSnapshot } from "@/lib/decision/verified";
+import { verifiedReadinessSnapshot, type VerifiedReadiness } from "@/lib/decision/verified";
 import { money } from "@/lib/format";
 import { parsePeriod, type Period } from "@/lib/period";
 import { BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
@@ -42,6 +42,10 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
   }
   const branch = BRANCH_BY_ID.get(branchId)!;
   const branchOptions = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id));
+  // Started now, awaited where the card renders: verified readiness (about 3 s on the seeded world,
+  // one snapshot) runs alongside the verdicts instead of after them.
+  const verified = verifiedReadinessSnapshot(getPool(), viewer, { branchId, period });
+  verified.catch(() => undefined); // awaited by the card; an early rejection is not unhandled
 
   return (
     <div className="space-y-6">
@@ -95,7 +99,7 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
       />
 
       <Suspense fallback={<Card title="Verdicts"><Skeleton lines={4} /></Card>}>
-        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} />
+        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} verified={verified} />
       </Suspense>
 
       <Suspense fallback={<Card title="A/A analysis"><Skeleton lines={5} /></Card>}>
@@ -107,7 +111,7 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
 
 const channelLabel = (code: string) => CHANNEL_BY_CODE.get(code as ChannelCode)?.label ?? code;
 
-async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: Viewer; branchId: string; period: Period }) {
+async function VerdictsAndScenarios({ viewer, branchId, period, verified }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness> }) {
   const pool = getPool();
   const [verdicts, saved] = await Promise.all([
     decisionVerdicts(pool, viewer, { branchId, period }),
@@ -130,7 +134,7 @@ async function VerdictsAndScenarios({ viewer, branchId, period }: { viewer: View
       </Card>
 
       <Suspense fallback={<Card title="Verified readiness"><Skeleton lines={4} /></Card>}>
-        <VerifiedReadinessCard viewer={viewer} branchId={branchId} period={period} />
+        <VerifiedReadinessCard verified={verified} />
       </Suspense>
 
       <div id="scenarios" className="grid scroll-mt-28 gap-6 xl:grid-cols-5">
@@ -163,8 +167,8 @@ const VERIFIED_LABEL = { READY: "ready", READY_WITH_LIMITATIONS: "ready, with li
  * numbers. The state first, then why; each channel opens to every rule of the policy with its
  * result, and the policy itself is shown in full.
  */
-async function VerifiedReadinessCard({ viewer, branchId, period }: { viewer: Viewer; branchId: string; period: Period }) {
-  const v = await verifiedReadinessSnapshot(getPool(), viewer, { branchId, period });
+async function VerifiedReadinessCard({ verified }: { verified: Promise<VerifiedReadiness> }) {
+  const v = await verified;
   return (
     <Card id="verified" className="scroll-mt-28" title="Verified readiness" subtitle="Can a budget decision rest on numbers that are proved, not just computed? One fixed policy, every rule shown.">
       <ul className="space-y-2 text-sm" data-testid="verified-readiness">

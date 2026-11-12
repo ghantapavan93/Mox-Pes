@@ -6,8 +6,9 @@ import { stageSample } from "./onboarding";
  * Quality gates (docs/testing.md, "Hardening pass"). Each one started as a diagnostic sweep that
  * found real defects; these specs keep them found.
  *
- *   * Accessibility: axe-core, WCAG 2.0/2.1/2.2 A + AA and best practice, every page at 1440 and
- *     390 px. Zero violations. (First run: 6 rules failing.)
+ *   * Accessibility: axe-core, WCAG 2.0/2.1/2.2 A + AA and best practice, every page at 1440,
+ *     1280, 768 and 390 px. Zero violations, and no horizontal page scroll. (First run: 6 rules
+ *     failing; 1280 and 768 and the investigation workspace added 2026-11-12.)
  *   * Layout shift: cumulative layout shift under 0.1, Google's "good" threshold, on every page at
  *     1440 and 390 px, measured from the first load. (First run: 0.25-0.39 on every desktop page.)
  *   * Hostile inputs: hostile query values and path ids on every page and read API, as two roles.
@@ -42,6 +43,11 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
   const changeRes = await page.request.post("/api/changes", { data: { kind: "source_contract", payload: { source: "calls", entity: "call", samples: [sample] }, reason: "Accessibility gate fixture" } });
   expect(changeRes.status()).toBe(201);
   const change = `/changes/${(await changeRes.json()).change.id}`;
+  // An investigation workspace (six hypotheses, versions, notes).
+  await page.request.post("/api/role", { data: { role: "marketing" } });
+  const inquiryRes = await page.request.post("/api/inquiries", { data: { kind: "cac_change", branchId: "B09" } });
+  expect(inquiryRes.status()).toBe(201);
+  const inquiry = `/investigator/inquiries/${(await inquiryRes.json()).id}`;
   return [
     ["overview", "/?period=oct", "marketing"],
     ["incidents", "/exceptions", "marketing"],
@@ -63,11 +69,12 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["demo", "/demo", "marketing"],
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],
+    ["inquiry", inquiry, "marketing"],
   ];
 }
 
 test.describe("quality gate · accessibility (axe, WCAG 2.2 AA)", () => {
-  for (const width of [1440, 390] as const) {
+  for (const width of [1440, 1280, 768, 390] as const) {
     test(`every page has zero axe violations at ${width}px`, async ({ page }) => {
       test.setTimeout(240_000);
       await page.setViewportSize({ width, height: 900 });
@@ -84,6 +91,9 @@ test.describe("quality gate · accessibility (axe, WCAG 2.2 AA)", () => {
           return result.violations.map((v) => `${v.id} (${v.impact}) ×${v.nodes.length}: ${v.nodes[0]?.target.join(" ")}`);
         });
         for (const v of violations) failures.push(`${name} ${url}: ${v}`);
+        // Long ids and figures must wrap, not push the page sideways.
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        if (overflow > 1) failures.push(`${name} ${url}: the page scrolls sideways by ${overflow}px`);
       }
       expect(failures, failures.join("\n")).toEqual([]);
     });
@@ -176,22 +186,34 @@ test.describe("quality gate · hostile inputs", () => {
   };
   const PATHS = ["/exceptions/{v}", "/customers/{v}", "/branches/{v}", "/investigator/{v}", "/integrations/jobs/{v}", "/api/customers/{v}", "/api/investigations/{v}", "/api/connectors/jobs/{v}", "/onboarding/{v}", "/api/onboarding/uploads/{v}", "/api/onboarding/uploads/{v}/rows"];
 
+  // One test per route and role: about 600 requests in a single test ran into its time budget once
+  // the Decision Lab (about 4 s a request on the seeded world) and the Overview (about 3 s) were
+  // both requested 27 times (2026-11-12). Same requests, each route with its own budget.
+  const broken = async (page: Page, urls: string[]) => {
+    const out: string[] = [];
+    for (const url of urls) {
+      const res = await page.request.get(url, { maxRedirects: 0 });
+      const body = await res.text();
+      if (res.status() >= 500 || DIGEST.test(body) || body.includes('data-testid="global-error"')) out.push(`${res.status()} ${url.slice(0, 120)}`);
+    }
+    return out;
+  };
   for (const role of ["marketing", "partner"] as const) {
-    test(`no hostile query value or path id breaks a page or API · ${role}`, async ({ page }) => {
-      test.setTimeout(300_000);
+    for (const [path, params] of Object.entries(QUERY)) {
+      test(`no hostile query value breaks ${path} · ${role}`, async ({ page }) => {
+        test.setTimeout(240_000);
+        await setRole(page, role);
+        const urls = params.flatMap((key) => HOSTILE.map((value) => `${path}?${key}=${encodeURIComponent(value)}`));
+        if (params[0]) urls.push(`${path}?${params[0]}=a&${params[0]}=b`);
+        const out = await broken(page, urls);
+        expect(out, out.join("\n")).toEqual([]);
+      });
+    }
+    test(`no hostile path id breaks a page or API · ${role}`, async ({ page }) => {
+      test.setTimeout(240_000);
       await setRole(page, role);
-      const broken: string[] = [];
-      const check = async (url: string) => {
-        const res = await page.request.get(url, { maxRedirects: 0 });
-        const body = await res.text();
-        if (res.status() >= 500 || DIGEST.test(body) || body.includes('data-testid="global-error"')) broken.push(`${res.status()} ${url.slice(0, 120)}`);
-      };
-      for (const [path, params] of Object.entries(QUERY)) {
-        for (const key of params) for (const value of HOSTILE) await check(`${path}?${key}=${encodeURIComponent(value)}`);
-        if (params[0]) await check(`${path}?${params[0]}=a&${params[0]}=b`);
-      }
-      for (const template of PATHS) for (const value of HOSTILE.filter(Boolean)) await check(template.replace("{v}", encodeURIComponent(value)));
-      expect(broken, broken.join("\n")).toEqual([]);
+      const out = await broken(page, PATHS.flatMap((template) => HOSTILE.filter(Boolean).map((value) => template.replace("{v}", encodeURIComponent(value)))));
+      expect(out, out.join("\n")).toEqual([]);
     });
   }
 });

@@ -1,8 +1,8 @@
 import { createPool, DEFAULT_DATABASE_URL, getNow, withRollback } from "@/lib/db";
-import { EVAL_CASES, DATASET_VERSION, loadFixture, scoreCase, skippedScore, summarize, type CaseScore } from "@/lib/ai/eval";
+import { EVAL_CASES, DATASET_VERSION, loadFixture, scopeRefusedScore, scoreCase, skippedScore, summarize, type CaseScore } from "@/lib/ai/eval";
 import { runInvestigation } from "@/lib/ai/investigate";
 import { anthropicModelClient } from "@/lib/ai/model";
-import { VIEWERS } from "@/lib/viewer";
+import { ForbiddenError, VIEWERS } from "@/lib/viewer";
 import { nestedPool } from "@/lib/workflow/nested";
 
 /**
@@ -49,8 +49,16 @@ async function main() {
     const score = await withRollback(pool, async (tx) => {
       if (c.setup) await c.setup(tx, fixture);
       const db = nestedPool(tx);
-      const out = await runInvestigation(db, { question, branchId: c.branchId, viewer: VIEWERS[c.role], mode: client ? "auto" : "deterministic", client });
-      return scoreCase(c, question, fixture, { steps: out.steps, result: out.result, latencyMs: out.latencyMs, costMicros: out.costMicros });
+      try {
+        const out = await runInvestigation(db, { question, branchId: c.branchId, viewer: VIEWERS[c.role], mode: client ? "auto" : "deterministic", client });
+        if (c.expectScopeRefusal) return { ...scoreCase(c, question, fixture, { steps: out.steps, result: out.result, latencyMs: out.latencyMs, costMicros: out.costMicros }), pass: false, failures: ["answered a question naming a branch outside the viewer's scope"] };
+        return scoreCase(c, question, fixture, { steps: out.steps, result: out.result, latencyMs: out.latencyMs, costMicros: out.costMicros });
+      } catch (error) {
+        // Refused before running (the question names what the viewer may not see): a result only
+        // when the case expects it; any other error still fails the run.
+        if (error instanceof ForbiddenError) return scopeRefusedScore(c, question, error.message);
+        throw error;
+      }
     });
     scores.push(score);
     console.log(`${score.pass ? "PASS" : "FAIL"}  ${c.id.padEnd(36)} tools ${pct(score.toolRecall)} recall / ${pct(score.toolPrecision)} precision · evidence ${pct(score.evidenceRecall)} · ${score.latencyMs} ms${score.failures.length ? `  — ${score.failures.join("; ")}` : ""}`);

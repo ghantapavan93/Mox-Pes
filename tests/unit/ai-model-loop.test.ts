@@ -120,6 +120,7 @@ describe("model tool loop", () => {
     const tools = modelTools();
     expect(tools.map((t) => t.name)).toEqual([
       "getBranchMetrics",
+      "getBrandMetrics",
       "getCustomerJourney",
       "getSourceLineage",
       "getIngestionFailures",

@@ -2,8 +2,9 @@ import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import type { SourceName } from "@/lib/adapters/contract";
 import { FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import type { PeriodKey } from "@/lib/period";
+import { exactDollars } from "@/lib/lineage/trace";
 import { formatCents } from "@/lib/primitives";
-import { BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
+import { BRANCH_BY_ID, BRANDS, CHANNEL_BY_CODE, type BrandId, type ChannelCode } from "@/lib/reference";
 import type { Viewer } from "@/lib/viewer";
 import type { DraftFindings, Observation, ProposalSuggestion } from "./contract";
 import { evidence, uniqueIds } from "./evidence";
@@ -33,6 +34,10 @@ export type Intent =
   | "refunds"
   | "stale_sync"
   | "high_cac"
+  /** A plain question about a branch's (or a brand's) figures: spend, customers, CAC, collected cash. */
+  | "metric_lookup"
+  /** A prediction or a what-if: records cannot answer it. */
+  | "forecast"
   | "no_evidence";
 
 export interface DetectedIntent {
@@ -45,13 +50,27 @@ export interface DetectedIntent {
   actionRequest: boolean;
   /** The question presumes spend stopped or dropped. */
   presumesStop: boolean;
+  /** A brand the question names when it names no branch (a brand-wide question). */
+  brandId: BrandId | null;
+  /** The question asks whether something caused an outcome: answered with figures, never with a cause. */
+  asksCause: boolean;
 }
+
+const CAUSAL_QUESTION = /\b(?:cause[sd]?|because|due to|thanks to|paid for itself|pay for itself|pays for itself|worth it|roi|return on|effective|drove|bring in more)\b/i;
+
+/** A prediction or a what-if: "what will CAC be in November", "if we double the budget". */
+const FORECAST = /\b(?:will|would|going to)\b[^.?!]{0,60}\b(?:be|cost|look|become|bring|get)\b|\bnext (?:month|quarter|year)\b|\bin (?:november|december|january|2027)\b|\bforecast\w*|\bpredict\w*|\bprojections?\b|\bif we (?:double|halve|triple|increase|cut|raise|lower|move|shift|spend|add|stop)\b/i;
+/** A plain figure question: spend, customers, CAC, collected cash, refunds. */
+const METRIC_QUESTION = /\b(?:how much|how many|what (?:was|is|were|did)|total|spend|spent|collect\w*|revenue|cash|new customers|customers? (?:serv|credit)\w*|paid media|cost per|cac)\b/i;
 
 const ACTION_REQUEST = [
   /^\s*(please\s+)?(approve|execute|apply|delete|drop|purge|merge|force|bypass|skip|reject|close)\b/i,
   /\b(approve|execute|apply)\b[^.?!]{0,40}\b(proposals?|fix|re-?map|replay|it|them|now|change)\b/i,
   /\b(without|skip|bypass|no)\b[^.?!]{0,20}\b(approval|dry[- ]run|review)\b/i,
   /\b(delete|drop|purge|truncate)\b[^.?!]{0,30}\b(records?|events?|exceptions?|tables?|rows?|customers?)\b/i,
+  // An imperative at the start of any sentence, or after "please / can you / then": "…share a
+  // phone number. Merge them into one customer" (held-out IV-45, first contact).
+  /(?:^|[.!?;]\s+|\b(?:please|can you|could you|would you|will you|go ahead and|and then|then|now)\s+)(?:approve|execute|apply|delete|drop|purge|merge|combine|unmerge|split|re-?assign|re-?credit|overwrite|update|edit|mark|re-?map|replay|close|reject|resolve|fix)\b(?!\s+(?:is|was|are|were|happened|history)\b)/i,
 ];
 
 const TOPICS: Array<{ intent: Intent; re: RegExp }> = [
@@ -73,10 +92,16 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
   const period: PeriodKey = /\bseptember\b|\bsep\b/i.test(question) ? (/\boctober\b|\boct\b/i.test(question) ? "all" : "sep") : "oct";
   const actionRequest = ACTION_REQUEST.some((re) => re.test(question));
   const presumesStop = /\b(stop(ped)?|drop(ped)?|cut|paused?|went to zero)\b/i.test(question);
+  const brandId = branchMatch ? null : brandNamed(question);
   let intent: Intent = "no_evidence";
   if (exceptionMatch) intent = "exception";
   else if (customerMatch) intent = "customer_lookup";
-  else intent = TOPICS.find((t) => t.re.test(question))?.intent ?? "no_evidence";
+  // A prediction is never answered from records, whatever metric it names.
+  else if (FORECAST.test(question)) intent = "forecast";
+  else if (UNMEASURED.test(question)) intent = "no_evidence";
+  // A brand-wide figure: a rollup over every branch of the brand.
+  else if (brandId && !requestedBranch && METRIC_QUESTION.test(question)) intent = "metric_lookup";
+  else intent = TOPICS.find((t) => t.re.test(question))?.intent ?? (METRIC_QUESTION.test(question) ? "metric_lookup" : "no_evidence");
   return {
     intent,
     branchId: branchId && BRANCH_BY_ID.has(branchId) ? branchId : null,
@@ -85,7 +110,22 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
     period,
     actionRequest,
     presumesStop,
+    brandId,
+    asksCause: CAUSAL_QUESTION.test(question),
   };
+}
+
+/** Measures no tool records: accounting revenue, profit, untracked sources (sponsorships, billboards). */
+const UNMEASURED = /\b(?:recogni[sz]ed revenue|accounting|gaap|accrual|profit\w*|margins?|ebitda|lifetime value|ltv|sponsorships?|arena|billboards?|radio|television|tv ads?|print ads?|mailers?|flyers?|word of mouth)\b/i;
+
+/** The brand a question names ("Joshua's", "the Mission brand"), if any. */
+export function brandNamed(question: string): BrandId | null {
+  for (const b of BRANDS) {
+    const first = b.name.split(" ")[0].replace(/'s$/, "");
+    // Case-sensitive: a brand is a proper noun ("our mission" is not the Mission brand).
+    if (new RegExp(String.raw`\b${first}(?:'?s)?\b`).test(question)) return b.id;
+  }
+  return null;
 }
 
 /** What a plan can do: call a registry tool (through the executor) and note what it could not get. */
@@ -181,6 +221,10 @@ function runPlan(intent: Intent, ctx: PlanContext, d: DetectedIntent): Promise<D
       return refundsPlan(ctx, d);
     case "stale_sync":
       return staleSyncPlan(ctx, d);
+    case "metric_lookup":
+      return metricLookupPlan(ctx, d);
+    case "forecast":
+      return Promise.resolve(forecastDraft(d));
     default:
       return noEvidencePlan(ctx, d);
   }
@@ -417,7 +461,8 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
   const bm = evidence.branchMetrics(b, metrics.period.key);
   const observations: Observation[] = [
     {
-      text: `${b}, ${metrics.period.label}: paid-media CAC ${money(metrics.paidCacCents)} = ${money(metrics.paidSpendCents)} paid spend ÷ ${metrics.paidAcquired} new customers whose first evidenced touch was paid; ${metrics.unknownAcquired} of ${metrics.acquired} new customers (${pct(metrics.unknownShare)}) have channel unknown.`,
+      // The equation's operands to the cent, so the arithmetic reproduces exactly from the sentence.
+      text: `${b}, ${metrics.period.label}: paid-media CAC ${money(metrics.paidCacCents)} = ${exactDollars(metrics.paidSpendCents)} paid spend ÷ ${metrics.paidAcquired} new customers whose first evidenced touch was paid; ${metrics.unknownAcquired} of ${metrics.acquired} new customers (${pct(metrics.unknownShare)}) have channel unknown.`,
       evidenceIds: [bm],
       status: "verified",
     },
@@ -962,4 +1007,114 @@ async function noEvidencePlan(ctx: PlanContext, d: DetectedIntent): Promise<Draf
     draft.recommendedNextAction = `Ask about a specific incident instead; for example exception ${list.exceptions[0].id} (${list.exceptions[0].kind}).`;
   }
   return draft;
+}
+
+// ── plain figure questions ───────────────────────────────────────────────────
+
+/**
+ * A plain question about figures ("How much did B33 spend…", "What did B42 collect…"): the
+ * branch's scorecard figures and, for spend, its campaigns and the records held out at intake.
+ * Every sentence is filled from a structured result (a template, proved by lib/ai/proof.ts). A
+ * question that names a brand and no branch gets the brand's rollup.
+ */
+async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFindings> {
+  if (d.brandId && !d.branchId) return brandRollupPlan(ctx, d, d.brandId);
+  if (!d.branchId) return needBranch(ctx, "A branch's figures are");
+  const b = d.branchId;
+  const metrics = await ctx.call("getBranchMetrics", { branchId: b, period: d.period });
+  if (!metrics) return nothingReadable(ctx, `${b}'s metrics could not be read.`);
+  const bm = evidence.branchMetrics(b, metrics.period.key);
+  const label = metrics.period.label;
+  const observations: Observation[] = [];
+  const trace = d.period === "all" ? null : await ctx.call("getMetricTrace", { branchId: b, period: d.period, metric: "paid_cac" });
+  const campaigns = trace?.campaigns ?? [];
+  const more = trace && trace.campaignsOmitted > 0 ? ` (the ${trace.campaignsOmitted} smallest not listed)` : "";
+  observations.push({
+    text: `${b}, ${label}: paid media spend ${money(metrics.paidSpendCents)}${campaigns.length ? ` across ${campaigns.length + (trace?.campaignsOmitted ?? 0)} campaign(s)${more}` : ""}.`,
+    evidenceIds: [bm],
+    status: "verified",
+  });
+  for (const c of campaigns.slice(0, 5)) {
+    const credited = c.paidCustomersCredited === null ? "" : `; campaign ${c.externalCampaignId} is credited with ${c.paidCustomersCredited} paid customer(s)`;
+    observations.push({ text: `${b}, ${label}: campaign ${c.externalCampaignId} spent ${money(c.spendCents)} (filed as ${c.channelCode})${credited}.`, evidenceIds: [bm, c.evidenceId], status: "verified" });
+  }
+  observations.push({
+    text: `${b}, ${label}: ${metrics.acquired} new customers serviced; ${metrics.paidAcquired} new customers whose first evidenced touch was paid; paid-media CAC ${money(metrics.paidCacCents)}${metrics.paidCacCents === null ? "" : ` = ${exactDollars(metrics.paidSpendCents)} ÷ ${metrics.paidAcquired}`}; ${metrics.unknownAcquired} of ${metrics.acquired} new customers (${pct(metrics.unknownShare)}) have channel unknown.`,
+    evidenceIds: [bm],
+    status: "verified",
+  });
+  observations.push({
+    text: `${b}, ${label}: collected cash ${money(metrics.collectedCents)} (successful payments minus refunds, by payment date); refunds ${money(metrics.refundsCents)}.`,
+    evidenceIds: [bm],
+    status: "verified",
+  });
+  const channels = metrics.channels.filter((c) => c.spendCents > 0 || c.acquired > 0);
+  if (channels.length > 0) {
+    observations.push({
+      text: `${b}, ${label}, by channel: ${channels.map((c) => `${c.label} ${money(c.spendCents)} spend, ${c.acquired} new customer(s)`).join("; ")}.`,
+      evidenceIds: channels.map((c) => evidence.channelMetrics(b, metrics.period.key, c.channelCode)),
+      status: "verified",
+    });
+  }
+  // What the figures do not contain: records held or excluded at intake, customers the definition leaves out.
+  for (const r of trace?.sourceRecords ?? []) {
+    observations.push({ text: `${r.count} ${r.source} record(s) at ${b} were ${r.status} at intake (${r.code}) and are not in these figures.`, evidenceIds: r.sampleEvidenceIds.slice(0, 5), status: "verified" });
+  }
+  for (const e of trace?.excluded ?? []) {
+    observations.push({ text: `${e.count} new customer(s) are left out of the CAC denominator by the definition (${e.code}).`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+  }
+  const missingInformation = [
+    ...(d.asksCause ? ["Whether the spend caused these customers or this cash: attribution credits each customer to the channel of the first evidenced touch; only a controlled experiment measures what spend caused."] : []),
+    ...failureNotes(ctx),
+  ];
+  return {
+    summary: `${b}, ${label}: paid media spend ${money(metrics.paidSpendCents)}; ${metrics.acquired} new customers serviced (${metrics.paidAcquired} paid); paid-media CAC ${money(metrics.paidCacCents)}; collected cash ${money(metrics.collectedCents)}.${d.asksCause ? " These figures describe what was recorded; they do not show what caused it." : ""}`,
+    observations,
+    suspectedCause: null,
+    confidence: trace && !trace.value.matches ? { level: "medium", why: "The paid figures do not reproduce exactly from the stored records (see the trace)." } : { level: "high", why: "Each figure is read from the scorecard and, for paid media, reproduced from the stored records." },
+    recommendedNextAction: `Open ${b}'s metric trace to see the records behind each figure.`,
+    expectedEffect: "None: nothing is proposed.",
+    risks: d.asksCause ? ["Reading a channel's credited customers as caused by its spend would overstate it: attribution is an association."] : [],
+    missingInformation,
+    proposals: [],
+  };
+}
+
+/** A brand's figures: every branch from one scorecard query, and the totals (refused unless the viewer sees the whole brand). */
+async function brandRollupPlan(ctx: PlanContext, d: DetectedIntent, brandId: BrandId): Promise<DraftFindings> {
+  const res = await ctx.call("getBrandMetrics", { brandId, period: d.period });
+  if (!res) return nothingReadable(ctx, "The brand's figures could not be read.");
+  const ids = res.branches.map((x) => x.branchId);
+  const t = res.totals;
+  const list = ids.length > 1 ? `${ids.slice(0, -1).join(", ")} and ${ids[ids.length - 1]}` : ids[0];
+  const cited = ids.map((id) => evidence.branchMetrics(id, res.period.key));
+  return {
+    summary: `${res.brandName}, ${res.period.label}: ${t.acquired} new customers serviced across its ${ids.length} branches; paid-media CAC ${money(t.paidCacCents)} (summed paid spend ÷ summed paid customers, not an average of branch CACs).`,
+    observations: [
+      {
+        text: `${res.brandName}, ${res.period.label}, totals over ${list}: ${t.acquired} new customers serviced; ${t.paidAcquired} new customers whose first evidenced touch was paid; paid media spend ${money(t.paidSpendCents)}; paid-media CAC ${money(t.paidCacCents)}; collected cash ${money(t.collectedCents)}.`,
+        evidenceIds: cited,
+        status: "verified",
+      },
+      { text: `${res.brandName}, ${res.period.label}, by branch: ${res.branches.map((x) => `${x.branchId} ${money(x.paidSpendCents)} spend, ${x.acquired} new customers`).join("; ")}.`, evidenceIds: cited, status: "verified" },
+    ],
+    suspectedCause: null,
+    confidence: { level: "high", why: "Every branch of the brand comes from the same scorecard query; totals are sums, and CAC is recomputed from the summed parts." },
+    recommendedNextAction: "Open a branch's metric trace to see the records behind its figures.",
+    expectedEffect: "None: nothing is proposed.",
+    risks: [],
+    missingInformation: failureNotes(ctx),
+    proposals: [],
+  };
+}
+
+/** A prediction or a what-if: the records describe what happened, not what will. */
+function forecastDraft(d: DetectedIntent): DraftFindings {
+  return {
+    ...emptyDraft(
+      `This asks for a prediction${d.branchId ? ` about ${d.branchId}` : ""}. The records describe what happened in September and October; no tool forecasts, and attribution cannot estimate what a budget change would do.`,
+    ),
+    missingInformation: ["A forecast under a changed budget: it would take a controlled experiment (a holdout test), not the stored records, to estimate the effect of spending more or less."],
+    recommendedNextAction: "Ask what the records show for the current period, or plan a holdout test before changing the budget.",
+  };
 }

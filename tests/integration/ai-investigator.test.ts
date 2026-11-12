@@ -59,14 +59,18 @@ function spend(campaign: "lsa" | "pmax" | "search", d: number, costDollars: numb
   return { entity: "spend_day", payload: { ...base, date: day(d), costMicros: String(costDollars * 1_000_000), clicks: 10, conversions: 3, fetchedAt: fetchedAt.toISOString() } };
 }
 
-/** Local Services migrates to PMax on day 13; ads@1.0 files it as Search. Returns the gap exception id. */
-async function seedB09(): Promise<number> {
+/**
+ * Local Services migrates to PMax on day 13; ads@1.0 files it as Search. Returns the gap exception id.
+ * `usd`: the feed states its currency (ads@1.2 reads it), so the spend is established USD.
+ */
+async function seedB09(opts: { usd?: boolean } = {}): Promise<number> {
   const ads: RawRecord[] = [];
   for (let d = 1; d <= 30; d++) {
     ads.push(spend("search", d, 300));
     ads.push(d < MIGRATION_DAY ? spend("lsa", d, 100) : spend("pmax", d, 100));
   }
-  await ingest(pool, "ads", ads, { mapper: mapperFor("ads", "1.0"), now: NOW });
+  if (opts.usd) for (const r of ads) (r.payload as Record<string, unknown>).currencyCode = "USD";
+  await ingest(pool, "ads", ads, { mapper: mapperFor("ads", opts.usd ? "1.2" : "1.0"), now: NOW });
   await pool.query(
     `insert into campaign_branch_map (campaign_id, branch_id, mapped_by, mapped_at)
      select id, $1, 'marketing-ops', $2 from ad_campaigns on conflict do nothing`,
@@ -91,7 +95,9 @@ async function seedB09(): Promise<number> {
   await ingest(pool, "calls", calls);
   await ingest(pool, "crm", crmRecords);
   await runReconcile(pool, NOW);
-  return Number((await one<{ id: string }>(pool, "select id from exceptions where kind = 'channel_coverage_gap'")).id);
+  // ads@1.2 classifies the PMax campaign correctly, so the USD world has no coverage gap (NaN).
+  const { rows } = await pool.query<{ id: string }>("select id from exceptions where kind = 'channel_coverage_gap'");
+  return Number(rows[0]?.id ?? Number.NaN);
 }
 
 /** B20 sells customers who called in; calls@1.0 quarantined every call (new caller shape). */
@@ -206,14 +212,15 @@ describe("tool scope enforcement", () => {
   it("a partner's investigation about another branch reads nothing and leaks nothing", async () => {
     await seedB09();
     await expect(runInvestigation(pool, { question: GOLDEN, branchId: B09, viewer: partner, now: NOW })).rejects.toThrow(ForbiddenError);
-    const out = await runInvestigation(pool, { question: GOLDEN, branchId: null, viewer: partner, now: NOW });
+    // The question itself names B09: refused before anything runs or is stored (held-out IV-54:
+    // an out-of-scope question is refused, not answered about something else).
+    await expect(runInvestigation(pool, { question: GOLDEN, branchId: null, viewer: partner, now: NOW })).rejects.toThrow(/cannot view branch B09/);
+    expect((await pool.query("select count(*)::int as n from investigations")).rows[0].n).toBe(0);
+    // Without a named branch, the partner's own scope is used and nothing about B09 leaks.
+    const out = await runInvestigation(pool, { question: "Why is our paid CAC so high?", branchId: null, viewer: partner, now: NOW });
     expect(out.mode).toBe("deterministic");
-    expect(out.steps.filter((s) => s.kind === "tool_call").every((s) => s.status === "forbidden")).toBe(true);
-    expect(out.result.observations).toEqual([]);
-    expect(out.result.proposals).toEqual([]);
-    expect(out.result.summary).toMatch(/outside your branch scope/);
     const stored = JSON.stringify(await getInvestigation(pool, partner, out.id));
-    expect(stored).not.toMatch(/pmax-lsa-B09|Local Services \(PMax/);
+    expect(stored).not.toMatch(/pmax-lsa-B09|Local Services \(PMax|\bB09\b/);
     // Guests cannot run investigations at all.
     await expect(runInvestigation(pool, { question: GOLDEN, branchId: null, viewer: guest, now: NOW })).rejects.toThrow(ForbiddenError);
   });
@@ -257,6 +264,9 @@ describe("deterministic B09 investigation", () => {
 
     // Grounding: nothing dropped, and every cited id came from a tool step of this run.
     expect(r.grounding.claimsDropped).toBe(0);
+    // The templates' figures follow from their facts: no proof contradicts them.
+    expect(r.claims!.flatMap((c) => c.proofs ?? []).filter((p) => p.verdict === "CONTRADICTED")).toEqual([]);
+    expect(r.claims!.flatMap((c) => c.proofs ?? []).filter((p) => p.verdict === "VERIFIED").length).toBeGreaterThan(0);
     const returned = new Set(out.steps.flatMap((s) => (s.kind === "tool_call" ? s.evidenceIds : [])));
     for (const id of cited) expect(returned.has(id), id).toBe(true);
 
@@ -500,7 +510,7 @@ describe("model tool loop (mocked client)", () => {
   });
 
   it("a figure the tools never returned is dropped even when it cites a real evidence id; every statement is typed and its support stated", async () => {
-    await seedB09();
+    await seedB09({ usd: true });
     const trace = await traceBranchMetric(pool, marketing, { branchId: B09, period: PERIODS.oct, metric: "paid_cac" });
     const cac = trace.value.reproduced.paidCacCents!;
     const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -530,11 +540,58 @@ describe("model tool loop (mocked client)", () => {
     expect(out.result.observations.map((o) => o.text)).toEqual([`Paid-media CAC at B09 is ${dollars(cac)} per new paid customer.`]);
     expect(out.result.grounding).toMatchObject({ claimsDropped: 2, numericDropped: 1 });
     const claims = out.result.claims!;
-    expect(claims.find((c) => c.text.includes(dollars(cac)) && c.status === "SUPPORTED")).toMatchObject({ type: "DERIVATION", numbers: [{ text: dollars(cac), kind: "money", supported: true }] });
+    const kept = claims.find((c) => c.text.includes(dollars(cac)) && c.status === "SUPPORTED");
+    expect(kept).toMatchObject({ type: "DERIVATION", origin: "model", numbers: [{ text: dollars(cac), kind: "money", supported: true }] });
+    // The figure FOLLOWS from the cited fact: paid CAC of B09 in October, from the trace, in USD.
+    expect(kept?.proofs).toEqual([expect.objectContaining({ verdict: "VERIFIED", relation: "level", subject: { metric: "paidCac", entity: B09, period: "oct" }, formula: `v(paidCac, ${B09}, oct)`, computed: cac / 100 })]);
+    expect(kept?.proofs?.[0].inputs[0]).toMatchObject({ tool: "getMetricTrace", currencyResolved: true, value: cac });
     expect(claims.find((c) => c.text.includes(dollars(cac + 6871)))).toMatchObject({ status: "UNSUPPORTED", reason: expect.stringContaining(dollars(cac + 6871)) });
     expect(claims.find((c) => c.text.includes("increased revenue"))).toMatchObject({ type: "CAUSAL", status: "UNSUPPORTED" });
     expect(claims.find((c) => c.type === "RECOMMENDATION")).toMatchObject({ status: "PARTIALLY_SUPPORTED" });
     expect(claims.find((c) => c.status === "NOT_DETERMINABLE")?.text).toContain("would have converted");
+  });
+
+  it("proof-carrying claims: a true figure on spend of unstated currency, a reversed change and a wrong metric are all rejected", async () => {
+    // ads@1.0 reads no currency: the spend is assumed USD, not established.
+    await seedB09();
+    const trace = await traceBranchMetric(pool, marketing, { branchId: B09, period: PERIODS.oct, metric: "paid_cac" });
+    const cac = trace.value.reproduced.paidCacCents!;
+    const spendCents = trace.value.reproduced.paidSpendCents;
+    const dollars = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const bm = `branch_metrics:${B09}:oct`;
+    const client = scriptedClient([
+      [toolUse("a", "getMetricTrace", { branchId: B09, period: "oct" }), toolUse("b", "getBranchMetrics", { branchId: B09, period: "sep" })],
+      [
+        toolUse("c", "submit_findings", {
+          summary: "B09's paid CAC, traced.",
+          observations: [
+            // The figure is right, but the money's currency is not established (rule M).
+            { text: `Paid-media CAC at B09 is ${dollars(cac)} per new paid customer.`, evidenceIds: [bm], status: "verified" },
+            // The CAC figure stated as the paid spend (wrong metric, D): the number is in the output, the meaning is wrong.
+            { text: `B09's October paid spend totals ${dollars(cac)}.`, evidenceIds: [bm], status: "verified" },
+            // September has no B09 activity in this world; a change against it is not in the cited facts.
+            { text: `B09's paid spend rose by ${dollars(spendCents)} from September.`, evidenceIds: [bm], status: "verified" },
+          ],
+          suspectedCause: null,
+          confidence: { level: "medium", why: "Traced." },
+          recommendedNextAction: "Review the mapping of the B09 Local Services campaign.",
+          expectedEffect: "None until reviewed.",
+          risks: [],
+          missingInformation: [],
+          proposals: [],
+        }),
+      ],
+    ]);
+    const out = await runInvestigation(pool, { question: "Why is B09's paid CAC what it is?", branchId: B09, viewer: marketing, now: NOW, client });
+    expect(out.mode).toBe("model");
+    expect(out.result.observations).toEqual([]);
+    expect(out.result.grounding.proofDropped).toBe(3);
+    const claims = out.result.claims!;
+    const currency = claims.find((c) => c.text.includes(dollars(cac)));
+    expect(currency).toMatchObject({ status: "UNSUPPORTED", reason: expect.stringMatching(/did not state its currency/) });
+    expect(currency?.proofs?.[0]).toMatchObject({ gap: "currency_unresolved", verdict: "UNRESOLVED" });
+    expect(claims.find((c) => c.text.includes("spend totals"))?.status).toBe("UNSUPPORTED");
+    expect(claims.find((c) => c.text.includes("from September"))?.status).toBe("UNSUPPORTED");
   });
 
   it("a model that never submits hits the turn budget and the deterministic investigator answers, labelled as such", async () => {

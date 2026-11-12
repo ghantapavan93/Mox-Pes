@@ -1,13 +1,14 @@
 import type { Pool } from "pg";
 import { ActionError } from "@/lib/actions";
 import { getNow } from "@/lib/db";
-import { BRANCH_BY_ID } from "@/lib/reference";
-import { requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
+import { BRANCH_BY_ID, BRAND_BY_ID, branchesOfBrands } from "@/lib/reference";
+import { ForbiddenError, requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
 import { buildClaims, evidenceFacts, groundDraft } from "./analyst";
 import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
-import { ACTION_REFUSAL, detectIntent, runDeterministic, type PlanContext } from "./deterministic";
+import { ACTION_REFUSAL, brandNamed, detectIntent, runDeterministic, type PlanContext } from "./deterministic";
 import { MODEL_ID, anthropicModelClient, costMicros, runModelInvestigator, type ModelClient, type TokenUsage } from "./model";
 import { planProposals } from "./planner";
+import { staleRevisions } from "./revisions";
 import { StepRecorder, executeTool, type InvestigationStep } from "./steps";
 import type { ToolContext, ToolData, ToolName } from "./tools";
 
@@ -53,6 +54,26 @@ export interface InvestigationOutcome {
 
 const QUESTION_MAX = 2000;
 
+/**
+ * A question that names what the viewer may not see is refused outright, not answered about
+ * something else in scope (held-out IV-54, first contact: a branch partner asked for a brand-wide
+ * figure and got an answer about their own branch). Branch ids named in the question must be in
+ * scope; a brand-wide question needs every branch of the brand in scope.
+ */
+function assertQuestionInScope(viewer: Viewer, question: string): void {
+  if (!viewer.branchIds) return;
+  for (const m of question.matchAll(/\bB(\d{2})\b/g)) {
+    const id = `B${m[1]}`;
+    if (BRANCH_BY_ID.has(id) && !viewer.branchIds.includes(id)) throw new ForbiddenError(`${viewer.label} cannot view branch ${id}, which the question names`);
+  }
+  const brand = brandNamed(question);
+  if (brand && /\b(?:brand[- ]?wide|brand|across|all (?:of )?(?:its|their|the) branches|every branch|whole|entire|total|branches|best branch|benchmark\w*)\b/i.test(question)) {
+    const ids = branchesOfBrands([brand]);
+    const outside = ids.filter((id) => !viewer.branchIds?.includes(id));
+    if (outside.length > 0) throw new ForbiddenError(`${viewer.label} cannot view ${BRAND_BY_ID.get(brand)?.name ?? brand} as a whole (${outside.length} of its ${ids.length} branches are outside the scope)`);
+  }
+}
+
 export async function runInvestigation(pool: Pool, input: RunInvestigationInput): Promise<InvestigationOutcome> {
   requirePermission(input.viewer, "investigate", "run investigations");
   const question = input.question.trim().replace(/\s+/g, " ");
@@ -62,6 +83,7 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
     if (!BRANCH_BY_ID.has(input.branchId)) throw new ActionError(`Unknown branch ${input.branchId}`, 400);
     resolveScope(input.viewer, input.branchId);
   }
+  assertQuestionInScope(input.viewer, question);
 
   const started = performance.now();
   const now = input.now ?? (await getNow(pool));
@@ -119,7 +141,11 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
     const analystStarted = performance.now();
     // Numbers are checked against what the tools returned, outside the model (lib/ai/numbers.ts).
     const facts = evidenceFacts(recorder.steps);
-    const grounded = groundDraft(draft, recorder.returnedEvidence, facts);
+    // Every figure must follow from the typed facts it cites (lib/ai/proof.ts). The deterministic
+    // investigator writes templates filled from structured results; the model writes free text.
+    const cited = [...draft.observations.flatMap((o) => o.evidenceIds), ...(draft.suspectedCause?.evidenceIds ?? [])];
+    const stale = await staleRevisions(pool, cited);
+    const grounded = groundDraft(draft, recorder.returnedEvidence, facts, { origin: mode === "model" ? "model" : "template", branchId: input.branchId, stale });
     const claims = buildClaims(grounded, facts);
     await recorder.record({
       stage: "analyst", kind: "analysis", tool: null, input: { claims: grounded.report.claimsIn },

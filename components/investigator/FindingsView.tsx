@@ -79,26 +79,93 @@ function ClaimCheck({ claims }: { claims: NonNullable<InvestigationResult["claim
         <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-faint">
           Claim check · {tally("SUPPORTED")} supported · {tally("PARTIALLY_SUPPORTED")} partly · {tally("UNSUPPORTED") + tally("CONFLICTED")} rejected or conflicted · {tally("NOT_DETERMINABLE")} not determinable
         </summary>
-        <p className="mt-2 text-xs text-muted">Checked by code, not by the model: every cited id must have been returned by a tool in this run, and every dollar amount, percentage and count written in figures must appear, as the same kind of figure, in those tools&apos; output (the summary, next step and expected effect are checked against everything the tools returned). Figures written as words and bare ratios are not checked. A cause of a business outcome is never accepted without a measured experiment.</p>
+        <p className="mt-2 text-xs text-muted">
+          Checked by code, not by the model. Every cited id must have been returned by a tool in this run. Every figure must follow from the facts the claim cites: the right metric, branch or channel, period, direction, arithmetic and unit, and money whose currency is established. A number that merely appears in a tool&apos;s output proves nothing. A cause of a business outcome is never accepted without a measured experiment. Open a claim&apos;s proof to see each calculation and the facts it used.
+        </p>
         <ul className="mt-2 space-y-2 text-sm">
           {claims.map((c) => (
             <li key={c.id} className="rounded border border-border p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</Badge>
                 <span className="text-[11px] uppercase tracking-wide text-faint">{c.type.toLowerCase()}</span>
+                {c.origin && <span className="text-[11px] text-faint">{c.origin === "template" ? "written from a calculation" : "model-written"}</span>}
                 {c.numbers.map((n, i) => (
                   <span key={`${i}-${n.text}`} className={`font-mono text-[11px] ${n.supported ? "text-good" : "text-bad"}`}>
                     {n.supported ? "✓" : "✗"} {n.text}
                   </span>
                 ))}
               </div>
-              <p className={`mt-1 ${c.status === "UNSUPPORTED" ? "text-muted line-through decoration-bad/50" : ""}`}>{c.text}</p>
+              <p className={`mt-1 break-words ${c.status === "UNSUPPORTED" ? "text-muted line-through decoration-bad/50" : ""}`}>{c.text}</p>
               <p className="mt-0.5 text-xs text-muted">{c.reason}</p>
+              {c.proofs && c.proofs.length > 0 && <ProofList proofs={c.proofs} />}
             </li>
           ))}
         </ul>
       </details>
     </section>
+  );
+}
+
+type ProofItem = NonNullable<NonNullable<InvestigationResult["claims"]>[number]["proofs"]>[number];
+
+const VERDICT = { VERIFIED: { mark: "✓", tone: "text-good", label: "follows" }, CONTRADICTED: { mark: "✗", tone: "text-bad", label: "contradicted" }, UNRESOLVED: { mark: "?", tone: "text-muted", label: "not proved" } } as const;
+
+/** A fact's value as a reader would write it: dollars, percent or a count. */
+function factValue(value: number | null, unit: ProofItem["inputs"][number]["unit"]): string {
+  if (value === null) return "n/a";
+  if (unit === "usd_cents") return `${value < 0 ? "−" : ""}$${(Math.abs(value) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (unit === "ratio") return `${(value * 100).toFixed(1)}%`;
+  return value.toLocaleString("en-US");
+}
+
+/**
+ * The proof of a claim, one line per proposition (level 3), each opening to the facts it used
+ * with their definition version, currency status, tool and evidence ids (level 4).
+ */
+function ProofList({ proofs }: { proofs: ProofItem[] }) {
+  const verified = proofs.filter((p) => p.verdict === "VERIFIED").length;
+  return (
+    <details className="mt-1" data-testid="claim-proof">
+      <summary className="cursor-pointer text-xs text-faint">
+        Proof · {verified} of {proofs.length} proposition{proofs.length === 1 ? "" : "s"} follow{verified === 1 ? "s" : ""}
+      </summary>
+      <ol className="mt-1 space-y-1">
+        {proofs.map((p, i) => {
+          const v = VERDICT[p.verdict];
+          return (
+            <li key={i} className="rounded bg-surface-2 px-2 py-1 text-xs">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className={`font-mono ${v.tone}`} aria-label={v.label}>
+                  {v.mark}
+                </span>
+                {p.figure && <span className="font-mono">{p.figure}</span>}
+                <span className="text-faint">{p.relation.replace(/_/g, " ")}</span>
+                {p.formula && <code className="break-all text-[11px] text-muted">{p.formula}</code>}
+                {p.computed !== null && p.relation !== "status" && p.relation !== "membership" && <span className="text-muted">= {Number.isInteger(p.computed) ? p.computed : p.computed.toFixed(2)}</span>}
+              </div>
+              <p className="text-muted">
+                {v.label}: {p.reason}
+                {p.qualifier !== "exact" ? ` (${p.rounding})` : ""}
+              </p>
+              {p.inputs.length > 0 && (
+                <details>
+                  <summary className="cursor-pointer text-faint">Facts used ({p.inputs.length})</summary>
+                  <ul className="mt-0.5 space-y-0.5">
+                    {p.inputs.map((f, j) => (
+                      <li key={j} className="break-words text-muted">
+                        <span className="font-mono">{f.metric}</span> · {f.entity} · {f.period} = <span className="font-mono">{factValue(f.value, f.unit)}</span>
+                        {f.unit === "usd_cents" && !f.currencyResolved ? " · currency not established" : ""}
+                        {f.definitionVersion ? ` · definition ${f.definitionVersion.split(" ")[0]}` : ""} · from {f.tool} · <span className="font-mono">{f.evidenceIds.slice(0, 2).join(", ")}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </details>
   );
 }
 

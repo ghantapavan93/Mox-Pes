@@ -79,6 +79,52 @@ export const PlannedProposalSchema = z.strictObject({
 });
 export type PlannedProposal = z.infer<typeof PlannedProposalSchema>;
 
+/**
+ * A proof of one proposition of a claim (lib/ai/proof.ts): what it is about, the calculation, the
+ * facts it used (with their definition versions, currency status and evidence ids), and whether
+ * the stated figure follows. Stored with the claim so a reader can see why it was accepted.
+ */
+const PERIOD_KEY = z.enum(["oct", "sep", "all"]);
+const UNIT = z.enum(["usd_cents", "count", "ratio"]);
+export const ProofSchema = z.strictObject({
+  piece: z.string(),
+  figure: z.string(),
+  subject: z.strictObject({ metric: z.string().nullable(), entity: z.string().nullable(), period: PERIOD_KEY.nullable() }),
+  against: z.strictObject({ entity: z.string(), period: PERIOD_KEY }).nullable(),
+  relation: z.enum(["level", "change", "relative_change", "points_change", "direction", "ratio", "sum", "share", "arithmetic", "membership", "status", "unknown"]),
+  formula: z.string(),
+  inputs: z.array(
+    z.strictObject({
+      metric: z.string(),
+      entity: z.string(),
+      period: PERIOD_KEY,
+      value: z.number().nullable(),
+      unit: UNIT,
+      definitionVersion: z.string().nullable(),
+      currencyResolved: z.boolean(),
+      evidenceIds: z.array(z.string()),
+      tool: z.string(),
+    }),
+  ),
+  unit: UNIT.nullable(),
+  computed: z.number().nullable(),
+  claimed: z.number().nullable(),
+  qualifier: z.enum(["exact", "approximately", "more_than", "at_least", "less_than", "at_most"]),
+  direction: z.enum(["increase", "decrease", "unchanged"]).nullable(),
+  claimedDirection: z.enum(["increase", "decrease"]).nullable(),
+  precision: z.number(),
+  rounding: z.string(),
+  verdict: z.enum(["VERIFIED", "CONTRADICTED", "UNRESOLVED"]),
+  gap: z
+    .enum([
+      "metric_unknown", "metric_unsupported", "fact_missing", "period_missing", "period_ambiguous", "comparison_missing", "currency_unresolved",
+      "undefined_value", "operand_missing", "conflicting_facts", "evaluative", "evidence_stale", "ambiguous", "hypothetical",
+    ])
+    .nullable(),
+  reason: z.string(),
+});
+export type ProofRecord = z.infer<typeof ProofSchema>;
+
 export const DroppedClaimSchema = z.strictObject({
   /** summary / recommendedNextAction / expectedEffect / risk: free text withheld by the analyst. */
   where: z.enum(["observation", "suspectedCause", "proposal", "summary", "recommendedNextAction", "expectedEffect", "risk"]),
@@ -89,6 +135,8 @@ export const DroppedClaimSchema = z.strictObject({
   /** Ids the claim cited that no tool returned in this run. */
   unsupported: z.array(z.string()),
   reason: z.string(),
+  /** The proofs that rejected it, when it was rejected for not following from its facts. */
+  proofs: z.array(ProofSchema).optional(),
 });
 export type DroppedClaim = z.infer<typeof DroppedClaimSchema>;
 
@@ -105,6 +153,12 @@ export const GroundingReportSchema = z.strictObject({
   numericDropped: z.number().int().nonnegative().optional(),
   /** Free-text fields (summary, next step, expected effect, risks) withheld for an unsupported figure or cause. */
   textWithheld: z.number().int().nonnegative().optional(),
+  /** Claims dropped because a proposition does not follow from the facts they cite (lib/ai/proof.ts; subset of claimsDropped). */
+  proofDropped: z.number().int().nonnegative().optional(),
+  /** Verified claims shown as hypotheses because a figure could not be proved (subset of downgraded). */
+  proofDowngraded: z.number().int().nonnegative().optional(),
+  /** Claims dropped because they cite a source record that a newer revision superseded (subset of claimsDropped). */
+  staleDropped: z.number().int().nonnegative().optional(),
   dropped: z.array(DroppedClaimSchema),
 });
 export type GroundingReport = z.infer<typeof GroundingReportSchema>;
@@ -144,6 +198,10 @@ export const ClaimSchema = z.strictObject({
   numbers: z.array(z.strictObject({ text: z.string(), kind: z.enum(["money", "percent", "count"]), supported: z.boolean() })),
   status: z.enum(SUPPORT_STATUSES),
   reason: z.string(),
+  /** Who wrote the sentence: a template filled from structured results, or the model. */
+  origin: z.enum(["template", "model"]).optional(),
+  /** One proof per proposition (figure or direction). Absent on claims stored before proofs existed. */
+  proofs: z.array(ProofSchema).optional(),
 });
 export type Claim = z.infer<typeof ClaimSchema>;
 

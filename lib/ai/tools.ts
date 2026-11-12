@@ -9,7 +9,7 @@ import { METRICS } from "@/lib/metrics/definitions";
 import { branchRows, channelRows, freshness, paidCac } from "@/lib/metrics/scorecard";
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { exceptionSummary, getException, listExceptions, type ExceptionRow } from "@/lib/queries";
-import { BRANCH_BY_ID } from "@/lib/reference";
+import { BRANCH_BY_ID, BRANDS, branchesOfBrands, type BrandId } from "@/lib/reference";
 import { ForbiddenError, canSeeBranch, resolveScope, type Viewer } from "@/lib/viewer";
 import { auditFeed, caseAudit, caseForException } from "@/lib/workflow/queries";
 import { TRACEABLE, traceBranchMetric } from "@/lib/lineage/trace";
@@ -1010,6 +1010,8 @@ export const getMetricTrace = defineTool({
         mappingVersion: c.mapping.version,
         mapperVersions: c.mapperVersions,
         assumedCurrencyCents: c.assumedCurrencyCents,
+        // Paid customers in the denominator credited to this campaign (null when the list was capped).
+        paidCustomersCredited: trace.denominator.truncated ? null : trace.denominator.customers.filter((k) => k.campaignExternalId === c.externalCampaignId).length,
       })),
       campaignsOmitted: Math.max(0, trace.numerator.campaigns.length - 10),
       customersCounted: trace.denominator.count,
@@ -1144,8 +1146,76 @@ export const getDecisionReadiness = defineTool({
 
 // ── registry ─────────────────────────────────────────────────────────────────
 
+// ── getBrandMetrics ──────────────────────────────────────────────────────────
+
+export interface BrandMetrics {
+  brandId: string;
+  brandName: string;
+  period: { key: PeriodKey; label: string };
+  /** Every branch of the brand, the same scorecard rows getBranchMetrics returns (without channels). */
+  branches: Array<Omit<BranchMetrics, "channels">>;
+  /** Sums over the branches; CAC and unknown share recomputed from the summed parts, never averaged. */
+  totals: { paidSpendCents: number; acquired: number; paidAcquired: number; unknownAcquired: number; paidCacCents: number | null; unknownShare: number | null; collectedCents: number; refundsCents: number; atRiskCents: number };
+}
+
+/**
+ * A brand's figures for one period: each of its branches from the same scorecard query, and their
+ * totals. Only for a viewer whose scope covers EVERY branch of the brand: a brand total from part
+ * of a brand would be a wrong number, not a smaller one.
+ */
+export const getBrandMetrics = defineTool({
+  name: "getBrandMetrics",
+  description:
+    "Scorecard metrics for every branch of one brand (moxie, joshuas, mission) and their totals for a period: paid spend, new customers (all / paid / unknown), paid-media CAC (summed spend ÷ summed paid customers), collected revenue, refunds. Refused unless the viewer's scope covers every branch of the brand. Money is integer cents.",
+  input: z.strictObject({ brandId: z.enum(BRANDS.map((b) => b.id) as [BrandId, ...BrandId[]]), period }),
+  async run(ctx, input): Promise<ToolOutput<BrandMetrics>> {
+    const brand = BRANDS.find((b) => b.id === input.brandId)!;
+    const ids = branchesOfBrands([brand.id]);
+    const outside = ids.filter((id) => !canSeeBranch(ctx.viewer, id));
+    if (outside.length > 0) throw new ForbiddenError(`${ctx.viewer.label} cannot view ${brand.name} as a whole (${outside.length} of its ${ids.length} branches are outside the scope)`);
+    const p = PERIODS[input.period];
+    const rows = await branchRows(ctx.db, { from: p.from, to: p.to, branchIds: ids });
+    const branches = rows.map((row) => ({
+      branchId: row.branchId,
+      branchName: row.name,
+      period: { key: p.key, label: p.label },
+      paidSpendCents: row.paidSpendCents,
+      acquired: row.acquired,
+      paidAcquired: row.paidAcquired,
+      unknownAcquired: row.unknownAcquired,
+      paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
+      unknownShare: row.acquired > 0 ? row.unknownAcquired / row.acquired : null,
+      rawLeads: row.rawLeads,
+      prospects: row.prospects,
+      platformClaimed: row.platformClaimed,
+      collectedCents: row.collectedCents,
+      refundsCents: row.refundsCents,
+      openExceptions: row.openExceptions,
+      atRiskCents: row.atRiskCents,
+    }));
+    const sum = (k: "paidSpendCents" | "acquired" | "paidAcquired" | "unknownAcquired" | "collectedCents" | "refundsCents" | "atRiskCents") => branches.reduce((s, b) => s + b[k], 0);
+    const totals = {
+      paidSpendCents: sum("paidSpendCents"),
+      acquired: sum("acquired"),
+      paidAcquired: sum("paidAcquired"),
+      unknownAcquired: sum("unknownAcquired"),
+      paidCacCents: paidCac(sum("paidSpendCents"), sum("paidAcquired")),
+      unknownShare: sum("acquired") > 0 ? sum("unknownAcquired") / sum("acquired") : null,
+      collectedCents: sum("collectedCents"),
+      refundsCents: sum("refundsCents"),
+      atRiskCents: sum("atRiskCents"),
+    };
+    return {
+      data: { brandId: brand.id, brandName: brand.name, period: { key: p.key, label: p.label }, branches, totals },
+      evidenceIds: branches.map((b) => evidence.branchMetrics(b.branchId, p.key)),
+      summary: `${brand.name} ${p.key}: ${branches.length} branches, paid CAC ${totals.paidCacCents === null ? "n/a" : `${totals.paidCacCents}¢`} = ${totals.paidSpendCents}¢ ÷ ${totals.paidAcquired}, ${totals.acquired} new customers`,
+    };
+  },
+});
+
 export const TOOLS = {
   getBranchMetrics,
+  getBrandMetrics,
   getCustomerJourney: getCustomerJourneyTool,
   getSourceLineage,
   getIngestionFailures,

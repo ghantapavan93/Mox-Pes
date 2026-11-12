@@ -221,7 +221,9 @@ export const EVAL_CASES: EvalCase[] = [
     role: "marketing",
     branchId: null,
     question: () => "What will TikTok ads do for our branches next year?",
-    expectedTools: ["getReconciliationExceptions"],
+    // A prediction: answered without reading records, by saying no tool forecasts (2026-11-12;
+    // it was the no-evidence plan, which listed open exceptions).
+    expectedTools: [],
     expectedEvidence: () => [],
     expectedProposalKinds: [],
     forbiddenClaims: [/\btiktok\b[^.]*\b(will|would) (increase|grow|drive|deliver)\b/i],

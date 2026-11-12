@@ -18,7 +18,8 @@ describe("detectIntent", () => {
     ["How do refunds reconcile with collected revenue at B22?", "refunds", "B22"],
     ["Is any data feed stale?", "stale_sync", null],
     ["Investigate exception #2455: something", "exception", null],
-    ["What will TikTok ads do for us next year?", "no_evidence", null],
+    // A prediction: answered by saying the records cannot forecast (held-out IV-49).
+    ["What will TikTok ads do for us next year?", "forecast", null],
   ])("%s → %s", (question, intent, branch) => {
     const d = detectIntent(question, marketing, null);
     expect(d.intent).toBe(intent);

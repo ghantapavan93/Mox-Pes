@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { withTransaction, type Queryable } from "@/lib/db";
-import { payloadHash } from "@/lib/primitives";
+import { formatCents, payloadHash } from "@/lib/primitives";
 import { isExclusion, type MapContext, type MapExclusion, type MapFailure, type MapResult, type RawRecord, type RecordIdentity, type SourceClient, type SourceMapper, type SourceName } from "@/lib/adapters/contract";
 import { redactValue } from "@/lib/adapters/redact";
 import { isFailure } from "@/lib/adapters/validation";
@@ -32,7 +32,110 @@ interface Prepared {
    * rebuild from it reproduces the projection exactly (tests/integration/ledger-model.test.ts).
    */
   lastSeenAt?: Date;
+  /** No observation of this version in the batch took effect: it was held (see `heldPaymentObservations`). */
+  held?: boolean;
 }
+
+/** A payment version as the fold below sees it: which version, when first received, what it counts. */
+interface PaymentState {
+  externalId: string;
+  firstReceivedAt: number;
+  status: string;
+  amountCents: number;
+  /** Everything but the status: amount, payment date, ticket, customer, office, original payment. */
+  content: string;
+}
+
+const paymentContent = (r: { amountCents: unknown; paidAt: unknown; crmTicketId: unknown; crmCustomerId: unknown; officeId: unknown; originalPaymentId: unknown }) =>
+  JSON.stringify([Number(r.amountCents), r.paidAt instanceof Date ? r.paidAt.toISOString() : String(r.paidAt), String(r.crmTicketId ?? null), String(r.crmCustomerId), String(r.officeId), String(r.originalPaymentId ?? null)]);
+
+/** Cash a payment version counts: its amount when successful (a refund is negative), else nothing. */
+const countedCents = (s: Pick<PaymentState, "status" | "amountCents">) => (s.status === "successful" ? s.amountCents : 0);
+
+/** Why one delivery of an earlier payment version did not take effect. */
+interface HeldObservation {
+  live: PaymentState;
+  incoming: PaymentState;
+}
+
+/**
+ * R-37 · an earlier payment version observed again never adds cash back silently.
+ *
+ * Payments are ordered by observation (FieldRoutes sends no `dateUpdated`): a NEW version a poll
+ * returns is the vendor's current state and applies, a correction after a void included. What
+ * the ledger cannot tell apart is a stale replica re-serving an earlier version (the mock's
+ * `out_of_order` fault) from a real reversal. So a version that would raise the payment's counted
+ * cash is held when it is
+ *   (a) a version first received BEFORE the live one, seen again (successful again after a void,
+ *       a larger amount after a correction, a smaller refund), or
+ *   (b) the live VOIDED version with only its status put back: a void reverted with nothing else
+ *       changed, which is what a replica serving the pre-void version (never seen here) sends.
+ * Held: the delivery is counted, the live state stays, and a person sees the conflict. A new
+ * version that also changes what was paid (amount, date) is a correction and applies. One that
+ * lowers cash (a void seen again) applies: overstating cash is the error that must not pass unseen.
+ *
+ * Returns the held observations by their index in the batch. The live payments are locked first,
+ * in id order and before any raw event is written, so two batches folding the same payment run
+ * one after the other.
+ */
+async function heldPaymentObservations(tx: Queryable, source: SourceName, observations: readonly Prepared[]): Promise<Map<number, HeldObservation>> {
+  const held = new Map<number, HeldObservation>();
+  if (source !== "crm") return held;
+  type Row = { status: string; amountCents: number; paidAt: Date; crmTicketId: number | null; crmCustomerId: number; officeId: number; originalPaymentId: number | null };
+  const payments = observations.flatMap((p, index) =>
+    p.identity.entity === "payment" && p.identity.versionClock === "received" && p.result.ok && p.result.projection.table === "crm_payments"
+      ? [{ p, index, row: p.result.projection.row as Row }]
+      : [],
+  );
+  if (payments.length === 0) return held;
+  const ids = [...new Set(payments.map(({ p }) => p.identity.entityId))].map(Number).sort((a, b) => a - b);
+  const live = await tx.query<{ id: string; status: string; amount_cents: string; paid_at: Date; crm_ticket_id: string | null; crm_customer_id: string; office_id: number; original_payment_id: string | null; external_id: string; received_at: Date }>(
+    `select cp.crm_payment_id as id, cp.status, cp.amount_cents, cp.paid_at, cp.crm_ticket_id, cp.crm_customer_id, cp.office_id,
+            cp.original_payment_id, re.external_id, re.received_at
+     from crm_payments cp join raw_events re on re.id = cp.raw_event_id
+     where cp.crm_payment_id = any($1::bigint[]) order by cp.crm_payment_id for update of cp`,
+    [ids],
+  );
+  const stored = await tx.query<{ external_id: string; received_at: Date }>(
+    "select external_id, received_at from raw_events where source = 'crm' and external_id = any($1::text[])",
+    [[...new Set(payments.map(({ p }) => p.identity.externalId))]],
+  );
+  const firstReceived = new Map(stored.rows.map((r) => [r.external_id, r.received_at.getTime()]));
+  const current = new Map<string, PaymentState>(
+    live.rows.map((r) => [
+      r.id,
+      {
+        externalId: r.external_id,
+        firstReceivedAt: r.received_at.getTime(),
+        status: r.status,
+        amountCents: Number(r.amount_cents),
+        content: paymentContent({ amountCents: r.amount_cents, paidAt: r.paid_at, crmTicketId: r.crm_ticket_id, crmCustomerId: r.crm_customer_id, officeId: r.office_id, originalPaymentId: r.original_payment_id }),
+      },
+    ]),
+  );
+  for (const { p, index, row } of payments) {
+    if (!firstReceived.has(p.identity.externalId)) firstReceived.set(p.identity.externalId, p.receivedAt.getTime());
+    const incoming: PaymentState = { externalId: p.identity.externalId, firstReceivedAt: firstReceived.get(p.identity.externalId)!, status: row.status, amountCents: Number(row.amountCents), content: paymentContent(row) };
+    const now = current.get(p.identity.entityId);
+    const addsCash = now !== undefined && now.externalId !== incoming.externalId && countedCents(incoming) > countedCents(now);
+    const earlier = addsCash && incoming.firstReceivedAt < now.firstReceivedAt;
+    const voidReverted = addsCash && now.status === "voided" && incoming.content === now.content;
+    if (now && (earlier || voidReverted)) {
+      held.set(index, { live: now, incoming });
+      continue;
+    }
+    current.set(p.identity.entityId, incoming);
+  }
+  return held;
+}
+
+/**
+ * A held payment version first stored in the batch that held it is kept as evidence, not counted:
+ * status 'excluded' with this code, so a rebuild of the projection from the ledger (which reads
+ * projected versions in observation order) never puts it after the version it did not replace.
+ * Observed again when nothing holds it, it is projected after all.
+ */
+export const EARLIER_VERSION_HELD = "EARLIER_VERSION_HELD";
 
 /** Advisory lock key serialising file publication against live lead intake (see ingestRecords). */
 export const LEAD_WRITE_LOCK = 742_002;
@@ -127,19 +230,24 @@ export async function ingestRecords(
   // deadlock against an authorization waiting on a raw event this batch already touched.
   if (source === "ads") await lockCurrencyShared(tx);
 
+  // Delivery order inside a batch is receipt order: record i is received i ms after record 0.
+  const observations = records.map((record, index) => prepare(record, mapper, { ...args.ctx, receivedAt: new Date(now.getTime() + index) }, now));
+  const held = await heldPaymentObservations(tx, source, observations);
   const prepared = new Map<string, Prepared>();
   const repeatsInBatch = new Map<string, number>();
   const inBatchConflicts: Prepared[] = [];
-  for (const [index, record] of records.entries()) {
-    // Delivery order inside a batch is receipt order: record i is received i ms after record 0.
-    const p = prepare(record, mapper, { ...args.ctx, receivedAt: new Date(now.getTime() + index) }, now);
+  for (const [index, p] of observations.entries()) {
+    const isHeld = held.has(index);
     const existing = prepared.get(p.identity.externalId);
-    if (!existing) prepared.set(p.identity.externalId, { ...p, lastSeenAt: p.receivedAt });
+    if (!existing) prepared.set(p.identity.externalId, isHeld ? { ...p, held: true } : { ...p, lastSeenAt: p.receivedAt });
     else if (existing.hash === p.hash) {
       repeatsInBatch.set(p.identity.externalId, (repeatsInBatch.get(p.identity.externalId) ?? 0) + 1);
+      // A held observation is counted as a delivery and moves nothing.
+      if (isHeld) continue;
       existing.lastSeenAt = p.receivedAt;
+      existing.held = false;
       // A receipt-ordered version seen again later in the batch is the latest observation:
-      // an in-batch A, B, A must end on A, as it does across batches.
+      // an in-batch A, B, A must end on A, as it does across batches (unless R-37 holds it).
       if (p.identity.versionClock === "received") existing.result = p.result;
     } else inBatchConflicts.push(p); // same version, different content in one batch: keep the first, record the second
   }
@@ -152,11 +260,11 @@ export async function ingestRecords(
     payload: p.payload,
     payloadHash: p.hash,
     occurredAt: p.identity.occurredAt.toISOString(),
-    status: p.result.ok ? "projected" : isExclusion(p.result) ? "excluded" : "quarantined",
+    status: p.held ? "excluded" : p.result.ok ? "projected" : isExclusion(p.result) ? "excluded" : "quarantined",
     errorCode: p.result.ok || isExclusion(p.result) ? null : p.result.code,
     errorDetail: p.result.ok || isExclusion(p.result) ? null : p.result.detail,
-    exclusionCode: isExclusion(p.result) ? p.result.code : null,
-    exclusionDetail: isExclusion(p.result) ? p.result.detail : null,
+    exclusionCode: p.held ? EARLIER_VERSION_HELD : isExclusion(p.result) ? p.result.code : null,
+    exclusionDetail: p.held ? "an earlier payment version received after a later one, that would add cash back; held for a person (R-37)" : isExclusion(p.result) ? p.result.detail : null,
     deliveryCount: 1 + (repeatsInBatch.get(p.identity.externalId) ?? 0),
     receivedAt: p.receivedAt.toISOString(),
     lastSeenAt: (p.lastSeenAt ?? p.receivedAt).toISOString(),
@@ -176,17 +284,24 @@ export async function ingestRecords(
   const reobserved: ProjectionItem[] = [];
   const exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }> = [];
   if (seen.length > 0) {
-    const existing = await tx.query<{ id: string; external_id: string; payload_hash: string; status: string }>(
-      "select id, external_id, payload_hash, status from raw_events where source = $1 and external_id = any($2::text[])",
+    const existing = await tx.query<{ id: string; external_id: string; payload_hash: string; status: string; exclusion_code: string | null }>(
+      "select id, external_id, payload_hash, status, exclusion_code from raw_events where source = $1 and external_id = any($2::text[])",
       [source, seen],
     );
-    const duplicates: Array<{ id: number; at: string; n: number }> = [];
+    const duplicates: Array<{ id: number; at: string | null; n: number }> = [];
+    const released: number[] = [];
     for (const row of existing.rows) {
       const incoming = prepared.get(row.external_id)!;
       if (incoming.hash === row.payload_hash) {
-        duplicates.push({ id: Number(row.id), at: (incoming.lastSeenAt ?? incoming.receivedAt).toISOString(), n: 1 + (repeatsInBatch.get(row.external_id) ?? 0) });
+        // A held re-observation is counted but does not move the version's observation clock,
+        // so a rebuild of the projection from the ledger keeps the later version too.
+        duplicates.push({ id: Number(row.id), at: incoming.held ? null : (incoming.lastSeenAt ?? incoming.receivedAt).toISOString(), n: 1 + (repeatsInBatch.get(row.external_id) ?? 0) });
         stats.duplicates += 1 + (repeatsInBatch.get(row.external_id) ?? 0);
-        if (incoming.identity.versionClock === "received" && incoming.result.ok && row.status === "projected") {
+        if (incoming.held) continue;
+        // A version held earlier and now observed with nothing holding it is projected after all.
+        const wasHeld = row.status === "excluded" && row.exclusion_code === EARLIER_VERSION_HELD;
+        if (wasHeld && incoming.result.ok) released.push(Number(row.id));
+        if (incoming.identity.versionClock === "received" && incoming.result.ok && (row.status === "projected" || wasHeld)) {
           // Upserts skip rows already pointing at this raw event, so an unchanged re-read
           // costs nothing; an A -> B -> A flip restores A.
           reobserved.push({ projection: incoming.result.projection, rawEventId: Number(row.id) });
@@ -209,6 +324,9 @@ export async function ingestRecords(
         [JSON.stringify(duplicates)],
       );
     }
+    if (released.length > 0) {
+      await tx.query("update raw_events set status = 'projected', exclusion_code = null, exclusion_detail = null where id = any($1::bigint[])", [released]);
+    }
   }
 
   for (const p of inBatchConflicts) {
@@ -217,9 +335,18 @@ export async function ingestRecords(
     if (storedId !== null) await recordPayloadConflict(tx, { source, rawEventId: storedId, externalId: p.identity.externalId, incoming: p, now });
   }
 
+  // Every held observation, recorded for a person against the stored version it re-delivered.
+  stats.conflicts += held.size;
+  for (const [index, h] of held) {
+    const p = observations[index];
+    const storedId = insertedIds.get(p.identity.externalId) ?? (await rawEventId(tx, source, p.identity.externalId));
+    if (storedId !== null) await recordStaleVersion(tx, { source, rawEventId: storedId, entityId: p.identity.entityId, held: h, now });
+  }
+
   const items: ProjectionItem[] = [];
   for (const [externalId, rawEventId] of insertedIds) {
     const p = prepared.get(externalId)!;
+    if (p.held) continue; // stored as evidence; it does not take effect
     if (p.result.ok) items.push({ projection: p.result.projection, rawEventId });
     else if (isExclusion(p.result)) {
       stats.excluded = (stats.excluded ?? 0) + 1;
@@ -424,6 +551,47 @@ async function projectIsolated(tx: Queryable, items: ProjectionItem[]): Promise<
     }
   }
   return { failed, changed, held: report.held };
+}
+
+/**
+ * A held earlier payment version (R-37), as a payload conflict a person closes once the source is
+ * checked: "is this a stale copy, or did the source really reverse the later state?". One per
+ * (version, later version); a repeat counts a delivery.
+ */
+async function recordStaleVersion(
+  tx: Queryable,
+  args: { source: string; rawEventId: number; entityId: string; held: HeldObservation; now: Date },
+): Promise<void> {
+  const { source, rawEventId, entityId, held, now } = args;
+  const cash = countedCents(held.incoming) - countedCents(held.live);
+  await tx.query(
+    `insert into exceptions (kind, severity, fingerprint, branch_id, subject_type, subject_id, summary, evidence,
+       first_detected_at, last_detected_at, customer_ids)
+     select 'payload_conflict', 'high', $1, payload_branch(re.payload), 'raw_event', $2, $3, $4, $5, $5,
+       case when re.payload ->> 'customerID' ~ '^[0-9]{1,18}$' then array[(re.payload ->> 'customerID')::bigint] else '{}'::bigint[] end
+     from raw_events re where re.id = $6
+     on conflict (fingerprint) do update set last_detected_at = excluded.last_detected_at,
+       evidence = exceptions.evidence || jsonb_build_object('deliveries', coalesce((exceptions.evidence->>'deliveries')::int, 1) + 1)`,
+    [
+      `payload_conflict:${source}:${held.incoming.externalId}:after:${held.live.externalId}`,
+      String(rawEventId),
+      `${source} re-sent an earlier version of payment ${entityId} (${held.incoming.status}) after a later one (${held.live.status}): it would add ${formatCents(cash)} of cash back, so the later version was kept`,
+      JSON.stringify({
+        conflict: "earlier_version_after_later",
+        externalId: held.incoming.externalId,
+        heldRawEventId: rawEventId,
+        liveExternalId: held.live.externalId,
+        liveStatus: held.live.status,
+        liveAmountCents: held.live.amountCents,
+        incomingStatus: held.incoming.status,
+        incomingAmountCents: held.incoming.amountCents,
+        cashCentsHeld: cash,
+        deliveries: 1,
+      }),
+      now,
+      rawEventId,
+    ],
+  );
 }
 
 async function recordPayloadConflict(

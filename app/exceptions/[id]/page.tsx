@@ -34,6 +34,10 @@ export default function ExceptionPage(props: Props) {
   );
 }
 
+/** A held payment version (R-37, lib/ingest/ingest.ts): a payload conflict of another shape. */
+const HELD_VERSION_WHY =
+  "The CRM sent a payment version that would put cash back, after a later version had removed it (a void, a lower amount or a larger refund). Payments carry no update time, so a stale copy cannot be told from a real reversal: the later version was kept and this one is stored as evidence. Check the payment in the CRM; close this once checked.";
+
 const WHY: Record<string, string> = {
   quarantined_source_records:
     "Records failed validation and were held back instead of being guessed at. Until they are replayed, every downstream number that depends on them is understated — here, customers who called in look like they came from nowhere.",
@@ -82,7 +86,7 @@ async function ExceptionDetail({ params }: Props) {
         description={
           <>
             <p className="font-medium text-text" data-testid="exception-summary">{exception.summary}</p>
-            <p className="mt-1 max-w-3xl">{WHY[exception.kind]}</p>
+            <p className="mt-1 max-w-3xl">{(exception.evidence as { conflict?: unknown } | null)?.conflict === "earlier_version_after_later" ? HELD_VERSION_WHY : WHY[exception.kind]}</p>
           </>
         }
         actions={

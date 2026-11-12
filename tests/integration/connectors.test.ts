@@ -442,6 +442,27 @@ describe("sync jobs", () => {
     expect(await count("select count(*) n from raw_events where entity_id = '9001'")).toBe(2);
   });
 
+  it("a stale replica serving a payment's pre-void version does not count it as cash again (R-37)", async () => {
+    // Payments carry no dateUpdated, so the source clock cannot reject the stale version as it
+    // does for an appointment (above); the ledger holds it instead of resurrecting the cash.
+    const paid = new Date("2026-10-31T12:40:00Z");
+    const voidedAt = new Date("2026-10-31T12:45:00Z");
+    const successful = crm.payment(9101, 7001, 4001, "B01", "149.00", paid);
+    const voided = crm.payment(9101, 7001, 4001, "B01", "149.00", paid);
+    (voided.payload as Record<string, unknown>).status = "2";
+    world.push(version(successful, paid), version(voided, voidedAt));
+    await sync([OFFICE_A], ["payment"]);
+    await runPendingJobs(runtime());
+    expect(await one(pool, "select status from crm_payments where crm_payment_id = 9101")).toEqual({ status: "voided" });
+
+    await fault({ kind: "out_of_order", officeId: OFFICE_A, entity: "payment", remaining: 1 });
+    const { created: [id] } = await sync([OFFICE_A], ["payment"]);
+    await runPendingJobs(runtime());
+    expect((await job(id)).stats).toMatchObject({ fetched: 1, inserted: 1 }); // the stale version is logged…
+    expect(await one(pool, "select status from crm_payments where crm_payment_id = 9101")).toEqual({ status: "voided" }); // …and does not count
+    expect(await count("select count(*) n from exceptions where kind = 'payload_conflict' and evidence->>'conflict' = 'earlier_version_after_later'")).toBe(1);
+  });
+
   it("a record that disappears from search results is not deleted downstream", async () => {
     addCustomers(OFFICE_A, 3, 400_000, new Date("2026-10-31T12:40:00Z"));
     await sync([OFFICE_A]);

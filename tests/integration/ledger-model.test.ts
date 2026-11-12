@@ -85,13 +85,28 @@ function history(seed: number) {
   return { deliveries, batches };
 }
 
-/** The source semantics, as a fold over the deliveries in order. */
+/**
+ * The source semantics, as a fold over the deliveries in order. A payment's latest delivery wins
+ * (it is the source's current state), except that a delivery never raises the payment's counted
+ * cash when it is a version first delivered BEFORE the live one, or the live VOIDED version with
+ * only its status changed (R-37: what a stale replica serves; held for a person).
+ */
 function model(deliveries: ReturnType<typeof history>["deliveries"]) {
   const payments = new Map<number, PaymentVersion>();
   const customers = new Map<number, { updated: number; phone: string }>();
-  for (const d of deliveries) {
-    if (d.kind === "payment") payments.set(d.version.id, d.version);
-    else {
+  const firstDelivered = new Map<string, number>();
+  const key = (v: PaymentVersion) => `${v.id}:${v.amount}:${v.status}:${v.original}`;
+  const counted = (v: PaymentVersion) => (v.status === "1" ? cents(v.amount) : 0);
+  for (const [at, d] of deliveries.entries()) {
+    if (d.kind === "payment") {
+      if (!firstDelivered.has(key(d.version))) firstDelivered.set(key(d.version), at);
+      const live = payments.get(d.version.id);
+      const addsCash = live !== undefined && key(live) !== key(d.version) && counted(d.version) > counted(live);
+      const earlier = addsCash && firstDelivered.get(key(d.version))! < firstDelivered.get(key(live!))!;
+      const voidReverted = addsCash && live!.status === "2" && live!.amount === d.version.amount && live!.original === d.version.original;
+      const stale = earlier || voidReverted;
+      if (!stale) payments.set(d.version.id, d.version);
+    } else {
       const cur = customers.get(d.id);
       if (!cur || d.updated > cur.updated) customers.set(d.id, { updated: d.updated, phone: d.phone });
     }
@@ -159,13 +174,15 @@ describe("ledger lifecycle · model-based", () => {
 });
 
 describe("ledger lifecycle · targeted cases", () => {
-  it("an in-batch flip A, B, A of a payment ends on A, as it does across batches", async () => {
+  it("an in-batch flip A, B, A of a payment does not bring the void's cash back, as across batches (R-37)", async () => {
+    // Until R-37 this ended on A: an earlier successful copy after the void counted as cash again.
     const a = crm.payment(7101, 1001, 4001, "B01", "149.00", hours(1));
     const b = crm.payment(7101, 1001, 4001, "B01", "149.00", hours(1), "1");
     (b.payload as Record<string, unknown>).status = "2"; // voided
     await ingest(pool, "crm", [a, b, a]);
-    expect(await one(pool, "select status from crm_payments where crm_payment_id = 7101")).toEqual({ status: "successful" });
+    expect(await one(pool, "select status from crm_payments where crm_payment_id = 7101")).toEqual({ status: "voided" });
     expect(await one(pool, "select delivery_count::int as n from raw_events where entity_id = '7101' and payload->>'status' = '1'")).toEqual({ n: 2 });
+    expect(await one(pool, "select count(*)::int as n from exceptions where kind = 'payload_conflict' and evidence->>'conflict' = 'earlier_version_after_later'")).toEqual({ n: 1 });
   });
 
   it("a CRM id arriving from another brand's office is quarantined instead of moving the customer", async () => {

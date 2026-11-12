@@ -46,7 +46,10 @@ describe("review regressions", () => {
 
     await ingest(pool, "crm", [pay("1", "99.00")], { now: at(73) });
     expect(await one(pool, "select status, amount_cents from crm_payments where crm_payment_id = 7001")).toMatchObject({ status: "successful", amount_cents: "9900" });
-    expect((await one(pool, "select count(*) n from exceptions where kind = 'payload_conflict'")).n).toBe("0");
+    // No same-version payload conflict. The void reverted at at(71) with nothing else changed is
+    // held for a person since R-37 (one exception); the corrected amount at at(73) applies.
+    expect((await one(pool, "select count(*) n from exceptions where kind = 'payload_conflict' and evidence->>'conflict' is null")).n).toBe("0");
+    expect((await one(pool, "select count(*) n from exceptions where kind = 'payload_conflict' and evidence->>'conflict' = 'earlier_version_after_later'")).n).toBe("1");
   });
 
   it("F3: spend totals do not depend on the database session time zone", async () => {

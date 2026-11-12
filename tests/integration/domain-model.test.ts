@@ -144,17 +144,19 @@ describe("domain events", () => {
     expect(retry).toEqual({ consumer: "reconciliation", status: "ran", delivered: 1 });
   });
 
-  it("a re-observed version that changes live rows (void → successful → void) wakes reconciliation (audit 2026-11-09, A-1)", async () => {
+  it("a re-observed version that changes live rows (void → corrected → void) wakes reconciliation (audit 2026-11-09, A-1)", async () => {
     const at = (h: number) => new Date(Date.UTC(2026, 9, 5, 15) + h * 3_600_000);
     const a = acquisition(2, "B01", "+12125550122", at(0));
     await ingest(pool, "crm", a.crm.slice(0, 5));
-    const pay = (status: "voided" | "successful") => {
-      const r = crm.payment(7001, a.customerId, a.ticketId, "B01", "149.00", at(60));
+    // The reinstatement is a correction (new amount): a void reverted with nothing else changed is
+    // held since R-37 (tests/integration/payment-revisions.test.ts), and would change no live row.
+    const pay = (status: "voided" | "successful", amount = "149.00") => {
+      const r = crm.payment(7001, a.customerId, a.ticketId, "B01", amount, at(60));
       if (status === "voided") (r.payload as Record<string, unknown>).status = "2";
       return r;
     };
     await ingest(pool, "crm", [pay("voided")], { now: at(70) });
-    await ingest(pool, "crm", [pay("successful")], { now: at(71) });
+    await ingest(pool, "crm", [pay("successful", "139.00")], { now: at(71) });
     await dispatchEvents(pool);
     const stored = await events("intake.records_stored");
 

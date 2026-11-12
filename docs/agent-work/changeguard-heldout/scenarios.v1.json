@@ -1,0 +1,1329 @@
+{
+  "version": "v1",
+  "author": "independent-reviewer-agent",
+  "writtenAt": "2026-11-11",
+  "scenarios": [
+    {
+      "id": "HO-01",
+      "category": "valid_mapping",
+      "title": "Unmapped Google Search campaign whose calls all land at B12 is mapped to B12, released and verified",
+      "rationale": "Unanimous own-lead evidence agrees with the proposal (BR-1) and the move is within one brand, so it is routine two-person work; release must move exactly the campaign's spend out of unallocated (BR-4, FI-2) and monitoring with agreeing post-release leads verifies it (BR-9).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "B12 | Search | Termite", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 80.25 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B12", "count": 14, "fromDay": 2, "toDay": 23 }
+        ],
+        "customers": [
+          { "key": "k1", "campaign": "c1", "branch": "B12", "day": 9, "amount": "149.00" },
+          { "key": "k2", "campaign": "c1", "branch": "B12", "day": 15, "amount": "189.00" }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B12", "reason": "New campaign, calls route to B12", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } },
+        { "do": "add_leads", "day": 28, "via": "call", "campaign": "c1", "branch": "B12", "count": 4, "fromDay": 26, "toDay": 28 },
+        { "do": "monitor", "as": "marketing", "ref": "ch1", "day": 29, "expect": { "outcome": "accepted", "status": "verified" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B12" },
+        "statuses": { "ch1": "verified" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5", "FI-6"],
+        "notes": "Release moves exactly 1926.00 (24 days x 80.25) from unallocated to B12; no other branch moves. Verification must not claim a CAC or revenue improvement (BR-10)."
+      }
+    },
+    {
+      "id": "HO-02",
+      "category": "valid_mapping",
+      "title": "Microsoft campaign mapped to B33 whose leads were all human-corrected to B34 is remapped to B34",
+      "rationale": "BR-1 defines lead evidence as the branch after human correction; all nine corrected calls plus three web forms point to B34, so B33 -> B34 is routine and the release moves exactly the campaign spend between two Moxie branches (FI-2, FI-3).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "microsoft_ads", "name": "Bing | Rodent | Mesa East", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 33.40 }], "mappedTo": "B33" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B33", "count": 9, "fromDay": 3, "toDay": 22 },
+          { "via": "web", "campaign": "c1", "branch": "B34", "count": 3, "fromDay": 5, "toDay": 20 }
+        ],
+        "leadCorrections": [{ "campaign": "c1", "fromBranch": "B33", "toBranch": "B34", "count": 9 }]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B34", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "engineer", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B34" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5"],
+        "notes": "B33 -801.60, B34 +801.60 (24 x 33.40). Uncorrected capture-system branch (B33) must not be read as contradicting evidence."
+      }
+    },
+    {
+      "id": "HO-03",
+      "category": "valid_mapping",
+      "title": "Joshua's Meta campaign moved B41 -> B43 inside the Joshua's brand on web-form evidence",
+      "rationale": "All eleven web leads carrying the campaign's utm_campaign arrive at B43, a Joshua's branch like the current B41, so the change is within one brand and agrees with evidence (BR-1, BR-3); brand total for joshuas is unchanged (FI-5).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Joshua's | Spring Ants | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 20, "dollarsPerDay": 27.15 }], "mappedTo": "B41" }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B43", "count": 11, "fromDay": 2, "toDay": 20 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing2", "ref": "ch1", "campaign": "c1", "branch": "B43", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B43" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5"],
+        "notes": "B41 -543.00, B43 +543.00 (20 x 27.15). Joshua's brand total unchanged; Moxie and Mission untouched."
+      }
+    },
+    {
+      "id": "HO-04",
+      "category": "valid_mapping",
+      "title": "Author's blocked mapping to B18 is superseded by a corrected resubmission to B19",
+      "rationale": "The first proposal contradicts all twelve calls at B19 and must fail its preview (BR-1); the author's corrected resubmission supersedes it (BR-13) and is routine, and the superseded change can never be approved.",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Termite Inspection | Phoenix NE", "spend": [{ "fromDay": 4, "toDay": 24, "dollarsPerDay": 61.00 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B19", "count": 12, "fromDay": 4, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B18", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } },
+        { "do": "resubmit", "as": "marketing", "ref": "ch2", "supersedes": "ch1", "campaign": "c1", "branch": "B19", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused" } },
+        { "do": "approve", "as": "approver", "ref": "ch2", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "superseded", "ch2": "approved" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-05",
+      "category": "unsafe_mapping",
+      "title": "Mapping to a branch that does not exist (B99)",
+      "rationale": "Branch ids outside B01-B44 do not exist; mapping spend to B99 would remove it from every real branch and brand, so it must be refused at the preview and never become approvable (BR-4, FI-4, FI-5).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Gilbert South", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 52.75 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B21", "count": 6, "fromDay": 3, "toDay": 21 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B99", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "refused" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4", "FI-5"],
+        "notes": "If the system rejects B99 at request validation instead of recording a failed preview, that is equally safe, but nothing may reach ready_for_review."
+      }
+    },
+    {
+      "id": "HO-06",
+      "category": "unsafe_mapping",
+      "title": "Mapping an ad-platform campaign id that does not exist",
+      "rationale": "A mapping for a campaign with no spend feed and no leads has nothing to move and cannot be checked against evidence; it is invalid and must not become approvable or touch any existing mapping (BR-2, FI-4).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | General Pest | Chandler", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 41.00 }], "mappedTo": "B02" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B02", "count": 7, "fromDay": 2, "toDay": 22 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "unknown", "branch": "B02", "expect": { "outcome": "either", "class": "BLOCK" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B02" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "outcome 'either': refusing the request outright or recording it as preflight_failed are both correct. It must never reach ready_for_review, and c1 must stay at B02."
+      }
+    },
+    {
+      "id": "HO-07",
+      "category": "unsafe_mapping",
+      "title": "Unmapped mosquito campaign with 27 leads all at B08 proposed to B15",
+      "rationale": "Every call and web form carrying the campaign id arrives at B08; mapping it to B15 contradicts the campaign's own evidence and would silently give B15 spend it did not generate (BR-1). Refusals must leave everything unchanged (FI-4).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Mosquito | Search | Summer", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 95.60 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B08", "count": 20, "fromDay": 1, "toDay": 24 },
+          { "via": "web", "campaign": "c1", "branch": "B08", "count": 7, "fromDay": 3, "toDay": 23 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B15", "reason": "B15 is short of leads", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused" } },
+        { "do": "release", "as": "engineer", "ref": "ch1", "expect": { "outcome": "refused" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-08",
+      "category": "unsafe_mapping",
+      "title": "Campaign named 'B12 | ...' whose leads all arrive at B19 proposed to B12",
+      "rationale": "The branch prefix in a campaign name is a convention, not an authority; the fourteen leads carrying the campaign id all land at B19, so a mapping to B12 contradicts the evidence and must be blocked (BR-1).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "B12 | Search | Termite", "spend": [{ "fromDay": 2, "toDay": 24, "dollarsPerDay": 58.90 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B19", "count": 10, "fromDay": 2, "toDay": 24 },
+          { "via": "web", "campaign": "c1", "branch": "B19", "count": 4, "fromDay": 6, "toDay": 20 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B12", "reason": "Name says B12", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-09",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Meta campaign with spend but no lead carrying its id",
+      "rationale": "With no lead evidence the system cannot confirm the branch and must not treat absence as agreement (BR-2): the change may go to approval only with the missing evidence flagged for a person to accept.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Fall Pest Promo | Awareness", "spend": [{ "fromDay": 5, "toDay": 24, "dollarsPerDay": 40.00 }], "mappedTo": null }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B26", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "The preview must state that no lead carries the campaign id; an ALLOW with no uncertainty shown is wrong."
+      }
+    },
+    {
+      "id": "HO-10",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "LSA campaign whose calls split 6 / 5 between B03 and B04",
+      "rationale": "Evidence split across two branches cannot be resolved by the system (BR-2); proposing the slightly larger branch must surface the split for a person rather than pass as routine.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Chandler-Tempe Border", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 70.10 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B03", "count": 6, "fromDay": 1, "toDay": 24 },
+          { "via": "call", "campaign": "c1", "branch": "B04", "count": 5, "fromDay": 2, "toDay": 23 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing2", "ref": "ch1", "campaign": "c1", "branch": "B03", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-11",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Brand-search campaign where B10's leads carry no campaign id",
+      "rationale": "Only leads carrying the campaign's id are its evidence (BR-1); 24 campaign-less calls and forms at B10 say nothing about this campaign, so the evidence is missing and a person must decide (BR-2).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Brand | Moxie | Exact", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 22.50 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "web", "campaign": null, "branch": "B10", "count": 15, "fromDay": 1, "toDay": 24 },
+          { "via": "call", "campaign": null, "branch": "B10", "count": 9, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B10", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "Treating branch-level leads without a campaign id as this campaign's evidence would be a false ALLOW."
+      }
+    },
+    {
+      "id": "HO-12",
+      "category": "sparse_or_contradictory_evidence",
+      "title": "Human corrections turn unanimous B16 evidence into a 4 / 4 split with B17",
+      "rationale": "Evidence is read after human branch corrections (BR-1); four of eight calls were corrected to B17, so the evidence is split and the proposal to B16 needs a person (BR-2).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "microsoft_ads", "name": "Bing | Termite | North Valley", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 18.90 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B16", "count": 8, "fromDay": 2, "toDay": 22 }
+        ],
+        "leadCorrections": [{ "campaign": "c1", "fromBranch": "B16", "toBranch": "B17", "count": 4 }]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B16", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-13",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Joshua's campaign with all leads at B41 proposed to Moxie branch B12",
+      "rationale": "Both the current mapping and every lead are Joshua's; mapping to a Moxie branch moves spend across brands against the evidence, which is never routine and must be refused (BR-1, BR-3, FI-5).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Joshua's | Search | Termite", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 110.00 }], "mappedTo": "B41" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B41", "count": 16, "fromDay": 1, "toDay": 24 }
+        ],
+        "customers": [
+          { "key": "k1", "campaign": "c1", "branch": "B41", "day": 12, "amount": "219.00" }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B12", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B41" },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4", "FI-5", "FI-6"]
+      }
+    },
+    {
+      "id": "HO-14",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Unmapped Meta campaign with leads split between Mission B29 and Moxie B07, proposed to B07",
+      "rationale": "Half the campaign's leads are Mission's, so mapping to Moxie is a cross-brand allocation (BR-3) on split evidence (BR-2); only a person who knows which ad account it belongs to can decide, with both flags shown.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Summer Scorpion | Lead Form", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 36.35 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B29", "count": 7, "fromDay": 1, "toDay": 24 },
+          { "via": "web", "campaign": "c1", "branch": "B07", "count": 6, "fromDay": 2, "toDay": 23 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B07", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4", "FI-5"],
+        "notes": "BLOCK is also safe; ALLOW (no cross-brand flag) is wrong."
+      }
+    },
+    {
+      "id": "HO-15",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Migrated PMax successor of a Joshua's LSA campaign proposed to Moxie branch B02",
+      "rationale": "The successor's own calls all land at Joshua's B40 and its predecessor maps to B40; mapping it to Moxie B02 contradicts evidence and crosses brands (BR-1, BR-3). Lineage is context that reinforces the refusal.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c0", "platform": "google_lsa", "name": "LSA | Joshua's | Tucson", "spend": [{ "fromDay": 1, "toDay": 12, "dollarsPerDay": 48.00 }], "mappedTo": "B40" },
+          { "key": "c1", "platform": "google_ads", "name": "PMax | Joshua's | Tucson LSA", "spend": [{ "fromDay": 13, "toDay": 24, "dollarsPerDay": 51.20 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c0", "branch": "B40", "count": 11, "fromDay": 1, "toDay": 12 },
+          { "via": "call", "campaign": "c1", "branch": "B40", "count": 9, "fromDay": 13, "toDay": 24 }
+        ],
+        "lineage": [{ "predecessor": "c0", "successor": "c1", "day": 12 }]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B02", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c0": "B40", "c1": null },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4", "FI-5"]
+      }
+    },
+    {
+      "id": "HO-16",
+      "category": "cross_brand_or_branch_conflict",
+      "title": "Request to split one campaign's spend 60 / 40 across B13 and B14",
+      "rationale": "A campaign maps to exactly one branch (brief section 1); a fractional allocation is not a change the product models, so the honest answer is UNSUPPORTED rather than silently applying one branch (BR-4).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Termite | West Valley", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 67.80 }], "mappedTo": "B13" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B13", "count": 6, "fromDay": 1, "toDay": 24 },
+          { "via": "call", "campaign": "c1", "branch": "B14", "count": 4, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose_kind", "as": "marketing", "ref": "ch1", "kind": "split_mapping", "payload": { "campaign": "c1", "allocations": [{ "branch": "B13", "share": 0.6 }, { "branch": "B14", "share": 0.4 }] }, "expect": { "outcome": "either", "class": "UNSUPPORTED" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B13" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "payload.campaign uses the local key c1; the runner should substitute the real campaign id if it translates payloads. Either refusing or recording-as-unsupported is fine; no mapping may change."
+      }
+    },
+    {
+      "id": "HO-17",
+      "category": "historical_mapping_effect",
+      "title": "Effective-dated remap: B12 until Oct 14, B13 from Oct 15",
+      "rationale": "Mappings are not effective-dated and apply to the campaign's whole history; honouring effectiveFrom is impossible, and silently applying a whole-history move instead would shift Oct 1-14 spend to B13 (BR-4, BR-10). The correct answer is UNSUPPORTED.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "B12 | Search | Termite", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 64.00 }], "mappedTo": "B12" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B12", "count": 8, "fromDay": 1, "toDay": 14 },
+          { "via": "call", "campaign": "c1", "branch": "B13", "count": 7, "fromDay": 15, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B13", "payloadExtra": { "effectiveFrom": "2026-10-15" }, "reason": "Territory moved to B13 on Oct 15", "expect": { "outcome": "either", "class": "UNSUPPORTED" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B12" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "Must not drop effectiveFrom and proceed as an ordinary whole-history remap."
+      }
+    },
+    {
+      "id": "HO-18",
+      "category": "historical_mapping_effect",
+      "title": "Territory handover without an effective date: whole-history remap B22 -> B23",
+      "rationale": "Leads moved from B22 (days 1-13) to B23 (days 14-24); a remap applies to all history, so B23 would receive spend from days its leads went to B22. Evidence is split over time (BR-2) and the whole-history effect must be shown for a person to accept (BR-4).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Scottsdale North", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 57.30 }], "mappedTo": "B22" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B22", "count": 10, "fromDay": 1, "toDay": 13 },
+          { "via": "call", "campaign": "c1", "branch": "B23", "count": 9, "fromDay": 14, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B23", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B22" },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "Preview should show all 1375.20 (24 x 57.30) moving, including days 1-13."
+      }
+    },
+    {
+      "id": "HO-19",
+      "category": "historical_mapping_effect",
+      "title": "Correcting a long-wrong mapping moves its whole history; a sibling campaign stays put",
+      "rationale": "All eighteen leads point to B11, so the remap is routine (BR-1); release moves exactly the campaign's full 24-day spend B09 -> B11 and must not touch the other campaign mapped to B09 (BR-4, FI-2, FI-3).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Pest | Glendale", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 45.10 }], "mappedTo": "B09" },
+          { "key": "c2", "platform": "google_ads", "name": "Search | Pest | Peoria", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 30.00 }], "mappedTo": "B09" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B11", "count": 13, "fromDay": 1, "toDay": 24 },
+          { "via": "web", "campaign": "c1", "branch": "B11", "count": 5, "fromDay": 4, "toDay": 20 },
+          { "via": "call", "campaign": "c2", "branch": "B09", "count": 9, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B11", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B11", "c2": "B09" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5"],
+        "notes": "B09 -1082.40, B11 +1082.40. c2's 720.00 stays at B09."
+      }
+    },
+    {
+      "id": "HO-20",
+      "category": "historical_mapping_effect",
+      "title": "Mission LSA migrated to PMax: successor mapped to the predecessor's branch on its own evidence",
+      "rationale": "The successor's own ten calls land at B28, the same branch its predecessor maps to; the mapping agrees with evidence and lineage context, stays inside Mission, and is routine (BR-1, BR-3).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c0", "platform": "google_lsa", "name": "LSA | Mission | Mesa", "spend": [{ "fromDay": 1, "toDay": 10, "dollarsPerDay": 39.00 }], "mappedTo": "B28" },
+          { "key": "c1", "platform": "google_ads", "name": "PMax | Mission | Mesa LSA", "spend": [{ "fromDay": 11, "toDay": 24, "dollarsPerDay": 42.65 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c0", "branch": "B28", "count": 8, "fromDay": 1, "toDay": 10 },
+          { "via": "call", "campaign": "c1", "branch": "B28", "count": 10, "fromDay": 11, "toDay": 24 }
+        ],
+        "lineage": [{ "predecessor": "c0", "successor": "c1", "day": 10 }]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B28", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "engineer", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c0": "B28", "c1": "B28" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5"],
+        "notes": "Unallocated -597.10, B28 +597.10 (14 x 42.65)."
+      }
+    },
+    {
+      "id": "HO-21",
+      "category": "benign_schema_drift",
+      "title": "Call-tracking account starts sending the caller under caller.number",
+      "rationale": "The deployed calls mapper reads both customer_phone_number and caller.number with the same meaning, so all samples map with no refusals; the shape is benign (BR-11). It can be approved as a review, but never released from this tool (BR-11).",
+      "severityIfWrong": "medium",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "calls", "entity": "call",
+          "samples": [
+            { "id": "CAL8f21a0c1", "branch_tag": "B12", "start_time": "2026-10-14T10:12:33.000-07:00", "tracking_phone_number": "+14805550101", "source": "Google Ads", "gclid": "Cj0KCQjw_synthetic_01", "campaign": "21900341", "agent_note": "termite swarm in garage", "customer_phone_number": "+14805550142" },
+            { "id": "CAL8f21a0c2", "branch_tag": "B12", "start_time": "2026-10-14T11:40:05.000-07:00", "tracking_phone_number": "+14805550101", "source": "Google Ads", "gclid": null, "campaign": "21900341", "agent_note": null, "caller": { "number": "+14805550157" } },
+            { "id": "CAL8f21a0c3", "branch_tag": "B13", "start_time": "2026-10-15T09:02:47.000-07:00", "tracking_phone_number": "+14805550102", "source": "Google LSA", "gclid": null, "campaign": "LSA-77120", "agent_note": "scorpions, quarterly plan", "caller": { "number": "+14805550163" } }
+          ],
+          "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" }
+        },
+        { "do": "approve", "as": "approver", "ref": "sc1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "engineer", "ref": "sc1", "expect": { "outcome": "refused" } }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "approved" },
+        "invariants": ["FI-1", "FI-4", "FI-6"],
+        "notes": "Release of a source contract must always be refused: activating a mapper is a code deployment."
+      }
+    },
+    {
+      "id": "HO-22",
+      "category": "benign_schema_drift",
+      "title": "Google migrates an LSA campaign into Google Ads as PERFORMANCE_MAX with local services enabled",
+      "rationale": "The deployed ads mapper reads campaignType and localServicesEnabled and files this spend as google_lsa, so every sample maps correctly with no refusal; the drift is benign for paid spend and channel spend (BR-11).",
+      "severityIfWrong": "medium",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "marketing", "ref": "sc1", "source": "ads", "entity": "spend_day",
+          "samples": [
+            { "platform": "google_ads", "accountId": "5512039874", "campaignId": "21044551", "campaignName": "PMax | Moxie | Gilbert LSA", "date": "2026-10-20", "costMicros": "48210000", "clicks": 14, "conversions": 3, "fetchedAt": "2026-10-21T06:00:00Z", "campaignType": "PERFORMANCE_MAX", "localServicesEnabled": true },
+            { "platform": "google_ads", "accountId": "5512039874", "campaignId": "21044551", "campaignName": "PMax | Moxie | Gilbert LSA", "date": "2026-10-21", "costMicros": "51870000", "clicks": 17, "conversions": 2, "fetchedAt": "2026-10-22T06:00:00Z", "campaignType": "PERFORMANCE_MAX", "localServicesEnabled": true },
+            { "platform": "google_ads", "accountId": "5512039874", "campaignId": "21044552", "campaignName": "Search | Moxie | Gilbert Termite", "date": "2026-10-21", "costMicros": "36400000", "clicks": 22, "conversions": 1, "fetchedAt": "2026-10-22T06:00:00Z", "campaignType": "SEARCH", "localServicesEnabled": false }
+          ],
+          "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-23",
+      "category": "benign_schema_drift",
+      "title": "Website pipeline adds page_url and a context object to lead events",
+      "rationale": "The added fields are not read by the deployed web mapper and change no projected lead (branch, channel, campaign, contact hashes); all samples map. The structural difference should be reported, but nothing a person must decide (BR-11).",
+      "severityIfWrong": "low",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "web", "entity": "lead",
+          "samples": [
+            { "messageId": "msg-2f7c1e01", "timestamp": "2026-10-18T15:21:09Z", "context": { "userAgent": "Mozilla/5.0", "locale": "en-US" }, "properties": { "form": "quote", "branch_id": "B05", "zip": "85201", "phone": "+14805550111", "email": null, "utm_source": "google", "utm_medium": "cpc", "utm_campaign": "21900377", "gclid": "Cj0KCQjw_synthetic_11", "message": "ants in kitchen", "page_url": "/quote/ants" } },
+            { "messageId": "msg-2f7c1e02", "timestamp": "2026-10-18T16:02:44Z", "context": { "userAgent": "Mozilla/5.0", "locale": "en-US" }, "properties": { "form": "contact", "branch_id": "B05", "zip": "85203", "phone": null, "email": "pat.sample@example.com", "utm_source": "facebook", "utm_medium": "paid_social", "utm_campaign": "fb-23310", "gclid": null, "message": null, "page_url": "/contact" } },
+            { "messageId": "msg-2f7c1e03", "timestamp": "2026-10-19T09:47:30Z", "context": { "userAgent": "Mozilla/5.0", "locale": "es-US" }, "properties": { "form": "checkout", "branch_id": "B06", "zip": "85210", "phone": "+14805550118", "email": "lee.example@example.com", "utm_source": null, "utm_medium": null, "utm_campaign": null, "gclid": null, "message": "quarterly plan", "page_url": "/checkout/quarterly" } }
+          ],
+          "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "ready_for_review" },
+        "invariants": ["FI-4"]
+      }
+    },
+    {
+      "id": "HO-24",
+      "category": "benign_schema_drift",
+      "title": "Call payloads start carrying direction, spam and lead_status (outbound and spam calls included)",
+      "rationale": "The deployed calls mapper ignores these fields, so outbound, spam and not-a-lead calls would be counted as inbound leads and as campaign lead evidence with no signal (VENDOR-CONTRACTS C-3). Every record maps, but the drift is not benign; a person must see it (BR-11, BR-1).",
+      "severityIfWrong": "high",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "calls", "entity": "call",
+          "samples": [
+            { "id": "CAL9a00b101", "branch_tag": "B03", "start_time": "2026-10-20T08:15:00.000-07:00", "tracking_phone_number": "+14805550120", "source": "Google Ads", "gclid": "Cj0KCQjw_synthetic_21", "campaign": "21900402", "agent_note": null, "customer_phone_number": "+14805550171", "direction": "inbound", "spam": false, "lead_status": "good_lead" },
+            { "id": "CAL9a00b102", "branch_tag": "B03", "start_time": "2026-10-20T09:30:12.000-07:00", "tracking_phone_number": "+14805550120", "source": "Google Ads", "gclid": null, "campaign": "21900402", "agent_note": "callback to customer", "customer_phone_number": "+14805550171", "direction": "outbound", "spam": false, "lead_status": null },
+            { "id": "CAL9a00b103", "branch_tag": "B03", "start_time": "2026-10-20T10:01:55.000-07:00", "tracking_phone_number": "+14805550120", "source": "Google Ads", "gclid": null, "campaign": "21900402", "agent_note": null, "customer_phone_number": "+14805550189", "direction": "inbound", "spam": true, "lead_status": null },
+            { "id": "CAL9a00b104", "branch_tag": "B04", "start_time": "2026-10-20T13:44:21.000-07:00", "tracking_phone_number": "+14805550121", "source": "Bing", "gclid": null, "campaign": "ms-55012", "agent_note": "vendor sales call", "caller": { "number": "+14805550193" }, "direction": "inbound", "spam": false, "lead_status": "not_a_lead" }
+          ],
+          "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "ready_for_review" },
+        "invariants": ["FI-4"],
+        "notes": "ALLOW because 'zero refused records' is wrong: three of four samples would be silently counted as leads. BLOCK is also acceptable."
+      }
+    },
+    {
+      "id": "HO-25",
+      "category": "benign_schema_drift",
+      "title": "Ad spend for a newly linked account arrives with currencyCode CAD",
+      "rationale": "The deployed ads mapper has no currency and would sum CAD cost as US dollars into branch paid spend and CAC with no signal (VENDOR-CONTRACTS G-3). All records map, so a naive check says benign; a reviewer must see that this changes money meaning (BR-11, FI-1).",
+      "severityIfWrong": "high",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "marketing", "ref": "sc1", "source": "ads", "entity": "spend_day",
+          "samples": [
+            { "platform": "google_ads", "accountId": "7734021198", "campaignId": "22011870", "campaignName": "Search | Termite | Snowbird", "date": "2026-10-19", "costMicros": "71500000", "clicks": 31, "conversions": 2, "fetchedAt": "2026-10-20T06:00:00Z", "campaignType": "SEARCH", "localServicesEnabled": false, "currencyCode": "CAD" },
+            { "platform": "google_ads", "accountId": "7734021198", "campaignId": "22011870", "campaignName": "Search | Termite | Snowbird", "date": "2026-10-20", "costMicros": "68250000", "clicks": 27, "conversions": 1, "fetchedAt": "2026-10-21T06:00:00Z", "campaignType": "SEARCH", "localServicesEnabled": false, "currencyCode": "CAD" }
+          ],
+          "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "BLOCK is also acceptable; ALLOW with no currency flag is wrong."
+      }
+    },
+    {
+      "id": "HO-26",
+      "category": "benign_schema_drift",
+      "title": "Native CallRail call objects (company_id, no branch_tag) sent straight to intake",
+      "rationale": "The deployed calls mapper needs branch_tag; native objects identify the account by company_id, so every sample is refused and no lead or campaign evidence would arrive (VENDOR-CONTRACTS C-2). The report must show 100% refused and the dependent lead and evidence metrics (BR-11).",
+      "severityIfWrong": "high",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "calls", "entity": "call",
+          "samples": [
+            { "id": "CAL7e55d201", "company_id": "COM4410293", "start_time": "2026-10-21T12:05:10.000-07:00", "tracking_phone_number": "+14805550130", "customer_phone_number": "+14805550175", "source": "Google Ads", "gclid": "Cj0KCQjw_synthetic_31", "campaign": "21900455", "agent_note": null, "answered": true, "duration": 214 },
+            { "id": "CAL7e55d202", "company_id": "COM4410293", "start_time": "2026-10-21T12:48:51.000-07:00", "tracking_phone_number": "+14805550130", "customer_phone_number": "+14805550178", "source": "Google LSA", "gclid": null, "campaign": null, "agent_note": "bed bugs", "answered": true, "duration": 389 },
+            { "id": "CAL7e55d203", "company_id": "COM4410293", "start_time": "2026-10-21T14:10:02.000-07:00", "tracking_phone_number": "+14805550131", "customer_phone_number": "+14805550181", "source": "Direct", "gclid": null, "campaign": null, "agent_note": null, "answered": false, "duration": 0 }
+          ],
+          "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "preflight_failed" },
+        "invariants": ["FI-4"]
+      }
+    },
+    {
+      "id": "HO-27",
+      "category": "refunds_and_source_corrections",
+      "title": "A partial refund arrives between approval and release of a valid remap",
+      "rationale": "A refund changes collected revenue, not the mapping or the lead evidence the approval is bound to (BR-7), so release proceeds; company collected revenue must fall by exactly the refund and by nothing from the release (FI-6, FI-2).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Termite | Peoria", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 58.40 }], "mappedTo": "B14" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B15", "count": 11, "fromDay": 1, "toDay": 24 }
+        ],
+        "customers": [
+          { "key": "k1", "campaign": "c1", "branch": "B15", "day": 8, "amount": "245.00" },
+          { "key": "k2", "campaign": "c1", "branch": "B15", "day": 14, "amount": "149.00" }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B15", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "refund", "customer": "k1", "amount": "60.00", "day": 26 },
+        { "do": "reconcile", "day": 26 },
+        { "do": "release", "as": "marketing", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B15" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5", "FI-6"],
+        "notes": "B14 -1401.60, B15 +1401.60. Collected revenue company-wide = 394.00 - 60.00 = 334.00; the release changes no revenue or customer count."
+      }
+    },
+    {
+      "id": "HO-28",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM payment feed with a payment, a partial refund referencing it, and a void",
+      "rationale": "A refund as a negative amount referencing originalPaymentID and a voided status are both handled by the deployed CRM mapper (VENDOR-CONTRACTS F-1), so collected revenue nets correctly and the shape is benign (BR-11, FI-6).",
+      "severityIfWrong": "medium",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "crm", "entity": "payment",
+          "samples": [
+            { "paymentID": "880101", "customerID": "551201", "officeID": "15", "ticketID": "770301", "amount": "189.00", "originalPaymentID": "0", "status": "1", "date": "2026-10-09 10:15:00" },
+            { "paymentID": "880102", "customerID": "551201", "officeID": "15", "ticketID": "770301", "amount": "-60.00", "originalPaymentID": "880101", "status": "1", "date": "2026-10-22 14:02:00" },
+            { "paymentID": "880103", "customerID": "551202", "officeID": "15", "ticketID": "770302", "amount": "149.00", "originalPaymentID": "0", "status": "2", "date": "2026-10-12 09:30:00" }
+          ],
+          "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "ready_for_review" },
+        "invariants": ["FI-4", "FI-6"],
+        "notes": "officeID '15' is assumed to be a known CRM office (B15). If the runner's office ids differ, substitute B15's CRM office id."
+      }
+    },
+    {
+      "id": "HO-29",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM payments start arriving with invoiceIDs / paymentApplications instead of ticketID",
+      "rationale": "The deployed CRM mapper requires ticketID, so every real-shaped payment is refused (VENDOR-CONTRACTS F-2, F-3) and collected revenue would stop growing; the report must show all records refused and collected revenue as the dependent metric (BR-11, FI-6).",
+      "severityIfWrong": "high",
+      "world": {},
+      "steps": [
+        {
+          "do": "propose_source_contract", "as": "engineer", "ref": "sc1", "source": "crm", "entity": "payment",
+          "samples": [
+            { "paymentID": "880201", "customerID": "551301", "officeID": "22", "invoiceIDs": "770411", "paymentApplications": [{ "ticketID": "770411", "appliedAmount": "175.00" }], "unassignedAmount": "0.00", "amount": "175.00", "originalPaymentID": "0", "status": "1", "date": "2026-10-16 11:20:00" },
+            { "paymentID": "880202", "customerID": "551302", "officeID": "22", "invoiceIDs": "", "paymentApplications": [], "unassignedAmount": "99.00", "amount": "99.00", "originalPaymentID": "0", "status": "1", "date": "2026-10-17 08:05:00" },
+            { "paymentID": "880203", "customerID": "551301", "officeID": "22", "invoiceIDs": "770411", "paymentApplications": [{ "ticketID": "770411", "appliedAmount": "-25.00" }], "unassignedAmount": "0.00", "amount": "-25.00", "originalPaymentID": "880201", "status": "1", "date": "2026-10-23 15:40:00" }
+          ],
+          "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" }
+        }
+      ],
+      "expectFinal": {
+        "statuses": { "sc1": "preflight_failed" },
+        "invariants": ["FI-4", "FI-6"],
+        "notes": "officeID '22' assumed to be B22's CRM office."
+      }
+    },
+    {
+      "id": "HO-30",
+      "category": "refunds_and_source_corrections",
+      "title": "Ad platform restates one day's spend between approval and release",
+      "rationale": "A spend restatement is a routine source correction (VENDOR-CONTRACTS G-5) that changes neither the current mapping nor the lead evidence the approval is bound to (BR-7), so release proceeds, but it must move exactly the campaign's spend as restated, not the preview's figure (BR-8, FI-2).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Termite Swarm | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 25.00 }], "mappedTo": "B06" }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B05", "count": 9, "fromDay": 2, "toDay": 23 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B05", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "restate_spend", "campaign": "c1", "day": 10, "dollars": 12.40 },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B05" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-4"],
+        "notes": "restate_spend's day is the restated spend date (Oct 10); the step itself runs on day 25 after the approval. Preview predicted 600.00; release must move 587.40 (600.00 - 25.00 + 12.40) and verify against that. Invalidating the approval instead is safe but over-strict."
+      }
+    },
+    {
+      "id": "HO-31",
+      "category": "refunds_and_source_corrections",
+      "title": "CRM moves a customer to another office between approval and release",
+      "rationale": "A CRM office change moves that customer's collected revenue between branches by the CRM's authority (FI-6), not the mapping's; it does not change lead evidence or the current mapping, so release proceeds and its verification must not attribute the CRM move to itself (BR-8, FI-3).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Surprise West", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 44.00 }], "mappedTo": "B35" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B36", "count": 8, "fromDay": 1, "toDay": 24 }
+        ],
+        "customers": [
+          { "key": "k1", "campaign": "c1", "branch": "B36", "day": 11, "amount": "175.00" }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing2", "ref": "ch1", "campaign": "c1", "branch": "B36", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "crm_move_customer", "customer": "k1", "toBranch": "B37", "day": 26 },
+        { "do": "release", "as": "marketing2", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B36" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-5", "FI-6"],
+        "notes": "B35 -1056.00, B36 +1056.00 spend. k1's 175.00 is at B37 after the CRM move; company collected revenue stays 175.00."
+      }
+    },
+    {
+      "id": "HO-32",
+      "category": "evidence_changed_after_preflight",
+      "title": "Fifteen contradicting calls arrive at the current branch after approval",
+      "rationale": "After approval, new calls make the evidence point back to B06 (15 vs 10), so the base the approver reviewed has moved; release must re-check, refuse, invalidate the approval and return the change to draft without moving anything (BR-7, BR-8, FI-4).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Ants | Tempe", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 66.70 }], "mappedTo": "B06" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B07", "count": 10, "fromDay": 2, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B07", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "add_leads", "day": 26, "via": "call", "campaign": "c1", "branch": "B06", "count": 15, "fromDay": 26, "toDay": 26 },
+        { "do": "release", "as": "marketing", "ref": "ch1", "day": 27, "expect": { "outcome": "refused", "status": "draft" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B06" },
+        "statuses": { "ch1": "draft" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-33",
+      "category": "evidence_changed_after_preflight",
+      "title": "Incident fix remaps the campaign through the old path after approval; re-preview, re-approve, release",
+      "rationale": "The current mapping moved (B24 -> B26) outside this tool after approval, so the approval no longer describes the base and release must be refused and invalidated (BR-7, BR-8); a fresh preview from B26 is routine again and its release moves spend from B26, not B24 (FI-2).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "microsoft_ads", "name": "Bing | Pest | Fountain Hills", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 31.15 }], "mappedTo": "B24" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B25", "count": 9, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B25", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "remap_outside", "as": "engineer", "campaign": "c1", "branch": "B26", "day": 26 },
+        { "do": "release", "as": "marketing", "ref": "ch1", "day": 27, "expect": { "outcome": "refused", "status": "draft" } },
+        { "do": "rerun_preflight", "as": "marketing", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver2", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B25" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-4"],
+        "notes": "The final release moves 747.60 from B26 to B25; B24 does not move during the release."
+      }
+    },
+    {
+      "id": "HO-34",
+      "category": "evidence_changed_after_preflight",
+      "title": "More agreeing calls arrive after approval; the base still points the same way",
+      "rationale": "New calls at the proposed branch strengthen, not move, the evidence, and the current mapping is unchanged, so the base is the same and release must go through (BR-7, BR-8); refusing would be over-strict.",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Ahwatukee", "spend": [{ "fromDay": 3, "toDay": 24, "dollarsPerDay": 38.25 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B32", "count": 7, "fromDay": 3, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B32", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "add_leads", "day": 26, "via": "call", "campaign": "c1", "branch": "B32", "count": 5, "fromDay": 26, "toDay": 26 },
+        { "do": "release", "as": "engineer", "ref": "ch1", "day": 27, "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B32" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3"],
+        "notes": "Unallocated -841.50, B32 +841.50 (22 x 38.25)."
+      }
+    },
+    {
+      "id": "HO-35",
+      "category": "evidence_changed_after_preflight",
+      "title": "All leads are corrected to another branch after the preview but before approval",
+      "rationale": "A person corrected all six leads from B20 to B21 after the preview, so the evidence the preview showed is stale; approving must be refused (BR-7), and a re-run preview now contradicts the evidence and must fail (BR-1, FI-4).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Roach Control | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 21.60 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B20", "count": 6, "fromDay": 2, "toDay": 22 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B20", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "correct_leads", "campaign": "c1", "fromBranch": "B20", "toBranch": "B21", "count": 6 },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused" } },
+        { "do": "rerun_preflight", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "preflight_failed" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-36",
+      "category": "concurrency",
+      "title": "A second change for the same campaign while the first is in review, and again while it is approved",
+      "rationale": "Two changes for the same campaign may not both be in review or approved (BR-12); the second and third proposals, though identical in content, must not reach ready_for_review while ch1 is open.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Rodent | Mesa", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 49.95 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B10", "count": 9, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B10", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "propose", "as": "marketing2", "ref": "ch2", "campaign": "c1", "branch": "B10", "expect": { "outcome": "either", "class": "BLOCK" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "propose", "as": "marketing2", "ref": "ch3", "campaign": "c1", "branch": "B10", "expect": { "outcome": "either", "class": "BLOCK" } },
+        { "do": "approve", "as": "approver2", "ref": "ch2", "expect": { "outcome": "refused" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "ch2 and ch3 may be refused at request time or recorded without entering review; neither may be ready_for_review or approved."
+      }
+    },
+    {
+      "id": "HO-37",
+      "category": "concurrency",
+      "title": "Two people release the same approved change at the same moment",
+      "rationale": "Release applies an approved mapping once (BR-8); exactly one release may succeed, and spend must move exactly once (FI-2), never doubled out of B01.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Termite | Ahwatukee", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 120.00 }], "mappedTo": "B01" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B02", "count": 14, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B02", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        {
+          "do": "concurrently",
+          "steps": [
+            { "do": "release", "as": "marketing", "ref": "ch1", "label": "r-marketing", "expect": { "outcome": "either" } },
+            { "do": "release", "as": "engineer", "ref": "ch1", "label": "r-engineer", "expect": { "outcome": "either" } }
+          ]
+        }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B02" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3"],
+        "exactlyOneOf": [["r-marketing", "r-engineer"]],
+        "notes": "B01 -2880.00 and B02 +2880.00 exactly once."
+      }
+    },
+    {
+      "id": "HO-38",
+      "category": "concurrency",
+      "title": "Approver presents the identity of a different change under review (swap)",
+      "rationale": "An approval is bound to the exact configuration and preview reviewed (BR-7); presenting ch2's reviewed identity to approve ch1 must be refused, after which correct approvals of each still succeed.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Mission | Gold Canyon", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 34.70 }], "mappedTo": null },
+          { "key": "c2", "platform": "google_lsa", "name": "LSA | Mission | San Tan", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 29.10 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B30", "count": 8, "fromDay": 1, "toDay": 24 },
+          { "via": "call", "campaign": "c2", "branch": "B31", "count": 7, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B30", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "propose", "as": "marketing", "ref": "ch2", "campaign": "c2", "branch": "B31", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "hashesFrom": "ch2", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "approve", "as": "approver2", "ref": "ch2", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null, "c2": null },
+        "statuses": { "ch1": "approved", "ch2": "approved" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-39",
+      "category": "concurrency",
+      "title": "One approver rejects; a second approver then tries to approve and someone tries to release",
+      "rationale": "rejected is final (brief section 6); a later approval by another approver and any release must be refused, leaving the mapping untouched (FI-4).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Bed Bug | Retargeting", "spend": [{ "fromDay": 6, "toDay": 24, "dollarsPerDay": 17.25 }], "mappedTo": "B37" }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B38", "count": 8, "fromDay": 6, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B38", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "reject", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "rejected" } },
+        { "do": "approve", "as": "approver2", "ref": "ch1", "expect": { "outcome": "refused", "status": "rejected" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "refused", "status": "rejected" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B37" },
+        "statuses": { "ch1": "rejected" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-40",
+      "category": "unauthorized_action",
+      "title": "Author approves own change; a proposer without approve permission tries too",
+      "rationale": "Approval is by a different person with the approve permission, never the author (BR-6); both the engineer's self-approval and marketing's approval (no approve permission) must be refused, and only the approver's succeeds.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Scorpion | Cave Creek", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 53.35 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B18", "count": 10, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B18", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "engineer", "ref": "ch1", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "approve", "as": "marketing", "ref": "ch1", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "release", "as": "engineer", "ref": "ch1", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-41",
+      "category": "unauthorized_action",
+      "title": "Guest, B20 partner and Joshua's brand viewer try to propose a B20 mapping",
+      "rationale": "Proposing needs the propose permission and scope (BR-6); guest, partner (in scope but no permission) and brand (neither) must all be refused, while the same mapping from marketing is routine (BR-1).",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Partner Territory", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 26.40 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B20", "count": 5, "fromDay": 4, "toDay": 22 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "guest", "ref": "g1", "campaign": "c1", "branch": "B20", "expect": { "outcome": "refused", "class": "ALLOW" } },
+        { "do": "propose", "as": "partner", "ref": "p1", "campaign": "c1", "branch": "B20", "expect": { "outcome": "refused", "class": "ALLOW" } },
+        { "do": "propose", "as": "brand", "ref": "b1", "campaign": "c1", "branch": "B20", "expect": { "outcome": "refused", "class": "ALLOW" } },
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B20", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "class ALLOW on refused proposals labels the mapping content (safe); the refusal is about the actor. g1, p1 and b1 must leave no change record that can be approved."
+      }
+    },
+    {
+      "id": "HO-42",
+      "category": "unauthorized_action",
+      "title": "Brand viewer approves a Joshua's change; approver tries to release; a second marketer releases",
+      "rationale": "The brand viewer is in scope but lacks approve permission, and the approver lacks the propose permission needed to release (BR-6, section 5); both must be refused, while release by marketing2 (propose permission, not the approver) is accepted.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Joshua's | Termite | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 19.80 }], "mappedTo": "B42" }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B44", "count": 8, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B44", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "brand", "ref": "ch1", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "approver", "ref": "ch1", "expect": { "outcome": "refused", "status": "approved" } },
+        { "do": "release", "as": "brand", "ref": "ch1", "expect": { "outcome": "refused", "status": "approved" } },
+        { "do": "release", "as": "marketing2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B44" },
+        "statuses": { "ch1": "monitoring" },
+        "invariants": ["FI-1", "FI-2", "FI-3", "FI-4", "FI-5"],
+        "notes": "B42 -475.20, B44 +475.20 (24 x 19.80)."
+      }
+    },
+    {
+      "id": "HO-43",
+      "category": "unauthorized_action",
+      "title": "A different marketer resubmits someone else's blocked change",
+      "rationale": "Only the author may resubmit their own change (BR-13); marketing2's resubmission of marketing's change must be refused and must not supersede it, while the author's own corrected resubmission succeeds.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Mission | Search | General Pest", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 47.45 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B27", "count": 10, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B28", "expect": { "outcome": "accepted", "class": "BLOCK", "status": "preflight_failed" } },
+        { "do": "resubmit", "as": "marketing2", "ref": "ch2", "supersedes": "ch1", "campaign": "c1", "branch": "B27", "expect": { "outcome": "refused", "class": "ALLOW" } },
+        { "do": "resubmit", "as": "marketing", "ref": "ch3", "supersedes": "ch1", "campaign": "c1", "branch": "B27", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "superseded", "ch3": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"],
+        "notes": "After the refused ch2, ch1 must still be preflight_failed (not superseded) until ch3."
+      }
+    },
+    {
+      "id": "HO-44",
+      "category": "monitoring_and_recovery",
+      "title": "After a verified release, an incident fix remaps the campaign back through the old path",
+      "rationale": "Monitoring checks the mapping is still in place (BR-9); once it has been changed outside the tool the change must become recovery_required, and nothing may be rolled back or re-applied automatically, so the live mapping stays where the outside change put it.",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Termite | Queen Creek", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 73.80 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B22", "count": 12, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B22", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } },
+        { "do": "add_leads", "day": 26, "via": "call", "campaign": "c1", "branch": "B22", "count": 3, "fromDay": 26, "toDay": 26 },
+        { "do": "monitor", "as": "marketing", "ref": "ch1", "day": 26, "expect": { "outcome": "accepted", "status": "verified" } },
+        { "do": "remap_outside", "as": "engineer", "campaign": "c1", "branch": "B21", "day": 27 },
+        { "do": "monitor", "as": "marketing", "ref": "ch1", "day": 28, "expect": { "outcome": "accepted", "status": "recovery_required" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B21" },
+        "statuses": { "ch1": "recovery_required" },
+        "invariants": ["FI-1", "FI-5"],
+        "notes": "No automatic rollback or re-apply: c1 stays at B21 until a person proposes a compensating change."
+      }
+    },
+    {
+      "id": "HO-45",
+      "category": "monitoring_and_recovery",
+      "title": "Post-release calls arrive at the old branch; recovery needs a person-made compensating change",
+      "rationale": "Leads after release stop agreeing with the mapping (12 at B04 vs 2 at B05), so monitoring must move the verified change to recovery_required without rolling back (BR-9); the compensating proposal back to B04 faces split evidence and needs a person (BR-2).",
+      "severityIfWrong": "high",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_lsa", "name": "LSA | Mesa Central", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 62.35 }], "mappedTo": "B04" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B05", "count": 8, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing2", "ref": "ch1", "campaign": "c1", "branch": "B05", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } },
+        { "do": "add_leads", "day": 26, "via": "call", "campaign": "c1", "branch": "B05", "count": 2, "fromDay": 26, "toDay": 26 },
+        { "do": "monitor", "as": "marketing2", "ref": "ch1", "day": 26, "expect": { "outcome": "accepted", "status": "verified" } },
+        { "do": "add_leads", "day": 28, "via": "call", "campaign": "c1", "branch": "B04", "count": 12, "fromDay": 27, "toDay": 28 },
+        { "do": "monitor", "as": "marketing2", "ref": "ch1", "day": 29, "expect": { "outcome": "accepted", "status": "recovery_required" } },
+        { "do": "propose", "as": "marketing", "ref": "ch2", "campaign": "c1", "branch": "B04", "day": 29, "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B05" },
+        "statuses": { "ch1": "recovery_required", "ch2": "ready_for_review" },
+        "invariants": ["FI-1", "FI-2", "FI-5"],
+        "notes": "Release moved 1496.40 B04 -> B05; it must not be reversed automatically. ch2 is allowed because ch1 is final (BR-12 does not block it)."
+      }
+    },
+    {
+      "id": "HO-46",
+      "category": "monitoring_and_recovery",
+      "title": "Monitoring right after release with no new leads, then again once agreeing leads arrive",
+      "rationale": "With no post-release leads the system has nothing to confirm and must not claim verification or a business improvement (BR-2, BR-10); once agreeing leads arrive, monitoring verifies the change (BR-9).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Spider Season | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 20, "dollarsPerDay": 14.50 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B39", "count": 6, "fromDay": 1, "toDay": 20 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B39", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "release", "as": "marketing", "ref": "ch1", "expect": { "outcome": "accepted", "status": "monitoring" } },
+        { "do": "monitor", "as": "marketing", "ref": "ch1", "day": 26, "expect": { "outcome": "accepted" } },
+        { "do": "add_leads", "day": 28, "via": "web", "campaign": "c1", "branch": "B39", "count": 4, "fromDay": 26, "toDay": 28 },
+        { "do": "monitor", "as": "marketing", "ref": "ch1", "day": 29, "expect": { "outcome": "accepted", "status": "verified" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B39" },
+        "statuses": { "ch1": "verified" },
+        "invariants": ["FI-1", "FI-2", "FI-5"],
+        "notes": "The day-26 monitor may leave the change in monitoring or degraded, never recovery_required. No step may report a CAC or revenue improvement (BR-10)."
+      }
+    },
+    {
+      "id": "HO-47",
+      "category": "monitoring_and_recovery",
+      "title": "Monitoring is requested on changes that were never released",
+      "rationale": "Monitoring only exists after release (brief section 6); running it on a change in review or approved must be refused and must not change its status.",
+      "severityIfWrong": "low",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Search | Wasp | Anthem", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 28.80 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B17", "count": 7, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B17", "expect": { "outcome": "accepted", "class": "ALLOW", "status": "ready_for_review" } },
+        { "do": "monitor", "as": "engineer", "ref": "ch1", "expect": { "outcome": "refused", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } },
+        { "do": "monitor", "as": "engineer", "ref": "ch1", "expect": { "outcome": "refused", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-48",
+      "category": "human_review_only",
+      "title": "Campaign mapped to Mission B28 whose calls all land at Moxie B05",
+      "rationale": "Evidence supports B05, but the campaign's current mapping is Mission, so the move crosses brands and is never routine (BR-3); blocking would ignore the evidence (BR-1), so only a person who knows the campaign's ad account can decide.",
+      "severityIfWrong": "critical",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "google_ads", "name": "Mission | Search | Termite", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 54.20 }], "mappedTo": "B28" }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c1", "branch": "B05", "count": 13, "fromDay": 1, "toDay": 24 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing", "ref": "ch1", "campaign": "c1", "branch": "B05", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } },
+        { "do": "approve", "as": "approver", "ref": "ch1", "expect": { "outcome": "accepted", "status": "approved" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": "B28" },
+        "statuses": { "ch1": "approved" },
+        "invariants": ["FI-1", "FI-4", "FI-5"],
+        "notes": "The preview must flag the Mission -> Moxie brand change; ALLOW is wrong. BLOCK is safe but over-strict."
+      }
+    },
+    {
+      "id": "HO-49",
+      "category": "human_review_only",
+      "title": "PMax successor with no leads of its own, proposed to its predecessor's Mission branch",
+      "rationale": "Lineage is context for a reviewer, not lead evidence (brief section 2); the successor itself has no leads, so the system cannot decide and must flag the missing evidence while showing the predecessor's mapping (BR-2).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c0", "platform": "google_lsa", "name": "LSA | Mission | Apache Junction", "spend": [{ "fromDay": 1, "toDay": 11, "dollarsPerDay": 35.60 }], "mappedTo": "B30" },
+          { "key": "c1", "platform": "google_ads", "name": "PMax | Mission | Apache Junction LSA", "spend": [{ "fromDay": 12, "toDay": 24, "dollarsPerDay": 46.10 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "call", "campaign": "c0", "branch": "B30", "count": 9, "fromDay": 1, "toDay": 11 }
+        ],
+        "lineage": [{ "predecessor": "c0", "successor": "c1", "day": 11 }]
+      },
+      "steps": [
+        { "do": "propose", "as": "engineer", "ref": "ch1", "campaign": "c1", "branch": "B30", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c0": "B30", "c1": null },
+        "statuses": { "ch1": "ready_for_review" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    },
+    {
+      "id": "HO-50",
+      "category": "human_review_only",
+      "title": "Mission lead-ads campaign spread three ways across B27, B28 and B29; reviewer rejects",
+      "rationale": "No branch has a majority (5 / 4 / 4 across calls and forms), so the system cannot pick one (BR-2); it must send the change to a person with the split shown, and a rejection must leave the campaign unmapped (FI-4).",
+      "severityIfWrong": "medium",
+      "world": {
+        "campaigns": [
+          { "key": "c1", "platform": "meta", "name": "Mission | Fall | Lead Ads", "spend": [{ "fromDay": 1, "toDay": 24, "dollarsPerDay": 29.95 }], "mappedTo": null }
+        ],
+        "leads": [
+          { "via": "web", "campaign": "c1", "branch": "B27", "count": 5, "fromDay": 1, "toDay": 24 },
+          { "via": "call", "campaign": "c1", "branch": "B28", "count": 4, "fromDay": 2, "toDay": 23 },
+          { "via": "web", "campaign": "c1", "branch": "B29", "count": 4, "fromDay": 3, "toDay": 22 }
+        ]
+      },
+      "steps": [
+        { "do": "propose", "as": "marketing2", "ref": "ch1", "campaign": "c1", "branch": "B27", "expect": { "outcome": "accepted", "class": "NEEDS_REVIEW", "status": "ready_for_review" } },
+        { "do": "reject", "as": "approver2", "ref": "ch1", "expect": { "outcome": "accepted", "status": "rejected" } }
+      ],
+      "expectFinal": {
+        "mapping": { "c1": null },
+        "statuses": { "ch1": "rejected" },
+        "invariants": ["FI-1", "FI-4"]
+      }
+    }
+  ]
+}

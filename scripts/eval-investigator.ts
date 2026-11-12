@@ -62,6 +62,13 @@ const at = (day: number, month = 10, minute = 0) => new Date(Date.UTC(2026, mont
 const ymd = (day: number, month = 10) => `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 const CALL_SOURCE: Record<string, string> = { google_ads: "Google Ads", google_lsa: "Google LSA", meta: "Facebook", microsoft_ads: "Bing" };
 const UTM: Record<string, string> = { google_ads: "google", google_lsa: "google", meta: "facebook", microsoft_ads: "bing" };
+/**
+ * The call source for a lead or customer: its campaign's platform, or "Direct" (the branch's main
+ * line, no tracking: channel unknown) when the case gives no campaign. SCHEMA.md: a null campaign
+ * means no paid touch. First contact used "Google Ads" for a null campaign, which made such
+ * customers paid (google_search); fixed after first contact (evidence/ADJUDICATION.md).
+ */
+const sourceFor = (platform: string | undefined) => (platform ? CALL_SOURCE[platform] ?? "Google Ads" : "Direct");
 const STREAMS: Array<[string, string]> = [["ads", "ads"], ["calls", "calls"], ["web", "web"], ["d2d", "d2d"], ["crm.customer", "crm"], ["crm.subscription", "crm"], ["crm.appointment", "crm"], ["crm.ticket", "crm"], ["crm.payment", "crm"]];
 const hours = (h: number) => h * 3_600_000;
 
@@ -122,9 +129,9 @@ async function buildWorld(ctx: Ctx) {
       const time = at(day, l.month ?? 10, i % 50);
       const phone = phoneFor(ctx, l.phoneKey);
       if (l.via === "web") {
-        records.push({ entity: "lead", payload: { messageId: `${ctx.c.id}-w${ctx.n}`, timestamp: time.toISOString(), properties: { form: "quote", branch_id: branchOk(l.branch), zip: "85001", phone, email: null, utm_source: UTM[platform ?? "google_ads"] ?? "google", utm_medium: "cpc", utm_campaign: l.campaign ? ctx.ext(l.campaign) : null, gclid: null, message: l.agentNote ?? null } } });
+        records.push({ entity: "lead", payload: { messageId: `${ctx.c.id}-w${ctx.n}`, timestamp: time.toISOString(), properties: { form: "quote", branch_id: branchOk(l.branch), zip: "85001", phone, email: null, utm_source: platform ? UTM[platform] ?? "google" : null, utm_medium: platform ? "cpc" : null, utm_campaign: l.campaign ? ctx.ext(l.campaign) : null, gclid: null, message: l.agentNote ?? null } } });
       } else {
-        records.push(call(`${ctx.c.id}-c${ctx.n}`, branchOk(l.branch), phone, time, CALL_SOURCE[platform ?? "google_ads"] ?? "Google Ads", {
+        records.push(call(`${ctx.c.id}-c${ctx.n}`, branchOk(l.branch), phone, time, sourceFor(platform), {
           campaign: l.campaign ? ctx.ext(l.campaign) : null,
           agent_note: l.agentNote ?? null,
           ...(l.direction ? { direction: l.direction } : {}),
@@ -141,7 +148,10 @@ async function buildWorld(ctx: Ctx) {
     const n = ctx.n;
     const b = branchOk(k.branch);
     const sold = at(k.day, k.month ?? 10);
-    const done = new Date(sold.getTime() + hours(48));
+    // The case convention (FREEZE.md, designer note 4): a customer's `day` is the sale, the first
+    // service and the payment date. First contact serviced 48 h after the sale, which moved day-29
+    // and day-30 customers into the next month; fixed after first contact (evidence/ADJUDICATION.md).
+    const done = new Date(sold.getTime() + hours(1));
     const phone = phoneFor(ctx, k.phoneKey);
     const platform = k.campaign ? ctx.platforms.get(k.campaign) : undefined;
     const customerId = 1000 + n;
@@ -151,7 +161,7 @@ async function buildWorld(ctx: Ctx) {
     const invoice = k.invoiceAmount ?? "149.00";
     const paid = k.paidAmount ?? invoice;
     const completed = k.completed !== false;
-    await ingest(ctx.pool, "calls", [call(`${ctx.c.id}-k${n}`, b, phone, new Date(sold.getTime() - hours(1)), CALL_SOURCE[platform ?? "google_ads"] ?? "Google Ads", { campaign: k.campaign ? ctx.ext(k.campaign) : null })], { now: NOW });
+    await ingest(ctx.pool, "calls", [call(`${ctx.c.id}-k${n}`, b, phone, new Date(sold.getTime() - hours(1)), sourceFor(platform), { campaign: k.campaign ? ctx.ext(k.campaign) : null })], { now: NOW });
     const records: RawRecord[] = [
       crm.customer(customerId, b, phone, sold),
       crm.subscription(subId, customerId, b, sold),
@@ -273,7 +283,9 @@ async function runCase(pool: Pool, c: Case) {
   let error: string | null = null;
   const t0 = Date.now();
   try {
-    const out = await runInvestigation(pool, { question: c.ask.question, branchId: c.ask.branch, viewer, now: NOW, ...(c.mode === "claims" ? { client: scripted(c) } : { mode: "deterministic" as const }) });
+    // An omitted branch is a company-wide question (fixed after first contact, where three cases
+    // failed with "Unknown branch undefined"; see evidence/ADJUDICATION.md).
+    const out = await runInvestigation(pool, { question: c.ask.question, branchId: c.ask.branch ?? null, viewer, now: NOW, ...(c.mode === "claims" ? { client: scripted(c) } : { mode: "deterministic" as const }) });
     result = out.result;
     steps = out.steps.filter((s) => s.kind === "tool_call").map((s) => ({ tool: s.tool, status: s.status }));
     const supported = (result.claims ?? []).filter((x) => x.status === "SUPPORTED");
@@ -330,7 +342,15 @@ async function runCase(pool: Pool, c: Case) {
   return {
     id: c.id, category: c.category, mode: c.mode, severityIfWrong: c.severityIfWrong, outcome, error, latencyMs, millis: Date.now() - started,
     tools: steps.map((s) => `${s.tool}:${s.status}`),
-    claims: claims.map((x) => ({ status: x.status, type: x.type, text: x.text.slice(0, 300), numbers: x.numbers, reason: x.reason })),
+    claims: claims.map((x) => ({
+      status: x.status,
+      type: x.type,
+      text: x.text.slice(0, 300),
+      numbers: x.numbers,
+      reason: x.reason,
+      // Compact proofs (after first contact): what each proposition was checked against.
+      ...(x.proofs?.length ? { proofs: x.proofs.map((p) => ({ figure: p.figure, relation: p.relation, formula: p.formula, computed: p.computed, verdict: p.verdict, gap: p.gap, reason: p.reason.slice(0, 160) })) } : {}),
+    })),
     candidates: (c.candidates ?? []).map((cand) => ({ text: cand.text, expect: cand.expect, got: claims.find((x) => x.text === cand.text)?.status ?? "MISSING" })),
     findings,
     pass: !findings.some((f) => f.severity !== "info"),

@@ -41,6 +41,8 @@ import { branchRows, paidCac, totals, type BranchRow } from "@/lib/metrics/score
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { instantToWallTime } from "@/lib/primitives";
 import { BRANCH_BY_ID, BRANCHES, BRANDS } from "@/lib/reference";
+import { AnswerSchema, assureAnswer, type AnswerCheck } from "@/lib/shadow/answer";
+import { compareSnapshot, SnapshotSchema, type Snapshot, type SnapshotCheck } from "@/lib/shadow/snapshot";
 import { ForbiddenError, requirePermission, resolveScope, VIEWERS, type Viewer } from "@/lib/viewer";
 import { call, crm, freshDb, ingest, runReconcile } from "../tests/helpers";
 
@@ -538,6 +540,83 @@ async function askStep(ctx: Ctx, s: Step, r: StepResult) {
   }
 }
 
+// ── Shadow Mode steps (docs/agent-work/shadow-acceptance/STEPS.md) ───────────
+// The runner calls the product's comparator and answer checker as the named viewer and scores
+// what they report. It computes no expected value itself.
+
+async function shadowSnapshotStep(ctx: Ctx, s: Step, r: StepResult, now: Date): Promise<void> {
+  const e = (s.expect ?? {}) as { verdict?: string; dimensions?: string[]; productValue?: number | null; outcome?: string };
+  const fail = (sev: Severity, type: string, detail: string) => r.findings.push({ severity: sev, step: r.index, type, detail });
+  let parsed: Snapshot;
+  try {
+    parsed = SnapshotSchema.parse(s.snapshot);
+  } catch (error) {
+    // The product's API would answer 400: the input itself was refused.
+    r.outcome = "input_refused";
+    r.error = String((error as Error).message).slice(0, 400);
+    fail(e.verdict === "MATCH" ? "high" : "medium", "snapshot_input_refused", r.error);
+    return;
+  }
+  let result: SnapshotCheck;
+  try {
+    result = await compareSnapshot(ctx.pool, actor(s.as), parsed, now);
+  } catch (error) {
+    if (!(error instanceof ForbiddenError)) throw error;
+    r.outcome = "refused";
+    r.error = error.message;
+    if (e.outcome !== "refused") fail(e.verdict === "MATCH" ? "high" : "medium", "snapshot_refused", `expected ${e.verdict ?? "a verdict"}, system refused (${error.message})`);
+    return;
+  }
+  r.outcome = "accepted";
+  r.observed = { verdict: result.verdict, dimensions: result.dimensions, productValue: result.ours ? (result.ours.value === null ? null : result.ours.unit === "usd_cents" ? cents(result.ours.value) : result.ours.value) : null, findings: result.findings };
+  if (e.outcome === "refused") {
+    fail("critical", "snapshot_scope_leak", `expected a refusal, system answered ${result.verdict}`);
+    return;
+  }
+  if (e.verdict && e.verdict !== result.verdict) {
+    const sev: Severity = result.verdict === "MATCH" ? "critical" : e.verdict === "MATCH" ? "high" : "medium";
+    fail(sev, result.verdict === "MATCH" ? "false_certification" : e.verdict === "MATCH" ? "false_alarm" : "wrong_verdict", `expected ${e.verdict}, system ${result.verdict} (${result.findings.join(" | ").slice(0, 300)})`);
+  }
+  for (const d of e.dimensions ?? []) if (!(result.dimensions as string[]).includes(d)) fail("medium", "missing_dimension", `expected dimension ${d}, system reported ${result.dimensions.join(", ") || "none"}`);
+  if (e.productValue !== undefined) {
+    const got = (r.observed as { productValue: number | null }).productValue;
+    const same = e.productValue === null ? got === null : got !== null && Math.abs(got - e.productValue) < 0.005;
+    if (!same) fail("high", "wrong_product_value", `expected product value ${e.productValue}, system ${got}`);
+  }
+}
+
+/** The product's verdict for a quoted claim: the claim containing the quote, else the claims inside it. */
+function claimVerdict(claims: AnswerCheck["claims"], quote: string): string {
+  const containing = claims.find((c) => c.text.includes(quote));
+  if (containing) return containing.verdict;
+  const inside = claims.filter((c) => quote.includes(c.text));
+  if (inside.length === 0) return "none";
+  if (inside.some((c) => c.verdict === "OUT_OF_SCOPE")) return "OUT_OF_SCOPE";
+  if (inside.some((c) => c.verdict === "CONTRADICTED")) return "CONTRADICTED";
+  return inside.every((c) => c.verdict === "SUPPORTED") ? "SUPPORTED" : "UNSUPPORTED";
+}
+
+async function shadowAnswerStep(ctx: Ctx, s: Step, r: StepResult, now: Date): Promise<void> {
+  const e = (s.expect ?? {}) as { overall?: string; claims?: Array<{ quote: string; verdict: string }> };
+  const fail = (sev: Severity, type: string, detail: string) => r.findings.push({ severity: sev, step: r.index, type, detail });
+  const a = (s.answer ?? {}) as { question?: string; answer?: string; asOf?: string };
+  const input = AnswerSchema.parse({ system: "atlas-bi", asOf: a.asOf, question: a.question ?? "", answer: a.answer });
+  const result = await assureAnswer(ctx.pool, actor(s.as), input, now);
+  r.outcome = "accepted";
+  r.observed = { overall: result.overall, claims: result.claims.map((c) => ({ text: c.text, verdict: c.verdict, reason: c.reason })), entities: result.entities };
+  for (const c of e.claims ?? []) {
+    if (!input.answer.includes(c.quote)) throw new InvalidScenario(`quote not in the answer: "${c.quote}"`);
+    const got = claimVerdict(result.claims, c.quote);
+    if (got === c.verdict) continue;
+    const sev: Severity = got === "SUPPORTED" ? "critical" : c.verdict === "OUT_OF_SCOPE" ? "critical" : c.verdict === "SUPPORTED" ? "high" : "medium";
+    fail(sev, got === "SUPPORTED" ? "false_certification" : c.verdict === "OUT_OF_SCOPE" ? "scope_leak" : c.verdict === "SUPPORTED" ? "false_alarm" : "wrong_claim_verdict", `"${c.quote}": expected ${c.verdict}, system ${got}`);
+  }
+  if (e.overall && e.overall !== result.overall) {
+    const sev: Severity = result.overall === "SUPPORTED" ? "critical" : e.overall === "SUPPORTED" ? "high" : "medium";
+    fail(sev, "wrong_overall", `expected ${e.overall}, system ${result.overall}`);
+  }
+}
+
 async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<StepResult> {
   const r: StepResult = { index, do: s.do, as: s.as, label: s.label, outcome: "done", findings: [] };
   const e = (s.expect ?? {}) as Record<string, unknown>;
@@ -569,6 +648,14 @@ async function runStep(ctx: Ctx, s: Step, index: string, now: Date): Promise<Ste
       if (!same) fail(severity, "wrong_exceptions", `expected ${JSON.stringify(Object.fromEntries(want))}, system ${JSON.stringify(Object.fromEntries(actual))}`);
     }
     r.observed = observed;
+    return r;
+  }
+  if (s.do === "shadow_snapshot") {
+    await shadowSnapshotStep(ctx, s, r, now);
+    return r;
+  }
+  if (s.do === "shadow_answer") {
+    await shadowAnswerStep(ctx, s, r, now);
     return r;
   }
   if (s.do === "ask") {
@@ -701,6 +788,9 @@ async function runScenario(pool: Pool, sc: Scenario) {
     checks += (e.metrics as unknown[] | undefined)?.length ?? 0;
     checks += ["heldCurrency", "openExceptions", "outcome", "class", "status", "premiseHolds", "state"].filter((k) => k in e).length;
     checks += Object.keys((e.hypotheses as object | undefined) ?? {}).length + ((e.mustState as unknown[] | undefined)?.length ?? 0) + ((e.forbidden as unknown[] | undefined)?.length ?? 0) + ((e.mustNotMention as unknown[] | undefined)?.length ?? 0);
+    // Shadow Mode: a verdict (or refusal), each required dimension, a product value, each claim, an overall.
+    checks += ("verdict" in e && !("outcome" in e) ? 1 : 0) + ((e.dimensions as unknown[] | undefined)?.length ?? 0) + ("productValue" in e ? 1 : 0);
+    checks += ((e.claims as unknown[] | undefined)?.length ?? 0) + ("overall" in e ? 1 : 0);
   }
   const findings = results.flatMap((r) => r.findings);
   return { id: sc.id, title: sc.title, centre: sc.centre, severityIfWrong: sc.severityIfWrong, checks, failed: findings.filter((f) => f.severity !== "info").length, critical: findings.filter((f) => f.severity === "critical").length, millis: Date.now() - t0, findings, steps: results };

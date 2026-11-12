@@ -1,0 +1,18 @@
+PASS SH-01   27 checks, 0 failed (0 critical) · 1931 ms · B07's correct September and October figures all match, and a fully cor
+PASS SH-02   26 checks, 0 failed (0 critical) · 1231 ms · B15: wrong upstream values are mismatches, including a CAC whose only 
+PASS SH-03   29 checks, 0 failed (0 critical) · 1549 ms · B09 and B10: blended CAC, customers sold, invoice-date cash and lead-b
+FAIL SH-04   28 checks, 2 failed (0 critical) · 1300 ms · B22: inputs that cannot be compared are not determinable, a CAD figure
+       [medium] step 5:CAC on office-local days, value equal to the product's missing_dimension: expected dimension definition.periodBasis, system reported period
+       [medium] step 6:CAD and office-local days: order 1 wins missing_dimension: expected dimension definition.periodBasis, system reported period
+PASS SH-05   28 checks, 0 failed (0 critical) · 1594 ms · B11 and B16: spend held for an unstated currency makes agreeing figure
+PASS SH-06   17 checks, 0 failed (0 critical) · 1308 ms · B25: a stale CRM payment feed makes agreeing cash incomplete until it 
+CRIT SH-07   21 checks, 2 failed (2 critical) · 1443 ms · B33: unreadable ad records and a stale web feed make agreeing figures 
+       [critical] step 2:Oct spend agrees, ad records unread false_certification: expected INCOMPLETE_EVIDENCE, system MATCH (Both report $420.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))
+       [critical] step 9:Oct CAC after the web feed recovers: ad records still unread false_certification: expected INCOMPLETE_EVIDENCE, system MATCH (Both report $140.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))
+PASS SH-08   31 checks, 0 failed (0 critical) · 1696 ms · B36: Atlas's Oct 25 snapshots stop matching after a partial refund and
+PASS SH-09   35 checks, 0 failed (0 critical) · 1689 ms · B05: a late spam reclassification removes a paid customer that Atlas r
+PASS SH-10   35 checks, 0 failed (0 critical) · 1897 ms · Scope: the B20 partner and the joshuas brand user see only their own b
+FAIL SH-11   25 checks, 1 failed (0 critical) · 1994 ms · B03 and B04: Atlas answers with a wrong direction, a swapped branch an
+       [medium] step 3:Wrong throughout wrong_claim_verdict: "B03's paid CAC in August 2026 was $140.00": expected UNSUPPORTED, system CONTRADICTED
+PASS SH-12   18 checks, 0 failed (0 critical) · 1619 ms · B38: figures and instructions planted in a campaign name, a CRM note, 
+wrote C:/Temp/shadow-first-contact.json

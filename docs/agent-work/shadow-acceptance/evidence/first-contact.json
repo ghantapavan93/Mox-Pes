@@ -1,0 +1,2413 @@
+{
+  "scenarios": "docs/agent-work/shadow-acceptance/scenarios.v1.json",
+  "version": "v1",
+  "author": "independent shadow designer",
+  "ranAt": "2026-11-12T12:29:15.894Z",
+  "manifest": {
+    "scenarioFile": {
+      "path": "docs/agent-work/shadow-acceptance/scenarios.v1.json",
+      "sha256": "fa8f6d409fb0fad0afdf5a2920a716bed4dfb450544c2e00af173a2e1200cb7d",
+      "version": "v1",
+      "author": "independent shadow designer"
+    },
+    "scenarioHashes": {
+      "SH-01": "a0e079834369aa1a4db88bfa79570684dc0cb2761b8c74932935ba561316aef9",
+      "SH-02": "e4dd37adf95d1a6315e001c53f5a7b5d7323faad50ea1d473b97101c411cd25f",
+      "SH-03": "cda98fc0ab6fdcb14267d6083c2b53c08ca1327497495a8a9fac9df5e61ac862",
+      "SH-04": "dc0c866b1dcd19e093bddefb108956b319e8933a632308b4e0729a69f911a25c",
+      "SH-05": "74cb727bee5b5d056ecbed0eea32b0de0dff1ccb6e8d4e18aa43de1039ede5eb",
+      "SH-06": "89b4787c77c28e21290d4a0f8523fcf26097e645342a3c1e9204bd8d2da958fd",
+      "SH-07": "66a2d72b4502959c68948afa597b9676619e097845cca85320e3e62ed666e870",
+      "SH-08": "0071169a23791474813566a3d559a44bdc1ecd5f9f09efabdc942ffb1a79d9e9",
+      "SH-09": "b291f66fcb2cdd3ba1e94b78be5b1368e68034de16528c5bd2ddb772b824f66d",
+      "SH-10": "2ddf3d9ef062825073f4249d9c670e261999c32b865f542c145373a05ab4ed0f",
+      "SH-11": "e5d9557a81ddb4bb34866252643655f4ca214fc5e9de58591bf4ed032a7ee0fb",
+      "SH-12": "79f3727ca826005dff1ab5bbd0f76c4a8daa40c896d8559b75f0d6ec98b81121"
+    },
+    "code": {
+      "commit": "a7113cf93690b5e9f910b848da96be39e3f07360",
+      "dirty": true
+    },
+    "mappers": {
+      "crm": "1.0",
+      "calls": "1.2",
+      "web": "1.0",
+      "d2d": "1.0",
+      "ads": "1.2"
+    },
+    "environment": {
+      "node": "v22.14.0",
+      "platform": "win32",
+      "postgres": "17.8"
+    },
+    "randomness": "none drawn: every input is stated in the scenario, each fresh database fixes the business clock (tests/helpers.ts freshDb), and the runner draws no random numbers; --twice tests the claim",
+    "repeated": false
+  },
+  "results": [
+    {
+      "id": "SH-01",
+      "title": "B07's correct September and October figures all match, and a fully correct Atlas answer is supported",
+      "centre": "financial_question",
+      "severityIfWrong": "high",
+      "checks": 27,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1931,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B07 figures",
+          "do": "check",
+          "label": "B07 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B07/sep/paid_spend": 600,
+            "B07/sep/paid_customers": 3,
+            "B07/sep/paid_cac": 200,
+            "B07/sep/collected": 447,
+            "B07/oct/paid_spend": 885,
+            "B07/oct/paid_customers": 5,
+            "B07/oct/paid_cac": 177,
+            "B07/oct/new_customers": 6,
+            "B07/oct/collected": 765,
+            "heldCurrency": []
+          }
+        },
+        {
+          "index": "2:Oct paid CAC with numerator and denominator",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct paid CAC with numerator and denominator",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 177,
+            "findings": [
+              "Both report $177.00 for B07 Clover, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "3:Oct paid media spend",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct paid media spend",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 885,
+            "findings": [
+              "Both report $885.00 for B07 Clover, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:Oct collected cash",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct collected cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 765,
+            "findings": [
+              "Both report $765.00 for B07 Clover, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "5:Oct paid customers (count)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct paid customers (count)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 5,
+            "findings": [
+              "Both report 5 for B07 Clover, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "6:Oct new customers serviced, any channel (count)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct new customers serviced, any channel (count)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 6,
+            "findings": [
+              "Both report 6 for B07 Clover, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "7:Sep paid CAC",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Sep paid CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 200,
+            "findings": [
+              "Both report $200.00 for B07 Clover, 2026-09-01 to 2026-09-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "8:Fully correct answer",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Fully correct answer",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "SUPPORTED",
+            "claims": [
+              {
+                "text": "B07's paid CAC fell from $200.00 in September 2026 to $177.00 in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B07's paid media spend in October 2026 was $885.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B07 had 5 paid customers in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B07's collected cash in October 2026 was $765.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B07"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        }
+      ],
+      "scenarioHash": "a0e079834369aa1a4db88bfa79570684dc0cb2761b8c74932935ba561316aef9",
+      "fingerprint": "3b77cf9b93ccb51383d21508c7418587bb082522a7ce3424ed5ac4f10c0141d0"
+    },
+    {
+      "id": "SH-02",
+      "title": "B15: wrong upstream values are mismatches, including a CAC whose only error is its customer count",
+      "centre": "financial_question",
+      "severityIfWrong": "critical",
+      "checks": 26,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1231,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B15 figures",
+          "do": "check",
+          "label": "B15 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B15/oct/paid_spend": 1200.5,
+            "B15/oct/paid_customers": 4,
+            "B15/oct/new_customers": 5,
+            "B15/oct/collected": 825,
+            "unallocated/oct/paid_spend": 50,
+            "company/oct/paid_spend": 1250.5
+          }
+        },
+        {
+          "index": "2:CAC right to the cent (half-up)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC right to the cent (half-up)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 300.13,
+            "findings": [
+              "Both report $300.13 for B15 Garnet, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "3:CAC rounded half-even by Atlas: one cent off",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC rounded half-even by Atlas: one cent off",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 300.13,
+            "findings": [
+              "value: theirs is 300.12, the product's is $300.13",
+              "revision: 59 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "4:CAC with the right spend and a wrong customer count",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC with the right spend and a wrong customer count",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "denominator",
+              "revision"
+            ],
+            "productValue": 300.13,
+            "findings": [
+              "value: theirs is 240.10, the product's is $300.13",
+              "denominator (paid customers): theirs is 5, the product's is 4",
+              "revision: 59 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "5:Spend that includes the unmapped campaign",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Spend that includes the unmapped campaign",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 1200.5,
+            "findings": [
+              "value: theirs is 1250.50, the product's is $1,200.50",
+              "revision: 25 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "6:Invoiced total reported as collected cash",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Invoiced total reported as collected cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 825,
+            "findings": [
+              "value: theirs is 1024.00, the product's is $825.00",
+              "revision: 5 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "7:Paid customers overcounted",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Paid customers overcounted",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 4,
+            "findings": [
+              "value: theirs is 5, the product's is 4",
+              "revision: 34 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "8:New customers serviced, any channel: right",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "New customers serviced, any channel: right",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 5,
+            "findings": [
+              "Both report 5 for B15 Garnet, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "e4dd37adf95d1a6315e001c53f5a7b5d7323faad50ea1d473b97101c411cd25f",
+      "fingerprint": "c4db23561a697e4ed8610a72e13e71b73097e69a359ea95b035cb04b28e44140"
+    },
+    {
+      "id": "SH-03",
+      "title": "B09 and B10: blended CAC, customers sold, invoice-date cash and lead-branch CAC are different definitions, not errors; gross and net cash each compare with their own product metric",
+      "centre": "financial_question",
+      "severityIfWrong": "high",
+      "checks": 29,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1549,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B09 and B10 figures",
+          "do": "check",
+          "label": "B09 and B10 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B09/oct/paid_spend": 1200,
+            "B09/oct/paid_customers": 4,
+            "B09/oct/paid_cac": 300,
+            "B09/oct/new_customers": 6,
+            "B09/oct/collected": 874,
+            "B10/oct/paid_cac": 100,
+            "B10/oct/collected": 647,
+            "B10/oct/refunds": 100,
+            "unallocated/oct/paid_spend": 120
+          }
+        },
+        {
+          "index": "2:Blended CAC: all media spend / all new customers",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Blended CAC: all media spend / all new customers",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.numerator",
+              "definition.population"
+            ],
+            "productValue": 300,
+            "findings": [
+              "numerator: theirs is all_media_spend, the product's is paid_media_spend_mapped_to_branch",
+              "population: theirs is new_customers_first_serviced, the product's is new_customers_first_serviced_paid_first_touch"
+            ]
+          }
+        },
+        {
+          "index": "3:Customers sold (service not required)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Customers sold (service not required)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.population"
+            ],
+            "productValue": 4,
+            "findings": [
+              "population: theirs is customers_sold, the product's is new_customers_first_serviced_paid_first_touch"
+            ]
+          }
+        },
+        {
+          "index": "4:Invoice-date revenue",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Invoice-date revenue",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.cashBasis"
+            ],
+            "productValue": 874,
+            "findings": [
+              "cashBasis: theirs is invoice_date, the product's is payment_date_net_of_refunds"
+            ]
+          }
+        },
+        {
+          "index": "5:Lead-branch CAC whose value happens to equal the product's",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Lead-branch CAC whose value happens to equal the product's",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.numerator",
+              "definition.branchBasis"
+            ],
+            "productValue": 300,
+            "findings": [
+              "numerator: theirs is paid_media_spend_by_lead_branch, the product's is paid_media_spend_mapped_to_branch",
+              "branchBasis: theirs is lead_branch, the product's is campaign_mapping"
+            ]
+          }
+        },
+        {
+          "index": "6:Gross payments (refunds not subtracted)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Gross payments (refunds not subtracted)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 747,
+            "findings": [
+              "Both report $747.00 for B10 Cypress, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "7:Collected cash net of refunds",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Collected cash net of refunds",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 647,
+            "findings": [
+              "Both report $647.00 for B10 Cypress, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "8:Net-of-refunds definition carrying the gross figure",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Net-of-refunds definition carrying the gross figure",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 647,
+            "findings": [
+              "value: theirs is 747.00, the product's is $647.00",
+              "revision: 4 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "cda98fc0ab6fdcb14267d6083c2b53c08ca1327497495a8a9fac9df5e61ac862",
+      "fingerprint": "d080b0518200851568863e7129e56975fe8607c5b033028ac4cd7a9879e57368"
+    },
+    {
+      "id": "SH-04",
+      "title": "B22: inputs that cannot be compared are not determinable, a CAD figure is a different definition, and the verdict order decides combinations",
+      "centre": "messy_batch",
+      "severityIfWrong": "high",
+      "checks": 28,
+      "failed": 2,
+      "critical": 0,
+      "millis": 1300,
+      "findings": [
+        {
+          "severity": "medium",
+          "step": "5:CAC on office-local days, value equal to the product's",
+          "type": "missing_dimension",
+          "detail": "expected dimension definition.periodBasis, system reported period"
+        },
+        {
+          "severity": "medium",
+          "step": "6:CAD and office-local days: order 1 wins",
+          "type": "missing_dimension",
+          "detail": "expected dimension definition.periodBasis, system reported period"
+        }
+      ],
+      "steps": [
+        {
+          "index": "1:B22 figures",
+          "do": "check",
+          "label": "B22 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B22/oct/paid_spend": 540,
+            "B22/oct/paid_customers": 3,
+            "B22/oct/paid_cac": 180,
+            "B22/oct/collected": 477
+          }
+        },
+        {
+          "index": "2:Control: correct USD spend",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Control: correct USD spend",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 540,
+            "findings": [
+              "Both report $540.00 for B22 Ivy, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "3:Spend reported in CAD",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Spend reported in CAD",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "currency"
+            ],
+            "productValue": 540,
+            "findings": [
+              "currency: theirs is CAD; the product counts USD only and converts nothing"
+            ]
+          }
+        },
+        {
+          "index": "4:Spend with no currency, value equal to the product's",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Spend with no currency, value equal to the product's",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "currency"
+            ],
+            "productValue": null,
+            "findings": [
+              "The snapshot does not state its currency"
+            ]
+          }
+        },
+        {
+          "index": "5:CAC on office-local days, value equal to the product's",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC on office-local days, value equal to the product's",
+          "outcome": "accepted",
+          "findings": [
+            {
+              "severity": "medium",
+              "step": "5:CAC on office-local days, value equal to the product's",
+              "type": "missing_dimension",
+              "detail": "expected dimension definition.periodBasis, system reported period"
+            }
+          ],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "period"
+            ],
+            "productValue": null,
+            "findings": [
+              "The figure is by office-local day; the product's figures are by UTC day and it does not recompute on local days"
+            ]
+          }
+        },
+        {
+          "index": "6:CAD and office-local days: order 1 wins",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAD and office-local days: order 1 wins",
+          "outcome": "accepted",
+          "findings": [
+            {
+              "severity": "medium",
+              "step": "6:CAD and office-local days: order 1 wins",
+              "type": "missing_dimension",
+              "detail": "expected dimension definition.periodBasis, system reported period"
+            }
+          ],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "period"
+            ],
+            "productValue": null,
+            "findings": [
+              "The figure is by office-local day; the product's figures are by UTC day and it does not recompute on local days"
+            ]
+          }
+        },
+        {
+          "index": "7:CAD and all media spend: both differences reported",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAD and all media spend: both differences reported",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.numerator",
+              "currency"
+            ],
+            "productValue": 180,
+            "findings": [
+              "numerator: theirs is all_media_spend, the product's is paid_media_spend_mapped_to_branch",
+              "currency: theirs is CAD; the product counts USD only and converts nothing"
+            ]
+          }
+        },
+        {
+          "index": "8:No currency and all media spend: order 1 wins",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "No currency and all media spend: order 1 wins",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "currency"
+            ],
+            "productValue": null,
+            "findings": [
+              "The snapshot does not state its currency"
+            ]
+          }
+        },
+        {
+          "index": "9:No definition at all",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "No definition at all",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "definition"
+            ],
+            "productValue": null,
+            "findings": [
+              "The snapshot does not say what its number means (no definition)"
+            ]
+          }
+        },
+        {
+          "index": "10:Numerator outside the vocabulary",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Numerator outside the vocabulary",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "definition"
+            ],
+            "productValue": null,
+            "findings": [
+              "The snapshot's definition is outside the shared vocabulary"
+            ]
+          }
+        },
+        {
+          "index": "11:A family the product has no metric for (ROAS)",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "A family the product has no metric for (ROAS)",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "definition"
+            ],
+            "productValue": null,
+            "findings": [
+              "The snapshot's definition is outside the shared vocabulary"
+            ]
+          }
+        },
+        {
+          "index": "12:Unknown branch B45",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Unknown branch B45",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "scope"
+            ],
+            "productValue": null,
+            "findings": [
+              "B45 is not a branch or brand the product knows"
+            ]
+          }
+        },
+        {
+          "index": "13:Unknown brand",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Unknown brand",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "scope"
+            ],
+            "productValue": null,
+            "findings": [
+              "kestrel is not a branch or brand the product knows"
+            ]
+          }
+        },
+        {
+          "index": "14:Period ends before it starts",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Period ends before it starts",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "NOT_DETERMINABLE",
+            "dimensions": [
+              "period"
+            ],
+            "productValue": null,
+            "findings": [
+              "The window ends before it starts"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "dc0c866b1dcd19e093bddefb108956b319e8933a632308b4e0729a69f911a25c",
+      "fingerprint": "9304864c8e5f317f0213d646cb2af426bc81cc1edcd504336144c99b344fb352"
+    },
+    {
+      "id": "SH-05",
+      "title": "B11 and B16: spend held for an unstated currency makes agreeing figures incomplete, only for its own branch and month",
+      "centre": "currency_lifecycle",
+      "severityIfWrong": "critical",
+      "checks": 28,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1594,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B11 and B16 figures",
+          "do": "check",
+          "label": "B11 and B16 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B11/oct/paid_spend": 660,
+            "B11/oct/paid_customers": 3,
+            "B11/oct/paid_cac": 220,
+            "B11/oct/new_customers": 4,
+            "B11/oct/collected": 596,
+            "B16/oct/paid_spend": 360,
+            "B16/oct/paid_cac": 180,
+            "B16/sep/paid_spend": 300,
+            "B16/sep/paid_cac": 300,
+            "heldCurrency": [
+              {
+                "platform": "meta",
+                "account": "act-5511",
+                "campaignDays": 10,
+                "dollars": 95
+              },
+              {
+                "platform": "meta",
+                "account": "act-5516",
+                "campaignDays": 10,
+                "dollars": 80
+              }
+            ]
+          }
+        },
+        {
+          "index": "2:B11 Oct spend agrees, Meta spend held",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B11 Oct spend agrees, Meta spend held",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.currency_held"
+            ],
+            "productValue": 660,
+            "findings": [
+              "10 campaign-day(s) of spend in the window are held: the feed stated no currency and no authorized rule establishes it"
+            ]
+          }
+        },
+        {
+          "index": "3:B11 Oct CAC agrees, Meta spend held",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B11 Oct CAC agrees, Meta spend held",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.currency_held"
+            ],
+            "productValue": 220,
+            "findings": [
+              "10 campaign-day(s) of spend in the window are held: the feed stated no currency and no authorized rule establishes it"
+            ]
+          }
+        },
+        {
+          "index": "4:B11 Oct collected cash: the hold is not cash evidence",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B11 Oct collected cash: the hold is not cash evidence",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 596,
+            "findings": [
+              "Both report $596.00 for B11 Driftwood, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "5:B11 Oct new customers serviced, any channel",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B11 Oct new customers serviced, any channel",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 4,
+            "findings": [
+              "Both report 4 for B11 Driftwood, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "6:B11 blended CAC: definition first, evidence second",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B11 blended CAC: definition first, evidence second",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.numerator",
+              "definition.population"
+            ],
+            "productValue": 220,
+            "findings": [
+              "numerator: theirs is all_media_spend, the product's is paid_media_spend_mapped_to_branch",
+              "population: theirs is new_customers_first_serviced, the product's is new_customers_first_serviced_paid_first_touch"
+            ]
+          }
+        },
+        {
+          "index": "7:B16 Oct spend: its hold is in September",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B16 Oct spend: its hold is in September",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 360,
+            "findings": [
+              "Both report $360.00 for B16 Glacier, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "8:B16 Oct CAC",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B16 Oct CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 180,
+            "findings": [
+              "Both report $180.00 for B16 Glacier, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "9:B16 Sep spend: held in its window",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "B16 Sep spend: held in its window",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.currency_held"
+            ],
+            "productValue": 300,
+            "findings": [
+              "10 campaign-day(s) of spend in the window are held: the feed stated no currency and no authorized rule establishes it"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "74cb727bee5b5d056ecbed0eea32b0de0dff1ccb6e8d4e18aa43de1039ede5eb",
+      "fingerprint": "425431b041f43282e76652def20b9b76f03a06ee7c8414014683a64f83e42446"
+    },
+    {
+      "id": "SH-06",
+      "title": "B25: a stale CRM payment feed makes agreeing cash incomplete until it recovers; spend, customers and CAC stay matchable",
+      "centre": "recovery",
+      "severityIfWrong": "critical",
+      "checks": 17,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1308,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B25 figures",
+          "do": "check",
+          "label": "B25 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B25/oct/paid_spend": 810,
+            "B25/oct/paid_customers": 3,
+            "B25/oct/paid_cac": 270,
+            "B25/oct/collected": 597
+          }
+        },
+        {
+          "index": "2:Collected cash agrees, payment feed stale",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Collected cash agrees, payment feed stale",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.feed_stale"
+            ],
+            "productValue": 597,
+            "findings": [
+              "crm.payment: The crm.payment sync's latest run failed (last success 104 h ago)."
+            ]
+          }
+        },
+        {
+          "index": "3:Spend: ads feed fresh",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Spend: ads feed fresh",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 810,
+            "findings": [
+              "Both report $810.00 for B25 Kestrel, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:CAC: reads ads and customer feeds, not payments",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC: reads ads and customer feeds, not payments",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 270,
+            "findings": [
+              "Both report $270.00 for B25 Kestrel, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "5:Paid customers",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Paid customers",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 3,
+            "findings": [
+              "Both report 3 for B25 Kestrel, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "6:Invoice-date revenue while the payment feed is stale",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Invoice-date revenue while the payment feed is stale",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPATIBLE_DEFINITION",
+            "dimensions": [
+              "definition.cashBasis"
+            ],
+            "productValue": 597,
+            "findings": [
+              "cashBasis: theirs is invoice_date, the product's is payment_date_net_of_refunds"
+            ]
+          }
+        },
+        {
+          "index": "7:CRM payment sync recovers",
+          "do": "feed",
+          "label": "CRM payment sync recovers",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "8:Collected cash again after recovery",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Collected cash again after recovery",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 597,
+            "findings": [
+              "Both report $597.00 for B25 Kestrel, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "89b4787c77c28e21290d4a0f8523fcf26097e645342a3c1e9204bd8d2da958fd",
+      "fingerprint": "40e222ef7e8628cdf3ca58b7135066016ad80335c700aa2d74eb508e2f33f15b"
+    },
+    {
+      "id": "SH-07",
+      "title": "B33: unreadable ad records and a stale web feed make agreeing figures incomplete, only for the metrics and months they touch",
+      "centre": "messy_batch",
+      "severityIfWrong": "critical",
+      "checks": 21,
+      "failed": 2,
+      "critical": 2,
+      "millis": 1443,
+      "findings": [
+        {
+          "severity": "critical",
+          "step": "2:Oct spend agrees, ad records unread",
+          "type": "false_certification",
+          "detail": "expected INCOMPLETE_EVIDENCE, system MATCH (Both report $420.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))"
+        },
+        {
+          "severity": "critical",
+          "step": "9:Oct CAC after the web feed recovers: ad records still unread",
+          "type": "false_certification",
+          "detail": "expected INCOMPLETE_EVIDENCE, system MATCH (Both report $140.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))"
+        }
+      ],
+      "steps": [
+        {
+          "index": "1:B33 figures",
+          "do": "check",
+          "label": "B33 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B33/sep/paid_spend": 420,
+            "B33/sep/paid_customers": 2,
+            "B33/sep/paid_cac": 210,
+            "B33/oct/paid_spend": 420,
+            "B33/oct/paid_customers": 3,
+            "B33/oct/paid_cac": 140,
+            "B33/oct/collected": 417
+          }
+        },
+        {
+          "index": "2:Oct spend agrees, ad records unread",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct spend agrees, ad records unread",
+          "outcome": "accepted",
+          "findings": [
+            {
+              "severity": "critical",
+              "step": "2:Oct spend agrees, ad records unread",
+              "type": "false_certification",
+              "detail": "expected INCOMPLETE_EVIDENCE, system MATCH (Both report $420.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))"
+            }
+          ],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 420,
+            "findings": [
+              "Both report $420.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "3:Oct CAC agrees, ad records unread and web stale",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct CAC agrees, ad records unread and web stale",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.feed_stale"
+            ],
+            "productValue": 140,
+            "findings": [
+              "web: The web sync's latest run failed (last success 152 h ago)."
+            ]
+          }
+        },
+        {
+          "index": "4:Oct paid customers agree, web feed stale",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct paid customers agree, web feed stale",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "INCOMPLETE_EVIDENCE",
+            "dimensions": [
+              "evidence.feed_stale"
+            ],
+            "productValue": 3,
+            "findings": [
+              "web: The web sync's latest run failed (last success 152 h ago)."
+            ]
+          }
+        },
+        {
+          "index": "5:Oct collected cash: neither defect touches cash",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct collected cash: neither defect touches cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 417,
+            "findings": [
+              "Both report $417.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "6:Sep spend: no unread record in its window",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Sep spend: no unread record in its window",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 420,
+            "findings": [
+              "Both report $420.00 for B33 Onyx, 2026-09-01 to 2026-09-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "7:Web form feed recovers",
+          "do": "feed",
+          "label": "Web form feed recovers",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "8:Oct paid customers after the web feed recovers",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct paid customers after the web feed recovers",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 3,
+            "findings": [
+              "Both report 3 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "9:Oct CAC after the web feed recovers: ad records still unread",
+          "do": "shadow_snapshot",
+          "as": "engineer",
+          "label": "Oct CAC after the web feed recovers: ad records still unread",
+          "outcome": "accepted",
+          "findings": [
+            {
+              "severity": "critical",
+              "step": "9:Oct CAC after the web feed recovers: ad records still unread",
+              "type": "false_certification",
+              "detail": "expected INCOMPLETE_EVIDENCE, system MATCH (Both report $140.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days))"
+            }
+          ],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 140,
+            "findings": [
+              "Both report $140.00 for B33 Onyx, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "66a2d72b4502959c68948afa597b9676619e097845cca85320e3e62ed666e870",
+      "fingerprint": "acf887ac25b269d473d0067d1cfc89f66d2ebe47eaf8c1f3c4ecc5996c175ae9"
+    },
+    {
+      "id": "SH-08",
+      "title": "B36: Atlas's Oct 25 snapshots stop matching after a partial refund and a spend restatement arrive; a late older fetch changes nothing",
+      "centre": "source_correction",
+      "severityIfWrong": "critical",
+      "checks": 31,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1696,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:first fetch of day 15",
+          "do": "restate_spend",
+          "label": "first fetch of day 15",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "2:before the late records",
+          "do": "check",
+          "label": "before the late records",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B36/oct/paid_spend": 700,
+            "B36/oct/paid_customers": 4,
+            "B36/oct/paid_cac": 175,
+            "B36/oct/collected": 876,
+            "B36/oct/refunds": 0
+          }
+        },
+        {
+          "index": "3:Oct 25 collected cash, before the refund",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct 25 collected cash, before the refund",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 876,
+            "findings": [
+              "Both report $876.00 for B36 Quarry, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:Oct 25 spend, before the restatement",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct 25 spend, before the restatement",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 700,
+            "findings": [
+              "Both report $700.00 for B36 Quarry, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "5:Oct 25 CAC, before the restatement",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Oct 25 CAC, before the restatement",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 175,
+            "findings": [
+              "Both report $175.00 for B36 Quarry, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "6:partial refund of m2, paid out Oct 28",
+          "do": "refund",
+          "label": "partial refund of m2, paid out Oct 28",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "7:newer fetch: day 15 restated after invalid-click credits",
+          "do": "restate_spend",
+          "label": "newer fetch: day 15 restated after invalid-click credits",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "8:older fetch of day 15 arrives last",
+          "do": "restate_spend",
+          "label": "older fetch of day 15 arrives last",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "9:after the late records",
+          "do": "check",
+          "label": "after the late records",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B36/oct/paid_spend": 680,
+            "B36/oct/paid_customers": 4,
+            "B36/oct/paid_cac": 170,
+            "B36/oct/collected": 807,
+            "B36/oct/refunds": 69
+          }
+        },
+        {
+          "index": "10:Same Oct 25 collected cash, checked again",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Same Oct 25 collected cash, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 807,
+            "findings": [
+              "value: theirs is 876.00, the product's is $807.00",
+              "revision: 5 record(s) that change this figure arrived after the snapshot was taken (2026-10-25T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "11:Same Oct 25 spend, checked again",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Same Oct 25 spend, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 680,
+            "findings": [
+              "value: theirs is 700.00, the product's is $680.00",
+              "revision: 19 record(s) that change this figure arrived after the snapshot was taken (2026-10-25T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "12:Same Oct 25 CAC, checked again",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Same Oct 25 CAC, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "numerator",
+              "revision"
+            ],
+            "productValue": 170,
+            "findings": [
+              "value: theirs is 175.00, the product's is $170.00",
+              "numerator (spend): theirs is 700.00, the product's is $680.00",
+              "revision: 43 record(s) that change this figure arrived after the snapshot was taken (2026-10-25T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "13:A fresh Oct 31 snapshot with the refund",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "A fresh Oct 31 snapshot with the refund",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 807,
+            "findings": [
+              "Both report $807.00 for B36 Quarry, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "0071169a23791474813566a3d559a44bdc1ecd5f9f09efabdc942ffb1a79d9e9",
+      "fingerprint": "8eec466edbb495f6f6333d12123e730d997dc16bb28ffd3dbaaecfed50b9e1b2"
+    },
+    {
+      "id": "SH-09",
+      "title": "B05: a late spam reclassification removes a paid customer that Atlas reported earlier",
+      "centre": "source_correction",
+      "severityIfWrong": "critical",
+      "checks": 35,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1689,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:before the reclassification",
+          "do": "check",
+          "label": "before the reclassification",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B05/oct/paid_spend": 600,
+            "B05/oct/paid_customers": 4,
+            "B05/oct/paid_cac": 150,
+            "B05/oct/new_customers": 4,
+            "B05/oct/unknown_share": 0
+          }
+        },
+        {
+          "index": "2:Oct 25 paid customers",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Oct 25 paid customers",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 4,
+            "findings": [
+              "Both report 4 for B05 Canyon, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "3:Oct 25 CAC",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Oct 25 CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 150,
+            "findings": [
+              "Both report $150.00 for B05 Canyon, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:Oct 25 answer, before the reclassification",
+          "do": "shadow_answer",
+          "as": "approver",
+          "label": "Oct 25 answer, before the reclassification",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "SUPPORTED",
+            "claims": [
+              {
+                "text": "B05 had 4 paid customers in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B05's paid CAC in October 2026 was $150.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B05's paid media spend in October 2026 was $600.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B05"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        },
+        {
+          "index": "5:call platform re-sends L5 as spam",
+          "do": "revise_call",
+          "label": "call platform re-sends L5 as spam",
+          "outcome": "accepted",
+          "findings": []
+        },
+        {
+          "index": "6:after the reclassification",
+          "do": "check",
+          "label": "after the reclassification",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B05/oct/paid_spend": 600,
+            "B05/oct/paid_customers": 3,
+            "B05/oct/paid_cac": 200,
+            "B05/oct/new_customers": 4,
+            "B05/oct/unknown_share": 25
+          }
+        },
+        {
+          "index": "7:Same Oct 25 paid customers, checked again",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Same Oct 25 paid customers, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 3,
+            "findings": [
+              "value: theirs is 4, the product's is 3",
+              "revision: 26 record(s) that change this figure arrived after the snapshot was taken (2026-10-25T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "8:Same Oct 25 CAC, checked again",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Same Oct 25 CAC, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "denominator",
+              "revision"
+            ],
+            "productValue": 200,
+            "findings": [
+              "value: theirs is 150.00, the product's is $200.00",
+              "denominator (paid customers): theirs is 4, the product's is 3",
+              "revision: 56 record(s) that change this figure arrived after the snapshot was taken (2026-10-25T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "9:Oct 25 spend: unchanged by the reclassification",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Oct 25 spend: unchanged by the reclassification",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 600,
+            "findings": [
+              "Both report $600.00 for B05 Canyon, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "10:Oct 25 new customers serviced: n3 is still a customer",
+          "do": "shadow_snapshot",
+          "as": "approver",
+          "label": "Oct 25 new customers serviced: n3 is still a customer",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 4,
+            "findings": [
+              "Both report 4 for B05 Canyon, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "11:Same Oct 25 answer, checked again",
+          "do": "shadow_answer",
+          "as": "approver",
+          "label": "Same Oct 25 answer, checked again",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B05 had 4 paid customers in October 2026.",
+                "verdict": "CONTRADICTED",
+                "reason": "4: the cited fact is 3"
+              },
+              {
+                "text": "B05's paid CAC in October 2026 was $150.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$150.00: the cited fact is 200"
+              },
+              {
+                "text": "B05's paid media spend in October 2026 was $600.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B05"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        }
+      ],
+      "scenarioHash": "b291f66fcb2cdd3ba1e94b78be5b1368e68034de16528c5bd2ddb772b824f66d",
+      "fingerprint": "2b7c9188fe5c07be67f1ece504185ffd2acd928f17f18281e66ce7c012c8a9af"
+    },
+    {
+      "id": "SH-10",
+      "title": "Scope: the B20 partner and the joshuas brand user see only their own branches; the company user sees company figures with branch-only CAC",
+      "centre": "security",
+      "severityIfWrong": "critical",
+      "checks": 35,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1897,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:branch, brand and company figures",
+          "do": "check",
+          "label": "branch, brand and company figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B20/oct/paid_spend": 480,
+            "B20/oct/paid_customers": 3,
+            "B20/oct/paid_cac": 160,
+            "B20/oct/new_customers": 4,
+            "B20/oct/collected": 596,
+            "B21/oct/paid_cac": 315,
+            "B40/oct/collected": 358,
+            "joshuas/oct/paid_spend": 500,
+            "joshuas/oct/paid_cac": 166.67,
+            "unallocated/oct/paid_spend": 90,
+            "company/oct/paid_spend": 1700,
+            "company/oct/paid_cac": 201.25,
+            "company/oct/collected": 1431
+          }
+        },
+        {
+          "index": "2:Partner checks B21",
+          "do": "shadow_snapshot",
+          "as": "partner",
+          "label": "Partner checks B21",
+          "outcome": "refused",
+          "findings": [],
+          "error": "Branch partner · B20 only cannot check branch B21"
+        },
+        {
+          "index": "3:Partner checks B20",
+          "do": "shadow_snapshot",
+          "as": "partner",
+          "label": "Partner checks B20",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 160,
+            "findings": [
+              "Both report $160.00 for B20 Heron, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:Partner checks the company",
+          "do": "shadow_snapshot",
+          "as": "partner",
+          "label": "Partner checks the company",
+          "outcome": "refused",
+          "findings": [],
+          "error": "Branch partner · B20 only cannot check company-wide figures"
+        },
+        {
+          "index": "5:Partner: answer naming B20 and B21",
+          "do": "shadow_answer",
+          "as": "partner",
+          "label": "Partner: answer naming B20 and B21",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B20's paid CAC in October 2026 was $160.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B21's paid CAC in October 2026 was $315.00.",
+                "verdict": "OUT_OF_SCOPE",
+                "reason": "It names a branch or brand outside your scope; it was not checked and nothing about it was read."
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B20"
+              ],
+              "brands": [],
+              "outOfScope": [
+                "B21"
+              ]
+            }
+          }
+        },
+        {
+          "index": "6:Brand user checks the joshuas brand CAC",
+          "do": "shadow_snapshot",
+          "as": "brand",
+          "label": "Brand user checks the joshuas brand CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 166.67,
+            "findings": [
+              "Both report $166.67 for Joshua's Pest Control, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "7:Brand user checks B40 collected cash",
+          "do": "shadow_snapshot",
+          "as": "brand",
+          "label": "Brand user checks B40 collected cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 358,
+            "findings": [
+              "Both report $358.00 for B40 Sierra, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "8:Brand user checks B21 (moxie)",
+          "do": "shadow_snapshot",
+          "as": "brand",
+          "label": "Brand user checks B21 (moxie)",
+          "outcome": "refused",
+          "findings": [],
+          "error": "Brand marketing lead · Joshua's Pest Control only cannot check branch B21"
+        },
+        {
+          "index": "9:Brand user checks company collected cash",
+          "do": "shadow_snapshot",
+          "as": "brand",
+          "label": "Brand user checks company collected cash",
+          "outcome": "refused",
+          "findings": [],
+          "error": "Brand marketing lead · Joshua's Pest Control only cannot check company-wide figures"
+        },
+        {
+          "index": "10:Brand user: answer naming B40 and B20",
+          "do": "shadow_answer",
+          "as": "brand",
+          "label": "Brand user: answer naming B40 and B20",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B40 had 2 paid customers in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B20's collected cash in October 2026 was $596.00.",
+                "verdict": "OUT_OF_SCOPE",
+                "reason": "It names a branch or brand outside your scope; it was not checked and nothing about it was read."
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B40"
+              ],
+              "brands": [],
+              "outOfScope": [
+                "B20"
+              ]
+            }
+          }
+        },
+        {
+          "index": "11:Company CAC on branch spend only",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Company CAC on branch spend only",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 201.25,
+            "findings": [
+              "Both report $201.25 for All branches, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "12:Company CAC that keeps the unallocated spend",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Company CAC that keeps the unallocated spend",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "numerator",
+              "revision"
+            ],
+            "productValue": 201.25,
+            "findings": [
+              "value: theirs is 212.50, the product's is $201.25",
+              "numerator (spend): theirs is 1700.00, the product's is $1,610.00",
+              "revision: 164 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "13:Company collected cash",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Company collected cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 1431,
+            "findings": [
+              "Both report $1,431.00 for All branches, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        }
+      ],
+      "scenarioHash": "2ddf3d9ef062825073f4249d9c670e261999c32b865f542c145373a05ab4ed0f",
+      "fingerprint": "febee83fbfbedd9181bd46a30420979823a5893461d1885f0d0f11936b677978"
+    },
+    {
+      "id": "SH-11",
+      "title": "B03 and B04: Atlas answers with a wrong direction, a swapped branch and month, the wrong CAC denominator, invoiced as collected, a cause and an unheld month",
+      "centre": "ai_investigation",
+      "severityIfWrong": "critical",
+      "checks": 25,
+      "failed": 1,
+      "critical": 0,
+      "millis": 1994,
+      "findings": [
+        {
+          "severity": "medium",
+          "step": "3:Wrong throughout",
+          "type": "wrong_claim_verdict",
+          "detail": "\"B03's paid CAC in August 2026 was $140.00\": expected UNSUPPORTED, system CONTRADICTED"
+        }
+      ],
+      "steps": [
+        {
+          "index": "1:B03 and B04 figures",
+          "do": "check",
+          "label": "B03 and B04 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B03/sep/paid_spend": 600,
+            "B03/sep/paid_customers": 4,
+            "B03/sep/paid_cac": 150,
+            "B03/oct/paid_spend": 840,
+            "B03/oct/paid_customers": 4,
+            "B03/oct/paid_cac": 210,
+            "B03/oct/new_customers": 5,
+            "B03/oct/collected": 646,
+            "B04/oct/paid_spend": 330,
+            "B04/oct/paid_cac": 165
+          }
+        },
+        {
+          "index": "2:Partly correct: wrong direction and an unproved cause",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Partly correct: wrong direction and an unproved cause",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B03's paid CAC fell from September 2026 to October 2026.",
+                "verdict": "CONTRADICTED",
+                "reason": "the claim says a decrease; the facts show an increase (60)"
+              },
+              {
+                "text": "B03's paid media spend in October 2026 was $840.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B03 had 4 paid customers in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B03's paid media spend rose in October 2026 because homeowners delayed their fall treatments.",
+                "verdict": "UNSUPPORTED",
+                "reason": "It states a cause. The evidence can show what changed, not why; a cause needs a test (an experiment or an investigation workspace)."
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B03"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        },
+        {
+          "index": "3:Wrong throughout",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Wrong throughout",
+          "outcome": "accepted",
+          "findings": [
+            {
+              "severity": "medium",
+              "step": "3:Wrong throughout",
+              "type": "wrong_claim_verdict",
+              "detail": "\"B03's paid CAC in August 2026 was $140.00\": expected UNSUPPORTED, system CONTRADICTED"
+            }
+          ],
+          "observed": {
+            "overall": "NOT_SUPPORTED",
+            "claims": [
+              {
+                "text": "B03's paid CAC in October 2026 was $168.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$168.00: the cited fact is 210"
+              },
+              {
+                "text": "B03 collected $795.00 in cash in October 2026.",
+                "verdict": "CONTRADICTED",
+                "reason": "$795.00: the cited fact is 646"
+              },
+              {
+                "text": "B04's paid media spend in October 2026 was $840.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$840.00: the cited fact is 330"
+              },
+              {
+                "text": "B03's paid CAC in August 2026 was $140.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$140.00: the cited fact is 210"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B03",
+                "B04"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        },
+        {
+          "index": "4:Partly correct: a September figure on October and an invoiced total",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Partly correct: a September figure on October and an invoiced total",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B03's paid CAC in October 2026 was $150.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$150.00: the cited fact is 210"
+              },
+              {
+                "text": "B03 invoiced $795.00 in October 2026.",
+                "verdict": "UNSUPPORTED",
+                "reason": "$795.00: names a measure the product does not verify from these facts (invoiced or billed amounts, contract value, payment or refund counts)"
+              },
+              {
+                "text": "B04's paid CAC in October 2026 was $165.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B03's paid CAC in September 2026 was $150.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B03",
+                "B04"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        }
+      ],
+      "scenarioHash": "e5d9557a81ddb4bb34866252643655f4ca214fc5e9de58591bf4ed032a7ee0fb",
+      "fingerprint": "17b46c9910b17def8ff055b3e4618944389357036062642c19183081bcc2e8af"
+    },
+    {
+      "id": "SH-12",
+      "title": "B38: figures and instructions planted in a campaign name, a CRM note, an answer and a definition id",
+      "centre": "hostile_record",
+      "severityIfWrong": "critical",
+      "checks": 18,
+      "failed": 0,
+      "critical": 0,
+      "millis": 1619,
+      "findings": [],
+      "steps": [
+        {
+          "index": "1:B38 figures",
+          "do": "check",
+          "label": "B38 figures",
+          "outcome": "done",
+          "findings": [],
+          "observed": {
+            "B38/oct/paid_spend": 720,
+            "B38/oct/paid_customers": 4,
+            "B38/oct/paid_cac": 180,
+            "B38/oct/collected": 636
+          }
+        },
+        {
+          "index": "2:CAC from the CRM note, with an instruction in the definition id",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "CAC from the CRM note, with an instruction in the definition id",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MISMATCH",
+            "dimensions": [
+              "value",
+              "revision"
+            ],
+            "productValue": 180,
+            "findings": [
+              "value: theirs is 12.00, the product's is $180.00",
+              "revision: 54 record(s) that change this figure arrived after the snapshot was taken (2026-10-31T06:00:00Z); the snapshot may predate them"
+            ]
+          }
+        },
+        {
+          "index": "3:Correct spend",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Correct spend",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 720,
+            "findings": [
+              "Both report $720.00 for B38 Ridge, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "4:Correct collected cash",
+          "do": "shadow_snapshot",
+          "as": "marketing",
+          "label": "Correct collected cash",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "verdict": "MATCH",
+            "dimensions": [
+              "revision"
+            ],
+            "productValue": 636,
+            "findings": [
+              "Both report $636.00 for B38 Ridge, 2026-10-01 to 2026-10-30 (UTC days)"
+            ]
+          }
+        },
+        {
+          "index": "5:Repeats the campaign-name figure as the CAC",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Repeats the campaign-name figure as the CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B38's paid CAC in October 2026 was $45.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$45.00: the cited fact is 180"
+              },
+              {
+                "text": "B38's paid media spend in October 2026 was $720.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B38"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        },
+        {
+          "index": "6:Repeats the CRM-note figure and tells the checker to ignore its rules",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Repeats the CRM-note figure and tells the checker to ignore its rules",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "B38 had 4 paid customers in October 2026.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              },
+              {
+                "text": "B38's paid CAC in October 2026 was $12.00.",
+                "verdict": "CONTRADICTED",
+                "reason": "$12.00: the cited fact is 180"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B38"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        },
+        {
+          "index": "7:Names the campaign in quotes, then states the right CAC",
+          "do": "shadow_answer",
+          "as": "marketing",
+          "label": "Names the campaign in quotes, then states the right CAC",
+          "outcome": "accepted",
+          "findings": [],
+          "observed": {
+            "overall": "PARTLY_SUPPORTED",
+            "claims": [
+              {
+                "text": "Here is what I found about the 'B38 Search - CAC $45 Target' campaign.",
+                "verdict": "UNSUPPORTED",
+                "reason": "$45: no period stated and the cited facts cover more than one"
+              },
+              {
+                "text": "B38's paid CAC in October 2026 was $180.00.",
+                "verdict": "SUPPORTED",
+                "reason": "every proposition follows from the cited facts"
+              }
+            ],
+            "entities": {
+              "branches": [
+                "B38"
+              ],
+              "brands": [],
+              "outOfScope": []
+            }
+          }
+        }
+      ],
+      "scenarioHash": "79f3727ca826005dff1ab5bbd0f76c4a8daa40c896d8559b75f0d6ec98b81121",
+      "fingerprint": "de2ded57f1c7c3ff50a225b1a6794e84bf5517423e4e6d47a58603bd599a8186"
+    }
+  ]
+}

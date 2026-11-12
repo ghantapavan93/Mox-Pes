@@ -91,7 +91,7 @@ export const ProofSchema = z.strictObject({
   figure: z.string(),
   subject: z.strictObject({ metric: z.string().nullable(), entity: z.string().nullable(), period: PERIOD_KEY.nullable() }),
   against: z.strictObject({ entity: z.string(), period: PERIOD_KEY }).nullable(),
-  relation: z.enum(["level", "change", "relative_change", "points_change", "direction", "ratio", "sum", "share", "arithmetic", "membership", "status", "unknown"]),
+  relation: z.enum(["level", "change", "relative_change", "points_change", "direction", "ratio", "sum", "share", "arithmetic", "membership", "status", "record", "unknown"]),
   formula: z.string(),
   inputs: z.array(
     z.strictObject({

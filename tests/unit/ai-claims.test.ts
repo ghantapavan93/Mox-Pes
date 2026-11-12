@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildClaims, evidenceFacts, groundDraft, isCausalImpactClaim, isModelCausalClaim } from "@/lib/ai/analyst";
 import type { DraftFindings } from "@/lib/ai/contract";
+import { rendered } from "@/lib/ai/rendered";
 
 /**
  * The claim check beyond observations (independent AI/security review, 2026-11-12): free text
@@ -11,8 +12,9 @@ const steps = (matches: boolean) => [
   {
     kind: "tool_call",
     status: "ok",
+    tool: "getReconciliationExceptions",
     evidenceIds: ["branch_metrics:B09:oct", "exception:77"],
-    output: { value: { matches, reproduced: { paidSpendCents: 1664923, paidAcquired: 69, paidCacCents: 24129 } }, exceptions: [{ records: 31 }] },
+    output: { value: { matches, reproduced: { paidSpendCents: 1664923, paidAcquired: 69, paidCacCents: 24129 } }, exceptions: [{ id: 77, records: 31 }] },
   },
 ];
 
@@ -61,12 +63,11 @@ describe("claim check beyond observations", () => {
 
   it("a figure whose own trace does not reproduce is CONFLICTED and not shown as verified; other records stay (S6)", () => {
     const facts = evidenceFacts(steps(false));
+    // The record count is certified by the field it renders (R-38), as the product's template declares it.
+    const quarantined = rendered({ text: "31 records are quarantined at B09.", evidenceIds: ["exception:77"], status: "verified" as const }, [{ figure: "31", tool: "getReconciliationExceptions", evidenceId: "exception:77", path: "exceptions[id=77].records" }]);
     const g = groundDraft(
       draft({
-        observations: [
-          { text: "Paid CAC at B09 is $241.29.", evidenceIds: ["branch_metrics:B09:oct"], status: "verified" },
-          { text: "31 records are quarantined at B09.", evidenceIds: ["exception:77"], status: "verified" },
-        ],
+        observations: [{ text: "Paid CAC at B09 is $241.29.", evidenceIds: ["branch_metrics:B09:oct"], status: "verified" }, quarantined],
       }),
       new Set(["branch_metrics:B09:oct", "exception:77"]),
       facts,

@@ -43,6 +43,17 @@ test("an unexpected CAC is traced, investigated, corrected through ChangeGuard a
   await check.locator(":scope > details > summary").click();
   await expect(check).toContainText("Checked by code, not by the model");
   await expect(check).toContainText("0 rejected or conflicted");
+  // R-38: "supported" never stands beside a proposition that is not proved. Every supported
+  // claim with a proof shows all of its propositions following, as stored and as shown.
+  const supportedProofs = check.locator('li[data-claim-status="SUPPORTED"] [data-testid="claim-proof"]');
+  expect(await supportedProofs.count()).toBeGreaterThan(0);
+  for (const proved of await supportedProofs.evaluateAll((els) => els.map((e) => e.getAttribute("data-proved")))) {
+    const [k, n] = String(proved).split("/");
+    expect(k, `a supported claim shows ${proved} propositions proved`).toBe(n);
+  }
+  // The unmapped campaign's figures are proved against the trace fields the sentence renders.
+  const unmappedClaim = check.locator('li[data-claim-status="SUPPORTED"]', { hasText: "lsa-B44-x" }).filter({ hasText: "is mapped to no branch" });
+  await expect(unmappedClaim.getByTestId("claim-proof")).toContainText("equal the record fields they render");
 
   // 3 · The correction, prefilled from the trace, previewed on the real write path.
   await page.goto(TRACE);

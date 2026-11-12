@@ -8,7 +8,14 @@ import { BRANCH_BY_ID, BRANDS, CHANNEL_BY_CODE, type BrandId, type ChannelCode }
 import type { Viewer } from "@/lib/viewer";
 import type { DraftFindings, Observation, ProposalSuggestion } from "./contract";
 import { evidence, uniqueIds } from "./evidence";
+import { rendered, type Render } from "./rendered";
 import type { ToolData, ToolInput, ToolName } from "./tools";
+
+/**
+ * A record figure a sentence renders: the figure as written, the tool and record it comes from,
+ * and the field. The analyst proves it against the recorded tool output (lib/ai/rendered.ts).
+ */
+const field = (figure: string | number, tool: ToolName, evidenceId: string, path: string): Render => ({ figure: String(figure), tool, evidenceId, path });
 
 /**
  * The deterministic investigator: what runs when no model is configured, and the baseline the
@@ -570,11 +577,15 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       status: "verified",
     });
     for (const e of trace.excluded) {
-      observations.push({ text: `${e.count} new customer(s) are left out of the denominator by the definition (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+      observations.push(
+        rendered({ text: `${e.count} new customer(s) are left out of the denominator by the definition (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" }, e.evidenceIds[0] ? [field(e.count, "getMetricTrace", e.evidenceIds[0], `excluded[code=${e.code}].count`)] : []),
+      );
     }
     // Evidence the number cannot see: a campaign whose leads land here but which maps nowhere.
     for (const m of trace.missing.filter((x) => x.kind === "unmapped_campaign").slice(0, 3)) {
-      observations.push({ text: m.detail, evidenceIds: m.evidenceIds, status: "verified" });
+      const at = `missing[campaignExternalId=${m.campaignExternalId}]`;
+      const figures = m.evidenceIds[0] && m.leads !== undefined && m.spendCents !== undefined ? [field(m.leads, "getMetricTrace", m.evidenceIds[0], `${at}.leads`), field(exactDollars(m.spendCents), "getMetricTrace", m.evidenceIds[0], `${at}.spendCents`)] : [];
+      observations.push(rendered({ text: m.detail, evidenceIds: m.evidenceIds, status: "verified" }, figures));
     }
   }
   const unmappedHere = trace?.missing.find((x) => x.kind === "unmapped_campaign") ?? null;
@@ -591,21 +602,32 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
     const src = String(ev.source) as SourceName;
     const qId = evidence.exception(quarantine.id);
     const samples = ((ev.sampleRawEventIds as number[] | null) ?? []).slice(0, 3).map(evidence.rawEvent);
-    observations.push({
-      text: `${ev.records} ${src} record(s) at ${b} are quarantined (${ev.errorCode}: ${ev.sampleError}) from ${day(ev.firstOccurredAt)} to ${day(ev.lastOccurredAt)}; ${ev.customersWithoutLead} new customer(s) have no lead record because of it.`,
-      evidenceIds: [qId, ...samples],
-      status: "verified",
-    });
+    const held = `exceptions[id=${quarantine.id}].evidence`;
+    observations.push(
+      rendered(
+        {
+          text: `${ev.records} ${src} record(s) at ${b} are quarantined (${ev.errorCode}: ${ev.sampleError}) from ${day(ev.firstOccurredAt)} to ${day(ev.lastOccurredAt)}; ${ev.customersWithoutLead} new customer(s) have no lead record because of it.`,
+          evidenceIds: [qId, ...samples],
+          status: "verified",
+        },
+        [field(String(ev.records), "getReconciliationExceptions", qId, `${held}.records`), field(String(ev.customersWithoutLead), "getReconciliationExceptions", qId, `${held}.customersWithoutLead`)],
+      ),
+    );
     const group = ing?.quarantineGroups.find((g) => g.exceptionId === quarantine.id);
     const stored = group?.adapterVersions.map(versionOf) ?? [];
     const fromVersion = stored.find((v) => v !== ACTIVE_VERSION[src]) ?? stored[0];
     const cmp = fromVersion ? await ctx.call("compareMappingVersions", { source: src, fromVersion, toVersion: ACTIVE_VERSION[src], exceptionId: quarantine.id }) : null;
     if (cmp) {
-      observations.push({
-        text: `Re-running ${src}@${cmp.fromVersion} and ${src}@${cmp.toVersion} over the ${cmp.records} held record(s), read-only: ${cmp.outcomes.nowProjects} would now project, ${cmp.outcomes.stillFails} would still fail.`,
-        evidenceIds: uniqueIds([qId, ...cmp.samples.nowProjects.slice(0, 5).map(evidence.rawEvent)]),
-        status: "verified",
-      });
+      observations.push(
+        rendered(
+          {
+            text: `Re-running ${src}@${cmp.fromVersion} and ${src}@${cmp.toVersion} over the ${cmp.records} held record(s), read-only: ${cmp.outcomes.nowProjects} would now project, ${cmp.outcomes.stillFails} would still fail.`,
+            evidenceIds: uniqueIds([qId, ...cmp.samples.nowProjects.slice(0, 5).map(evidence.rawEvent)]),
+            status: "verified",
+          },
+          [field(cmp.records, "compareMappingVersions", qId, "records"), field(cmp.outcomes.nowProjects, "compareMappingVersions", qId, "outcomes.nowProjects"), field(cmp.outcomes.stillFails, "compareMappingVersions", qId, "outcomes.stillFails")],
+        ),
+      );
     }
     observations.push({
       text: `Paid CAC at ${b} is overstated: a customer whose only lead record is quarantined counts as channel unknown rather than paid, which shrinks the CAC denominator while the spend stays.`,
@@ -633,7 +655,8 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
   }
   if (gap) {
     observations.push({
-      text: `A channel coverage gap is also open at ${b}: ${gap.summary}`,
+      // Quoted: the exception's own summary, whose figures are the detector's, not checked here.
+      text: `A channel coverage gap is also open at ${b}: "${gap.summary}"`,
       evidenceIds: [evidence.exception(gap.id)],
       status: "verified",
     });
@@ -695,11 +718,17 @@ async function quarantinePlan(ctx: PlanContext, d: DetectedIntent): Promise<Draf
   let cause: DraftFindings["suspectedCause"] = null;
   for (const g of groups.slice(0, 3)) {
     const ids = uniqueIds([...(g.exceptionId ? [evidence.exception(g.exceptionId)] : []), ...g.sampleRawEventIds.slice(0, 3).map(evidence.rawEvent)]);
-    observations.push({
-      text: `${g.records} ${g.source} record(s)${g.branchId ? ` at ${g.branchId}` : ""} are quarantined with ${g.errorCode} (${g.sampleError ?? "no detail"}), first ${day(g.firstOccurredAt)}, last ${day(g.lastOccurredAt)}, refused by ${g.adapterVersions.join(", ")}.`,
-      evidenceIds: ids,
-      status: "verified",
-    });
+    const group = `quarantineGroups[source=${g.source}&errorCode=${g.errorCode}&branchId=${g.branchId}&exceptionId=${g.exceptionId}]`;
+    observations.push(
+      rendered(
+        {
+          text: `${g.records} ${g.source} record(s)${g.branchId ? ` at ${g.branchId}` : ""} are quarantined with ${g.errorCode} (${g.sampleError ?? "no detail"}), first ${day(g.firstOccurredAt)}, last ${day(g.lastOccurredAt)}, refused by ${g.adapterVersions.join(", ")}.`,
+          evidenceIds: ids,
+          status: "verified",
+        },
+        ids[0] ? [field(g.records, "getIngestionFailures", ids[0], `${group}.records`)] : [],
+      ),
+    );
   }
   const top = groups[0];
   const src = top.source as SourceName;
@@ -708,11 +737,17 @@ async function quarantinePlan(ctx: PlanContext, d: DetectedIntent): Promise<Draf
   const fromVersion = top.adapterVersions.map(versionOf).find((v) => v !== ACTIVE_VERSION[src]) ?? versionOf(top.adapterVersions[0]);
   const cmp = top.exceptionId ? await ctx.call("compareMappingVersions", { source: src, fromVersion, toVersion: ACTIVE_VERSION[src], exceptionId: top.exceptionId }) : null;
   if (cmp && top.exceptionId) {
-    observations.push({
-      text: `Read-only comparison: ${src}@${cmp.toVersion} (deployed) maps ${cmp.outcomes.nowProjects} of the ${cmp.records} held record(s) that ${src}@${cmp.fromVersion} refused; ${cmp.outcomes.stillFails} still fail.`,
-      evidenceIds: uniqueIds([evidence.exception(top.exceptionId), ...cmp.samples.nowProjects.slice(0, 5).map(evidence.rawEvent)]),
-      status: "verified",
-    });
+    const qId = evidence.exception(top.exceptionId);
+    observations.push(
+      rendered(
+        {
+          text: `Read-only comparison: ${src}@${cmp.toVersion} (deployed) maps ${cmp.outcomes.nowProjects} of the ${cmp.records} held record(s) that ${src}@${cmp.fromVersion} refused; ${cmp.outcomes.stillFails} still fail.`,
+          evidenceIds: uniqueIds([qId, ...cmp.samples.nowProjects.slice(0, 5).map(evidence.rawEvent)]),
+          status: "verified",
+        },
+        [field(cmp.outcomes.nowProjects, "compareMappingVersions", qId, "outcomes.nowProjects"), field(cmp.records, "compareMappingVersions", qId, "records"), field(cmp.outcomes.stillFails, "compareMappingVersions", qId, "outcomes.stillFails")],
+      ),
+    );
     if (cmp.outcomes.nowProjects > 0) {
       cause = {
         text: `The ${src} source changed the shape of these records; ${src}@${cmp.fromVersion} rejected them and ${src}@${cmp.toVersion}, deployed since, reads the new shape. The held records were never replayed.`,
@@ -748,11 +783,25 @@ async function duplicatesPlan(ctx: PlanContext, d: DetectedIntent): Promise<Draf
   const observations: Observation[] = [];
   const redelivered = ing.duplicates.filter((x) => x.duplicateDeliveries > 0);
   for (const x of redelivered.slice(0, 4)) {
-    observations.push({
-      text: `${x.source}: ${x.recordsRedelivered} stored record version(s) were delivered more than once (${x.duplicateDeliveries} extra deliveries); each version is stored once, keyed by source and external id${x.storedEvents === null ? "" : `, so ${x.storedEvents} events are counted, not ${x.storedEvents + x.duplicateDeliveries}`}.`,
-      evidenceIds: x.sampleRawEventIds.map(evidence.rawEvent),
-      status: "verified",
-    });
+    const ids = x.sampleRawEventIds.map(evidence.rawEvent);
+    const at = `duplicates[source=${x.source}]`;
+    const figures = ids[0]
+      ? [
+          field(x.recordsRedelivered, "getIngestionFailures", ids[0], `${at}.recordsRedelivered`),
+          field(x.duplicateDeliveries, "getIngestionFailures", ids[0], `${at}.duplicateDeliveries`),
+          ...(x.storedEvents === null ? [] : [field(x.storedEvents, "getIngestionFailures", ids[0], `${at}.storedEvents`), field(x.storedEvents + x.duplicateDeliveries, "getIngestionFailures", ids[0], `${at}.storedEvents + ${at}.duplicateDeliveries`)]),
+        ]
+      : [];
+    observations.push(
+      rendered(
+        {
+          text: `${x.source}: ${x.recordsRedelivered} stored record version(s) were delivered more than once (${x.duplicateDeliveries} extra deliveries); each version is stored once, keyed by source and external id${x.storedEvents === null ? "" : `, so ${x.storedEvents} events are counted, not ${x.storedEvents + x.duplicateDeliveries}`}.`,
+          evidenceIds: ids,
+          status: "verified",
+        },
+        figures,
+      ),
+    );
   }
   if (redelivered[0]?.sampleRawEventIds[0]) await ctx.call("getSourceLineage", { rawEventId: redelivered[0].sampleRawEventIds[0] });
   for (const c of ing.payloadConflicts.slice(0, 3)) {
@@ -803,11 +852,17 @@ async function customerPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftF
       status: "verified",
     });
     if (lineage && lineage.kind === "raw_event") {
-      observations.push({
-        text: `That lead's raw record (raw event ${lineage.rawEvent.id}) was received ${day(lineage.rawEvent.receivedAt)}, mapped by ${lineage.rawEvent.adapterVersion}, delivered ${lineage.rawEvent.deliveryCount} time(s); ${lineage.versions.length} stored version(s).`,
-        evidenceIds: [evidence.rawEvent(lineage.rawEvent.id)],
-        status: "verified",
-      });
+      const raw = evidence.rawEvent(lineage.rawEvent.id);
+      observations.push(
+        rendered(
+          {
+            text: `That lead's raw record (raw event ${lineage.rawEvent.id}) was received ${day(lineage.rawEvent.receivedAt)}, mapped by ${lineage.rawEvent.adapterVersion}, delivered ${lineage.rawEvent.deliveryCount} time(s); ${lineage.versions.length} stored version(s).`,
+            evidenceIds: [raw],
+            status: "verified",
+          },
+          [field(lineage.rawEvent.deliveryCount, "getSourceLineage", raw, "rawEvent.deliveryCount"), field(lineage.versions.length, "getSourceLineage", raw, "#versions")],
+        ),
+      );
     }
   } else if (a) {
     observations.push({
@@ -824,25 +879,44 @@ async function customerPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftF
   }
   if (j.leads.length > 0) {
     const bySource = j.leads.reduce<Record<string, number>>((acc, l) => ({ ...acc, [l.source]: (acc[l.source] ?? 0) + 1 }), {});
-    observations.push({
-      text: `${j.leads.length} lead record(s) are linked by exact phone/email hash: ${Object.entries(bySource).map(([s, n]) => `${n} ${s}`).join(", ")}; channels ${[...new Set(j.leads.map((l) => channelLabel(l.channelCode)))].join(", ")}.`,
-      evidenceIds: j.leads.slice(0, 5).map((l) => evidence.lead(l.id)),
-      status: "verified",
-    });
+    observations.push(
+      rendered(
+        {
+          text: `${j.leads.length} lead record(s) are linked by exact phone/email hash: ${Object.entries(bySource).map(([s, n]) => `${n} ${s}`).join(", ")}; channels ${[...new Set(j.leads.map((l) => channelLabel(l.channelCode)))].join(", ")}.`,
+          evidenceIds: j.leads.slice(0, 5).map((l) => evidence.lead(l.id)),
+          status: "verified",
+        },
+        [field(j.leads.length, "getCustomerJourney", cust, "#leads"), ...Object.entries(bySource).map(([s, n]) => field(n, "getCustomerJourney", cust, `#leads[source=${s}]`))],
+      ),
+    );
   }
-  observations.push({
-    text: `Money: ${money(j.money.collectedCents)} collected = ${money(j.money.paymentsCents)} successful payments − ${money(j.money.refundsCents)} refunds; ${money(j.money.invoicedCents)} invoiced; ${money(j.money.failedOrVoidedCents)} failed or voided (never counted).`,
-    evidenceIds: uniqueIds([cust, ...j.payments.slice(0, 5).map((p) => evidence.payment(p.id))]),
-    status: "verified",
-  });
+  // One customer's money is not among the metric facts (those are a branch's); each figure is
+  // proved against the journey's own money fields.
+  const m = (key: keyof typeof j.money) => field(money(j.money[key]), "getCustomerJourney", cust, `money.${key}`);
+  observations.push(
+    rendered(
+      {
+        text: `Money: ${money(j.money.collectedCents)} collected = ${money(j.money.paymentsCents)} successful payments − ${money(j.money.refundsCents)} refunds; ${money(j.money.invoicedCents)} invoiced; ${money(j.money.failedOrVoidedCents)} failed or voided (never counted).`,
+        evidenceIds: uniqueIds([cust, ...j.payments.slice(0, 5).map((p) => evidence.payment(p.id))]),
+        status: "verified",
+      },
+      [m("collectedCents"), m("paymentsCents"), m("refundsCents"), m("invoicedCents"), m("failedOrVoidedCents")],
+    ),
+  );
   const exceptions = j.flags.openExceptions;
   if (exceptions.length > 0) {
     const first = await ctx.call("getReconciliationExceptions", { exceptionId: exceptions[0].id });
-    observations.push({
-      text: `${exceptions.length} open exception(s) touch this customer: ${exceptions.map((e) => `${e.kind} ${e.id}`).join(", ")}${first ? ` — ${first.exceptions[0].summary}` : ""}.`,
-      evidenceIds: exceptions.map((e) => evidence.exception(e.id)),
-      status: "verified",
-    });
+    // The exception's own summary is quoted: its figures are the exception's, not checked here.
+    observations.push(
+      rendered(
+        {
+          text: `${exceptions.length} open exception(s) touch this customer: ${exceptions.map((e) => `${e.kind} ${e.id}`).join(", ")}${first ? ` — "${first.exceptions[0].summary}"` : ""}.`,
+          evidenceIds: exceptions.map((e) => evidence.exception(e.id)),
+          status: "verified",
+        },
+        [field(exceptions.length, "getCustomerJourney", cust, "#flags.openExceptions")],
+      ),
+    );
     if (j.flags.noLeadRecord && exceptions.some((e) => e.kind === "quarantined_source_records")) {
       observations.push({
         text: `The customer's own lead is probably among the quarantined records: it has no lead record and a quarantine exception lists it.`,
@@ -853,7 +927,7 @@ async function customerPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftF
     }
   }
   if (j.flags.pendingConflicts > 0) {
-    observations.push({ text: `${j.flags.pendingConflicts} identity match(es) for this customer wait for a reviewer.`, evidenceIds: [cust], status: "verified" });
+    observations.push(rendered({ text: `${j.flags.pendingConflicts} identity match(es) for this customer wait for a reviewer.`, evidenceIds: [cust], status: "verified" }, [field(j.flags.pendingConflicts, "getCustomerJourney", cust, "flags.pendingConflicts")]));
   }
   return {
     summary: a
@@ -896,13 +970,20 @@ async function branchMismatchPlan(ctx: PlanContext, d: DetectedIntent): Promise<
   // claim check: "25 lead(s)" at a branch with 58 open mismatches).
   const openTotal = list.counts.find((c) => c.kind === "branch_mismatch")?.open ?? rows.length;
   const sampled = rows.length < openTotal;
-  const observations: Observation[] = [...pairs.values()].slice(0, 4).map((p) => ({
-    text: sampled
-      ? `${openTotal} branch-mismatch exception(s) are open${d.branchId ? ` at ${d.branchId}` : ""}; of the ${rows.length} read, ${p.ids.length} are leads captured for ${p.lead} that belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`
-      : `${p.ids.length} lead(s) captured for ${p.lead} belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`,
-    evidenceIds: p.ids.slice(0, 5).map(evidence.exception),
-    status: "verified" as const,
-  }));
+  const observations: Observation[] = [...pairs.values()].slice(0, 4).map((p) => {
+    const cite = evidence.exception(p.ids[0]);
+    const pair = field(p.ids.length, "getReconciliationExceptions", cite, `#exceptions[kind=branch_mismatch&evidence.leadBranch=${p.lead}&evidence.crmBranch=${p.crm}]`);
+    return rendered(
+      {
+        text: sampled
+          ? `${openTotal} branch-mismatch exception(s) are open${d.branchId ? ` at ${d.branchId}` : ""}; of the ${rows.length} read, ${p.ids.length} are leads captured for ${p.lead} that belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`
+          : `${p.ids.length} lead(s) captured for ${p.lead} belong to customers serviced by ${p.crm}${p.territory ? ` (the territory table also says ${p.territory})` : ""}.`,
+        evidenceIds: p.ids.slice(0, 5).map(evidence.exception),
+        status: "verified" as const,
+      },
+      sampled ? [field(openTotal, "getReconciliationExceptions", cite, "counts[kind=branch_mismatch].open"), field(rows.length, "getReconciliationExceptions", cite, "#exceptions[kind=branch_mismatch]"), pair] : [pair],
+    );
+  });
   const top = rows[0];
   const tev = top.evidence as Record<string, unknown>;
   const journey = tev.customerId ? await ctx.call("getCustomerJourney", { customerId: Number(tev.customerId) }) : null;
@@ -953,17 +1034,21 @@ async function channelConflictPlan(ctx: PlanContext, d: DetectedIntent): Promise
   if (!list) return nothingReadable(ctx, "Channel conflicts could not be read.");
   const rows = list.exceptions;
   if (rows.length === 0) return { ...emptyDraft(`No open D2D / paid channel conflict${d.branchId ? ` at ${d.branchId}` : ""}.`), confidence: { level: "medium", why: "The detector found none." } };
-  const count = list.counts.find((c) => c.kind === "channel_conflict")?.open ?? rows.length;
+  const counted = list.counts.find((c) => c.kind === "channel_conflict")?.open;
+  const count = counted ?? rows.length;
   const top = rows[0];
   const ev = top.evidence as Record<string, unknown>;
   const journey = ev.customerId ? await ctx.call("getCustomerJourney", { customerId: Number(ev.customerId) }) : null;
   await ctx.call("getMetricDefinition", { key: "acquired" });
   const observations: Observation[] = [
-    {
-      text: `${count} open conflict(s)${d.branchId ? ` at ${d.branchId}` : " in scope"}: a paid touch reached the customer first, then a door-to-door rep signed the sale; credit follows the first evidenced touch.`,
-      evidenceIds: rows.slice(0, 5).map((e) => evidence.exception(e.id)),
-      status: "verified",
-    },
+    rendered(
+      {
+        text: `${count} open conflict(s)${d.branchId ? ` at ${d.branchId}` : " in scope"}: a paid touch reached the customer first, then a door-to-door rep signed the sale; credit follows the first evidenced touch.`,
+        evidenceIds: rows.slice(0, 5).map((e) => evidence.exception(e.id)),
+        status: "verified",
+      },
+      [field(count, "getReconciliationExceptions", evidence.exception(top.id), counted === undefined ? "#exceptions" : "counts[kind=channel_conflict].open")],
+    ),
   ];
   if (journey) {
     observations.push({
@@ -1054,11 +1139,18 @@ async function staleSyncPlan(ctx: PlanContext, d: DetectedIntent): Promise<Draft
   const stale = ing.streams.filter((s) => s.hoursSinceSuccess === null || s.hoursSinceSuccess > FRESHNESS_MAX_AGE_HOURS);
   for (const s of ing.streams.slice(0, 8)) {
     if (!s.lastSuccessRunId) continue;
-    observations.push({
-      text: `${s.stream}: last successful run ${s.lastSuccessRunId} at ${when(s.lastSuccessAt)} (${s.hoursSinceSuccess ?? "?"} h before the business clock; stale after ${FRESHNESS_MAX_AGE_HOURS} h); last run ${s.lastRunStatus ?? "none"}.`,
-      evidenceIds: [evidence.ingestionRun(s.lastSuccessRunId)],
-      status: "verified",
-    });
+    const run = evidence.ingestionRun(s.lastSuccessRunId);
+    const at = `streams[stream=${s.stream}]`;
+    observations.push(
+      rendered(
+        {
+          text: `${s.stream}: last successful run ${s.lastSuccessRunId} at ${when(s.lastSuccessAt)} (${s.hoursSinceSuccess ?? "?"} h before the business clock; stale after ${s.staleAfterHours} h); last run ${s.lastRunStatus ?? "none"}.`,
+          evidenceIds: [run],
+          status: "verified",
+        },
+        [...(s.hoursSinceSuccess === null ? [] : [field(s.hoursSinceSuccess, "getIngestionFailures", run, `${at}.hoursSinceSuccess`)]), field(s.staleAfterHours, "getIngestionFailures", run, `${at}.staleAfterHours`)],
+      ),
+    );
   }
   for (const f of ing.failedRuns.slice(0, 3)) {
     observations.push({
@@ -1120,11 +1212,16 @@ async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<Dr
   const trace = d.period === "all" ? null : await ctx.call("getMetricTrace", { branchId: b, period: d.period, metric: "paid_cac" });
   const campaigns = trace?.campaigns ?? [];
   const more = trace && trace.campaignsOmitted > 0 ? ` (the ${trace.campaignsOmitted} smallest not listed)` : "";
-  observations.push({
-    text: `${b}, ${label}: paid media spend ${money(metrics.paidSpendCents)}${campaigns.length ? ` across ${campaigns.length + (trace?.campaignsOmitted ?? 0)} campaign(s)${more}` : ""}.`,
-    evidenceIds: [bm],
-    status: "verified",
-  });
+  observations.push(
+    rendered(
+      {
+        text: `${b}, ${label}: paid media spend ${money(metrics.paidSpendCents)}${campaigns.length ? ` across ${campaigns.length + (trace?.campaignsOmitted ?? 0)} campaign(s)${more}` : ""}.`,
+        evidenceIds: [bm],
+        status: "verified",
+      },
+      trace && campaigns.length ? [field(campaigns.length + trace.campaignsOmitted, "getMetricTrace", bm, "#campaigns + campaignsOmitted"), ...(trace.campaignsOmitted > 0 ? [field(trace.campaignsOmitted, "getMetricTrace", bm, "campaignsOmitted")] : [])] : [],
+    ),
+  );
   for (const c of campaigns.slice(0, 5)) {
     const credited = c.paidCustomersCredited === null ? "" : `; campaign ${c.externalCampaignId} is credited with ${c.paidCustomersCredited} paid customer(s)`;
     observations.push({ text: `${b}, ${label}: campaign ${c.externalCampaignId} spent ${money(c.spendCents)} (filed as ${c.channelCode})${credited}.`, evidenceIds: [bm, c.evidenceId], status: "verified" });
@@ -1145,15 +1242,22 @@ async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<Dr
   if (cash) {
     const r = cash.value.reproduced;
     const broken = cash.invariants.filter((i) => !i.holds);
-    observations.push({
-      text: cash.value.matches
-        ? `${b}, ${label}: collected cash ${exactDollars(r.collectedCents)} = ${exactDollars(r.grossCents)} paid − ${exactDollars(r.refundsCents)} refunded, from ${cash.payments.count} stored payment record(s), ${cash.payments.refunds} of them refunds${broken.length ? `; ${broken.length} invariant(s) broken: ${broken.map((i) => i.name).join("; ")}` : ""}.`
-        : `The stored payment records do NOT reproduce ${b}'s collected cash: ${cash.value.discrepancies.join(" ")}`,
-      evidenceIds: [bm, ...cash.payments.sample.slice(0, 5).map((p) => p.evidenceId)],
-      status: "verified",
-    });
+    observations.push(
+      rendered(
+        {
+          text: cash.value.matches
+            ? `${b}, ${label}: collected cash ${exactDollars(r.collectedCents)} = ${exactDollars(r.grossCents)} paid − ${exactDollars(r.refundsCents)} refunded, from ${cash.payments.count} stored payment record(s), ${cash.payments.refunds} of them refunds${broken.length ? `; ${broken.length} invariant(s) broken: ${broken.map((i) => i.name).join("; ")}` : ""}.`
+            : `The stored payment records do NOT reproduce ${b}'s collected cash: ${cash.value.discrepancies.join(" ")}`,
+          evidenceIds: [bm, ...cash.payments.sample.slice(0, 5).map((p) => p.evidenceId)],
+          status: "verified",
+        },
+        cash.value.matches ? [field(cash.payments.count, "getCashTrace", bm, "payments.count"), field(cash.payments.refunds, "getCashTrace", bm, "payments.refunds")] : [],
+      ),
+    );
     for (const e of cash.excluded) {
-      observations.push({ text: `${e.count} payment record(s) at ${b} are not in collected cash (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+      observations.push(
+        rendered({ text: `${e.count} payment record(s) at ${b} are not in collected cash (${e.code}): ${e.reason}.`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" }, e.evidenceIds[0] ? [field(e.count, "getCashTrace", e.evidenceIds[0], `excluded[code=${e.code}].count`)] : []),
+      );
     }
   }
   const channels = metrics.channels.filter((c) => c.spendCents > 0 || c.acquired > 0);
@@ -1166,10 +1270,18 @@ async function metricLookupPlan(ctx: PlanContext, d: DetectedIntent): Promise<Dr
   }
   // What the figures do not contain: records held or excluded at intake, customers the definition leaves out.
   for (const r of trace?.sourceRecords ?? []) {
-    observations.push({ text: `${r.count} ${r.source} record(s) at ${b} were ${r.status} at intake (${r.code}) and are not in these figures.`, evidenceIds: r.sampleEvidenceIds.slice(0, 5), status: "verified" });
+    const cite = r.sampleEvidenceIds[0];
+    observations.push(
+      rendered(
+        { text: `${r.count} ${r.source} record(s) at ${b} were ${r.status} at intake (${r.code}) and are not in these figures.`, evidenceIds: r.sampleEvidenceIds.slice(0, 5), status: "verified" },
+        cite ? [field(r.count, "getMetricTrace", cite, `sourceRecords[source=${r.source}&status=${r.status}&code=${r.code}].count`)] : [],
+      ),
+    );
   }
   for (const e of trace?.excluded ?? []) {
-    observations.push({ text: `${e.count} new customer(s) are left out of the CAC denominator by the definition (${e.code}).`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" });
+    observations.push(
+      rendered({ text: `${e.count} new customer(s) are left out of the CAC denominator by the definition (${e.code}).`, evidenceIds: e.evidenceIds.slice(0, 5), status: "verified" }, e.evidenceIds[0] ? [field(e.count, "getMetricTrace", e.evidenceIds[0], `excluded[code=${e.code}].count`)] : []),
+    );
   }
   const missingInformation = [
     ...(d.asksCause ? ["Whether the spend caused these customers or this cash: attribution credits each customer to the channel of the first evidenced touch; only a controlled experiment measures what spend caused."] : []),

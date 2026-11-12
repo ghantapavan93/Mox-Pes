@@ -94,7 +94,8 @@ export function claimNumbers(text: string): ClaimNumber[] {
     .replace(/\bHTTP\s+\d{3}\b/gi, " ")
     .replace(/\b[a-z]+(?:_[a-z]+)+\s+#?\d+\b/g, " ") // an exception kind and its id: "quarantined_source_records 1063"
     // A record named in prose ("campaign 8677", "raw event 198055", "exception #2455") is an id.
-    .replace(/\b(?:campaigns?|raw events?|exceptions?|customers?|leads?|runs?|changes?|cases?|proposals?|payments?|tickets?|investigations?|incidents?|records?|subscriptions?|appointments?)\s+#?\d+\b|#\d+\b/gi, " ")
+    // So is a zip code or a sales rep's number ("lives in zip 15147", "sold by rep 1973").
+    .replace(/\b(?:campaigns?|raw events?|exceptions?|customers?|leads?|runs?|changes?|cases?|proposals?|payments?|tickets?|investigations?|incidents?|records?|subscriptions?|appointments?|zip(?: code)?|reps?)\s+#?\d+\b|#\d+\b/gi, " ")
     .replace(/\b[A-Za-z]+\d+[\w-]*/g, " ")
     .replace(/\b[A-Za-z][\w]*[-_][\w-]*\d[\w-]*/g, " ") // source record ids: msg-00000074, CAL-77
     .replace(/@?\d+\.\d+(?:\.\d+)*/g, " ")

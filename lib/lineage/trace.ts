@@ -89,7 +89,8 @@ export interface MetricTrace {
   denominator: { count: number; customers: CustomerContribution[]; truncated: boolean };
   excluded: Array<{ reason: string; code: string; count: number; amountCents: number | null; evidenceIds: string[] }>;
   sourceRecords: Array<{ source: string; status: "excluded" | "quarantined"; code: string; count: number; sampleEvidenceIds: string[] }>;
-  missing: Array<{ kind: string; detail: string; evidenceIds: string[] }>;
+  /** An unmapped campaign also states its figures as fields, so a sentence rendering them is proved (R-38). */
+  missing: Array<{ kind: string; detail: string; evidenceIds: string[]; campaignExternalId?: string; leads?: number; spendCents?: number }>;
   freshness: StreamFreshness[];
   limitations: string[];
   evidenceIds: string[];
@@ -300,6 +301,9 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
       kind: "unmapped_campaign",
       detail: `Campaign ${u.external_campaign_id} has ${num(u.leads)} lead(s) at ${branch.id} but is mapped to no branch: ${exactDollars(num(u.spend))} of its spend in the period counts nowhere.`,
       evidenceIds: [evidence.campaign(Number(u.id))],
+      campaignExternalId: String(u.external_campaign_id),
+      leads: num(u.leads),
+      spendCents: num(u.spend),
     });
   }
   for (const e of exceptions.rows) missing.push({ kind: `open_exception:${e.kind}`, detail: e.summary, evidenceIds: [evidence.exception(Number(e.id))] });

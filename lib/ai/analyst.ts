@@ -3,6 +3,7 @@ import { parseEvidenceId } from "./evidence";
 import { metricFacts, statusFacts, type MetricFact, type StatusFacts } from "./facts";
 import { checkNumbers, emptyFacts, mergeFacts, outputFacts, type Facts, type NumberCheck } from "./numbers";
 import { citedFacts, judge, proveStatement, type Judgement, type Proof, type ProofOrigin } from "./proof";
+import { applyRenders, rendersOf, type RecordedOutput } from "./rendered";
 
 /**
  * What the tools of this run actually said, per evidence id: the TYPED figures (money, percent,
@@ -19,6 +20,8 @@ export interface EvidenceFacts {
   metrics: MetricFact[];
   /** Readiness and feed freshness from every tool call of the run. */
   status: StatusFacts;
+  /** Each successful tool call's output, for the record figures a template renders (lib/ai/rendered.ts). */
+  outputs: RecordedOutput[];
 }
 
 export function evidenceFacts(steps: ReadonlyArray<{ kind: string; status: string; tool?: string | null; output: unknown; evidenceIds: string[] }>): EvidenceFacts {
@@ -37,7 +40,8 @@ export function evidenceFacts(steps: ReadonlyArray<{ kind: string; status: strin
     }
   }
   const typed = steps.map((s) => ({ ...s, tool: s.tool ?? null }));
-  return { byId, all, conflicted, metrics: metricFacts(typed), status: statusFacts(typed) };
+  const outputs = typed.filter((s) => s.kind === "tool_call" && s.status === "ok").map((s) => ({ tool: s.tool, evidenceIds: s.evidenceIds, output: s.output }));
+  return { byId, all, conflicted, metrics: metricFacts(typed), status: statusFacts(typed), outputs };
 }
 
 function factsFor(ids: string[], facts: EvidenceFacts): Facts {
@@ -155,9 +159,9 @@ export function isCausalImpactClaim(text: string): boolean {
  * The model's free text is held to a wider net: any movement of a metric, or an outcome,
  * attributed to a cause ("because", "thanks to", "due to"), a campaign "bringing in" customers,
  * or spend "returning" cash. Attribution credits a channel; it does not show the channel caused
- * the customer (review 2026-11-12, AI-claims finding 12). The product's own templates use
- * "because" for data-quality explanations ("quarantined because of a mapper error"), so this
- * applies to model text only.
+ * the customer (review 2026-11-12, AI-claims finding 12). It applies to the product's own
+ * templates too (R-38): their data-quality "because" ("quarantined because of a mapper error")
+ * names no metric moving, and over the demo and held-out runs no template sentence matched it.
  */
 const METRIC_WORD = String.raw`(?:revenue|collections?|collected|cash|sales|cac|acquisition cost|cost per (?:new )?(?:customer|acquisition)|spend|customers?|profit|roi|bookings?)`;
 /** A metric MOVING: "revenue fell", "collections rose", "CAC went up". A data-quality explanation ("a campaign mapped to no branch") is not one. */
@@ -183,9 +187,13 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   const figureReason = (bad: NumberCheck[]) => `states ${bad.map((b) => b.text).join(", ")}, which no tool output it cites contains; figures must come from the tools`;
   const proved = new Map<string, Proved>();
   // Proofs against the typed metric facts the claim cites (all of them for text that cites nothing).
-  const prove = (text: string, ids: string[] | null): Proved => {
+  // `source` is the draft object the text came from: a template's declared record figures are
+  // proved against the recorded tool outputs (lib/ai/rendered.ts). Model drafts declare none.
+  const prove = (text: string, ids: string[] | null, source?: object): Proved => {
     if (!facts) return { proofs: [], judgement: null };
-    const proofs = proveStatement(text, { branchId: opts.branchId, facts: ids === null ? facts.metrics : citedFacts(facts.metrics, ids), status: facts.status, origin: opts.origin });
+    const read = proveStatement(text, { branchId: opts.branchId, facts: ids === null ? facts.metrics : citedFacts(facts.metrics, ids), status: facts.status, origin: opts.origin });
+    const renders = opts.origin === "template" && source ? rendersOf(source) : [];
+    const proofs = renders.length > 0 ? applyRenders(read, renders, facts.outputs, text) : read;
     return { proofs, judgement: judge(proofs, opts.origin) };
   };
   const proofReason = (j: Judgement) => `does not follow from the facts it cites: ${j.reason}`;
@@ -207,7 +215,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
     // Stated as fact or as hypothesis, an unhedged claim that something caused a business
     // outcome is dropped (a "strong hypothesis" is shown as a finding too; review S7). The
     // model's "verified" findings are held to the wider net.
-    if (isCausalImpactClaim(o.text) || (opts.origin === "model" && o.status === "verified" && isModelCausalClaim(o.text))) {
+    if (isCausalImpactClaim(o.text) || (o.status === "verified" && isModelCausalClaim(o.text))) {
       dropped.push({ where: "observation", claimStatus: o.status, text: o.text, evidenceIds: o.evidenceIds, unsupported: [], reason: CAUSAL_REASON });
       continue;
     }
@@ -225,7 +233,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
     }
     // Each figure (and stated direction) must FOLLOW from the facts cited: metric, entity,
     // period, sign, arithmetic, unit. Appearing in an output is not enough (lib/ai/proof.ts).
-    const p = prove(o.text, o.evidenceIds);
+    const p = prove(o.text, o.evidenceIds, o);
     // A figure no cited output contains is dropped, unless its proof derives it from cited facts
     // (a difference, a share, a sum): then the proof is the evidence.
     const badFigures = unsupportedFigures(o.text, o.evidenceIds, facts).filter((b) => !derived(p, b.text));
@@ -302,7 +310,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   }
   if (suspectedCause) {
     // A hypothesis may leave figures unproved, but may not contradict its own evidence.
-    const p = prove(suspectedCause.text, suspectedCause.evidenceIds);
+    const p = prove(suspectedCause.text, suspectedCause.evidenceIds, suspectedCause);
     if (p.proofs.some((x) => x.verdict === "CONTRADICTED") && p.judgement) {
       proofDropped++;
       dropped.push({ where: "suspectedCause", text: suspectedCause.text, evidenceIds: suspectedCause.evidenceIds, unsupported: [], reason: proofReason(p.judgement), proofs: p.proofs });
@@ -326,7 +334,7 @@ export function groundDraft(draft: DraftFindings, returned: ReadonlySet<string>,
   const textDropped: DroppedClaim[] = [];
   const checkText = (where: "summary" | "recommendedNextAction" | "expectedEffect" | "risk", text: string | undefined): boolean => {
     if (text === undefined) return true;
-    if (isCausalImpactClaim(text) || (opts.origin === "model" && where === "summary" && isModelCausalClaim(text))) {
+    if (isCausalImpactClaim(text) || (where === "summary" && isModelCausalClaim(text))) {
       textDropped.push({ where, text, evidenceIds: [], unsupported: [], reason: CAUSAL_REASON });
       return false;
     }
@@ -406,6 +414,17 @@ export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | unde
     const p = grounded.proved.get(text);
     return p !== undefined && p.proofs.length > 0 && p.proofs.every((x) => x.verdict === "VERIFIED");
   };
+  /** What a certified claim rests on: propositions proved from facts, record fields rendered. */
+  const basis = (text: string) => {
+    const proofs = grounded.proved.get(text)?.proofs ?? [];
+    const records = proofs.filter((x) => x.relation === "record").length;
+    const facts = proofs.length - records;
+    const parts = [
+      ...(facts ? [`${facts === 1 ? "its proposition follows" : `all ${facts} propositions follow`} from the facts they cite`] : []),
+      ...(records ? [`${records === 1 ? "its record figure equals the field" : `its ${records} record figures equal the fields`} of the returned record${records === 1 ? "" : "s"} it renders`] : []),
+    ];
+    return `cited records returned by tools in this run; ${parts.join("; ")} (proofs attached)`;
+  };
 
   for (const o of d.observations) {
     const nums = numbers(o.text, o.evidenceIds);
@@ -415,20 +434,16 @@ export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | unde
     const factual: Claim["type"] = DERIVED.test(o.text) ? "DERIVATION" : "OBSERVATION";
     if (o.status === "verified") {
       const conflict = conflicted(o.evidenceIds);
-      const n = grounded.proved.get(o.text)?.proofs.length ?? 0;
+      // Certified only with every proposition proved (R-38). A verified observation reaches here
+      // with all proofs VERIFIED, or with none: a statement of what a cited record says, with no
+      // figure, status or direction in it for the checker to test.
       add({
         type: factual,
         text: o.text,
         evidenceIds: o.evidenceIds,
         numbers: nums,
         status: conflict ? "CONFLICTED" : "SUPPORTED",
-        reason: conflict
-          ? "its evidence reports the number does not reproduce from the records"
-          : provedAll(o.text)
-            ? `cited records returned by tools in this run; ${n === 1 ? "its figure follows" : `all ${n} figures follow`} from the facts they cite (proofs attached)`
-            : nums.length
-              ? "cited records returned by tools in this run; every figure appears in their output"
-              : "cited records returned by tools in this run",
+        reason: conflict ? "its evidence reports the number does not reproduce from the records" : provedAll(o.text) ? basis(o.text) : "cited records returned by tools in this run; it states no figure, status or change for the checker to prove",
         origin,
         ...proofsOf(o.text),
       });
@@ -437,7 +452,7 @@ export function buildClaims(grounded: GroundedDraft, facts: EvidenceFacts | unde
       add({ type: factual, text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "CONFLICTED", reason: "its metric's trace in this run does not reproduce the scorecard; shown as a hypothesis, not a finding", origin, ...proofsOf(o.text) });
     } else if (judgement?.status === "PARTIALLY_SUPPORTED") {
       // Stated as fact, but a figure could not be proved from what it cites: a limitation, not a finding.
-      add({ type: factual, text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "PARTIALLY_SUPPORTED", reason: `not proved, so shown as a hypothesis: ${judgement.reason}`, origin, ...proofsOf(o.text) });
+      add({ type: factual, text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "PARTIALLY_SUPPORTED", reason: origin === "template" ? `${judgement.reason}; so it is shown as a hypothesis, not a finding` : `not proved, so shown as a hypothesis: ${judgement.reason}`, origin, ...proofsOf(o.text) });
     } else {
       add({ type: "HYPOTHESIS", text: o.text, evidenceIds: o.evidenceIds, numbers: nums, status: "PARTIALLY_SUPPORTED", reason: `consistent with the cited evidence (${o.strength ?? "weak"}), not proof`, origin, ...proofsOf(o.text) });
     }

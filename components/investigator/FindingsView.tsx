@@ -80,11 +80,11 @@ function ClaimCheck({ claims }: { claims: NonNullable<InvestigationResult["claim
           Claim check · {tally("SUPPORTED")} supported · {tally("PARTIALLY_SUPPORTED")} partly · {tally("UNSUPPORTED") + tally("CONFLICTED")} rejected or conflicted · {tally("NOT_DETERMINABLE")} not determinable
         </summary>
         <p className="mt-2 text-xs text-muted">
-          Checked by code, not by the model. Every cited id must have been returned by a tool in this run. Every figure must follow from the facts the claim cites: the right metric, branch or channel, period, direction, arithmetic and unit, and money whose currency is established. A number that merely appears in a tool&apos;s output proves nothing. A cause of a business outcome is never accepted without a measured experiment. Open a claim&apos;s proof to see each calculation and the facts it used.
+          Checked by code, not by the model. Every cited id must have been returned by a tool in this run. Every figure must follow from the facts the claim cites: the right metric, branch or channel, period, direction, arithmetic and unit, and money whose currency is established. A record figure the product writes (a count of held records) must equal the field of the returned record it renders. A number that merely appears in a tool&apos;s output proves nothing, and a sentence the product wrote is not supported for that reason: only when every part of it is proved. A cause of a business outcome is never accepted without a measured experiment. Open a claim&apos;s proof to see each calculation and the facts it used.
         </p>
         <ul className="mt-2 space-y-2 text-sm">
           {claims.map((c) => (
-            <li key={c.id} className="rounded border border-border p-2">
+            <li key={c.id} className="rounded border border-border p-2" data-claim-status={c.status}>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</Badge>
                 <span className="text-[11px] uppercase tracking-wide text-faint">{c.type.toLowerCase()}</span>
@@ -124,10 +124,13 @@ function factValue(value: number | null, unit: ProofItem["inputs"][number]["unit
  */
 function ProofList({ proofs }: { proofs: ProofItem[] }) {
   const verified = proofs.filter((p) => p.verdict === "VERIFIED").length;
+  // A record figure is proved against the field of the returned record it renders, not a metric fact.
+  const records = proofs.filter((p) => p.relation === "record" && p.verdict === "VERIFIED").length;
   return (
-    <details className="mt-1" data-testid="claim-proof">
+    <details className="mt-1" data-testid="claim-proof" data-proved={`${verified}/${proofs.length}`}>
       <summary className="cursor-pointer text-xs text-faint">
         Proof · {verified} of {proofs.length} proposition{proofs.length === 1 ? "" : "s"} follow{verified === 1 ? "s" : ""}
+        {records === 1 ? " · 1 equals the record field it renders" : records > 1 ? ` · ${records} equal the record fields they render` : ""}
       </summary>
       <ol className="mt-1 space-y-1">
         {proofs.map((p, i) => {

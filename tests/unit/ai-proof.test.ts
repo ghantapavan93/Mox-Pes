@@ -359,14 +359,16 @@ describe("reading statements as people write them", () => {
     expect(prove("B09's October paid spend of $4,825.80 bought 25 paid customers.").model?.status).toBe("UNSUPPORTED");
   });
 
-  it("does not certify what it cannot read (model text), but keeps templates", () => {
+  it("does not certify what it cannot read, whoever wrote it", () => {
     // The count of campaigns is outside the vocabulary, and the spend it names is not proved:
-    // model text saying so is not read, so it is rejected (closed reading); a template keeps it.
+    // model text saying so is not read, so it is rejected (closed reading). A template is no
+    // longer kept for being a template (R-38): it is shown with the limitation, not certified.
     const r = prove("B09's paid spend came from 12 campaigns in October.");
     expect(r.proofs[0].gap).toBe("metric_unknown");
     expect(r.model?.status).toBe("UNSUPPORTED");
     expect(r.modelProofs.find((p) => p.gap === "unread")?.reason).toMatch(/mentions spend, which no proposition in it is about/);
-    expect(r.template?.status).toBe("SUPPORTED");
+    expect(r.template?.status).toBe("PARTIALLY_SUPPORTED");
+    expect(r.template?.reason).toMatch(/^written from a calculation, but not certified: 0 of 1 propositions are proved/);
   });
 
   it("treats a projection as a hypothesis, not a proved figure", () => {
@@ -385,7 +387,9 @@ describe("reading statements as people write them", () => {
     const dated = prove("B09, Oct 1–30, 2026 (UTC): paid media spend $4,825.80 across 1 campaign(s).");
     expect(dated.proofs.find((p) => p.figure === "$4,825.80")).toMatchObject({ verdict: "VERIFIED" });
     expect(dated.proofs.find((p) => p.figure === "1")).toMatchObject({ verdict: "UNRESOLVED", gap: "metric_unknown" });
-    expect(dated.template?.status).toBe("SUPPORTED");
+    // The campaign count is proved only against the trace field the template renders (R-38;
+    // tests/unit/ai-template-trust.test.ts); read alone, the sentence is not certified.
+    expect(dated.template?.status).toBe("PARTIALLY_SUPPORTED");
     // "(20 paid)": the paid customers; "$100,500.00 paid − $500.00 refunded": gross and refunds.
     expect(prove("B09, Oct 1–30, 2026 (UTC): 25 new customers serviced (20 paid).").proofs.map((p) => p.verdict)).toEqual(["VERIFIED", "VERIFIED"]);
     const cash = prove("B09, Oct 1–30, 2026 (UTC): collected cash $100,000.00 = $100,500.00 paid − $500.00 refunded.");
@@ -638,7 +642,9 @@ describe("the AI-claims review, 2026-11-12: the product's own sentences kept", (
     const text = "B09 refunded $500.00 in Oct 1–30, 2026 (UTC); collected revenue is already net of it. Customer 415347 has $50.00 in refunds; collected $1,200.00.";
     const r = prove(text);
     expect(r.proofs.filter((p) => p.verdict === "CONTRADICTED")).toEqual([]);
-    expect(r.template?.status).toBe("SUPPORTED");
+    // Not contradicted by the branch's figures, and not certified either: a customer's money is
+    // proved against the journey fields the product's template renders (R-38), not here.
+    expect(r.template?.status).toBe("PARTIALLY_SUPPORTED");
   });
 
   it("20 · a figure inside a quoted campaign name is a name, not a figure", () => {

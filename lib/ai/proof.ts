@@ -103,7 +103,8 @@ export interface ProofInput {
 /** "almost", "nearly", "just under": close to the figure and not above it. */
 export type Qualifier = "exact" | "approximately" | "almost" | "more_than" | "at_least" | "less_than" | "at_most";
 
-export type Relation = "level" | "change" | "relative_change" | "points_change" | "direction" | "ratio" | "sum" | "share" | "arithmetic" | "membership" | "status" | "unknown";
+/** "record": a template's figure equals the field of a returned record it renders (lib/ai/rendered.ts). */
+export type Relation = "level" | "change" | "relative_change" | "points_change" | "direction" | "ratio" | "sum" | "share" | "arithmetic" | "membership" | "status" | "record" | "unknown";
 
 export interface Proof {
   piece: string;
@@ -428,8 +429,13 @@ const dirWord = (d: "increase" | "decrease" | "unchanged") => (d === "unchanged"
 function splitPieces(text: string): string[] {
   const raw = text.split(/;\s*|(?<=[.!?])\s+(?=[A-Z])|\s*,?\s+(?:while|whereas|but|although|though)\s+/);
   const out: string[] = [];
+  // A quotation is one unit: split inside it, each half has one quote mark and its figures would
+  // be read as the sentence's own (R-38: a quoted exception summary holding a ";").
+  const open = (s: string) => ((s.match(/"/g)?.length ?? 0) % 2 === 1) || (s.match(/“/g)?.length ?? 0) > (s.match(/”/g)?.length ?? 0);
   for (const p of raw) {
-    if (out.length > 0 && /\b(?:Oct|Sep|Sept|vs|approx|No|e\.g|i\.e)\.$/i.test(out[out.length - 1])) out[out.length - 1] += ` ${p}`;
+    const last = out[out.length - 1];
+    if (last !== undefined && open(last)) out[out.length - 1] += `; ${p}`;
+    else if (last !== undefined && /\b(?:Oct|Sep|Sept|vs|approx|No|e\.g|i\.e)\.$/i.test(last)) out[out.length - 1] += ` ${p}`;
     else out.push(p);
   }
   return out.map((s) => s.trim()).filter(Boolean);
@@ -636,6 +642,11 @@ interface Statement {
   campaignIds: string[];
   channels: Channel[];
   subjectBranch: string | null;
+  /**
+   * Templates quote what they insert verbatim (a campaign name, an exception's own summary), so a
+   * quotation asserts nothing of theirs: its words are not read (R-38). Model text is read whole.
+   */
+  quotesAreNames: boolean;
 }
 
 /** What one piece of a statement passes to the next: "Joshua's …: 10 new customers; 10 paid; …". */
@@ -667,7 +678,9 @@ function channelMentionsIn(piece: string, channels: Channel[]): ChannelMention[]
   return out.sort((a, b) => a.at - b.at);
 }
 
-function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
+function provePiece(text: string, st: Statement, carry: Carry): Proof[] {
+  // What is read: the piece, with a template's quotations blanked (positions kept). Proofs show `text`.
+  const piece = st.quotesAreNames ? maskQuoted(text) : text;
   const out: Proof[] = [];
   const modal = MODAL.test(piece);
   // A figure is hypothetical only when the conditional or forward-looking word governs it, i.e.
@@ -676,7 +689,8 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
   const modalAt = piece.search(MODAL);
   const modalBefore = (at: number) => modalAt !== -1 && modalAt < at;
   // A count the credited-part reader takes ("10 of them credited to paid media") is not read again.
-  const credited = creditedCountSpans(piece);
+  // So is a count of readiness verdicts ("4 of 4 paid channel(s) not ready"): statusProofs proves it.
+  const credited = [...creditedCountSpans(piece), ...readinessCountSpans(piece)];
   const figs = figuresOf(piece).filter((f) => !credited.some(([a, b]) => f.start < b && f.end > a));
   const mentions = familyMentions(piece);
   const dirs = directions(piece);
@@ -748,7 +762,7 @@ function provePiece(piece: string, st: Statement, carry: Carry): Proof[] {
   const subjectChannel = chanCmp ? channelsHere.find((c) => c.id !== chanCmp.id)?.id ?? null : null;
 
   const blank = (figure: string, extra: Partial<Proof>): Proof => ({
-    piece,
+    piece: text,
     figure,
     subject: { metric: null, entity: subject, period: p },
     against: null,
@@ -1124,12 +1138,59 @@ function streamsFor(text: string): RegExp {
   return /./;
 }
 
+/**
+ * A count of a branch's readiness verdicts: "4 of 4 paid channel(s) not ready to move budget",
+ * "two of four channels are decision-ready". Before this reading, such a sentence named no
+ * channel, so it proved nothing, and a template stating it was still shown as supported (R-38).
+ */
+const READY_COUNT = new RegExp(
+  String.raw`\b${COUNT_WORD}\s+of\s+(?:(?:the|its|their)\s+)?${COUNT_WORD}\s+(?:paid\s+)?(?:media\s+)?channel(?:s|\(s\))?\s+(?:(?:are|is|were|was)\s+)?(not\s+(?:yet\s+)?)?(?:decision[- ]ready|ready to (?:move|shift|reallocate) (?:the )?budget|ready for (?:a )?budget (?:decisions?|moves?))\b`,
+  "i",
+);
+
+function readinessCountSpans(piece: string): Array<[number, number]> {
+  const m = READY_COUNT.exec(piece);
+  if (!m) return [];
+  const at = m.index ?? 0;
+  const second = m[0].indexOf(m[2], m[1].length);
+  return [
+    [at, at + m[1].length],
+    [at + second, at + second + m[2].length],
+  ];
+}
+
 function statusProofs(piece: string, st: Statement, subject: string | null, p: PeriodKey | null, channelsHere: ChannelMention[], blank: (figure: string, extra: Partial<Proof>) => Proof): Proof[] {
   const out: Proof[] = [];
   if (MODAL.test(piece)) return out;
   const status = st.status;
   const ready = READY.exec(piece);
-  if (ready && subject) {
+  const counted = READY_COUNT.exec(piece);
+  if (counted && subject) {
+    // Count the verdicts the tools returned for this branch (and period), one per channel.
+    const verdicts = new Map<string, boolean>();
+    for (const r of status?.readiness ?? []) if (r.branchId === subject && (!p || r.period === p)) verdicts.set(r.channelCode, (verdicts.get(r.channelCode) ?? true) && r.ready);
+    const figure = `${counted[1]} of ${counted[2]}`;
+    if (verdicts.size === 0) {
+      out.push(blank(figure, { relation: "status", verdict: "UNRESOLVED", gap: "fact_missing", reason: `no decision-readiness result for ${subject} was returned` }));
+    } else {
+      const claimsReady = !counted[3];
+      const part = countOf(counted[1]);
+      const whole = countOf(counted[2]);
+      const actual = [...verdicts.values()].filter((v) => v === claimsReady).length;
+      const ok = part === actual && whole === verdicts.size;
+      out.push(
+        blank(figure, {
+          relation: "status",
+          formula: `count(readiness(${subject}) ${claimsReady ? "=" : "≠"} ready) of count(readiness(${subject}))`,
+          unit: "count",
+          computed: actual,
+          claimed: part,
+          verdict: ok ? "VERIFIED" : "CONTRADICTED",
+          reason: ok ? `${actual} of the ${verdicts.size} channel verdicts returned for ${subject} are ${claimsReady ? "" : "not "}ready, as stated` : `${actual} of the ${verdicts.size} channel verdicts returned for ${subject} are ${claimsReady ? "" : "not "}ready`,
+        }),
+      );
+    }
+  } else if (ready && subject) {
     const claimsReady = !ready[1];
     // Every channel the piece names is part of the claim: "Google Search and Meta are
     // decision-ready" is two propositions (review 2026-11-12, AI-claims finding 13).
@@ -1396,6 +1457,12 @@ const MODIFIER = /\b(?:blended|recogni[sz]ed|profits?|profitab\w*|margins?|earni
 const ONLY = /\b(?:from|by|in|at|via|through|on)\s+[^.;,]{1,30}?\s+(?:only|alone)\b|\b(?:only|solely|exclusively)\s+(?:from|by|via|through|on)\b/i;
 /** Money "per customer" with a verb of cash: that is not CAC. */
 const CASH_PER_CUSTOMER = /\b(?:collect\w*|earn\w*|revenue|cash|brought in|refund\w*|received)\b[^.;]{0,40}?\$[\d,.]+\s*(?:per|\/|for each|a|from each)\s+(?:(?:new|paid|paying|acquired)\s+)*customer/i;
+/**
+ * A cost per something other than a new customer acquired: "CAC per paying customer", "cost per
+ * lead". CAC divides spend by acquisitions; a paying or active customer is another population
+ * (R-38 test: "B09's paid-media CAC per paying customer was $250.00" was certified).
+ */
+const CAC_BASE = /\bper\s+(?:(?:new|paid)\s+)?(?:paying|active|returning|existing|recurring|subscribed|retained|invoiced|billed)\s+customers?\b|\bper\s+(?:leads?|calls?|prospects?|bookings?|appointments?|sales?|subscribers?|accounts?|households?|jobs?|visits?)\b/i;
 /** A count of customers with a verb that is not acquisition: paying, invoiced, refunded, cancelled, converted. */
 const CUSTOMER_VERB = /\b(?:customers?\s+(?:paid|pay|paying)\b|paying\b|payments?\s+from|paid\s+(?:us|B\d{2}|the branch)\b|invoic\w*|bill(?:ed|ing)\b|refund\w*|cancel\w*|churn\w*|became|become|becoming|convert\w*|conversions?|renew\w*|signed|booked|retain\w*|returning|repeat)\b/i;
 /** The unknown share is a share of ALL new customers, not of spend or of paid customers. */
@@ -1511,7 +1578,9 @@ function closedReading(piece: string, own: Proof[], statement: Proof[], st: Stat
   if (CUSTOMER_REF.test(piece)) say("names a customer; the cited facts are branch, channel and campaign metrics, not one customer's");
   if (COMPANY.test(piece) && !aggregate) say("speaks of the company or a total, but no proposition in it is about more than one branch");
   if (!relations.has("membership")) {
-    const named = new Set<string>([...piece.matchAll(/\bB\d{2}\b/g)].map((m) => m[0]));
+    // A branch id inside a campaign id ("lsa-B44") is part of the id, not a branch named (R-38 survey:
+    // 279 correct sentences about campaigns were read as naming a branch no proposition was about).
+    const named = new Set<string>([...piece.matchAll(/(?<![\w-])B\d{2}\b/g)].map((m) => m[0]));
     for (const m of piece.matchAll(BRANCH_NAME)) named.add(BRANCH_BY_NAME.get(m[1]) ?? m[1]);
     const unbound = [...named].filter((id) => !bound.has(id));
     if (unbound.length > 0) say(`names ${unbound.join(", ")}, which no proposition in it is about`);
@@ -1573,6 +1642,7 @@ function closedReading(piece: string, own: Proof[], statement: Proof[], st: Stat
   if (modifier) say(`"${modifier[0]}" changes what is measured; the checker proves the product's own definitions only`);
   if (ONLY.test(piece)) say("restricts the figure to a part (\"only\", \"alone\") the facts do not break down");
   if (metrics.has("paidCac") && CASH_PER_CUSTOMER.test(piece)) say("money per customer named with a verb of cash: that is not the acquisition cost");
+  if ((metrics.has("paidCac") || metrics.has("channelCac")) && CAC_BASE.test(piece)) say("a cost per something other than a new customer acquired: CAC divides spend by acquisitions");
   if ([...metrics].some((k) => COUNT_METRICS.has(k)) && CUSTOMER_VERB.test(piece)) say("counts customers with a verb that is not acquisition (paying, invoiced, refunded, cancelled, converted): the facts count acquisitions");
   if (metrics.has("unknownShare") && SHARE_BASE.test(piece)) say("a share of a base the unknown share does not use (it is a share of all new customers)");
   // Nothing proved, yet something asserted.
@@ -1621,6 +1691,7 @@ export function proveStatement(text: string, ctx: ProveContext): Proof[] {
     campaignIds: [...new Set(ctx.facts.filter((f) => f.entity.type === "campaign").map((f) => f.entity.id))],
     channels: channelsOf(ctx.facts),
     subjectBranch: /\bB\d{2}\b/.exec(text)?.[0] ?? ctx.branchId,
+    quotesAreNames: ctx.origin === "template",
   };
   const { rest, proofs } = extractArithmetic(text, st);
   const arithmetic = [...proofs];
@@ -1665,12 +1736,19 @@ export interface Judgement {
  * - Tools that disagree, or money whose currency is not established: at best PARTIALLY_SUPPORTED.
  * - Model-written, with a soft gap (a figure outside the metric vocabulary, an ambiguous or
  *   conditional reading): PARTIALLY_SUPPORTED — shown with its limitation, never as verified.
- * - Template-written (filled from a structured calculation): otherwise kept.
+ * - Template-written, with any proposition not proved: PARTIALLY_SUPPORTED. A sentence the
+ *   product wrote is not certified for that reason; it is certified when every figure and status
+ *   it states is proved, whether against a metric fact or against the record field it renders
+ *   (lib/ai/rendered.ts). Before R-38 a template was trusted unless contradicted, so a sentence
+ *   with an unproved part read as verified ("supported" beside "0 of 2 propositions follow").
+ *   A hard gap does not drop a template's sentence as it drops the model's: its figures were
+ *   copied from structured results, so it is shown with the limitation instead.
  * - Every proposition verified: SUPPORTED.
  * - Model-written with nothing to prove: PARTIALLY_SUPPORTED. The model is never the only
  *   verifier, so its text is SUPPORTED only by a proof (review 2026-11-12, AI-claims shared root:
  *   a "verified" sentence the checker could not read was certified).
- * Null when a template asserts nothing the checker can test.
+ * Null when a template asserts nothing the checker can test: a statement of what a cited record
+ * says, with no figure, status or direction in it.
  */
 export function judge(proofs: Proof[], origin: ProofOrigin): Judgement | null {
   if (proofs.length === 0) {
@@ -1685,10 +1763,13 @@ export function judge(proofs: Proof[], origin: ProofOrigin): Judgement | null {
   if (doubtful) return { status: "PARTIALLY_SUPPORTED", reason: why(doubtful), decisive: doubtful };
   const soft = proofs.find((p) => p.verdict === "UNRESOLVED");
   if (soft && origin === "model") return { status: "PARTIALLY_SUPPORTED", reason: why(soft), decisive: soft };
+  if (soft) {
+    const proved = proofs.filter((p) => p.verdict === "VERIFIED").length;
+    return { status: "PARTIALLY_SUPPORTED", reason: `written from a calculation, but not certified: ${proved} of ${proofs.length} propositions are proved; ${why(hard ?? soft)}`, decisive: hard ?? soft };
+  }
   // Right as stored, but the facts leave records out: model text stating it plainly is a
   // limitation, not a finding (templates state the held records in their own sentence).
   const incomplete = proofs.find((p) => p.verdict === "VERIFIED" && p.inputs.some((i) => i.incompleteReason));
   if (incomplete && origin === "model") return { status: "PARTIALLY_SUPPORTED", reason: `${incomplete.figure ? `${incomplete.figure}: ` : ""}correct as stored, but ${incomplete.inputs.find((i) => i.incompleteReason)?.incompleteReason}`, decisive: incomplete };
-  if (!soft) return { status: "SUPPORTED", reason: "every proposition follows from the cited facts", decisive: null };
-  return { status: "SUPPORTED", reason: "written from a structured calculation; propositions outside the checker's vocabulary are not separately proved", decisive: soft };
+  return { status: "SUPPORTED", reason: "every proposition follows from the cited facts", decisive: null };
 }

@@ -578,12 +578,16 @@ describe("execution", () => {
 
   it("resolve_identity_conflict decides a real identity conflict through the Identity module", async () => {
     bindWorkflowPorts({ identity: undefined });
-    // A lead captured for B06 whose phone belongs to two B07 CRM customers: a branch mismatch
-    // for the customer it was credited to, and an ambiguous identity for the resolver.
-    const phone = "+12125550188";
-    const a = acquisition(1, "B07", phone, T0);
-    await ingest(pool, "calls", [call("CAL-SHARED", "B06", phone, new Date(T0.getTime() - 3_600_000))]);
-    await ingest(pool, "crm", [...a.crm, crm.customer(1002, "B07", phone, T0)]);
+    // A lead captured for B06 whose customer was serviced by B07 (a branch mismatch), and a
+    // second B06 call whose phone two B07 customers share: an ambiguous identity for the resolver.
+    // Since migration 0022 an ambiguous lead credits neither customer, so the mismatch needs a
+    // lead of its own (before, the shared-phone call credited both customers and made it).
+    const own = "+12125550187";
+    const shared = "+12125550188";
+    const a = acquisition(1, "B07", own, T0);
+    const before = new Date(T0.getTime() - 3_600_000);
+    await ingest(pool, "calls", [call("CAL-OWN", "B06", own, before), call("CAL-SHARED", "B06", shared, before)]);
+    await ingest(pool, "crm", [...a.crm, crm.customer(1002, "B07", shared, T0), crm.customer(1003, "B07", shared, T0)]);
     await runReconcile(pool, NOW);
     await resolveIdentities(pool, NOW);
     const exceptionId = Number((await one<{ id: string }>(pool, "select id from exceptions where kind = 'branch_mismatch'")).id);

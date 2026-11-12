@@ -5,6 +5,22 @@ Every claim below points at something that can be re-run. "Not done" means not d
 All work is committed locally on `feature/audit-enterprise-redesign`. **Nothing was pushed,
 deployed or merged.** No real company data and no vendor credentials were used.
 
+**Commit hashes were rewritten on 2026-11-11 (evening), with Pavan's approval,** to drop a
+`Co-Authored-By` trailer from ten messages. Trees and message text are otherwise identical
+(checked commit by commit). The hashes in these documents are the originals. They still
+resolve through `refs/backup/pre-trailer-rewrite-2026-11-11`.
+
+| Original | Now | | Original | Now |
+|---|---|---|---|---|
+| `454d6e5` | `afaa01a` | | `01c6472` | `b65d9e9` |
+| `dcbb806` | `85f4dc9` | | `78f0c7d` | `ec7ce5d` |
+| `0979ec7` | `f907983` | | `120bee4` | `2c003c5` |
+| `c6ed3e3` | `90d55ab` | | `0d76a4f` | `54dce66` |
+| `c875ec9` | `4c520bb` | | `fdd7b79` | `5ee2d72` |
+| `88747a1` | `78f2af5` | | `9fe7ca4` | `6dcf8ff` |
+| `29a9d1b` | `1a8cc6a` | | `392bd57` | `be35079` (hydration fix) |
+| `f3d123f` | `609eb67` | | | |
+
 ## Commits
 
 | Commit | Content |
@@ -112,3 +128,25 @@ production integration.
   - the preflight rule ("run the real write, measure everything, roll back");
   - the bound approval;
   - the exact-move verification.
+
+---
+
+# R-20 closed (same day, evening)
+
+Three causes, each with a test that fails without its fix. Full account: `VERIFICATION.md`, "R-20
+resolved".
+
+| Commit | Content |
+|---|---|
+| `be35079` | The viewer is read from the request first, so no static shell carries a guest viewer (React #418 gone) |
+| `1751b19` | The seed ends with `ANALYZE` (Overview stall) |
+| `e3de0e0` | Browser tests wait for dry-run and execute responses |
+
+| Check (after the last change, nothing edited during the runs) | Result |
+|---|---|
+| `npm run typecheck`, `npm run lint`, `npm run build` | pass |
+| `vitest run` | **551 / 551**, 46 files, 318 s |
+| B09 four-minute path alone, production server, reseeded each run | **10 / 10 passed** |
+| Playwright, production server (`CI=1`), pixel baselines (`VISUAL=1`) | **69 passed, 1 skipped, 0 failed, no retries**, 17.7 min. The skip is the demo-video recording |
+
+Not done here: a clean-checkout run of these commits (`bash C:/Temp/rso-verify-run.sh`).

@@ -60,7 +60,8 @@ test("a stopped rollout and a passing one, as computed, with no deployment claim
   await runVariant(page, /Cross-brand credit \(expected to stop\)/);
   await expect(section.getByTestId("rollout-stopped")).toBeVisible({ timeout: 8 * 60_000 });
   await expect(section.getByTestId("rollout-stopped")).toContainText("Rollout stopped at stage B (5 branches)");
-  const rows = section.getByTestId("rollout-stages").locator("tbody tr");
+  // The stage rows only: each stage's details hold a table of their own.
+  const rows = section.getByTestId("rollout-stages").locator("tr[data-stage]");
   await expect(rows.nth(0)).toHaveAttribute("data-status", "PASSED");
   await expect(rows.nth(1)).toHaveAttribute("data-status", "RECOVERED");
   await expect(rows.nth(2)).toHaveAttribute("data-status", "BLOCKED");

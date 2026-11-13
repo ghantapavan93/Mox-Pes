@@ -147,6 +147,15 @@ export async function worldExists(mainUrl: string, name: string): Promise<boolea
   return withAdmin(mainUrl, async (admin) => (await admin.query("select 1 from pg_database where datname = $1", [name])).rowCount === 1);
 }
 
+/** Twin databases on this server whose names start with `prefix` (a control database's own prefix). */
+export async function listWorlds(mainUrl: string, prefix: string): Promise<string[]> {
+  return withAdmin(mainUrl, async (admin) =>
+    (await admin.query<{ datname: string }>("select datname from pg_database where starts_with(datname, $1) order by datname", [prefix])).rows
+      .map((r) => r.datname)
+      .filter((name) => /^rso_twin_[a-z0-9_]{1,50}$/.test(name)),
+  );
+}
+
 export async function dropWorld(mainUrl: string, name: string): Promise<void> {
   await withAdmin(mainUrl, (admin) => dropDatabase(admin, name));
 }

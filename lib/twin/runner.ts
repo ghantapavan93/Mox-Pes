@@ -15,7 +15,7 @@ import { referenceState } from "./oracle";
 import { BASELINE_VERSION, FROM_VERSIONS, PHASE_NOW, STAGES, STEPS, TO_VERSION, buildOverlay, faultPlan, scenarioHash, type Overlay, type StageKey, type StagePlan, type StepName } from "./scenario";
 import { getEvaluation, type EvaluationRow, type StageRow } from "./store";
 import { STALE_AFTER_MS } from "./store";
-import { assertTwinDatabase, cloneWorld, codeFingerprint, databaseUrl, dropWorld, ensureBase } from "./world";
+import { assertTwinDatabase, cloneWorld, codeFingerprint, databaseUrl, dropWorld, ensureBase, listWorlds } from "./world";
 
 /**
  * The rollout runner. It drives one evaluation through its stages in the twin database and
@@ -178,6 +178,13 @@ export async function runEvaluation(control: Pool, id: number, opts: RunOptions)
       for (const o of old.rows) {
         await dropWorld(opts.mainUrl, o.twin_database).catch(() => undefined);
         await control.query("update rollout_evaluations set summary = summary || jsonb_build_object('twinDropped', now()) where id = $1", [o.id]);
+      }
+      // Twins of this control database that no evaluation names any more (the control database was
+      // reseeded under them): nothing can show or resume them, so they only hold disk.
+      const prefix = ev.twinDatabase.replace(/\d+$/, "");
+      const known = new Set((await control.query<{ twin_database: string }>("select twin_database from rollout_evaluations")).rows.map((r) => r.twin_database));
+      for (const name of await listWorlds(opts.mainUrl, prefix)) {
+        if (/^\d+$/.test(name.slice(prefix.length)) && !known.has(name)) await dropWorld(opts.mainUrl, name).catch(() => undefined);
       }
       twin = createPool(twinUrl);
       await twin.query("create table twin_inputs (variant text not null, overlay jsonb not null)");

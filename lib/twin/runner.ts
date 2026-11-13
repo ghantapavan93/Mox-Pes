@@ -15,7 +15,8 @@ import { referenceState } from "./oracle";
 import { BASELINE_VERSION, FROM_VERSIONS, PHASE_NOW, STAGES, STEPS, TO_VERSION, buildOverlay, faultPlan, scenarioHash, type Overlay, type StageKey, type StagePlan, type StepName } from "./scenario";
 import { getEvaluation, type EvaluationRow, type StageRow } from "./store";
 import { STALE_AFTER_MS } from "./store";
-import { assertTwinDatabase, cloneWorld, codeFingerprint, databaseUrl, dropWorld, ensureBase, listWorlds } from "./world";
+import { DISK_HEADROOM_BYTES, diskPreflight, formatBytes } from "./disk";
+import { assertTwinDatabase, cloneBytesNeeded, cloneWorld, codeFingerprint, databaseUrl, dropWorld, ensureBase, listWorlds, serverFreeBytes } from "./world";
 
 /**
  * The rollout runner. It drives one evaluation through its stages in the twin database and
@@ -49,6 +50,8 @@ export interface RunOptions {
   interruptions?: boolean;
   /** The lease holder's name. A supervisor restarting a lost runner reuses it; another process has its own. */
   runnerId?: string;
+  /** Test seam: the disk measurement (default: the server's data volume, lib/twin/disk.ts). */
+  diskFreeBytes?: () => Promise<number>;
 }
 
 /** Fences every control-plane write: the lease is still this runner's, and the run is within its time. */
@@ -117,6 +120,34 @@ const compactReplay = (from: string, r: ReplayResult) => ({
   googleConversionsToUpload: r.before && r.after ? [r.before.googleConversionsToUpload, r.after.googleConversionsToUpload] : null,
 });
 
+/** Keep three finished twins of this control database for inspection, before a new one is cloned. */
+const KEEP_FINISHED_TWINS = 3;
+
+async function markTwinDropped(control: Pool, evaluationId: number, why: string): Promise<void> {
+  await control.query("update rollout_evaluations set summary = summary || jsonb_build_object('twinDropped', now(), 'twinDroppedWhy', $2::text) where id = $1", [evaluationId, why]);
+}
+
+/**
+ * Twins this control database owns and no longer needs: finished ones beyond the newest three,
+ * and orphans (its own prefix, named by no evaluation: the control database was reseeded under
+ * them). Nothing outside its own prefix is ever listed, so nothing else is ever dropped.
+ */
+async function pruneOwnTwins(control: Pool, mainUrl: string, twinDatabase: string, evaluationId: number): Promise<void> {
+  const old = await control.query<{ id: string; twin_database: string }>(
+    "select id, twin_database from rollout_evaluations where status <> 'RUNNING' and id < $1 and not (summary ? 'twinDropped') order by id desc offset $2",
+    [evaluationId, KEEP_FINISHED_TWINS],
+  );
+  for (const o of old.rows) {
+    await dropWorld(mainUrl, o.twin_database).catch(() => undefined);
+    await markTwinDropped(control, Number(o.id), `retention: the ${KEEP_FINISHED_TWINS} newest finished twins are kept`);
+  }
+  const prefix = twinDatabase.replace(/\d+$/, "");
+  const known = new Set((await control.query<{ twin_database: string }>("select twin_database from rollout_evaluations")).rows.map((r) => r.twin_database));
+  for (const name of await listWorlds(mainUrl, prefix)) {
+    if (/^\d+$/.test(name.slice(prefix.length)) && !known.has(name)) await dropWorld(mainUrl, name).catch(() => undefined);
+  }
+}
+
 export async function runEvaluation(control: Pool, id: number, opts: RunOptions): Promise<EvaluationRow> {
   // Every line names the evaluation and says it is a simulation (review 2026-11-12, SRE M1).
   const log = (line: string) => opts.log?.(`[twin evaluation ${id} · simulated] ${line}`);
@@ -166,26 +197,33 @@ export async function runEvaluation(control: Pool, id: number, opts: RunOptions)
     }
     if (!ev.summary.world) {
       await control.query("update rollout_evaluations set code_fingerprint = $2 where id = $1", [evaluationId, code]);
+      // Disk before any copy (R-49): first this control database's own leftovers, then the
+      // preflight, which may drop more of its OWN finished twins and otherwise refuses.
+      await pruneOwnTwins(control, opts.mainUrl, ev.twinDatabase, evaluationId);
+      const finished = await control.query<{ id: string; twin_database: string }>(
+        // Twins of evaluations that ended with an error last: they can still be resumed.
+        "select id, twin_database from rollout_evaluations where status <> 'RUNNING' and id <> $1 and not (summary ? 'twinDropped') order by (status = 'ERROR'), id",
+        [evaluationId],
+      );
+      const disk = await diskPreflight({
+        needBytes: (await cloneBytesNeeded(opts.mainUrl)) + DISK_HEADROOM_BYTES,
+        measure: opts.diskFreeBytes ?? (() => serverFreeBytes(opts.mainUrl)),
+        ownFinished: finished.rows.map((r) => ({ evaluationId: Number(r.id), database: r.twin_database })),
+        drop: async (t) => {
+          await dropWorld(opts.mainUrl, t.database);
+          await markTwinDropped(control, t.evaluationId, "disk preflight: not enough free space for a new twin");
+        },
+      });
+      log(
+        disk.skipped
+          ? "disk preflight skipped (TWIN_SKIP_DISK_PREFLIGHT=1)"
+          : `disk preflight: ${formatBytes(disk.freeBytes)} free, ${formatBytes(disk.needBytes)} needed${disk.dropped.length ? `; dropped ${disk.dropped.length} finished twin(s) of this control database` : ""}`,
+      );
+      await fence(true);
       const base = await ensureBase(opts.mainUrl, log);
       await fence(true);
       const cloneMs = await cloneWorld(opts.mainUrl, ev.twinDatabase);
       log(`twin ${ev.twinDatabase}: cloned in ${cloneMs} ms`);
-      // Each twin is a ~200 MB copy: keep the three most recent finished ones for inspection.
-      const old = await control.query<{ id: string; twin_database: string }>(
-        "select id, twin_database from rollout_evaluations where status <> 'RUNNING' and id < $1 and not (summary ? 'twinDropped') order by id desc offset 3",
-        [evaluationId],
-      );
-      for (const o of old.rows) {
-        await dropWorld(opts.mainUrl, o.twin_database).catch(() => undefined);
-        await control.query("update rollout_evaluations set summary = summary || jsonb_build_object('twinDropped', now()) where id = $1", [o.id]);
-      }
-      // Twins of this control database that no evaluation names any more (the control database was
-      // reseeded under them): nothing can show or resume them, so they only hold disk.
-      const prefix = ev.twinDatabase.replace(/\d+$/, "");
-      const known = new Set((await control.query<{ twin_database: string }>("select twin_database from rollout_evaluations")).rows.map((r) => r.twin_database));
-      for (const name of await listWorlds(opts.mainUrl, prefix)) {
-        if (/^\d+$/.test(name.slice(prefix.length)) && !known.has(name)) await dropWorld(opts.mainUrl, name).catch(() => undefined);
-      }
       twin = createPool(twinUrl);
       await twin.query("create table twin_inputs (variant text not null, overlay jsonb not null)");
       const overlay = await buildOverlay(twin, ev.variant);

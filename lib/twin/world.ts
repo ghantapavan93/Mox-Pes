@@ -4,6 +4,7 @@ import path from "node:path";
 import type { Pool } from "pg";
 import { createPool } from "@/lib/db";
 import { seed } from "@/lib/sim/seed";
+import { freeBytesOnServer } from "./disk";
 
 /**
  * The twin's isolated world: a separate Postgres database per evaluation, cloned from a BASE
@@ -158,4 +159,25 @@ export async function listWorlds(mainUrl: string, prefix: string): Promise<strin
 
 export async function dropWorld(mainUrl: string, name: string): Promise<void> {
   await withAdmin(mainUrl, (admin) => dropDatabase(admin, name));
+}
+
+/**
+ * What the next clone will write (lib/twin/disk.ts): a copy of the base when it is current, or
+ * a rebuilt base AND its copy (about twice the control database) when it is missing or outdated.
+ */
+export async function cloneBytesNeeded(mainUrl: string): Promise<number> {
+  return withAdmin(mainUrl, async (admin) => {
+    const { rows } = await admin.query<{ comment: string | null; bytes: string }>(
+      "select shobj_description(oid, 'pg_database') as comment, pg_database_size(oid) as bytes from pg_database where datname = $1",
+      [TWIN_BASE_DATABASE],
+    );
+    if (rows[0]?.comment === baseFingerprint()) return Number(rows[0].bytes);
+    const control = await admin.query<{ bytes: string }>("select pg_database_size($1) as bytes", [databaseName(mainUrl)]);
+    return 2 * Number(control.rows[0].bytes);
+  });
+}
+
+/** Free bytes on the database server's data volume (fail-closed: lib/twin/disk.ts). */
+export async function serverFreeBytes(mainUrl: string): Promise<number> {
+  return withAdmin(mainUrl, (admin) => freeBytesOnServer(admin, new URL(mainUrl).hostname));
 }

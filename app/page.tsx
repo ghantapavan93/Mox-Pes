@@ -4,15 +4,17 @@ import { ArrowRight } from "lucide-react";
 import { AtRiskSplit } from "@/components/AtRiskSplit";
 import { Bridge } from "@/components/Bridge";
 import { StackedWeeks } from "@/components/StackedWeeks";
+import { MovementSectionAsync, MovementSkeleton } from "@/components/overview/MovementSection";
 import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th } from "@/components/ui";
 import { attentionFlags } from "@/lib/attention";
 import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
 import { decisionHolds } from "@/lib/metrics/decision";
+import { overviewMovement, parseChannel, parseWeek } from "@/lib/metrics/movement";
 import { branchRows, conversionBridge, freshness, totals, type Totals } from "@/lib/metrics/scorecard";
 import { PERIODS, parsePeriod } from "@/lib/period";
 import { weeklySeries } from "@/lib/queries";
-import { BRANDS, BRAND_BY_ID, type BrandId } from "@/lib/reference";
+import { BRANCHES, BRANDS, BRAND_BY_ID, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, resolveBrandScope, type Viewer } from "@/lib/viewer";
 
@@ -71,6 +73,17 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
     compare ? totals(pool, compare) : Promise.resolve(null as Totals | null),
   ]);
   const t = await totals(pool, scope, rows);
+  // "What changed" (components/overview) starts its reads only now, once the page's own are done,
+  // and reuses the page's holds. Started beside them, its queries took the pool's connections ahead
+  // of the holds' and added 0.1–0.2 s to R-34's time to the hold; reading the holds again added
+  // about 0.45 s of database work just as the hold was shown (docs/agent-work/OVERVIEW-MOVEMENT.md).
+  // It renders in its own Suspense boundary, after the hold.
+  const branchParam = typeof sp.branch === "string" && sp.branch !== "" ? sp.branch : null;
+  const channelParam = parseChannel(sp.channel);
+  const weekParam = parseWeek(sp.week);
+  const movementReady = overviewMovement(pool, viewer, { branchParam, brandBranchIds: brand ? branchIds : null, period, pageHolds: holds });
+  movementReady.catch(() => {}); // awaited by the section; this only keeps an early failure from being unhandled
+  const branchOptions = BRANCHES.filter((b) => branchIds === null || branchIds.includes(b.id));
   const flags = attentionFlags(rows);
   const ranked = [...rows].sort((a, b) => (flags.get(b.branchId)?.length ?? 0) - (flags.get(a.branchId)?.length ?? 0) || b.atRiskCents - a.atRiskCents);
   const flagged = ranked.filter((r) => (flags.get(r.branchId)?.length ?? 0) > 0);
@@ -130,6 +143,16 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           Channel comparisons still show their blockers branch by branch.
         </Callout>
       )}
+
+      <Suspense fallback={<MovementSkeleton />}>
+        <MovementSectionAsync
+          ready={movementReady}
+          branchOptions={branchOptions}
+          periodKey={period.key}
+          brandParam={brandParam}
+          selection={channelParam && weekParam ? { channel: channelParam, week: weekParam } : null}
+        />
+      </Suspense>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} delta={delta(t.paidSpendCents, before?.paidSpendCents ?? null, null)} sub={t.unallocatedSpendCents > 0 ? `+ ${money(t.unallocatedSpendCents)} on unmapped campaigns` : "all spend mapped"} subTone={t.unallocatedSpendCents > 0 ? "bad" : "neutral"} />

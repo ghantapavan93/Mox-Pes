@@ -1,0 +1,11 @@
+{"label":"final-confirm","layer":"direct","phase":"fresh","seed":1,"mode":"direct","run":1,"wall":1925,"ttfb":6,"htmlEnd":1430,"domContentLoaded":1442,"holdInDom":1428,"holdVisible":1618}
+{"label":"final-confirm","layer":"direct","phase":"warm","seed":1,"mode":"direct","run":1,"wall":1437,"ttfb":5,"htmlEnd":1376,"domContentLoaded":1399,"holdInDom":1364,"holdVisible":1390}
+{"label":"final-confirm","layer":"direct","phase":"warm","seed":1,"mode":"direct","run":2,"wall":1403,"ttfb":4,"htmlEnd":1202,"domContentLoaded":1233,"holdInDom":1202,"holdVisible":1228}
+{"label":"final-confirm","layer":"direct","phase":"warm","seed":1,"mode":"direct","run":3,"wall":1433,"ttfb":4,"htmlEnd":1191,"domContentLoaded":1214,"holdInDom":1179,"holdVisible":1206}
+{"label":"final-confirm","layer":"guide","phase":"fresh","seed":1,"mode":"guide","run":1,"wall":1389,"holdVisibleAfterClick":1281}
+{"label":"final-confirm","layer":"guide","phase":"warm","seed":1,"mode":"guide","run":1,"wall":1343,"holdVisibleAfterClick":1150}
+{"label":"final-confirm","layer":"guide","phase":"warm","seed":1,"mode":"guide","run":2,"wall":1382,"holdVisibleAfterClick":1154}
+{"label":"final-confirm","layer":"guide","phase":"warm","seed":1,"mode":"guide","run":3,"wall":1362,"holdVisibleAfterClick":1178}
+{"label":"final-confirm","layer":"server","phase":"fresh","seed":1,"mode":"server","run":1,"status":200,"firstByte":7,"holdsChunk":1215,"holdText":1226,"end":1230,"chunks":33,"bytes":239986}
+{"label":"final-confirm","layer":"server","phase":"warm","seed":1,"mode":"server","run":1,"status":200,"firstByte":6,"holdsChunk":1102,"holdText":1103,"end":1119,"chunks":33,"bytes":239986}
+{"label":"final-confirm","layer":"server","phase":"warm","seed":1,"mode":"server","run":2,"status":200,"firstByte":4,"holdsChunk":1156,"holdText":1157,"end":1171,"chunks":33,"bytes":239986}

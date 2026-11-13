@@ -4,10 +4,12 @@ import { Suspense } from "react";
 import { Badge, ButtonLink, Callout, Card, Forbidden, KV, PageHeader, PeriodTabs, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { count, dateTime, money } from "@/lib/format";
 import { CashTraceView } from "@/components/trace/CashTraceView";
+import { OverviewSelection } from "@/components/trace/OverviewSelection";
+import { parseChannel, parseWeek, selectionEvidence } from "@/lib/metrics/movement";
 import { traceCash, type CashTrace } from "@/lib/lineage/cash";
 import { compareTraces, exactDollars, traceBranchMetric, TRACEABLE, type MetricTrace, type TraceableMetric } from "@/lib/lineage/trace";
 import { PERIODS, parsePeriod, type Period } from "@/lib/period";
-import { BRANCH_BY_ID, type Branch } from "@/lib/reference";
+import { BRAND_BY_ID, BRANCH_BY_ID, type Branch, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 
@@ -49,6 +51,13 @@ async function Trace({ params, searchParams }: Props) {
     throw error;
   }
   const diff = previous ? compareTraces(previous, trace) : null;
+  // Arrived from one point of the Overview's "What changed" chart: that point's records, and the
+  // way back to the same selection. The branch passed the scope check above.
+  const channel = parseChannel(sp.channel);
+  const week = parseWeek(sp.week);
+  const brandParam = typeof sp.brand === "string" && BRAND_BY_ID.has(sp.brand as BrandId) ? sp.brand : null;
+  const selection = channel && week && metric === "paid_spend" ? await selectionEvidence(pool, { branchId: branch.id, channel, week }) : null;
+  const overviewHref = `/?period=${period.key}${brandParam ? `&brand=${brandParam}` : ""}${selection ? `&branch=${branch.id}&channel=${channel}&week=${week}#movement` : ""}`;
   const v = trace.value;
   const isCac = metric === "paid_cac";
   const headline = isCac ? money(v.scorecard.paidCacCents) : money(v.scorecard.paidSpendCents);
@@ -57,7 +66,7 @@ async function Trace({ params, searchParams }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        crumbs={[{ href: `/?period=${period.key}`, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Trace" }]}
+        crumbs={[{ href: overviewHref, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Trace" }]}
         eyebrow={`Trace · ${branch.id} ${branch.name} · ${period.label}`}
         title={`Where does ${headline} come from?`}
         description={`${trace.metric.label}: ${trace.metric.formula}. Every row below is a stored record you can open; the number is recomputed from them and checked against the scorecard.`}
@@ -68,6 +77,9 @@ async function Trace({ params, searchParams }: Props) {
           </div>
         }
       />
+      {selection && (
+        <OverviewSelection branchId={branch.id} channel={channel!} channelLabel={selection.channelLabel} week={week!} days={selection.days} markers={selection.markers} backHref={overviewHref} />
+      )}
       <PeriodTabs base={`/branches/${branch.id}/trace`} current={period.key} extra={`&metric=${metric}`} />
 
       {v.matches ? (

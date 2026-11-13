@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import { ActionError } from "@/lib/actions";
 import { withRollback, withTransaction } from "@/lib/db";
 import { isExclusion, type MapExclusion, type SourceName } from "@/lib/adapters/contract";
+import { CALL_EXCLUSION_CODES } from "@/lib/adapters/marketing";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { recordEvent } from "@/lib/events/outbox";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
@@ -136,30 +137,47 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
     const before = await snapshot(tx, req.scope, req.now);
     // The claim is the exactly-once point: a record moves to 'replaying' once. For a
     // re-projection it must still carry the old mapper version, so repeating the request
-    // (or racing it) finds nothing left to claim.
+    // (or racing it) finds nothing left to claim. A re-projection also re-reads what the old
+    // version EXCLUDED as not a lead (calls@1.2's own codes): without them a rollback from
+    // calls@1.2 could not restore a single lead it took out. The claim returns each row's state
+    // before it, so a record the target cannot read goes back exactly as it was.
+    type Claimed = { id: string; entity: string; payload: unknown; observed_at: Date; was_status: string; was_code: string | null; was_detail: string | null };
+    // The time a held record is mapped at. A call is a receipt-ordered record with no hold rule:
+    // its latest observation decides, as at intake (VENDOR-CONTRACTS C-4a). Any other source keeps
+    // the FIRST receipt: a stale replica that re-serves an unreadable earlier payment version after
+    // its void must not, once replayed, beat the void (R-37 holds that copy at intake only when
+    // it can be read; independent review 2026-11-12, data finding 1).
+    const heldClock = req.source === "calls" ? "last_delivered_at" : "received_at";
     const claimed =
       mode === "quarantined"
-        ? await tx.query<{ id: string; entity: string; payload: unknown; received_at: Date }>(
+        ? await tx.query<Claimed>(
             `update raw_events set status = 'replaying', error_code = null, error_detail = null
              where id = any($1::bigint[]) and source = $2 and status = 'quarantined'
-             returning id, entity, payload, received_at`,
+             returning id, entity, payload, ${heldClock} as observed_at, 'quarantined' as was_status, null::text as was_code, null::text as was_detail`,
             [req.rawEventIds, req.source],
           )
-        : await tx.query<{ id: string; entity: string; payload: unknown; received_at: Date }>(
-            `update raw_events set status = 'replaying'
-             where id = any($1::bigint[]) and source = $2 and status = 'projected' and adapter_version = $3
-             returning id, entity, payload, received_at`,
-            [req.rawEventIds, req.source, `${req.source}@${req.fromVersion}`],
+        : await tx.query<Claimed>(
+            `update raw_events r set status = 'replaying', exclusion_code = null, exclusion_detail = null
+             from (select id, status, exclusion_code, exclusion_detail from raw_events
+                   where id = any($1::bigint[]) and source = $2 and adapter_version = $3
+                     and (status = 'projected' or (status = 'excluded' and exclusion_code = any($4::text[])))
+                   for update) old
+             where r.id = old.id
+             returning r.id, r.entity, r.payload, r.last_delivered_at as observed_at, old.status as was_status, old.exclusion_code as was_code, old.exclusion_detail as was_detail`,
+            [req.rawEventIds, req.source, `${req.source}@${req.fromVersion}`, req.source === "calls" ? [...CALL_EXCLUSION_CODES] : []],
           );
+    const claimedRows = new Map(claimed.rows.map((r) => [Number(r.id), r]));
 
     const items: ProjectionItem[] = [];
     const errors: ReplayResult["errors"] = [];
     const mappedIds: number[] = [];
     const exclusions: Array<{ exclusion: MapExclusion; rawEventId: number }> = [];
     for (const row of claimed.rows) {
-      // A replayed record keeps its ORIGINAL receipt time: it was received then and only
-      // failed to map. It must not beat a version received after it.
-      const result = mapper.map({ entity: row.entity, payload: row.payload }, { ...referenceContext, receivedAt: row.received_at });
+      // A re-projected record is mapped at its LATEST OBSERVATION (last_delivered_at): a version
+      // delivered again after a newer one is the latest observation, as it is at intake (A, B, A
+      // ends on A; VENDOR-CONTRACTS C-4a). Ordering by first receipt let an older observation
+      // win (tests/integration/reprojection-ordering.test.ts). A held record: see heldClock.
+      const result = mapper.map({ entity: row.entity, payload: row.payload }, { ...referenceContext, receivedAt: row.observed_at });
       if (result.ok) {
         items.push({ projection: result.projection, rawEventId: Number(row.id) });
         mappedIds.push(Number(row.id));
@@ -199,8 +217,10 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
           [e.rawEventId, e.code, e.detail],
         );
       } else {
-        // Its earlier projection is still valid; a re-map that cannot read it leaves it as it was.
-        await tx.query("update raw_events set status = 'projected' where id = $1", [e.rawEventId]);
+        // Its earlier projection (or exclusion) is still valid; a re-map that cannot read it
+        // leaves it exactly as it was.
+        const was = claimedRows.get(e.rawEventId)!;
+        await tx.query("update raw_events set status = $2, exclusion_code = $3, exclusion_detail = $4 where id = $1", [e.rawEventId, was.was_status, was.was_code, was.was_detail]);
       }
     }
     if (req.lineage) {

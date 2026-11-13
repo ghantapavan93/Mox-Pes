@@ -46,7 +46,12 @@ const SQL: Record<Table, string> = {
       source_updated_at = excluded.source_updated_at, raw_event_id = excluded.raw_event_id,
       -- A newer qualifying version restores a lead an earlier revision excluded (migration 0018).
       excluded_code = null, excluded_at = null
-    where excluded.source_updated_at >= t.source_updated_at and excluded.raw_event_id <> t.raw_event_id`,
+    -- The same raw event re-read as a lead restores the lead it excluded: a re-projection back
+    -- to a mapper that counts it (a rollback of calls@1.2, lib/ingest/replay.ts). The live version
+    -- delivered again moves the lead's clock to that later observation, so a held or excluded
+    -- version observed in between cannot later beat it (independent review 2026-11-12, data 2).
+    where excluded.source_updated_at >= t.source_updated_at
+      and (excluded.raw_event_id <> t.raw_event_id or t.excluded_code is not null or excluded.source_updated_at > t.source_updated_at)`,
 
   crm_customers: `
     insert into crm_customers as t (crm_customer_id, office_id, source_label, phone_hash, email_hash, zip,

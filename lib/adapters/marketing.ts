@@ -81,6 +81,13 @@ const callV12 = z.union([
   z.object({ ...callBase, ...callQualification, caller: z.object({ number: z.string().min(1) }) }),
 ]);
 
+/**
+ * The codes calls@1.2 gives a call the source says is not a lead. A re-projection FROM calls@1.2
+ * re-reads the records it excluded with these codes, so a rollback can restore them
+ * (lib/ingest/replay.ts); exclusions made by other gates are not the mapper's to undo.
+ */
+export const CALL_EXCLUSION_CODES = ["NOT_INBOUND", "SPAM_CALL", "NOT_A_LEAD"] as const;
+
 function excludeUnqualified(c: z.infer<typeof callV12>, receivedAt: Date): MapExclusion | null {
   const exclude = (code: string, detail: string): MapExclusion => ({
     ok: false,

@@ -413,7 +413,8 @@ export async function applyExclusions(tx: Queryable, exclusions: Array<{ exclusi
              as x("source" text, "sourceLeadId" text, "code" text, "receivedAt" timestamptz, "rawEventId" bigint)
            order by "source", "sourceLeadId", "receivedAt" desc) r
      where t.source = r."source" and t.source_lead_id = r."sourceLeadId" and t.source_updated_at <= r."receivedAt"
-       and (t.excluded_code is distinct from r."code" or t.raw_event_id <> r."rawEventId")`,
+       -- the excluding version delivered again moves the lead's clock too (see project.ts)
+       and (t.excluded_code is distinct from r."code" or t.raw_event_id <> r."rawEventId" or t.source_updated_at < r."receivedAt")`,
     [JSON.stringify(rows), now],
   );
   return result.rowCount ?? 0;
@@ -439,11 +440,13 @@ export async function reapplyNewerExclusions(tx: Queryable, keys: Array<{ source
   const calls = keys.filter((k) => k.source === "calls").map((k) => k.sourceLeadId);
   if (calls.length === 0) return 0;
   const result = await tx.query(
-    `update leads l set excluded_code = x.exclusion_code, excluded_at = $2, raw_event_id = x.id, source_updated_at = x.received_at
-     from (select distinct on (entity_id) entity_id, id, exclusion_code, received_at from raw_events
+    // By each version's LATEST observation, the clock a lead's source_updated_at is on (a version
+    // delivered again after a newer one is the newest observation; replay.ts maps on it too).
+    `update leads l set excluded_code = x.exclusion_code, excluded_at = $2, raw_event_id = x.id, source_updated_at = x.last_delivered_at
+     from (select distinct on (entity_id) entity_id, id, exclusion_code, last_delivered_at from raw_events
            where source = 'calls' and status = 'excluded' and entity_id = any($1::text[])
-           order by entity_id, received_at desc, id desc) x
-     where l.source = 'calls' and l.source_lead_id = x.entity_id and x.received_at > l.source_updated_at`,
+           order by entity_id, last_delivered_at desc, id desc) x
+     where l.source = 'calls' and l.source_lead_id = x.entity_id and x.last_delivered_at > l.source_updated_at`,
     [calls, now],
   );
   return result.rowCount ?? 0;

@@ -68,14 +68,14 @@ function StageDetails({ s, twinDropped }: { s: StageRow; twinDropped: boolean })
   return (
     <div className="space-y-4 border-t border-border pt-3 text-xs" data-testid={`stage-details-${s.key}`}>
       <section>
-        <h4 className="font-semibold text-text">Inputs and contract</h4>
+        <h3 className="font-semibold text-text">Inputs and contract</h3>
         <p className="text-muted">
           {contract ? `${contract.from?.join(", ")} → ${contract.to}. ${contract.routing}.` : "Not started."} New branches in this stage: {s.newBranchIds.length <= 8 ? s.newBranchIds.join(", ") : `${s.newBranchIds.length}`}. Stored calls re-projected: {inputs?.reprojected ?? "—"}. Delivered during the stage:{" "}
           {inputs?.delivered ? Object.entries(inputs.delivered).map(([k, n]) => `${n} ${k}`).join(", ") : "—"} (each sent twice).
         </p>
       </section>
       <section>
-        <h4 className="font-semibold text-text">Gates</h4>
+        <h3 className="font-semibold text-text">Gates</h3>
         <ul className="space-y-1" aria-label={`Stage ${s.key} gates`}>
           {s.gates.map((g) => (
             <li key={g.id} className="flex gap-2" data-gate={g.id} data-status={g.status}>
@@ -91,7 +91,7 @@ function StageDetails({ s, twinDropped }: { s: StageRow; twinDropped: boolean })
       </section>
       {attribution && (
         <section>
-          <h4 className="font-semibold text-text">Attribution changes</h4>
+          <h3 className="font-semibold text-text">Attribution changes</h3>
           <p className="text-muted">
             {attribution.changed} customer credit(s) moved because of this stage&apos;s mapper ({attribution.inPeriod} counted in Sept–Oct): {attribution.paidToUnpaid} left a paid channel, {attribution.unpaidToPaid} returned to one, {attribution.outsideStage} belong to a branch outside the stage.
           </p>
@@ -116,14 +116,14 @@ function StageDetails({ s, twinDropped }: { s: StageRow; twinDropped: boolean })
         </section>
       )}
       <section>
-        <h4 className="font-semibold text-text">Branches</h4>
+        <h3 className="font-semibold text-text">Branches</h3>
         <p className="text-muted">
           Affected: {((evidence.affected as string[] | undefined) ?? s.branchIds).join(", ")}. Unaffected (outside the stage, unchanged): {((evidence.unaffected as string[] | undefined) ?? []).length} branch(es).
         </p>
       </section>
       {recovery && (
         <section data-testid={`stage-recovery-${s.key}`}>
-          <h4 className="font-semibold text-text">Recovery</h4>
+          <h3 className="font-semibold text-text">Recovery</h3>
           {recovery.kind === "rollback" ? (
             <dl className="grid gap-x-3 gap-y-1 text-muted sm:grid-cols-[max-content_1fr]">
               <dt className="font-medium text-text">What was done</dt>
@@ -152,7 +152,7 @@ function StageDetails({ s, twinDropped }: { s: StageRow; twinDropped: boolean })
       )}
       {metrics.stepMs && (
         <section>
-          <h4 className="font-semibold text-text">Measured</h4>
+          <h3 className="font-semibold text-text">Measured</h3>
           <p className="text-muted">
             Stage {seconds(metrics.stageMs)} ({Object.entries(metrics.stepMs).map(([k, v]) => `${k} ${seconds(v)}`).join(", ")}); {seconds(metrics.msPerNewBranch)} per new branch; reference {seconds(metrics.oracleMs)}; 44-branch scorecard query {metrics.scorecardMs ? `${metrics.scorecardMs.before} → ${metrics.scorecardMs.after} ms` : "—"}; peak memory {metrics.peakRssMb ?? "—"} MB.
             Records: {metrics.records ? Object.entries(metrics.records).map(([k, v]) => `${v} ${k}`).join(", ") : "—"}. Database: {metrics.db ? `${metrics.db.xact_commit} commits, ${metrics.db.tup_inserted} rows inserted, ${metrics.db.tup_updated} updated` : "—"}.
@@ -162,7 +162,7 @@ function StageDetails({ s, twinDropped }: { s: StageRow; twinDropped: boolean })
       )}
       {refs && (
         <section>
-          <h4 className="font-semibold text-text">Evidence references</h4>
+          <h3 className="font-semibold text-text">Evidence references</h3>
           <p className="break-words text-muted">
             Twin database <code>{String(refs.twinDatabase)}</code>{twinDropped ? " (deleted: only the three most recent twins are kept; the figures above stay on record)" : ""}; replays {((refs.replayKeys as string[]) ?? []).map((k) => <code key={k} className="mr-1">{k}</code>)}; sync request <code>{String(refs.syncRequestKey)}</code>, jobs {((refs.syncJobIds as number[]) ?? []).length}; raw events {((refs.rawEventIds as number[]) ?? []).join("–") || "none added"}.
           </p>

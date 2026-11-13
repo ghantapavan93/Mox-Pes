@@ -7,7 +7,7 @@ import { overrideLeadBranch } from "@/lib/actions";
 import { CONSUMERS, consumerBacklog, dispatchEvents } from "@/lib/events/consumers";
 import { ingestRecords } from "@/lib/ingest/ingest";
 import { brandRows } from "@/lib/metrics/brands";
-import { totals } from "@/lib/metrics/scorecard";
+import { branchRows, totals } from "@/lib/metrics/scorecard";
 import { reconcile } from "@/lib/reconcile/reconcile";
 import { BRANCHES, BRANDS, branchesOfBrands } from "@/lib/reference";
 import { ForbiddenError, VIEWERS, resolveBrandScope, resolveScope } from "@/lib/viewer";
@@ -227,6 +227,15 @@ describe("brands", () => {
     expect(sum("paidSpendCents")).toBe(company.paidSpendCents);
     expect(company.unallocatedSpendCents).toBe(2_500);
     expect(brands.every((b) => b.totals.unallocatedSpendCents === 0)).toBe(true);
+
+    // The Overview passes the branch rows it already has (R-34): exactly the same brand lines,
+    // for the whole company and for a partial scope, as recomputing each brand's scorecard.
+    const all = await branchRows(pool, scope);
+    expect(await brandRows(pool, scope, all)).toEqual(brands);
+    const partial = { ...OCT, branchIds: ["B05", "B28", "B41"] };
+    expect(await brandRows(pool, partial, all)).toEqual(await brandRows(pool, partial));
+    // A set missing one of a brand's branches is not reused; that brand is computed in full.
+    expect(await brandRows(pool, scope, all.filter((r) => r.branchId !== "B05"))).toEqual(brands);
   });
 
   it("brand scope is branch scope: a brand role sees its brand only; a partial view of a brand is refused", () => {

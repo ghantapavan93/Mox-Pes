@@ -58,12 +58,15 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
   const scope = { from: period.from, to: period.to, branchIds };
   // October is compared with September (same length, same definitions); other periods are not.
   const compare = period.key === "oct" ? { from: PERIODS.sep.from, to: PERIODS.sep.to, branchIds } : null;
+  const branchRowsReady = branchRows(pool, scope);
   const [rows, bridge, streams, holds, brands, weeks, before] = await Promise.all([
-    branchRows(pool, scope),
+    branchRowsReady,
     conversionBridge(pool, scope),
     freshness(pool),
     decisionHolds(pool, branchIds),
-    brand ? Promise.resolve([]) : brandRows(pool, scope),
+    // Brand lines from the same branch rows, as soon as they are ready, instead of the whole
+    // scorecard recomputed once per brand in turn (R-34: about 2 s of every load).
+    brand ? Promise.resolve([]) : branchRowsReady.then((r) => brandRows(pool, scope, r)),
     weeklySeries(pool, branchIds),
     compare ? totals(pool, compare) : Promise.resolve(null as Totals | null),
   ]);

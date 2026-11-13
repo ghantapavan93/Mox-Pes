@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChangeActions } from "@/components/changes/ChangeActions";
 import { ChangeForm } from "@/components/changes/ChangeForm";
+import { MonitoringStatus } from "@/components/changes/MonitoringStatus";
+import { monitorView } from "@/lib/changeguard/monitor";
 import { RolloutEvaluation } from "@/components/changes/RolloutEvaluation";
 import { VARIANTS } from "@/lib/twin/scenario";
 import { evaluationsForPage } from "@/lib/twin/store";
@@ -13,7 +15,7 @@ import { getChange, listCampaignOptions, type ChangeRow } from "@/lib/changeguar
 import { dateTime, money } from "@/lib/format";
 import { parseRecordId } from "@/lib/record-id";
 import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
-import { getPool, getViewer } from "@/lib/server";
+import { businessNow, getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import { STATUS_TONE } from "../status";
 
@@ -95,6 +97,8 @@ async function Change({ params }: { params: Params }) {
     change.kind === "source_contract" && payload.source === "calls" && viewer.branchIds === null
       ? await evaluationsForPage(getPool(), viewer, change.id, codeFingerprint())
       : null;
+  // Post-release monitoring, judged on the business clock the schedule runs on.
+  const monitoring = await monitorView(getPool(), change, await businessNow());
 
   return (
     <div className="space-y-6">
@@ -268,9 +272,9 @@ async function Change({ params }: { params: Params }) {
             </dd>
             <dt className="font-medium text-text">Observed since release</dt>
             <dd className="text-muted">
-              {change.verification?.monitor
-                ? `${change.verification.monitor.filter((c) => c.passed).length} of ${change.verification.monitor.length} monitoring checks passed (mapping still in place; new leads agree).`
-                : change.verification ? "Not monitored yet." : "Not released."}
+              {monitoring
+                ? `Checked on a schedule after the release: ${monitoring.runs} check(s) so far, latest ${monitoring.latest ? dateTime(monitoring.latest.ranAt) : "none yet"} (below).`
+                : change.verification ? "Not monitored: only campaign mappings are." : "Not released."}
             </dd>
             <dt className="font-medium text-text">Measured business outcome</dt>
             <dd className="text-muted"><strong className="text-text">Not measured.</strong> Revenue or CAC improvement needs a controlled measurement; none exists.</dd>
@@ -289,20 +293,7 @@ async function Change({ params }: { params: Params }) {
                   </li>
                 ))}
               </ul>
-              {change.verification.monitor && (
-                <ul className="space-y-1" aria-label="Monitoring">
-                  {change.verification.monitor.map((c) => (
-                    <li key={c.id} className="flex gap-2">
-                      <span aria-hidden className={c.passed ? "text-good" : "text-bad"}>
-                        {c.passed ? "✓" : "✗"}
-                      </span>
-                      <span>
-                        <span className="font-medium">monitoring, {c.layer.replace("_", " ")}</span>: {c.detail}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              {monitoring && <MonitoringStatus changeId={change.id} view={monitoring} viewer={viewer} />}
               <p className="text-muted">
                 Measured business improvement: <strong>not measured</strong>. A correct configuration is not evidence of more revenue; that needs an experiment.
               </p>

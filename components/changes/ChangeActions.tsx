@@ -11,7 +11,7 @@ const NEXT: Record<string, string> = {
   approved: "Next: the proposer or an integration engineer releases it to the synthetic environment; nothing is live yet.",
   rejected: "The change is closed; propose a corrected one if it is still needed.",
   preflight_failed: "It cannot be approved as is: correct it and propose again.",
-  verified: "Released and verified. Run monitoring later to check new leads still agree.",
+  verified: "Released and verified. The worker re-checks it daily for 14 days; Re-verify now runs the same check at once.",
   draft: "The approval was withdrawn because what it was bound to changed: run the preview again.",
 };
 

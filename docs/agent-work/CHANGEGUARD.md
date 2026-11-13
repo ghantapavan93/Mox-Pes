@@ -49,10 +49,17 @@ account is touched.**
 6. **Verify and monitor:** checks are reported by layer: configuration, data-integrity and
    operational success.
    - **Measured business improvement is always "not measured".**
-   - Re-verifying later checks two things: the mapping is still in place, and new leads still
-     agree with it.
-   - If either fails, the change becomes **recovery required**. A person proposes a
-     compensating change; nothing is rolled back automatically.
+   - After release, the worker re-checks it daily for 14 days, and "Re-verify now" runs the
+     same check (`POST-RELEASE-MONITORING.md`). The check asks four things:
+     - the mapping is still in place;
+     - the campaign id is not shared with another platform;
+     - the leads still arrive where the approval saw them;
+     - the lead feeds are current.
+   - A confirmed drift makes the change **recovery required**, with one review item. A person
+     proposes a compensating change; nothing is rolled back automatically, and the mapping is
+     never touched.
+   - "Verified at release" never moves. The last successful verification moves only when a
+     check finds the mapping current.
 
 State machine: `draft → ready_for_review | preflight_failed → approved | rejected | superseded →
 monitoring → verified | degraded → recovery_required`. Every move goes through

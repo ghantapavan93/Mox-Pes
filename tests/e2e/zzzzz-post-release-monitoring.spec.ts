@@ -116,7 +116,7 @@ test("verified at release, then a clean scheduled check, then a conflicting revi
       "select r.payload from v_leads l join raw_events r on r.id = l.raw_event_id where l.campaign_external_id = 'lsa-B44-x' and l.effective_branch_id = 'B44' order by l.id limit 1",
     )
   ).rows[0];
-  await deliverCalls([{ ...lead.payload, branch_tag: "B39", agent_note: "Tracking number moved to the Ridge office" }], new Date(slot1.getTime() + 6 * HOUR));
+  await deliverCalls([{ ...lead.payload, branch_tag: "B39", agent_note: "Tracking number moved to the Sage office" }], new Date(slot1.getTime() + 6 * HOUR));
   const before = (await pool.query("select branch_id from campaign_branch_map m join ad_campaigns c on c.id = m.campaign_id where c.external_campaign_id = 'lsa-B44-x'")).rows;
 
   // Slot 2: the worker finds it.
@@ -183,7 +183,9 @@ test("a reviewer starts in Incidents and reaches the changed lead without knowin
   await expect(page).toHaveURL(/\/exceptions\?kind=mapping_drift$/);
   await page.locator('main a[href^="/exceptions/"]').filter({ hasText: "Mapping drift after release" }).filter({ visible: true }).first().click();
   await expect(page.getByRole("heading", { level: 1, name: "Mapping drift after release" })).toBeVisible();
-  await expect(shown(page, "exception-summary")).toContainText(`Change #${changeId}`);
+  // The case is a decision brief now (zzzzzz-drift-review.spec.ts); it names the change it is about.
+  await expect(shown(page, "drift-brief")).toBeVisible();
+  await expect(page.locator("main").getByRole("link", { name: `change #${changeId}`, exact: true }).first()).toBeVisible();
 
   // → the exact check's evidence → the change, by its breadcrumb.
   await page.getByTestId("drift-evidence-link").filter({ visible: true }).click();

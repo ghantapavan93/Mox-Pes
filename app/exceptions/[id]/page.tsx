@@ -6,6 +6,7 @@ import { CoverageGapRecords } from "@/components/CoverageGap";
 import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
+import { DriftReview } from "@/components/incidents/DriftReview";
 import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
@@ -19,7 +20,7 @@ import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { parseRecordId } from "@/lib/record-id";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 /** Exception kinds that gate a budget decision: their page links to the Decision Lab. */
 const DECISION_KINDS: ReadonlySet<string> = new Set(DECISION_BLOCKING_KINDS);
@@ -50,11 +51,9 @@ const WHY: Record<string, string> = {
   payload_conflict: "The source sent two different payloads under the same record version. The first was kept; a person must decide whether the source has a bug.",
   channel_coverage_gap:
     "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates Google migrating a Local Services campaign into Performance Max: the Google change is real, this branch, date and pipeline failure are invented.",
-  mapping_drift:
-    "A scheduled post-release check found stored records that contradict what a ChangeGuard mapping was approved on: the campaign's leads now arrive where the approval did not see them, or the live mapping moved without a release. The mapping was left as released and no credit was rewritten. A contradiction is not proof the mapping is wrong: one revised lead can be a correction at the source. Review the changed records first, then acknowledge them, or propose a compensating change if the evidence holds.",
 };
 
-async function ExceptionDetail({ params }: Props) {
+async function ExceptionDetail({ params, searchParams }: Props) {
   const { id } = await params;
   const exceptionId = parseRecordId(id);
   if (exceptionId === null) notFound();
@@ -63,9 +62,15 @@ async function ExceptionDetail({ params }: Props) {
   // Out of scope reads as missing, as for customers and investigations: naming the branch would
   // confirm the id exists and where (audit 2026-11-09, E6).
   if (!canSeeBranch(viewer, exception.branchId)) notFound();
+  // A post-release drift has its own decision brief: the review is recorded there, not through
+  // the generic fix workflow (lib/changeguard/review.ts).
+  if (exception.kind === "mapping_drift") {
+    const since = (await searchParams).since;
+    return <DriftReview exception={exception} viewer={viewer} sinceRunId={typeof since === "string" ? parseRecordId(since) : null} />;
+  }
   const ev = exception.evidence;
 
-  const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" || exception.kind === "mapping_drift" ? "Spend affected" : "Revenue at stake";
+  const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake";
   const branch = exception.branchId ? BRANCH_BY_ID.get(exception.branchId) : null;
 
   return (
@@ -361,23 +366,6 @@ async function Records({ exception }: { exception: ExceptionRow }) {
   }
 
   if (exception.kind === "channel_coverage_gap") return <CoverageGapRecords exception={exception} />;
-
-  if (exception.kind === "mapping_drift") {
-    // The records live on the check's evidence page, which applies the viewer's branch scope.
-    return (
-      <Card title="The check that found it" subtitle="Read-only evidence: what the release was approved on, where the leads arrive now, and the records that moved">
-        <p className="text-sm">
-          <Link href={`/changes/${Number(ev.changeId)}/checks/${Number(ev.runId)}`} className="font-medium text-accent underline" data-testid="drift-evidence-link">
-            Open check #{Number(ev.runId)} of change #{Number(ev.changeId)}
-          </Link>{" "}
-          <span className="text-muted">· the change itself: </span>
-          <Link href={`/changes/${Number(ev.changeId)}`} className="text-accent underline">
-            change #{Number(ev.changeId)}
-          </Link>
-        </p>
-      </Card>
-    );
-  }
 
   if (exception.subjectType === "acquisition") {
     const trail = await acquisitionTrail(pool, Number(exception.subjectId));

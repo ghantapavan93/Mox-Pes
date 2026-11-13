@@ -4,7 +4,8 @@ import { getNow, withTransaction, type Queryable } from "@/lib/db";
 import { feedFreshness, FRESHNESS_MAX_AGE_HOURS, staleReason } from "@/lib/decision/verdicts";
 import { lockReconcile } from "@/lib/reconcile/reconcile";
 import type { Viewer } from "@/lib/viewer";
-import { syncCases } from "@/lib/workflow/cases";
+import { syncCases, transitionCase } from "@/lib/workflow/cases";
+import { materialFacts, unseenFacts } from "./facts";
 import { assertChangeTransition, CampaignMappingPayload, type ChangeStatus } from "./model";
 import { evidenceVerdict, readCampaignBase, type EvidenceVerdict } from "./preflight";
 import { isOverdue, nextSlot, RETRY_AFTER_MS } from "./schedule";
@@ -130,7 +131,7 @@ export interface MonitorRun {
 
 const iso = (d: Date | null) => (d ? new Date(d).toISOString() : null);
 
-function toRun(r: Record<string, unknown>): MonitorRun {
+export function toRun(r: Record<string, unknown>): MonitorRun {
   return {
     id: Number(r.id),
     changeId: Number(r.change_id),
@@ -521,9 +522,18 @@ export const reviewFingerprint = (changeId: number) => `mapping_drift:change:${c
 
 /**
  * The review item for a confirmed drift: one per change. A later drift updates it (evidence, last
- * detected); one a person resolved re-opens, one they acknowledged stays acknowledged, as
- * reconciliation treats its own exceptions. Its summary names no branch but the released one:
- * the full scope is on the check's evidence page, which applies the viewer's branch scope.
+ * detected). Its summary names no branch but the released one: the full scope is on the check's
+ * evidence page, which applies the viewer's branch scope.
+ *
+ * Recurrence after a person reviewed it ("reviewed — no mapping change", lib/changeguard/review.ts):
+ * the check's MATERIAL FACTS (./facts.ts) are compared with the facts that review saw. The same
+ * facts — a duplicate delivery, another check of the same evidence, a new check id, reordered rows,
+ * a later time, an edit to a field the check does not judge — leave the item acknowledged and the
+ * case closed. A fact the review did not see (a second lead outside the approved branches) reopens
+ * the SAME case: closed_acknowledged → detected, reopen_count + 1, with the check and the review it
+ * outdates in the transition. A reopened case is open, so the next check with the same facts only
+ * updates it: one reopen per new contradiction. Late, unavailable or inconclusive checks never get
+ * here (only a drift does).
  */
 async function upsertReviewItem(tx: Queryable, row: ChangeRow, ev: Evaluation, runId: number, now: Date): Promise<number> {
   const e = ev.evidence;
@@ -531,6 +541,27 @@ async function upsertReviewItem(tx: Queryable, row: ChangeRow, ev: Evaluation, r
     ? "the live mapping moved without a ChangeGuard release"
     : `${e.conflicting.length} lead(s) with this campaign's id arrive outside the evidence the release was approved on`;
   const summary = `Change #${row.id} (${e.campaign.externalId} → ${e.releasedBranchId}): ${what}. The mapping was left as released; a person decides.`;
+  const facts = materialFacts({ ...e, reasons: ev.reasons });
+  const fingerprint = reviewFingerprint(row.id);
+
+  // Reviewed already? Then only a fact that review did not see re-opens it.
+  const prior = (await tx.query<{ id: string; status: string }>("select id, status from exceptions where fingerprint = $1 for update", [fingerprint])).rows[0];
+  let reopen: { caseId: number; reviewId: number | null; reviewedRunId: number | null; unseen: string[] } | null = null;
+  if (prior?.status === "acknowledged") {
+    const review = (
+      await tx.query<{ id: string; run_id: string; facts: string[] }>(
+        "select id, run_id, facts from case_reviews where exception_id = $1 and disposition = 'reviewed_no_change' order by id desc limit 1",
+        [Number(prior.id)],
+      )
+    ).rows[0];
+    const unseen = unseenFacts(facts, review?.facts ?? []);
+    if (unseen.length > 0) {
+      const kase = (await tx.query<{ id: string; state: string }>("select id, state from cases where exception_id = $1 for update", [Number(prior.id)])).rows[0];
+      reopen = { caseId: kase && kase.state === "closed_acknowledged" ? Number(kase.id) : 0, reviewId: review ? Number(review.id) : null, reviewedRunId: review ? Number(review.run_id) : null, unseen };
+    }
+  }
+  const status = prior?.status === "acknowledged" && !reopen ? "acknowledged" : "open";
+
   const { rows } = await tx.query<{ id: string }>(
     `insert into exceptions as e (kind, severity, fingerprint, branch_id, subject_type, subject_id, summary, evidence,
        amount_cents, customer_ids, status, first_detected_at, last_detected_at)
@@ -538,13 +569,13 @@ async function upsertReviewItem(tx: Queryable, row: ChangeRow, ev: Evaluation, r
      on conflict (fingerprint) do update set
        severity = excluded.severity, summary = excluded.summary, evidence = excluded.evidence,
        amount_cents = excluded.amount_cents, last_detected_at = excluded.last_detected_at,
-       status = case when e.status = 'acknowledged' then 'acknowledged' else 'open' end,
-       resolution = case when e.status = 'acknowledged' then e.resolution else null end,
+       status = $9,
+       resolution = case when $9 = 'acknowledged' then e.resolution else null end,
        resolved_at = null
      returning id`,
     [
       ev.severity,
-      reviewFingerprint(row.id),
+      fingerprint,
       e.releasedBranchId,
       String(row.id),
       summary,
@@ -563,8 +594,25 @@ async function upsertReviewItem(tx: Queryable, row: ChangeRow, ev: Evaluation, r
       },
       ev.scope.spendAtStakeCents,
       now,
+      status,
     ],
   );
+  if (reopen && reopen.caseId) {
+    // Explicitly, so the transition says why; syncCases below then finds nothing to do for it.
+    // Branch-free text: the case history is shown wherever the released branch is in scope.
+    await transitionCase(
+      tx,
+      {
+        caseId: reopen.caseId,
+        from: "closed_acknowledged",
+        to: "detected",
+        reason: `New evidence since review #${reopen.reviewId}: ${reopen.unseen.length === 1 ? "a contradiction" : `${reopen.unseen.length} contradictions`} it did not see (check #${runId})`,
+        detail: { trigger: "new_material_evidence", runId, reviewId: reopen.reviewId, reviewedRunId: reopen.reviewedRunId, newFacts: reopen.unseen.length },
+      },
+      "monitor",
+      now,
+    );
+  }
   await syncCases(tx, now);
   return Number(rows[0].id);
 }

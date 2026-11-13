@@ -113,7 +113,9 @@ export type CaseEventKind =
   | "approval"
   | "rejection"
   | "execution"
-  | "execution_refused";
+  | "execution_refused"
+  /** A person's review of a drift case that moves no state (lib/changeguard/review.ts). */
+  | "review";
 
 /** A non-transition event (with its audit row). `auditAction` names it in the audit log. */
 export async function recordCaseEvent(

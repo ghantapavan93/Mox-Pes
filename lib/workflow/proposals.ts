@@ -577,8 +577,14 @@ async function lockCaseInScope(tx: PoolClient, viewer: Viewer, caseId: number): 
   await lockReconcile(tx);
   const kase = await lockCase(tx, caseId);
   if (!kase) throw new ActionError("Case not found", 404);
-  const { rows } = await tx.query<{ branch_id: string | null }>("select branch_id from exceptions where id = $1", [kase.exceptionId]);
+  const { rows } = await tx.query<{ branch_id: string | null; kind: string }>("select branch_id, kind from exceptions where id = $1", [kase.exceptionId]);
   if (!canSeeBranch(viewer, rows[0]?.branch_id ?? null)) throw new ActionError("Case not found", 404);
+  // A post-release drift is decided by a review bound to the evidence it read (owner and statement
+  // included), which refuses a decision over newer evidence (lib/changeguard/review.ts). Assigning
+  // or closing it here would skip both.
+  if (rows[0]?.kind === "mapping_drift") {
+    throw new ActionError("A drift case is decided on its incident page: record \"Reviewed — no mapping change\" or \"Needs investigation\" there.", 409);
+  }
   return kase;
 }
 

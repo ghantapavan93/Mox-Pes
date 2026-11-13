@@ -62,7 +62,7 @@ export async function supportingRecord(db: Queryable, viewer: Pick<Viewer, "bran
   return `/customers/${ref}#raw-${lead.rawEventId}`;
 }
 
-async function liveMapping(db: Queryable, campaignId: number): Promise<{ branchId: string | null; version: number | null; changeId: number | null }> {
+export async function liveMapping(db: Queryable, campaignId: number): Promise<{ branchId: string | null; version: number | null; changeId: number | null }> {
   const { rows } = await db.query<{ branch_id: string | null; version: number | null; change_id: string | null }>(
     `select m.branch_id, v.version, v.change_id from ad_campaigns c
      left join campaign_branch_map m on m.campaign_id = c.id
@@ -172,7 +172,15 @@ export async function decisionSummary(db: Queryable, viewer: Viewer, change: Cha
     next = { label: `Open change #${n}`, href: n ? `/changes/${n}` : null, primary: false, note: "This change is no longer monitored; the newer release is." };
   } else if (view.state === "confirmed_drift" && concluded) {
     const visible = e?.conflicting ?? [];
-    if (reasons.includes("MAPPING_MOVED_OUTSIDE_CHANGEGUARD")) {
+    if (view.reviewItem?.status === "acknowledged") {
+      // Decided on the incident (lib/changeguard/review.ts); this page only points there.
+      next = {
+        label: "Read the review",
+        href: inScope(viewer, view.reviewItem.branchId) ? `/exceptions/${view.reviewItem.id}` : evidencePage(concluded.run.id),
+        primary: false,
+        note: "A person reviewed this drift on its incident and kept the mapping. The incident reopens only if a later check finds a contradiction that review did not see.",
+      };
+    } else if (reasons.includes("MAPPING_MOVED_OUTSIDE_CHANGEGUARD")) {
       next = { label: "Review the mapping change", href: evidencePage(concluded.run.id), primary: canAct, note: "The live mapping moved without a release; the audit history below says who moved it." };
     } else if (visible.length === 1) {
       const record = await supportingRecord(db, viewer, visible[0]);
@@ -181,7 +189,7 @@ export async function decisionSummary(db: Queryable, viewer: Viewer, change: Cha
         href: record ?? evidencePage(concluded.run.id),
         primary: canAct,
         note: canAct
-          ? "Compare its stored versions. If it is a correction, acknowledge the incident; if more leads follow it, propose a compensating change for a second person to approve."
+          ? `Compare its stored versions, then record the decision on incident #${view.reviewItem?.id ?? "?"}: reviewed with no mapping change, or needs investigation. If more leads follow it, a compensating change needs a second person to approve.`
           : "Read-only for your role: an analyst or approver decides what to do.",
       };
     } else if (visible.length > 1) {

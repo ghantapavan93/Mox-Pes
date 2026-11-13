@@ -138,6 +138,76 @@ a server not on this machine. Measured here: 19.5 GB free, 390 MB needed.
 The regression and clean-checkout scripts (`C:/Temp`, not in the repository) refuse below 6 GB.
 The clean checkout drops only its own twin clones and its own base at the end.
 
+## 6a. The reviewer's path and the decision summary (roadmap 4a, 2026-11-13)
+
+**Checked first, in the production browser, on the B44/B39 drift: the path already worked, so it
+was not rebuilt.**
+
+| Step | What the reviewer clicks |
+|---|---|
+| 1 | Incidents → "Amount at stake by incident type" lists *Mapping drift after release* first (`$4,539 · 1 open`) |
+| 2 | That filters the queue to the one case |
+| 3 | The incident page links *Open check #N of change #M* |
+| 4 | The check's evidence page; its breadcrumb opens the change |
+
+No change id is needed at any step. What was missing was the last hop: from the change to the
+changed lead's own record.
+
+**Added, on the existing page and design system:**
+
+- **A decision summary above the numbered sections.** It is built only from stored results:
+  the release verification, the latest concluded check, and a fresh read of the live mapping
+  (`lib/changeguard/summary.ts`, `components/changes/DecisionSummary.tsx`). It shows:
+  - the release verdict, and the lead evidence it was approved on;
+  - the latest check's verdict and time;
+  - what changed in the evidence, for example "Call … was revised at the source: it now arrives
+    at B39, a branch the approval did not see (it was B44)";
+  - what the system did not change: the live mapping and its version, read now, and that no
+    check edits spend, customers, credits or source records;
+  - one next action for the viewer's role.
+- **A caution, whenever the evidence moved,** that one changed lead does not show the mapping is
+  wrong. It says how many of the campaign's leads still arrive at the released branch, and that a
+  revision can be a source correction. Nothing in the summary suggests a remap.
+
+**The next action, by role** (B44/B39):
+
+| Viewer | Action |
+|---|---|
+| Analyst, engineer, approver | primary **Review the changed lead** → the lead's own customer or prospect page, scrolled to that lead's row; its *raw #…* button shows both stored versions (B44, then B39) |
+| Guest (read-only) | the same page as a plain link, **Read the changed lead**; no primary action, no change buttons |
+| A viewer whose scope excludes the lead's branch | **Read the evidence** (redacted); the lead is counted, not named |
+| Engineer, when a check is overdue | **Check the worker** (Audit & Health) |
+| Other roles, when a check is overdue | a hand-off sentence: "This is not a drift" |
+
+**Overdue stays apart from drift.** An overdue check has its own state, tone (warning) and clock
+icon. When a drifted change's next check is also late, the summary keeps the verdict ("Confirmed
+drift", error tone) and adds a separate chip: "Next check overdue … A missing check, not a new
+finding."
+
+**Wording.** "Recovery required" now says that a person reviews the evidence first, and that a
+compensating change is one possible outcome, not the default. The incident's explanation says a
+contradiction is not proof that the mapping is wrong.
+
+**Also:**
+
+- The check's evidence page links each contradicting lead to its record, where the viewer's
+  scope allows.
+- The ChangeGuard browser spec now waits for its preflight and release requests (R-20's
+  pattern): a release took 4.8 s once and raced the 5 s assertion.
+
+**Tests:**
+
+- Integration: two cases.
+  - The summary for every role on the drift: the exact sentences, the action and its target, the
+    redaction for the B20 partner, and drift plus a late check.
+  - On the race scenario: current (no action), overdue (engineer vs analyst), and replaced.
+- Browser (production build), one journey: Incidents → by type → the case → *Open check* → the
+  change, by breadcrumb → the summary (above question 1) → *Review the changed lead* → the record
+  row → its two stored versions. Then:
+  - at 390 px: no sideways scroll on the change and the record, and axe clean;
+  - as guest: read-only, the record still opens;
+  - with the clock 79 h after the release: the drift verdict plus a separate overdue chip.
+
 ## 7. What remains unknown
 
 - **No real feed or worker.** The cadence (daily for 14 days, overdue after 6 h) is a choice, not

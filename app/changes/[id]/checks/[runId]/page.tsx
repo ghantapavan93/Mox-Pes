@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { OUTCOME_LABEL } from "@/components/changes/MonitoringStatus";
 import { Badge, Callout, Card, Forbidden, PageHeader, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { getMonitorRun, type MonitorOutcome } from "@/lib/changeguard/monitor";
+import { supportingRecord } from "@/lib/changeguard/summary";
 import { dateTime, money } from "@/lib/format";
 import { parseRecordId } from "@/lib/record-id";
 import { getPool, getViewer } from "@/lib/server";
@@ -45,6 +46,8 @@ async function CheckEvidence({ params }: { params: Params }) {
   const { run, hidden } = redacted;
   const e = run.evidence;
   const reasons = e.reasons ?? [];
+  // Each contradicting lead's own record (its customer or prospect page, every stored version), where the viewer may open it.
+  const records = await Promise.all((e.conflicting ?? []).slice(0, 20).map((c) => supportingRecord(getPool(), viewer, c)));
 
   return (
     <div className="space-y-6">
@@ -162,10 +165,19 @@ async function CheckEvidence({ params }: { params: Params }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {e.conflicting!.map((c) => (
+                  {e.conflicting!.map((c, i) => (
                     <tr key={c.leadId}>
                       <Td className="text-xs">
-                        {c.source} {c.sourceLeadId} (#{c.leadId})
+                        {records[i] ? (
+                          <Link href={records[i]!} className="text-accent underline" data-testid="conflicting-record-link">
+                            {c.source} {c.sourceLeadId}
+                          </Link>
+                        ) : (
+                          <>
+                            {c.source} {c.sourceLeadId}
+                          </>
+                        )}{" "}
+                        (#{c.leadId})
                       </Td>
                       <Td className="text-xs">
                         {c.branchId}

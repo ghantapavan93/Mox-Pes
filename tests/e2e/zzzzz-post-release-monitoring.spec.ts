@@ -170,3 +170,85 @@ test("verified at release, then a clean scheduled check, then a conflicting revi
   await page.goto(evidenceUrl);
   await expect(page.getByRole("heading", { name: /403/ })).toBeVisible();
 });
+
+const noSideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+
+test("a reviewer starts in Incidents and reaches the changed lead without knowing the change id", async ({ page }) => {
+  test.setTimeout(180_000);
+  await setRole(page, "marketing");
+
+  // Incidents → the drift type → its one case.
+  await page.goto("/exceptions");
+  await shown(page, "kind-breakdown").getByRole("link", { name: /Mapping drift after release/ }).click();
+  await expect(page).toHaveURL(/\/exceptions\?kind=mapping_drift$/);
+  await page.locator('main a[href^="/exceptions/"]').filter({ hasText: "Mapping drift after release" }).filter({ visible: true }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: "Mapping drift after release" })).toBeVisible();
+  await expect(shown(page, "exception-summary")).toContainText(`Change #${changeId}`);
+
+  // → the exact check's evidence → the change, by its breadcrumb.
+  await page.getByTestId("drift-evidence-link").filter({ visible: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/changes/${changeId}/checks/\\d+$`));
+  await expect(shown(page, "check-outcome")).toContainText("Confirmed drift");
+  await page.getByRole("navigation", { name: "Breadcrumb" }).filter({ visible: true }).getByRole("link", { name: `Change #${changeId}` }).click();
+  await expect(page).toHaveURL(new RegExp(`/changes/${changeId}$`));
+
+  // The decision summary, above the numbered sections, from stored results.
+  const summary = shown(page, "decision-summary");
+  await expect(summary).toHaveAttribute("data-state", "confirmed_drift");
+  const [top, firstSection] = await Promise.all([summary.boundingBox(), shown(page, "q-what").boundingBox()]);
+  expect(top!.y).toBeLessThan(firstSection!.y);
+  await expect(shown(page, "summary-release")).toContainText("Verified");
+  await expect(shown(page, "summary-release")).toContainText("4 of 4 release checks passed");
+  await expect(shown(page, "summary-latest")).toHaveAttribute("data-tone", "bad");
+  await expect(shown(page, "summary-changed")).toContainText("now arrives at B39, a branch the approval did not see (it was B44)");
+  await expect(shown(page, "summary-unchanged")).toContainText("The mapping is still B44 (version 2), as released.");
+  await expect(shown(page, "summary-caution")).toContainText("One changed lead does not show the mapping is wrong");
+  await expect(summary).not.toContainText(/remap/i);
+  await expect(shown(page, "summary-next")).toHaveAttribute("data-primary", "true");
+  await expect(shown(page, "summary-next-action")).toHaveText("Review the changed lead");
+  // Timestamps, source checks and history stay below.
+  await expect(shown(page, "verified-at-release")).toBeVisible();
+  await expect(shown(page, "q-after").locator('li[data-check="evidence_since_release"]')).toBeVisible();
+  await expect(shown(page, "q-after").getByRole("list", { name: "History" })).toContainText("recovery required");
+
+  // → the supporting record: the lead's own page, at its row, with both stored versions.
+  await shown(page, "summary-next-action").click();
+  await expect(page).toHaveURL(/\/customers\/(\d+|P-\d+)#raw-\d+$/);
+  const recordUrl = page.url();
+  const row = page.locator(`li[id="${new URL(recordUrl).hash.slice(1)}"]`);
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: /Show source payload/ }).click();
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toContainText("Stored versions of this record (2)");
+  await expect(drawer.getByRole("region", { name: "Source payload" })).toContainText('"branch_tag": "B39"');
+  await page.keyboard.press("Escape");
+
+  // Mobile: the same summary and action, no sideways scroll, no accessibility violations.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/changes/${changeId}`);
+  await expect(shown(page, "summary-next-action")).toBeVisible();
+  expect(await noSideScroll(page)).toBe(true);
+  expect(await axeViolations(page)).toEqual([]);
+  await page.goto(recordUrl);
+  await expect(page.locator(`li[id="${new URL(recordUrl).hash.slice(1)}"]`)).toBeVisible();
+  expect(await noSideScroll(page)).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  // Read-only: the guest reads the same record, with no primary action and no change actions.
+  await setRole(page, "guest");
+  await page.goto(`/changes/${changeId}`);
+  await expect(shown(page, "summary-next")).toHaveAttribute("data-primary", "false");
+  await expect(shown(page, "summary-next-action")).toHaveText("Read the changed lead");
+  await expect(page.locator("main").getByRole("button", { name: /Approve|Reject|Release|Re-verify|Re-run/ })).toHaveCount(0);
+  await shown(page, "summary-next-action").click();
+  await expect(page).toHaveURL(/\/customers\/(\d+|P-\d+)#raw-\d+$/);
+
+  // A late check stays apart from the drift: its own chip, its own tone.
+  await setRole(page, "marketing");
+  await setClock(new Date(releasedAt.getTime() + 79 * HOUR)); // the slot due at +72 h, past its 6 h grace
+  await page.goto(`/changes/${changeId}`);
+  await expect(shown(page, "summary-latest")).toHaveAttribute("data-tone", "bad");
+  await expect(shown(page, "summary-overdue")).toHaveAttribute("data-tone", "warn");
+  await expect(shown(page, "summary-overdue")).toContainText("A missing check, not a new finding.");
+  await expect(shown(page, "monitoring-state")).toContainText("Confirmed drift");
+});

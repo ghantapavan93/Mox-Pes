@@ -5,6 +5,8 @@ import { mapperFor, referenceContext } from "@/lib/adapters/registry";
 import { getMonitorRun, monitorState, monitorView, type MonitorHooks, type MonitorRun } from "@/lib/changeguard/monitor";
 import { OVERDUE_AFTER_MS } from "@/lib/changeguard/schedule";
 import { createChange, decideChange, getChange, releaseChange, type ChangeRow } from "@/lib/changeguard/service";
+import { decisionSummary } from "@/lib/changeguard/summary";
+import { dateTime } from "@/lib/format";
 import { runStream } from "@/lib/ingest/ingest";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
@@ -297,6 +299,45 @@ describe("one released mapping, checked on schedule by the worker", () => {
     // A run id from another change is not found here.
     await expect(getMonitorRun(pool, marketing, change.id + 999, driftRunId)).rejects.toMatchObject({ status: 404 });
   });
+
+  it("the decision summary: verdicts, what changed, what did not, one action per role, no remap implied", async () => {
+    const now = at(169, 10);
+    const current = (await getChange(pool, marketing, change.id)).change;
+    const view = (await monitorView(pool, current, now))!;
+    const forRole = (v: typeof marketing) => decisionSummary(pool, v, current, view);
+
+    const m = await forRole(marketing);
+    expect(m.release).toEqual({ verdict: "verified", at: T0.toISOString(), passed: 4, of: 4, approvedOn: "8 at B20 (agrees)" });
+    expect(m.latest).toMatchObject({ state: "confirmed_drift", overdue: false });
+    expect(m.changed).toEqual([
+      "Call MON-5 was revised at the source: it now arrives at B19, a branch the approval did not see (it was B20).",
+      'The campaign\'s leads now read "split" (8 of 9 at B20); at release they read "agrees".',
+    ]);
+    expect(m.unchanged[0]).toBe("The mapping is still B20 (version 2), as released.");
+    expect(m.unchanged[1]).toMatch(/^No check edited spend, customers, credits or source records, and nothing was rolled back\. The checks recorded their results and one review item \(incident #\d+\)\.$/);
+    expect(m.caution).toBe("One changed lead does not show the mapping is wrong: most of the campaign's leads (8 of 9) still arrive at B20, and a revision can be a correction at the source. Check the record first.");
+    // The primary action opens the lead's own record, at its row.
+    const leadRaw = Number((await one<{ raw_event_id: string }>(pool, "select raw_event_id from leads where source_lead_id = 'MON-5'")).raw_event_id);
+    expect(m.next).toMatchObject({ label: "Review the changed lead", primary: true });
+    expect(m.next.href).toMatch(new RegExp(`^/customers/(\\d+|P-\\d+)#raw-${leadRaw}$`));
+    expect(JSON.stringify(m)).not.toMatch(/remap|compensating change is needed|should be remapped/i);
+
+    // Read-only: the same record, as a plain link with no primary action.
+    expect((await forRole(guest)).next).toMatchObject({ label: "Read the changed lead", primary: false, href: m.next.href });
+    // An approver reviews too; the B20 partner sees the change but not the B19 lead.
+    expect((await forRole(approver)).next).toMatchObject({ label: "Review the changed lead", primary: true });
+    const p = await forRole(partner);
+    expect(p.next).toMatchObject({ label: "Read the evidence", primary: false, href: `/changes/${change.id}/checks/${view.latestConclusion!.id}` });
+    expect(p.changed).toContain("1 lead(s) now arrive at a branch outside your scope.");
+    expect(p.changed).toContain('The campaign\'s leads now read "split" (8 of 9 at B20); at release they read "agrees".');
+    expect(JSON.stringify(p)).not.toContain("B19");
+
+    // A late next check is reported beside the drift, never as it.
+    const late = (await monitorView(pool, current, at(199)))!;
+    const lateSummary = await decisionSummary(pool, marketing, current, late);
+    expect(lateSummary.latest).toMatchObject({ state: "confirmed_drift", overdue: true, dueAt: at(192).toISOString() });
+    expect(lateSummary.next.label).toBe("Review the changed lead");
+  });
 });
 
 describe("a controlled race: a newer release lands while a scheduled check runs", () => {
@@ -363,6 +404,27 @@ describe("a controlled race: a newer release lands while a scheduled check runs"
     expect(run.evidence.sinceRelease).toMatchObject({ newLeads: 3 });
     expect(run.evidence.conflicting).toEqual([]);
     expect((await one<{ scope: { branches: string[]; rawEventIds: number[] } }>(pool, "select scope from change_monitor_runs where id = $1", [run.id])).scope).toMatchObject({ branches: ["B22"], rawEventIds: [] });
+  });
+
+  it("summaries: a current change needs nothing; an overdue one is a missing check (engineer acts), not a drift", async () => {
+    const n = (await getChange(pool, marketing, newer.id)).change;
+    const current = await decisionSummary(pool, marketing, n, (await monitorView(pool, n, at(48, 10)))!);
+    expect(current.latest.state).toBe("current");
+    expect(current.next).toEqual({ label: "No action needed", href: null, primary: false, note: `Next check ${dateTime(at(72, 5).toISOString())}.` });
+    expect(current.caution).toBeNull();
+
+    // The worker stops: the slot due T0+72 h 5 m passes its 6 h grace.
+    const overdueView = (await monitorView(pool, n, at(78, 6)))!;
+    expect(overdueView.state).toBe("overdue");
+    const engineerSummary = await decisionSummary(pool, VIEWERS.engineer, n, overdueView);
+    expect(engineerSummary.latest).toMatchObject({ state: "overdue", overdue: true });
+    expect(engineerSummary.next).toMatchObject({ label: "Check the worker", href: "/audit", primary: true });
+    const analystSummary = await decisionSummary(pool, marketing, n, overdueView);
+    expect(analystSummary.next).toMatchObject({ label: "Ask an integration engineer to check the worker", href: null, primary: false });
+    expect(analystSummary.next.note).toContain("This is not a drift");
+    // The older, replaced change points at the newer one.
+    const o = (await getChange(pool, marketing, older.id)).change;
+    expect((await decisionSummary(pool, marketing, o, (await monitorView(pool, o, at(48, 10)))!)).next).toMatchObject({ label: `Open change #${newer.id}`, href: `/changes/${newer.id}` });
   });
 });
 

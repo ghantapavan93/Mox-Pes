@@ -51,7 +51,7 @@ const WHY: Record<string, string> = {
   channel_coverage_gap:
     "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates Google migrating a Local Services campaign into Performance Max: the Google change is real, this branch, date and pipeline failure are invented.",
   mapping_drift:
-    "A scheduled post-release check found stored records that contradict what a ChangeGuard mapping was approved on: the campaign's leads now arrive where the approval did not see them, or the live mapping moved without a release. The mapping was left as released and no credit was rewritten. A person decides: propose a compensating change, or acknowledge the evidence.",
+    "A scheduled post-release check found stored records that contradict what a ChangeGuard mapping was approved on: the campaign's leads now arrive where the approval did not see them, or the live mapping moved without a release. The mapping was left as released and no credit was rewritten. A contradiction is not proof the mapping is wrong: one revised lead can be a correction at the source. Review the changed records first, then acknowledge them, or propose a compensating change if the evidence holds.",
 };
 
 async function ExceptionDetail({ params }: Props) {

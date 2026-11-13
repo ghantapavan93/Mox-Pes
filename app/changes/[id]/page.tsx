@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChangeActions } from "@/components/changes/ChangeActions";
 import { ChangeForm } from "@/components/changes/ChangeForm";
+import { DecisionSummary } from "@/components/changes/DecisionSummary";
 import { MonitoringStatus } from "@/components/changes/MonitoringStatus";
 import { monitorView } from "@/lib/changeguard/monitor";
+import { decisionSummary } from "@/lib/changeguard/summary";
 import { RolloutEvaluation } from "@/components/changes/RolloutEvaluation";
 import { VARIANTS } from "@/lib/twin/scenario";
 import { evaluationsForPage } from "@/lib/twin/store";
@@ -34,9 +36,9 @@ export default function ChangePage({ params }: { params: Params }) {
 const CHECK_TONE = { pass: "good", warn: "warn", fail: "bad", not_applicable: "neutral" } as const;
 const CHECK_MARK = { pass: "✓", warn: "!", fail: "✗", not_applicable: "–" } as const;
 
-function Question({ n, title, children, testId }: { n: number | string; title: string; children: React.ReactNode; testId?: string }) {
+function Question({ n, title, children, testId, id }: { n: number | string; title: string; children: React.ReactNode; testId?: string; id?: string }) {
   return (
-    <section className="grid gap-3 border-t border-border py-4 first:border-t-0 first:pt-0 md:grid-cols-[220px_minmax(0,1fr)]" data-testid={testId}>
+    <section id={id} className="grid scroll-mt-28 gap-3 border-t border-border py-4 first:border-t-0 first:pt-0 md:grid-cols-[220px_minmax(0,1fr)]" data-testid={testId}>
       <h2 className="flex items-start gap-2 text-sm font-semibold text-text">
         <span className="inline-flex size-5 flex-none items-center justify-center rounded-full bg-text text-[10px] font-bold text-white">{n}</span>
         {title}
@@ -99,6 +101,7 @@ async function Change({ params }: { params: Params }) {
       : null;
   // Post-release monitoring, judged on the business clock the schedule runs on.
   const monitoring = await monitorView(getPool(), change, await businessNow());
+  const summary = monitoring ? await decisionSummary(getPool(), viewer, change, monitoring) : null;
 
   return (
     <div className="space-y-6">
@@ -114,6 +117,8 @@ async function Change({ params }: { params: Params }) {
         }
         description={<p>Proposed by {change.authorSubject} ({change.authorRole}) on {dateTime(change.createdAt)}.{change.supersedes ? ` Corrects change #${change.supersedes}.` : ""}</p>}
       />
+
+      {summary && <DecisionSummary summary={summary} detailsHref="#after-release" />}
 
       <Card>
         <Question n={1} title="What is changing?" testId="q-what">
@@ -260,7 +265,7 @@ async function Change({ params }: { params: Params }) {
           <ChangeActions changeId={change.id} can={capabilities(change, viewer)} hashes={{ configHash: change.configHash, preflightHash: change.preflightHash }} />
         </Question>
 
-        <Question n={8} title="What happened after release?" testId="q-after">
+        <Question n={8} title="What happened after release?" testId="q-after" id="after-release">
           <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-[max-content_1fr]" aria-label="Evidence levels" data-testid="evidence-levels">
             <dt className="font-medium text-text">Previewed impact</dt>
             <dd className="text-muted">{pre ? `Measured on the real write path in a rolled-back transaction${change.preflightedAt ? `, ${dateTime(change.preflightedAt)}` : ""}. A prediction, not a fact about the live data.` : "No preview yet."}</dd>
@@ -297,7 +302,11 @@ async function Change({ params }: { params: Params }) {
               <p className="text-muted">
                 Measured business improvement: <strong>not measured</strong>. A correct configuration is not evidence of more revenue; that needs an experiment.
               </p>
-              {change.status === "recovery_required" && <p className="text-bad">Recovery required: propose a compensating change. Nothing was rolled back automatically.</p>}
+              {change.status === "recovery_required" && (
+                <p className="text-bad">
+                  Recovery required: a person reviews the evidence before anything changes. A compensating change is one possible outcome, not the default. Nothing was rolled back automatically.
+                </p>
+              )}
             </>
           ) : (
             <p className="text-muted">Not released.</p>

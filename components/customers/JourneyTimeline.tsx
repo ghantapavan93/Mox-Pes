@@ -39,7 +39,13 @@ export function JourneyTimeline({ items, journeyId }: { items: TimelineItem[]; j
     <>
       <ol className="relative space-y-0 border-l border-border pl-0" data-testid="journey-timeline">
         {items.map((item) => (
-          <li key={item.key} className={`grid grid-cols-[7.5rem_1fr_auto] items-start gap-3 border-b border-border py-2 pl-4 text-sm last:border-b-0 ${item.credited ? "bg-accent-soft" : ""}`}>
+          <li
+            key={item.key}
+            // A lead row can be linked to by its raw event (#raw-<id>), e.g. from a post-release
+            // check's "Review the changed lead"; the linked row is outlined.
+            id={item.kind === "lead" ? `raw-${item.rawEventId}` : undefined}
+            className={`grid scroll-mt-28 grid-cols-[7.5rem_1fr_auto] items-start gap-3 border-b border-border py-2 pl-4 text-sm last:border-b-0 target:outline target:outline-2 target:-outline-offset-2 target:outline-accent ${item.credited ? "bg-accent-soft" : ""}`}
+          >
             <time dateTime={item.at} className="pt-0.5 text-xs tabular-nums text-muted">{utcDateTime(item.at)}</time>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">

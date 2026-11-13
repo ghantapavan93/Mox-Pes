@@ -639,12 +639,12 @@ export interface ReconciliationExceptions {
 export const getReconciliationExceptions = defineTool({
   name: "getReconciliationExceptions",
   description:
-    "Reconciliation exceptions in the viewer's scope: either one exception by exceptionId (with its full stored evidence and its Action Center case state), or a filtered list (branchId, kind, status, limit ≤ 25) plus open/resolved counts by kind. Kinds: quarantined_source_records, payment_without_ticket, branch_mismatch, unmapped_spend, channel_conflict, payload_conflict, channel_coverage_gap.",
+    "Reconciliation exceptions in the viewer's scope: either one exception by exceptionId (with its full stored evidence and its Action Center case state), or a filtered list (branchId, kind, status, limit ≤ 25) plus open/resolved counts by kind. Kinds: quarantined_source_records, payment_without_ticket, branch_mismatch, unmapped_spend, channel_conflict, payload_conflict, channel_coverage_gap, mapping_drift.",
   input: z.strictObject({
     exceptionId: id.optional(),
     branchId: branchId.optional(),
     kind: z
-      .enum(["quarantined_source_records", "payment_without_ticket", "branch_mismatch", "unmapped_spend", "channel_conflict", "payload_conflict", "channel_coverage_gap"])
+      .enum(["quarantined_source_records", "payment_without_ticket", "branch_mismatch", "unmapped_spend", "channel_conflict", "payload_conflict", "channel_coverage_gap", "mapping_drift"])
       .optional(),
     status: z.enum(["open", "resolved", "acknowledged"]).optional(),
     limit: z.number().int().min(1).max(25).default(10),

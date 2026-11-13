@@ -322,8 +322,12 @@ describe("independent review findings (each failed before its fix)", () => {
     const ids = verified.verification!.checks.map((c) => `${c.id}:${c.passed}`);
     expect(ids).toEqual(["applied:true", "spend_moved_exactly:true", "unrelated_unchanged:true", "predicted_exceptions_cleared:true"]);
     expect(verified.verification!.checks[1].detail).toBe("B44 gained exactly $500.00 of paid spend from unallocated.");
-    // Monitoring replaced, never appended: the release checks are still the four above.
-    expect(verified.verification!.monitor?.map((c) => c.id)).toEqual(["still_applied", "evidence_since_release"]);
+    // Monitoring replaced, never appended: the release checks are still the four above. The
+    // monitoring checks are the scheduled check's four (R-30, lib/changeguard/monitor.ts).
+    expect(verified.verification!.monitor?.map((c) => c.id)).toEqual(["still_applied", "campaign_id_unambiguous", "evidence_since_release", "feeds_current"]);
+    // Verified at release stays the release time; the failed check did not refresh the last success.
+    expect(verified.verifiedAt).toBe(verified.releasedAt);
+    expect(verified.lastVerifiedAt).toBe(verified.releasedAt);
   });
 });
 

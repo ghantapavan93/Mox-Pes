@@ -50,6 +50,8 @@ const WHY: Record<string, string> = {
   payload_conflict: "The source sent two different payloads under the same record version. The first was kept; a person must decide whether the source has a bug.",
   channel_coverage_gap:
     "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates Google migrating a Local Services campaign into Performance Max: the Google change is real, this branch, date and pipeline failure are invented.",
+  mapping_drift:
+    "A scheduled post-release check found stored records that contradict what a ChangeGuard mapping was approved on: the campaign's leads now arrive where the approval did not see them, or the live mapping moved without a release. The mapping was left as released and no credit was rewritten. A person decides: propose a compensating change, or acknowledge the evidence.",
 };
 
 async function ExceptionDetail({ params }: Props) {
@@ -63,7 +65,7 @@ async function ExceptionDetail({ params }: Props) {
   if (!canSeeBranch(viewer, exception.branchId)) notFound();
   const ev = exception.evidence;
 
-  const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake";
+  const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" || exception.kind === "mapping_drift" ? "Spend affected" : "Revenue at stake";
   const branch = exception.branchId ? BRANCH_BY_ID.get(exception.branchId) : null;
 
   return (
@@ -359,6 +361,23 @@ async function Records({ exception }: { exception: ExceptionRow }) {
   }
 
   if (exception.kind === "channel_coverage_gap") return <CoverageGapRecords exception={exception} />;
+
+  if (exception.kind === "mapping_drift") {
+    // The records live on the check's evidence page, which applies the viewer's branch scope.
+    return (
+      <Card title="The check that found it" subtitle="Read-only evidence: what the release was approved on, where the leads arrive now, and the records that moved">
+        <p className="text-sm">
+          <Link href={`/changes/${Number(ev.changeId)}/checks/${Number(ev.runId)}`} className="font-medium text-accent underline" data-testid="drift-evidence-link">
+            Open check #{Number(ev.runId)} of change #{Number(ev.changeId)}
+          </Link>{" "}
+          <span className="text-muted">· the change itself: </span>
+          <Link href={`/changes/${Number(ev.changeId)}`} className="text-accent underline">
+            change #{Number(ev.changeId)}
+          </Link>
+        </p>
+      </Card>
+    );
+  }
 
   if (exception.subjectType === "acquisition") {
     const trail = await acquisitionTrail(pool, Number(exception.subjectId));

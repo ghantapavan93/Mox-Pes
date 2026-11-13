@@ -110,7 +110,7 @@ export type EvidenceVerdict = "none" | "agrees" | "split" | "disagrees";
  * (or ties for the most) without a majority is "split": a person decides (held-out HO-50; it
  * used to be blocked as a contradiction of itself).
  */
-export function evidenceVerdict(base: CampaignBase, branchId: string): EvidenceVerdict {
+export function evidenceVerdict(base: Pick<CampaignBase, "leadEvidence">, branchId: string): EvidenceVerdict {
   const total = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
   if (total === 0) return "none";
   const at = base.leadEvidence.find((e) => e.branchId === branchId)?.leads ?? 0;

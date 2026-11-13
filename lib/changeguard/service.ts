@@ -18,7 +18,8 @@ import {
   type NewChange,
   type PreflightResult,
 } from "./model";
-import { applyCampaignMapping, baseHashOf, preflightCampaignMapping, preflightSourceContract, readCampaignBase } from "./preflight";
+import { firstSchedule } from "./schedule";
+import { applyCampaignMapping, baseHashOf, evidenceVerdict, preflightCampaignMapping, preflightSourceContract, readCampaignBase } from "./preflight";
 
 /** Exact to the cent: an "exactly" claim must not be rounded for display. */
 const exactMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -46,7 +47,14 @@ export interface ChangeRow {
   releasedBy: string | null;
   releasedAt: string | null;
   verification: Verification | null;
+  /** When the release itself was verified (set in the release transaction; monitoring never moves it). */
   verifiedAt: string | null;
+  /** Post-release monitoring (lib/changeguard/monitor.ts), on the business clock. */
+  monitorDueAt: string | null;
+  monitorUntil: string | null;
+  monitorRetryAt: string | null;
+  /** The latest SUCCESSFUL verification: the release, or a check that found the mapping current. */
+  lastVerifiedAt: string | null;
 }
 
 export interface VerificationCheck {
@@ -54,22 +62,36 @@ export interface VerificationCheck {
   /** Which kind of success this check speaks for. */
   layer: "configuration" | "data_integrity" | "operational";
   passed: boolean;
+  /** Monitoring checks only: "unknown" when the evidence cannot decide it (passed is then false). */
+  status?: "pass" | "fail" | "unknown";
   detail: string;
+}
+
+/** What the release was approved and verified on: where the campaign's leads arrived. */
+export interface ReleaseEvidence {
+  leadEvidence: Array<{ branchId: string; leads: number }>;
+  verdict: "none" | "agrees" | "split" | "disagrees";
+  /** Lead sources that carried the campaign's id. */
+  sources: string[];
 }
 
 export interface Verification {
   /** Checked in the release transaction. */
   checks: VerificationCheck[];
-  /** The latest post-release monitoring run (replaced on every run). */
+  /** The latest post-release monitoring run's checks (replaced on every run; history in change_monitor_runs). */
   monitor?: VerificationCheck[];
+  monitorRunId?: number;
+  /** Recorded at release; what monitoring compares later evidence with. */
+  releaseEvidence?: ReleaseEvidence;
   /** Never claimed by this system: a measured business improvement needs an experiment. */
   businessImprovement: "not measured";
+  /** When the release was verified. */
   at: string;
 }
 
 const iso = (d: Date | null) => (d ? new Date(d).toISOString() : null);
 
-function toRow(r: Record<string, unknown>): ChangeRow {
+export function toRow(r: Record<string, unknown>): ChangeRow {
   return {
     id: Number(r.id),
     kind: r.kind as ChangeKind,
@@ -94,18 +116,22 @@ function toRow(r: Record<string, unknown>): ChangeRow {
     releasedAt: iso(r.released_at as Date | null),
     verification: (r.verification as Verification | null) ?? null,
     verifiedAt: iso(r.verified_at as Date | null),
+    monitorDueAt: iso((r.monitor_due_at as Date | null) ?? null),
+    monitorUntil: iso((r.monitor_until as Date | null) ?? null),
+    monitorRetryAt: iso((r.monitor_retry_at as Date | null) ?? null),
+    lastVerifiedAt: iso((r.last_verified_at as Date | null) ?? null),
   };
 }
 
 /** The branches a change touches: the mapping it replaces and the one it proposes. */
-function branchesOf(row: Pick<ChangeRow, "kind" | "payload" | "base">): string[] {
+export function branchesOf(row: Pick<ChangeRow, "kind" | "payload" | "base">): string[] {
   if (row.kind !== "campaign_mapping") return [];
   const p = row.payload as { branchId: string };
   const previous = (row.base.currentBranchId as string | null) ?? null;
   return [previous, p.branchId].filter((b): b is string => b !== null);
 }
 
-function assertScope(viewer: Viewer, branches: string[], action: string): void {
+export function assertScope(viewer: Viewer, branches: string[], action: string): void {
   if (viewer.branchIds === null) return;
   // A change that names no branch (a source contract check) spans every branch: company-wide roles only.
   if (branches.length === 0) throw new ForbiddenError(`${viewer.label} cannot ${action}: it is not limited to your branches`);
@@ -113,7 +139,7 @@ function assertScope(viewer: Viewer, branches: string[], action: string): void {
   if (outside.length > 0) throw new ForbiddenError(`${viewer.label} cannot ${action}: ${outside.join(", ")} is outside your branches`);
 }
 
-async function recordEvent(tx: Queryable, changeId: number, from: ChangeStatus | null, to: ChangeStatus, viewer: Viewer | { subject: string; role: string }, at: Date, detail: Record<string, unknown> = {}) {
+export async function recordEvent(tx: Queryable, changeId: number, from: ChangeStatus | null, to: ChangeStatus, viewer: Viewer | { subject: string; role: string }, at: Date, detail: Record<string, unknown> = {}) {
   await tx.query("insert into config_change_events (change_id, from_status, to_status, subject, role, at, detail) values ($1, $2, $3, $4, $5, $6, $7)", [
     changeId,
     from,
@@ -180,7 +206,7 @@ async function storePreflight(pool: Pool, id: number, viewer: Viewer, pre: Await
   });
 }
 
-async function getChangeTx(db: Queryable, id: number): Promise<ChangeRow> {
+export async function getChangeTx(db: Queryable, id: number): Promise<ChangeRow> {
   const { rows } = await db.query("select * from config_changes where id = $1", [id]);
   if (rows.length === 0) throw new ActionError(`Change ${id} not found`, 404);
   return toRow(rows[0]);
@@ -362,9 +388,17 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
     // The configuration must apply, or nothing stands. Other misses (new data arriving in the
     // window, an exception still open) are reported as DEGRADED for a person to look at.
     if (!checks[0].passed) throw new ActionError(`Release verification failed, nothing was applied: ${checks[0].detail}`, 409);
-    const verification: Verification = { checks, businessImprovement: "not measured", at: at.toISOString() };
+    // What monitoring compares later evidence with: where the leads were when this was released.
+    const sources = await tx.query<{ source: string }>("select distinct source from leads where campaign_external_id = $1 order by source", [base.externalCampaignId]);
+    const releaseEvidence = { leadEvidence: base.leadEvidence, verdict: evidenceVerdict(base, payload.branchId), sources: sources.rows.map((r) => r.source) };
+    const verification: Verification = { checks, releaseEvidence, businessImprovement: "not measured", at: at.toISOString() };
     const to: ChangeStatus = checks.every((c) => c.passed) ? "verified" : "degraded";
-    await tx.query("update config_changes set status = $2, verification = $3, verified_at = $4 where id = $1", [id, to, verification, at]);
+    const schedule = firstSchedule(at);
+    await tx.query(
+      `update config_changes set status = $2, verification = $3, verified_at = $4, last_verified_at = $5, monitor_due_at = $6, monitor_until = $7, monitor_retry_at = null
+       where id = $1`,
+      [id, to, verification, at, to === "verified" ? at : null, schedule.dueAt, schedule.until],
+    );
     await recordEvent(tx, id, "monitoring", to, { subject: "system:verifier", role: "system" }, at, { passed: checks.filter((c) => c.passed).length, of: checks.length });
     return { stale: false as const };
   });
@@ -373,44 +407,21 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
 }
 
 /**
- * Post-release monitoring: is the released configuration still in place, and does the evidence
- * that arrived since still agree with it? Either failing is RECOVERY_REQUIRED: a person must
- * propose a compensating change. Nothing is rolled back automatically. The release checks are
- * kept as they were; the monitoring checks are replaced on every run.
+ * Post-release monitoring on request ("Re-verify now"): the same check the worker runs on its
+ * schedule (lib/changeguard/monitor.ts), recorded as a manual run. It does not move the schedule.
+ * A confirmed drift is RECOVERY_REQUIRED: a person must propose a compensating change; nothing is
+ * rolled back automatically, and the mapping is never touched.
  */
 export async function monitorChange(pool: Pool, viewer: Viewer, id: number, now?: Date): Promise<ChangeRow> {
   if (!viewer.can.propose && !viewer.can.approve) throw new ForbiddenError(`${viewer.label} cannot monitor configuration changes`);
   const at = now ?? (await getNow(pool));
-  return withTransaction(pool, async (tx) => {
-    const row = await loadForUpdate(tx, id);
-    assertScope(viewer, branchesOf(row), "monitor this change");
-    if (row.status !== "verified" && row.status !== "degraded") throw new ActionError(`Only a released change can be monitored (this one is ${row.status})`, 409);
-    const payload = CampaignMappingPayload.parse(row.payload);
-    const base = await readCampaignBase(tx, payload.campaignId);
-    const since = await tx.query<{ branch_id: string; n: string }>(
-      `select l.effective_branch_id as branch_id, count(*) as n from v_leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
-       where c.id = $1 and l.occurred_at >= $2 group by l.effective_branch_id order by count(*) desc`,
-      [payload.campaignId, row.releasedAt],
-    );
-    const total = since.rows.reduce((t, r) => t + Number(r.n), 0);
-    const atTarget = Number(since.rows.find((r) => r.branch_id === payload.branchId)?.n ?? 0);
-    const monitor: VerificationCheck[] = [
-      { id: "still_applied", layer: "configuration", passed: base?.currentBranchId === payload.branchId, detail: `The live mapping is ${base?.currentBranchId ?? "unmapped"} (released: ${payload.branchId}).` },
-      {
-        id: "evidence_since_release",
-        layer: "operational",
-        passed: total === 0 || atTarget / total >= 0.5,
-        detail: total === 0 ? "No lead with this campaign's id has arrived since the release." : `${atTarget} of ${total} lead(s) since the release arrived at ${payload.branchId}.`,
-      },
-    ];
-    const releaseChecks = row.verification?.checks ?? [];
-    const to: ChangeStatus = monitor.some((c) => !c.passed) ? "recovery_required" : releaseChecks.every((c) => c.passed) ? "verified" : "degraded";
-    assertChangeTransition(row.status, to);
-    const verification: Verification = { checks: releaseChecks, monitor, businessImprovement: "not measured", at: at.toISOString() };
-    await tx.query("update config_changes set status = $2, verification = $3, verified_at = $4 where id = $1", [id, to, verification, at]);
-    await recordEvent(tx, id, row.status, to, viewer, at, { failing: monitor.filter((c) => !c.passed).map((c) => c.id) });
-    return getChangeTx(tx, id);
-  });
+  const row = await getChangeTx(pool, id);
+  assertScope(viewer, branchesOf(row), "monitor this change");
+  if (row.status !== "verified" && row.status !== "degraded") throw new ActionError(`Only a released change can be monitored (this one is ${row.status})`, 409);
+  // Imported here: monitor.ts builds on this module's helpers.
+  const { runCheck } = await import("./monitor");
+  await runCheck(pool, id, { trigger: "manual", slot: null, now: at, ranBy: viewer.subject, actor: viewer });
+  return getChangeTx(pool, id);
 }
 
 export async function getChange(db: Queryable, viewer: Viewer, id: number): Promise<{ change: ChangeRow; events: Array<{ from: string | null; to: string; subject: string; role: string; at: string; detail: unknown }> }> {

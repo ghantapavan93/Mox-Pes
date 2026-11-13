@@ -24,4 +24,5 @@ export const KIND_LABEL: Record<string, string> = {
   channel_conflict: "D2D / paid conflict",
   payload_conflict: "Conflicting payload",
   channel_coverage_gap: "Channel coverage gap",
+  mapping_drift: "Mapping drift after release",
 };

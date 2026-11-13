@@ -167,8 +167,13 @@ function releaseEvidenceOf(change: ChangeRow, branchId: string): ReleaseEvidence
 
 const describe = (evidence: Array<{ branchId: string; leads: number }>) => (evidence.length === 0 ? "no leads" : evidence.map((e) => `${e.leads} at ${e.branchId}`).join(", "));
 
-/** Leads of this campaign at a branch other than the released one that the approval did not see, or that arrived (or were revised) after the release. */
-async function conflictingLeads(db: Queryable, externalId: string, target: string, newBranches: string[], releasedAt: string): Promise<ConflictingLead[]> {
+/**
+ * The records that contradict the approval: leads of this campaign at a branch the approval never
+ * saw and, when the verdict worsened, leads at any other branch delivered (new or revised) after
+ * the release. A lead at a second branch the approval DID see (a split release) contradicts
+ * nothing on its own.
+ */
+async function conflictingLeads(db: Queryable, externalId: string, target: string, newBranches: string[], deliveredAfter: string | null): Promise<ConflictingLead[]> {
   const { rows } = await db.query(
     `select l.id as lead_id, l.source, l.source_lead_id, l.effective_branch_id as branch_id, l.branch_overridden, l.raw_event_id,
             cur.last_delivered_at as delivered_at,
@@ -181,10 +186,10 @@ async function conflictingLeads(db: Queryable, externalId: string, target: strin
        where p.source = cur.source and p.entity = cur.entity and p.entity_id = cur.entity_id and p.id <> cur.id and p.received_at <= cur.received_at
        order by p.received_at desc, p.id desc limit 1) prev on true
      where l.campaign_external_id = $1 and l.effective_branch_id <> $2
-       and (l.effective_branch_id = any($3::text[]) or cur.last_delivered_at > $4)
+       and (l.effective_branch_id = any($3::text[]) or ($4::timestamptz is not null and cur.last_delivered_at > $4::timestamptz))
      order by cur.last_delivered_at desc, l.id
      limit 200`,
-    [externalId, target, newBranches, releasedAt],
+    [externalId, target, newBranches, deliveredAfter],
   );
   return rows.map((r) => ({
     leadId: Number(r.lead_id),
@@ -237,7 +242,7 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
   const verdictNow = evidenceVerdict(base, target);
   const withdrawn = atRelease.verdict !== "none" && verdictNow === "none";
   const worsened = RANK[verdictNow] > RANK[atRelease.verdict];
-  const conflicting = await conflictingLeads(db, base.externalCampaignId, target, newBranches, change.releasedAt);
+  const conflicting = newBranches.length > 0 || worsened ? await conflictingLeads(db, base.externalCampaignId, target, newBranches, worsened ? change.releasedAt : null) : [];
   const since = await sinceRelease(db, base.externalCampaignId, change.releasedAt);
 
   const used = await db.query<{ source: string }>("select distinct source from leads where campaign_external_id = $1", [base.externalCampaignId]);
@@ -570,8 +575,8 @@ async function upsertReviewItem(tx: Queryable, row: ChangeRow, ev: Evaluation, r
  */
 export async function runDueChecks(pool: Pool, opts: { ranBy: string; now?: Date; limit?: number; hooks?: MonitorHooks }): Promise<CheckResult[]> {
   const now = opts.now ?? (await getNow(pool));
-  const due = await pool.query<{ id: string; monitor_due_at: Date }>(
-    `select id, monitor_due_at from config_changes
+  const due = await pool.query<{ id: string; monitor_due_at: Date; status: ChangeStatus }>(
+    `select id, monitor_due_at, status from config_changes
      where kind = 'campaign_mapping' and monitor_due_at is not null and status = any($3::text[])
        and coalesce(monitor_retry_at, monitor_due_at) <= $1
      order by monitor_due_at, id limit $2`,
@@ -579,7 +584,14 @@ export async function runDueChecks(pool: Pool, opts: { ranBy: string; now?: Date
   );
   const results: CheckResult[] = [];
   for (const r of due.rows) {
-    results.push(await runCheck(pool, Number(r.id), { trigger: "scheduled", slot: new Date(r.monitor_due_at), now, ranBy: opts.ranBy, hooks: opts.hooks }));
+    try {
+      results.push(await runCheck(pool, Number(r.id), { trigger: "scheduled", slot: new Date(r.monitor_due_at), now, ranBy: opts.ranBy, hooks: opts.hooks }));
+    } catch (error) {
+      // runCheck records its own errors; this is one that could not even be recorded (the
+      // database refused). The slot stays due, and the other changes are still checked.
+      console.error(JSON.stringify({ level: "error", msg: "post-release check could not be recorded", changeId: Number(r.id), error: (error as Error).message }));
+      results.push({ changeId: Number(r.id), runId: null, outcome: "error", status: r.status, exceptionId: null, reevaluated: false, detail: (error as Error).message });
+    }
   }
   return results;
 }

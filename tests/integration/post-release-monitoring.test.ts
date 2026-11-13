@@ -346,11 +346,23 @@ describe("a controlled race: a newer release lands while a scheduled check runs"
     expect((await getChange(pool, marketing, newer.id)).change).toMatchObject({ status: "verified", monitorDueAt: at(48, 5).toISOString() });
   });
 
-  it("the newer change is then monitored on its own schedule; the older one is not", async () => {
-    expect((await deliverCalls([], at(46))).status).toBe("succeeded");
+  it("the newer change is then monitored on its own schedule; a lead at the other approved branch contradicts nothing", async () => {
+    // The newer release was approved on split evidence (6 at B21, 6 at B22). One more call at
+    // B21 and two at B22: still split, no branch the approval did not see.
+    const more = [
+      call("RACE-21-NEW", "B21", "+14805554100", at(40), "Google Ads", { campaign: "race-1" }),
+      call("RACE-22-NEW-1", "B22", "+14805555100", at(41), "Google Ads", { campaign: "race-1" }),
+      call("RACE-22-NEW-2", "B22", "+14805555101", at(42), "Google Ads", { campaign: "race-1" }),
+    ];
+    expect((await deliverCalls(more, at(46))).status).toBe("succeeded");
     await setClock(at(48, 10));
     const result = await tick();
     expect(result.checks.map((c) => [c.changeId, c.outcome])).toEqual([[newer.id, "current"]]);
+    const run = await latestRun(newer.id);
+    expect(run.evidence.now).toEqual({ leadEvidence: [{ branchId: "B22", leads: 8 }, { branchId: "B21", leads: 7 }], verdict: "split" });
+    expect(run.evidence.sinceRelease).toMatchObject({ newLeads: 3 });
+    expect(run.evidence.conflicting).toEqual([]);
+    expect((await one<{ scope: { branches: string[]; rawEventIds: number[] } }>(pool, "select scope from change_monitor_runs where id = $1", [run.id])).scope).toMatchObject({ branches: ["B22"], rawEventIds: [] });
   });
 });
 

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 /**
  * Marketing ChangeGuard in the browser, on the seeded demo world, end to end:
@@ -18,6 +18,18 @@ async function setRole(page: Page, role: "marketing" | "approver" | "guest") {
   expect(res.ok()).toBe(true);
 }
 
+/**
+ * Clicks a button that posts a ChangeGuard request and waits for that request. A preflight or a
+ * release runs the production write path and two 44-branch scorecards: 4–5 s over HTTP (4.8 s
+ * measured on 2026-11-13), so an assertion's default 5 s window raced it (R-20's pattern,
+ * tests/e2e/action-center.ts). The 60 s bound only stops a hung request hanging the suite.
+ */
+async function clickAndWait(page: Page, button: Locator, path: RegExp, status: number) {
+  const done = page.waitForResponse((r) => path.test(new URL(r.url()).pathname) && r.request().method() === "POST", { timeout: 60_000 });
+  await button.click();
+  expect((await done).status()).toBe(status);
+}
+
 test("wrong branch blocked → corrected → approved by a different person → released → verified", async ({ page }) => {
   test.setTimeout(180_000);
   await setRole(page, "marketing");
@@ -28,7 +40,7 @@ test("wrong branch blocked → corrected → approved by a different person → 
   await form.getByLabel("Campaign").selectOption({ label: "lsa-B44-x · B44 | Local Services | Expansion (unmapped)" });
   await form.getByLabel(/Map to branch/).selectOption("B04");
   await form.getByLabel(/Why/).fill("New expansion campaign for the Briar office");
-  await form.getByRole("button", { name: "Propose and preflight" }).click();
+  await clickAndWait(page, form.getByRole("button", { name: "Propose and preflight" }), /^\/api\/changes$/, 201);
 
   await expect(page).toHaveURL(/\/changes\/\d+$/);
   await expect(shown(page, "change-status")).toContainText("preflight failed");
@@ -44,7 +56,7 @@ test("wrong branch blocked → corrected → approved by a different person → 
 
   // What must be corrected: the evidence names B44; resubmit.
   await expect(shown(page, "q-correct")).toContainText("Map it to B44 instead");
-  await page.getByRole("button", { name: "Resubmit corrected change" }).click();
+  await clickAndWait(page, page.getByRole("button", { name: "Resubmit corrected change" }), /^\/api\/changes$/, 201);
   await expect(shown(page, "change-status")).toContainText("ready for review");
   const correctedUrl = page.url();
   await expect(shown(page, "q-failed")).toContainText("Nothing failed");
@@ -58,7 +70,7 @@ test("wrong branch blocked → corrected → approved by a different person → 
 
   await setRole(page, "marketing");
   await page.goto(correctedUrl);
-  await page.getByRole("button", { name: "Release to the synthetic environment" }).click();
+  await clickAndWait(page, page.getByRole("button", { name: "Release to the synthetic environment" }), /^\/api\/changes\/\d+$/, 200);
   await expect(shown(page, "change-status")).toContainText("verified");
   const after = shown(page, "q-after");
   await expect(after).toContainText("configuration success: The live mapping is B44");

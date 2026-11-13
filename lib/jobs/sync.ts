@@ -547,7 +547,7 @@ async function processJob(rt: SyncRuntime, job: SyncJob): Promise<JobOutcome> {
       return true;
     });
     if (!succeeded) throw new ClaimLostSignal();
-    console.log(JSON.stringify({ level: "info", msg: "sync job succeeded", jobId: job.id, office: job.officeId, entity: job.entity, attempt: job.attempts, ...stats }));
+    console.log(JSON.stringify({ level: "info", msg: "sync job succeeded", jobId: job.id, office: job.officeId, entity: job.entity, attempt: job.attempts, workerId: rt.workerId, ...stats }));
     return { jobId: job.id, state: "succeeded", attempt: job.attempts };
   } catch (error) {
     await flush().catch(() => undefined);
@@ -641,7 +641,7 @@ async function handleFailure(rt: SyncRuntime, job: SyncJob, connector: Connector
     );
     if (queued.rowCount === 0) return claimLostOutcome(rt, job);
     await audit(rt.pool, at, rt.workerId, "sync_job.retry_scheduled", `sync_job:${job.id}`, { attempt: job.attempts, errorKind: kind, error: message, retryInMs: delay });
-    console.warn(JSON.stringify({ level: "warn", msg: "sync job retry scheduled", jobId: job.id, attempt: job.attempts, errorKind: kind, retryInMs: delay }));
+    console.warn(JSON.stringify({ level: "warn", msg: "sync job retry scheduled", jobId: job.id, attempt: job.attempts, errorKind: kind, retryInMs: delay, workerId: rt.workerId }));
     return { jobId: job.id, state: "queued", attempt: job.attempts, error: message, errorKind: kind };
   }
 
@@ -653,7 +653,7 @@ async function handleFailure(rt: SyncRuntime, job: SyncJob, connector: Connector
   );
   if (failed.rowCount === 0) return claimLostOutcome(rt, job);
   await audit(rt.pool, at, rt.workerId, "sync_job.failed", `sync_job:${job.id}`, { attempt: job.attempts, errorKind: kind, error: actionable });
-  console.error(JSON.stringify({ level: "error", msg: "sync job failed", jobId: job.id, office: job.officeId, entity: job.entity, errorKind: kind }));
+  console.error(JSON.stringify({ level: "error", msg: "sync job failed", jobId: job.id, office: job.officeId, entity: job.entity, errorKind: kind, workerId: rt.workerId }));
   return { jobId: job.id, state: "failed", attempt: job.attempts, error: actionable, errorKind: kind };
 }
 

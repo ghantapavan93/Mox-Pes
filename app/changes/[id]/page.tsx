@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChangeActions } from "@/components/changes/ChangeActions";
 import { ChangeForm } from "@/components/changes/ChangeForm";
+import { RolloutEvaluation } from "@/components/changes/RolloutEvaluation";
+import { VARIANTS } from "@/lib/twin/scenario";
+import { evaluationsForPage } from "@/lib/twin/store";
+import { codeFingerprint } from "@/lib/twin/world";
 import { Badge, Card, Forbidden, PageHeader, Skeleton } from "@/components/ui";
 import { CHECK_LABEL, type PreflightCheck } from "@/lib/changeguard/model";
 import { getChange, listCampaignOptions, type ChangeRow } from "@/lib/changeguard/service";
@@ -86,6 +90,11 @@ async function Change({ params }: { params: Params }) {
   const correction = correctionOf(change);
   const canCorrect = viewer.can.propose && change.status === "preflight_failed" && change.kind === "campaign_mapping" && correction !== null;
   const campaigns = canCorrect ? await listCampaignOptions(getPool(), viewer) : [];
+  // Staged rollout evaluations (Reliability Twin): company-scope viewers only.
+  const rollout =
+    change.kind === "source_contract" && payload.source === "calls" && viewer.branchIds === null
+      ? await evaluationsForPage(getPool(), viewer, change.id, codeFingerprint())
+      : null;
 
   return (
     <div className="space-y-6">
@@ -311,6 +320,16 @@ async function Change({ params }: { params: Params }) {
             ))}
           </ol>
         </Question>
+
+        {change.kind === "source_contract" && payload.source === "calls" && (
+          <Question n={9} title="Would a staged rollout hold? (simulated)" testId="q-rollout">
+            {rollout ? (
+              <RolloutEvaluation changeId={change.id} initial={rollout} canRun={viewer.can.propose} variants={Object.entries(VARIANTS).map(([id, v]) => ({ id, label: v.label, description: v.description }))} />
+            ) : (
+              <p className="text-muted">A rollout evaluation covers all 44 branches; {viewer.label} cannot see it.</p>
+            )}
+          </Question>
+        )}
       </Card>
     </div>
   );

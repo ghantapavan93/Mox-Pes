@@ -17,6 +17,12 @@ export interface SeedOptions {
   /** Stop the daily runs early (tests use a short history). Defaults to the full period. */
   until?: Date;
   log?: (line: string) => void;
+  /**
+   * The mapper version each source used after its fix shipped, instead of today's active one.
+   * The Reliability Twin builds its baseline world as it stood before calls@1.2 shipped
+   * (`{ calls: "1.1" }`, lib/twin/world.ts). The demo seed leaves it unset.
+   */
+  versionsAfterFix?: Partial<Record<"calls" | "ads", string>>;
 }
 
 export interface SeedReport {
@@ -106,7 +112,9 @@ export async function seed(pool: Pool, opts: SeedOptions = {}): Promise<SeedRepo
       const version =
         (spec.source === "calls" && runAt < CALLS_FIX_DEPLOYED_AT) || (spec.source === "ads" && runAt < ADS_FIX_DEPLOYED_AT)
           ? "1.0"
-          : undefined;
+          : spec.source === "calls" || spec.source === "ads"
+            ? opts.versionsAfterFix?.[spec.source]
+            : undefined;
       const result = await runStream(pool, {
         client,
         mapper: mapperFor(spec.source, version),

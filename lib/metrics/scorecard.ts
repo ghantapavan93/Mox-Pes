@@ -85,21 +85,24 @@ const scopeParams = (s: Scope) => [s.from, s.to, s.branchIds];
  * carry a campaign id without a platform, so a held campaign id is matched on its id alone.
  * CTEs for `with` lists.
  */
-export const HELD_SPEND = `held_days as (
-       select distinct x.platform, x.ext, x.d::date as day
-       from (
-         select re.payload ->> 'platform' as platform, re.payload ->> 'campaignId' as ext, re.payload ->> 'date' as d
-         from raw_events re where re.source = 'ads' and re.status = 'excluded'
-         union all
-         select re.payload ->> 'platform', re.payload ->> 'campaignId', re.payload ->> 'date'
-         from raw_events re where re.source = 'ads' and re.status = 'quarantined'
-       ) x
-       where x.ext is not null and x.d ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+export const HELD_SPEND = `held_records as (
+       select re.payload ->> 'platform' as platform, re.payload ->> 'campaignId' as ext, try_date(re.payload ->> 'date') as day
+       from raw_events re where re.source = 'ads' and re.status = 'excluded'
+       union all
+       select re.payload ->> 'platform', re.payload ->> 'campaignId', try_date(re.payload ->> 'date')
+       from raw_events re where re.source = 'ads' and re.status = 'quarantined'),
+     held_days as (
+       -- try_date (migration 0026): an impossible date ("2026-02-30") is no day, not a failed scorecard.
+       select distinct h.platform, h.ext, h.day from held_records h
+       where h.ext is not null and h.day is not null
          and not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
-                         where c.platform = x.platform and c.external_campaign_id = x.ext and s.spend_date = x.d::date)),
+                         where c.platform = h.platform and c.external_campaign_id = h.ext and s.spend_date = h.day)),
      held_campaigns as (
-       select distinct h.ext as external_campaign_id from held_days h
-       where not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
+       -- Every record held and none counted: its cost is in no figure, whether or not the held
+       -- record's date could be read (independent review 2026-11-12, financial finding 6).
+       select distinct h.ext as external_campaign_id from held_records h
+       where h.ext is not null
+         and not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
                          where c.platform = h.platform and c.external_campaign_id = h.ext))`;
 
 export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow[]> {

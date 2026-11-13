@@ -240,15 +240,16 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   // 2026-11-12, financial 7).
   const currencyHeld = await read(
     db.query<{ month: string; days: string; cents: string }>(
-      `select case when (re.payload ->> 'date')::date < $4::date then 'sep' else 'oct' end as month,
+      // try_date (migration 0026): a quarantined record's impossible date is no day, not an error.
+      `select case when try_date(re.payload ->> 'date') < $4::date then 'sep' else 'oct' end as month,
               count(distinct (re.payload ->> 'campaignId', re.payload ->> 'date')) as days,
               coalesce(sum(round(((re.payload ->> 'costMicros')::numeric) / 10000)), 0) as cents
        from raw_events re
        join ad_campaigns c on c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId'
        join campaign_branch_map m on m.campaign_id = c.id
        where re.source = 'ads' and ((re.status = 'excluded' and re.exclusion_code = $5) or re.status = 'quarantined')
-         and m.branch_id = $1 and (re.payload ->> 'date')::date >= $2::date and (re.payload ->> 'date')::date < $3::date
-         and not exists (select 1 from ad_spend_daily s where s.campaign_id = c.id and s.spend_date = (re.payload ->> 'date')::date)
+         and m.branch_id = $1 and try_date(re.payload ->> 'date') >= $2::date and try_date(re.payload ->> 'date') < $3::date
+         and not exists (select 1 from ad_spend_daily s where s.campaign_id = c.id and s.spend_date = try_date(re.payload ->> 'date'))
        group by 1`,
       [b, sep.from.toISOString().slice(0, 10), oct.to.toISOString().slice(0, 10), oct.from.toISOString().slice(0, 10), CURRENCY_UNSTATED],
     ),

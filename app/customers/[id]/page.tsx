@@ -6,7 +6,8 @@ import { JourneyTimeline } from "@/components/customers/JourneyTimeline";
 import { Badge, Card, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { KIND_LABEL, count, date, dateTime, money } from "@/lib/format";
 import { LIFECYCLE_TONE, getCustomerJourney, getProspectJourney, parseJourneyRef, type CustomerJourney } from "@/lib/identity";
-import { BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
+import type { CampaignMatch } from "@/lib/identity/journey";
+import { BRANCH_BY_ID, CHANNEL_BY_CODE, platformLabel, type ChannelCode } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 
 type Props = { params: Promise<{ id: string }> };
@@ -42,6 +43,14 @@ const BASIS_LABEL: Record<string, { text: string; tone: "good" | "warn" | "bad" 
   no_lead_record: { text: "no lead record", tone: "bad" },
 };
 const Unknown = ({ children = "unknown" }: { children?: ReactNode }) => <span className="font-normal italic text-faint">{children}</span>;
+
+/** Why the credited lead's campaign id matched no campaign: its own record must name the platform (R-46). */
+function unmatchedCampaign(match: CampaignMatch, named: string[]): string {
+  const names = named.map(platformLabel);
+  if (match === "conflicting_platforms") return `Not matched: the lead names more than one ad platform (${names.join(" and ")}).`;
+  if (match === "no_campaign_on_platform") return `Not matched: no ${names[0]} campaign has this id.`;
+  return "Not matched: the lead names no ad platform, and an id alone does not identify a campaign.";
+}
 
 /** Label/value rows for the narrow side column (KV's two-column grid is for full-width cards). */
 function Facts({ items }: { items: Array<[string, ReactNode]> }) {
@@ -214,7 +223,19 @@ function AttributionCard({ journey }: { journey: CustomerJourney }) {
                 <Unknown>no lead record</Unknown>
               ),
             ],
-            ["Campaign", a.campaignName ? <span>{a.campaignName}<span className="block text-xs font-normal text-muted">{a.campaignPlatform}</span></span> : a.campaignExternalId ? <span className="font-mono">{a.campaignExternalId}</span> : <Unknown>not sent by source</Unknown>],
+            [
+              "Campaign",
+              a.campaignName ? (
+                <span>{a.campaignName}<span className="block text-xs font-normal text-muted">{a.campaignPlatform}</span></span>
+              ) : a.campaignExternalId ? (
+                <span>
+                  <span className="font-mono">{a.campaignExternalId}</span>
+                  {a.campaignMatch && a.campaignMatch !== "matched" && <span className="block text-xs font-normal text-muted" data-testid="campaign-unmatched">{unmatchedCampaign(a.campaignMatch, a.campaignNamedPlatforms)}</span>}
+                </span>
+              ) : (
+                <Unknown>not sent by source</Unknown>
+              ),
+            ],
             ["Lead branch", a.leadBranchId ? <span className={branchDiffers ? "text-warn" : ""}>{a.leadBranchId}{branchDiffers ? " (differs)" : ""}</span> : <Unknown />],
             ["First sale", dateTime(a.soldAt)],
             ["Initial service", <span key="initial">{a.initialStatus}{a.initialCompletedAt ? <span className="block text-xs font-normal text-muted">{dateTime(a.initialCompletedAt)}</span> : null}</span>],

@@ -34,6 +34,8 @@ export interface OracleLead {
   channelCode: string;
   evidence: string;
   campaign: string | null;
+  /** The ad platforms the lead's own record names (namedPlatforms). */
+  platforms: string[];
   phone: string | null;
   email: string | null;
   occurredAt: number;
@@ -95,6 +97,32 @@ function callChannel(source: unknown, gclid: unknown): { channelCode: string; ev
   }
 }
 
+const CALL_LABEL_PLATFORM: Record<string, string> = { "Google Ads": "google_ads", "Google LSA": "google_lsa", Facebook: "meta", Bing: "microsoft_ads" };
+const UTM_SOURCE_PLATFORM: Record<string, string> = { google: "google_ads", facebook: "meta", meta: "meta", instagram: "meta", bing: "microsoft_ads" };
+const PAID_UTM_MEDIUM = new Set(["cpc", "paid", "ppc", "paid_social"]);
+
+/**
+ * The ad platforms a lead's own record names (R-46): for a call, the call-tracking source label
+ * and a Google click id; for a web form, a Google click id and a paid utm_source. Written out
+ * here from the source contracts, not read from the product's view. A campaign id is matched only
+ * when exactly one platform is named: a bare id names no campaign.
+ */
+export function namedPlatforms(source: string, p: Json): string[] {
+  const text = (v: unknown) => (typeof v === "string" && v !== "" ? v : null);
+  const named = new Set<string>();
+  if (source === "calls") {
+    const label = text(p.source);
+    if (label !== null && CALL_LABEL_PLATFORM[label]) named.add(CALL_LABEL_PLATFORM[label]);
+    if (text(p.gclid) !== null) named.add("google_ads");
+  } else if (source === "web") {
+    const q = (p.properties ?? {}) as Json;
+    if (text(q.gclid) !== null) named.add("google_ads");
+    const utm = text(q.utm_source)?.toLowerCase();
+    if (utm && UTM_SOURCE_PLATFORM[utm] && PAID_UTM_MEDIUM.has(text(q.utm_medium)?.toLowerCase() ?? "")) named.add(UTM_SOURCE_PLATFORM[utm]);
+  }
+  return [...named].sort();
+}
+
 function push<K, V>(map: Map<K, V[]>, key: K | null, value: V) {
   if (key === null) return;
   const list = map.get(key);
@@ -152,19 +180,20 @@ export async function referenceState(db: Queryable, args: { onNewVersion: readon
     const { channelCode, evidence } = callChannel(p.source, p.gclid);
     leads.push({
       id, source: "calls", sourceLeadId: callId, branchId: id !== null ? overrides.get(id) ?? branch : branch, channelCode, evidence,
-      campaign: typeof p.campaign === "string" ? p.campaign : null, phone, email: null, occurredAt: start,
+      campaign: typeof p.campaign === "string" ? p.campaign : null, platforms: namedPlatforms("calls", p), phone, email: null, occurredAt: start,
     });
   }
-  // Web forms and door-to-door sales: untouched by a calls change, read as projected.
-  const others = await db.query<{ id: string; source: string; source_lead_id: string; branch_id: string; channel_code: string; attribution_evidence: string; campaign_external_id: string | null; phone_hash: string | null; email_hash: string | null; occurred_at: Date }>(
-    `select id, source, source_lead_id, branch_id, channel_code, attribution_evidence, campaign_external_id, phone_hash, email_hash, occurred_at
-     from leads where source <> 'calls' and excluded_code is null`,
+  // Web forms and door-to-door sales: untouched by a calls change, read as projected. The platform
+  // their campaign id belongs to is read from their own stored payload (R-46).
+  const others = await db.query<{ id: string; source: string; source_lead_id: string; branch_id: string; channel_code: string; attribution_evidence: string; campaign_external_id: string | null; phone_hash: string | null; email_hash: string | null; occurred_at: Date; payload: Json }>(
+    `select l.id, l.source, l.source_lead_id, l.branch_id, l.channel_code, l.attribution_evidence, l.campaign_external_id, l.phone_hash, l.email_hash, l.occurred_at, re.payload
+     from leads l join raw_events re on re.id = l.raw_event_id where l.source <> 'calls' and l.excluded_code is null`,
   );
   for (const l of others.rows) {
     const id = Number(l.id);
     leads.push({
       id, source: l.source, sourceLeadId: l.source_lead_id, branchId: overrides.get(id) ?? l.branch_id, channelCode: l.channel_code, evidence: l.attribution_evidence,
-      campaign: l.campaign_external_id, phone: l.phone_hash, email: l.email_hash, occurredAt: l.occurred_at.getTime(),
+      campaign: l.campaign_external_id, platforms: namedPlatforms(l.source, l.payload), phone: l.phone_hash, email: l.email_hash, occurredAt: l.occurred_at.getTime(),
     });
   }
 
@@ -199,15 +228,19 @@ export async function referenceState(db: Queryable, args: { onNewVersion: readon
     byCustomer.set(Number(k.crm_customer_id), k.status);
     reviews.set(Number(k.lead_id), byCustomer);
   }
-  const unmapped = new Set((await db.query<{ ext: string }>("select external_campaign_id as ext from ad_campaigns c where not exists (select 1 from campaign_branch_map m where m.campaign_id = c.id)")).rows.map((r) => r.ext));
+  // Campaigns are keyed by platform and id: two platforms can use one id (R-46).
+  const campaignKey = (platform: string, ext: string) => `${platform}:${ext}`;
+  const unmapped = new Set(
+    (await db.query<{ platform: string; ext: string }>("select platform, external_campaign_id as ext from ad_campaigns c where not exists (select 1 from campaign_branch_map m where m.campaign_id = c.id)")).rows.map((r) => campaignKey(r.platform, r.ext)),
+  );
   // A campaign whose every spend day was held at intake: none of its cost is in any figure.
   const held = new Set(
-    (await db.query<{ ext: string }>(
-      `select distinct re.payload ->> 'campaignId' as ext from raw_events re
+    (await db.query<{ platform: string; ext: string }>(
+      `select distinct re.payload ->> 'platform' as platform, re.payload ->> 'campaignId' as ext from raw_events re
        where re.source = 'ads' and re.status in ('excluded', 'quarantined') and re.payload ->> 'campaignId' is not null
          and not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
                          where c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId')`,
-    )).rows.map((r) => r.ext),
+    )).rows.map((r) => campaignKey(r.platform, r.ext)),
   );
 
   // ── Credit: the first touch with evidence in the customer's 60-day lookback; a lead credits one customer ──
@@ -276,7 +309,9 @@ export async function referenceState(db: Queryable, args: { onNewVersion: readon
     const first = initial.get(sale.sub);
     const channel = best?.channelCode ?? "unknown";
     const ch = channels.get(channel);
-    const campaign = best?.campaign ?? null;
+    // The credited lead's campaign: its id on the one platform its record names; none otherwise,
+    // and then, as with no campaign id, no campaign's mapping or held spend applies.
+    const campaign = best && best.campaign !== null && best.platforms.length === 1 ? campaignKey(best.platforms[0], best.campaign) : null;
     const paid = Boolean(ch?.is_paid && ch.cost_basis === "media" && !(campaign !== null && (unmapped.has(campaign) || held.has(campaign))));
     const inPeriod = Boolean(sale.branchId && first?.status === "completed" && first.completedAt !== null && first.completedAt >= t0 && first.completedAt < t1);
     acquisitions.set(customer, { branchId: sale.branchId, channelCode: channel, leadBranchId: best?.branchId ?? null, paid, inPeriod });

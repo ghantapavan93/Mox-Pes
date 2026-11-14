@@ -99,8 +99,9 @@ export const HELD_SPEND = `held_records as (
                          where c.platform = h.platform and c.external_campaign_id = h.ext and s.spend_date = h.day)),
      held_campaigns as (
        -- Every record held and none counted: its cost is in no figure, whether or not the held
-       -- record's date could be read (independent review 2026-11-12, financial finding 6).
-       select distinct h.ext as external_campaign_id from held_records h
+       -- record's date could be read (independent review 2026-11-12, financial finding 6). Keyed
+       -- by platform and id: another platform's campaign with the same id is another campaign (R-46).
+       select distinct h.platform, h.ext as external_campaign_id from held_records h
        where h.ext is not null
          and not exists (select 1 from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
                          where c.platform = h.platform and c.external_campaign_id = h.ext))`;
@@ -126,6 +127,15 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
      sold as (
        select a.branch_id, count(*) as sold from v_acquisitions a, p
        where a.sold_at >= p.t0 and a.sold_at < p.t1 group by 1),
+     -- The period's new customers first, materialized and planned on their own: joined in the same
+     -- step as v_lead_campaigns, the planner credited every customer's first touch before
+     -- filtering on the period (9,477 instead of 3,687 on the demo world, +150 ms).
+     period_acq as materialized (
+       select a.branch_id, a.lead_id, a.channel_code, a.channel_conflict, a.subscription_status, a.annual_value_cents,
+              ch.is_paid, ch.cost_basis, r.collected_cents
+       from v_acquisitions a join channels ch on ch.code = a.channel_code
+       left join v_customer_revenue r on r.crm_customer_id = a.crm_customer_id, p
+       where a.initial_status = 'completed' and a.initial_completed_at >= p.t0 and a.initial_completed_at < p.t1),
      acq as (
        select a.branch_id, count(*) as acquired,
               -- Paid MEDIA customers whose spend the numerator can see: the CAC denominator.
@@ -133,24 +143,25 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
               -- is mapped to has its cost in unallocated spend, not here (audit 2026-11-09, D-3);
               -- nor one credited to a campaign whose spend was all held at intake (another currency,
               -- no stated currency), whose cost no figure contains (definition v3, held-out IV-26).
-              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
-                and not exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
-                                  and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id))
-                and not exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as paid_acquired,
-              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
-                and exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)) as held_acquired,
+              -- The campaign is the one on the platform the lead's own record names (v_lead_campaigns,
+              -- R-46). A lead naming no platform, or two, has no campaign here: like a lead with no
+              -- campaign id, its customer counts, and no campaign's mapping or held spend applies.
+              count(*) filter (where a.is_paid and a.cost_basis = 'media'
+                and not (lc.campaign_id is not null and not exists (select 1 from campaign_branch_map um where um.campaign_id = lc.campaign_id))
+                and not exists (select 1 from held_campaigns hc where hc.platform = lc.platform and hc.external_campaign_id = lc.campaign_external_id)) as paid_acquired,
+              count(*) filter (where a.is_paid and a.cost_basis = 'media'
+                and exists (select 1 from held_campaigns hc where hc.platform = lc.platform and hc.external_campaign_id = lc.campaign_external_id)) as held_acquired,
               -- Counted, but their campaign has spend days held in the period: the CAC is incomplete.
-              count(*) filter (where ch.is_paid and ch.cost_basis = 'media'
-                and not exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id)
-                and exists (select 1 from held_days hd where hd.ext = a.campaign_external_id
+              count(*) filter (where a.is_paid and a.cost_basis = 'media'
+                and not exists (select 1 from held_campaigns hc where hc.platform = lc.platform and hc.external_campaign_id = lc.campaign_external_id)
+                and exists (select 1 from held_days hd where hd.platform = lc.platform and hd.ext = lc.campaign_external_id
                               and hd.day >= (p.t0 at time zone 'UTC')::date and hd.day < (p.t1 at time zone 'UTC')::date)) as partly_held_acquired,
               count(*) filter (where a.channel_code = 'unknown') as unknown_acquired,
               count(*) filter (where a.channel_conflict) as conflicts,
-              coalesce(sum(r.collected_cents), 0) as new_collected,
+              coalesce(sum(a.collected_cents), 0) as new_collected,
               coalesce(sum(a.annual_value_cents) filter (where a.subscription_status = 'active'), 0) as new_acv
-       from v_acquisitions a join channels ch on ch.code = a.channel_code
-       left join v_customer_revenue r on r.crm_customer_id = a.crm_customer_id, p
-       where a.initial_status = 'completed' and a.initial_completed_at >= p.t0 and a.initial_completed_at < p.t1
+       from period_acq a
+       left join v_lead_campaigns lc on lc.lead_id = a.lead_id, p
        group by 1),
      rev as (
        select br.id as branch_id, sum(pm.amount_cents) as net, -coalesce(sum(pm.amount_cents) filter (where pm.amount_cents < 0), 0) as refunds

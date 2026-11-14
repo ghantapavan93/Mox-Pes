@@ -144,6 +144,15 @@ export const AD_PLATFORM_CHANNEL: Record<string, ChannelCode> = {
   meta: "meta",
 };
 
+const AD_PLATFORM_LABEL: Record<string, string> = {
+  google_ads: "Google Ads",
+  google_lsa: "Google Local Services",
+  microsoft_ads: "Microsoft Ads",
+  meta: "Meta",
+};
+/** An ad platform's name for people; an unknown code is shown as it is. */
+export const platformLabel = (platform: string) => AD_PLATFORM_LABEL[platform] ?? platform;
+
 /** Scenario anchors, named once so the seed, the tests and the demo script agree. */
 export const SCENARIO = {
   /** Branch whose call-tracking feed changes shape mid-period (the flagship incident). */

@@ -185,12 +185,14 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   // mapped to no branch, and October customers of this branch's campaigns serviced at another
   // branch (cost on one row, customers on another). Both are misassignment, whatever exception
   // reconciliation has opened (VP acceptance, first contact: VP-01 had both and H3 said none).
+  // A customer is this branch's campaign's when the lead's own record names that campaign's
+  // platform (v_lead_campaigns, R-46), not when another platform's campaign shares the id.
   const crossBranch = await read(
     db.query<{ branch_id: string; n: string }>(
       `select a.branch_id, count(*) as n
        from v_acquisitions a
-       join ad_campaigns c on c.external_campaign_id = a.campaign_external_id
-       join campaign_branch_map m on m.campaign_id = c.id
+       join v_lead_campaigns lc on lc.lead_id = a.lead_id
+       join campaign_branch_map m on m.campaign_id = lc.campaign_id
        join channels ch on ch.code = a.channel_code
        where m.branch_id = $1 and a.branch_id <> $1 and ch.is_paid
          and a.initial_status = 'completed' and a.initial_completed_at >= $2 and a.initial_completed_at < $3

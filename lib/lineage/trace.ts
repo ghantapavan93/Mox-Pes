@@ -4,7 +4,7 @@ import { evidence } from "@/lib/ai/evidence";
 import { METRICS } from "@/lib/metrics/definitions";
 import { branchRows, freshness, HELD_SPEND, paidCac, type BranchRow, type StreamFreshness } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
-import { BRANCH_BY_ID } from "@/lib/reference";
+import { BRANCH_BY_ID, platformLabel } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
 
 /**
@@ -90,7 +90,12 @@ export interface MetricTrace {
   excluded: Array<{ reason: string; code: string; count: number; amountCents: number | null; evidenceIds: string[] }>;
   sourceRecords: Array<{ source: string; status: "excluded" | "quarantined"; code: string; count: number; sampleEvidenceIds: string[] }>;
   /** An unmapped campaign also states its figures as fields, so a sentence rendering them is proved (R-38). */
-  missing: Array<{ kind: string; detail: string; evidenceIds: string[]; campaignExternalId?: string; leads?: number; spendCents?: number }>;
+  /**
+   * `campaign_unresolved` (R-46): leads at the branch whose campaign id cannot be matched to one
+   * campaign, by `reason` (v_lead_campaigns.status), with how many of this trace's counted paid
+   * customers they credit (`customers`).
+   */
+  missing: Array<{ kind: string; detail: string; evidenceIds: string[]; campaignExternalId?: string; leads?: number; spendCents?: number; reason?: string; customers?: number }>;
   freshness: StreamFreshness[];
   limitations: string[];
   evidenceIds: string[];
@@ -192,16 +197,19 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
      order by sum(s.cost_cents) desc, c.id`,
     params,
   );
+  // The customer's campaign is the one on the platform its lead's own record names
+  // (v_lead_campaigns, R-46), as the scorecard reads it; with none or two named, no campaign's
+  // mapping or held spend applies and the customer counts.
   const acquired = await db.query(
     `with ${HELD_SPEND}
      select a.crm_customer_id, a.sold_at, a.initial_completed_at, a.channel_code, a.campaign_external_id, a.lead_id,
-            a.attribution_basis, l.raw_event_id as lead_raw_event_id, ch.is_paid, ch.cost_basis,
-            exists (select 1 from ad_campaigns uc where uc.external_campaign_id = a.campaign_external_id
-                    and not exists (select 1 from campaign_branch_map um where um.campaign_id = uc.id)) as unmapped_campaign,
-            exists (select 1 from held_campaigns hc where hc.external_campaign_id = a.campaign_external_id) as held_campaign
+            a.attribution_basis, l.raw_event_id as lead_raw_event_id, ch.is_paid, ch.cost_basis, lc.platform as campaign_platform,
+            (lc.campaign_id is not null and not exists (select 1 from campaign_branch_map um where um.campaign_id = lc.campaign_id)) as unmapped_campaign,
+            exists (select 1 from held_campaigns hc where hc.platform = lc.platform and hc.external_campaign_id = lc.campaign_external_id) as held_campaign
      from v_acquisitions a
      join channels ch on ch.code = a.channel_code
      left join leads l on l.id = a.lead_id
+     left join v_lead_campaigns lc on lc.lead_id = a.lead_id
      where a.branch_id = $3 and a.initial_status = 'completed'
        and a.initial_completed_at >= $1 and a.initial_completed_at < $2 and ch.is_paid
      order by a.initial_completed_at, a.crm_customer_id`,
@@ -222,14 +230,36 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
      order by count(*) desc`,
     params,
   );
+  // Unmapped campaigns whose leads arrive here: matched on the platform each lead names (R-46), so
+  // another platform's campaign with the same id, and its spend, is never shown for these leads.
   const unmapped = await db.query(
     `select c.id, c.external_campaign_id, count(*) as leads,
             (select coalesce(sum(s.cost_cents), 0) from ad_spend_daily s where s.campaign_id = c.id
               and s.spend_date >= ($1::timestamptz at time zone 'UTC')::date and s.spend_date < ($2::timestamptz at time zone 'UTC')::date) as spend
-     from v_leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
+     from v_leads l
+     join v_lead_campaigns lc on lc.lead_id = l.id
+     join ad_campaigns c on c.id = lc.campaign_id
      where l.effective_branch_id = $3 and l.occurred_at >= $1 and l.occurred_at < $2
        and not exists (select 1 from campaign_branch_map m where m.campaign_id = c.id)
      group by c.id, c.external_campaign_id order by count(*) desc limit 20`,
+    params,
+  );
+  // Leads here whose campaign id cannot be matched to one campaign, and the counted paid customers
+  // they credit. Only this branch's own leads and their own fields are described: nothing about
+  // any campaign that uses the id (it may be another account's, or another branch's).
+  // A campaign whose spend was all held may have no record, but its held spend is matched on the
+  // platform and id all the same (CAMPAIGN_SPEND_HELD above): that is not "unresolved".
+  // The counted paid customers they credit are counted below from `acquired`, not joined here:
+  // v_acquisitions joined by lead credits every customer first (+200 ms on the demo world).
+  const unresolved = await db.query<{ campaign_external_id: string; status: string; platforms: string[]; lead_ids: string[] }>(
+    `with ${HELD_SPEND}
+     select lc.campaign_external_id, lc.status, lc.platforms, array_agg(l.id order by l.id) as lead_ids
+     from v_leads l
+     join v_lead_campaigns lc on lc.lead_id = l.id
+     where l.effective_branch_id = $3 and l.occurred_at >= $1 and l.occurred_at < $2 and lc.status <> 'matched'
+       and not exists (select 1 from held_campaigns hc where hc.platform = lc.platform and hc.external_campaign_id = lc.campaign_external_id)
+     group by lc.campaign_external_id, lc.status, lc.platforms
+     order by lc.campaign_external_id, lc.status limit 20`,
     params,
   );
   const exceptions = await db.query(
@@ -294,11 +324,14 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
   if (args.metric === "paid_cac") {
     if (unmappedCustomers.length) excluded.push({ reason: "New paid customers whose crediting campaign is mapped to no branch: its spend is unallocated, so they are left out of the denominator too", code: "CAMPAIGN_UNMAPPED", count: unmappedCustomers.length, amountCents: null, evidenceIds: unmappedCustomers.slice(0, 10).map(evidence.customer) });
     if (heldCustomers.length) {
-      // The held spend records behind the exclusion, so the evidence leads to its cause.
-      const heldCampaignIds = [...new Set(acquired.rows.filter((r) => r.held_campaign).map((r) => r.campaign_external_id as string))];
+      // The held spend records behind the exclusion, so the evidence leads to its cause: the held
+      // campaign's own records, on its platform (R-46), not another platform's with the same id.
+      const heldCampaigns = [...new Map(acquired.rows.filter((r) => r.held_campaign).map((r) => [`${r.campaign_platform}:${r.campaign_external_id}`, r])).values()];
       const heldRaw = await db.query<{ id: string }>(
-        `select id from raw_events where source = 'ads' and status in ('excluded', 'quarantined') and payload ->> 'campaignId' = any($1::text[]) order by id desc limit 5`,
-        [heldCampaignIds],
+        `select re.id from raw_events re
+         join unnest($1::text[], $2::text[]) as held(platform, ext) on held.platform = re.payload ->> 'platform' and held.ext = re.payload ->> 'campaignId'
+         where re.source = 'ads' and re.status in ('excluded', 'quarantined') order by re.id desc limit 5`,
+        [heldCampaigns.map((r) => r.campaign_platform as string), heldCampaigns.map((r) => r.campaign_external_id as string)],
       );
       excluded.push({
         reason: "New paid customers whose crediting campaign's spend was all held at intake (another currency, or no stated currency without a rule): its cost is in no figure, so they are left out of the denominator too",
@@ -328,6 +361,28 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
       campaignExternalId: String(u.external_campaign_id),
       leads: num(u.leads),
       spendCents: num(u.spend),
+    });
+  }
+  const countedByLead = new Set(counted.map((k) => k.leadEvidenceId).filter((id): id is string => id !== null));
+  for (const u of unresolved.rows) {
+    const leads = u.lead_ids.length;
+    const customers = u.lead_ids.filter((id) => countedByLead.has(evidence.lead(Number(id)))).length;
+    const why =
+      u.status === "conflicting_platforms"
+        ? `name more than one ad platform (${u.platforms.map(platformLabel).join(" and ")})`
+        : u.status === "no_platform"
+          ? "name no ad platform (no call-tracking source label for one, no click id, no paid utm_source)"
+          : `name ${platformLabel(u.platforms[0])}, and no ${platformLabel(u.platforms[0])} campaign has this id`;
+    missing.push({
+      kind: "campaign_unresolved",
+      detail:
+        `Campaign id ${u.campaign_external_id}: ${leads} lead(s) at ${branch.id} ${why}, so they are matched to no campaign; a bare id is not enough.` +
+        (customers > 0 ? ` The ${customers} paid customer(s) they credit are counted, as customers whose lead carries no campaign are: no campaign's mapping or held spend applies to them.` : ""),
+      evidenceIds: u.lead_ids.slice(0, 5).map((id) => evidence.lead(Number(id))),
+      campaignExternalId: u.campaign_external_id,
+      leads,
+      reason: u.status,
+      customers,
     });
   }
   for (const e of exceptions.rows) missing.push({ kind: `open_exception:${e.kind}`, detail: e.summary, evidenceIds: [evidence.exception(Number(e.id))] });

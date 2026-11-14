@@ -20,12 +20,15 @@ export const DECISION_BLOCKING_KINDS = ["channel_coverage_gap", "quarantined_sou
  * customers: their cost is missing from the channel's spend there. So an open unmapped-spend
  * exception blocks each branch whose acquired customers are credited to its campaign, in that
  * campaign's channel (audit 2026-11-09, D-1: before this, the kind was listed as blocking but its
- * null branch meant it never matched any branch).
+ * null branch meant it never matched any branch). "Credited to its campaign" means the lead's own
+ * record names that campaign's platform (v_lead_campaigns, R-46): a customer of another
+ * platform's campaign with the same id is not this campaign's.
  */
 const UNMAPPED_AT_BRANCH = `
   select distinct e.id, a.branch_id, a.channel_code, a.initial_completed_at, e.kind, e.summary, e.severity, e.amount_cents
   from exceptions e
-  join v_acquisitions a on a.campaign_external_id = e.evidence ->> 'externalCampaignId' and a.initial_status = 'completed'
+  join v_lead_campaigns lc on lc.campaign_id = (e.evidence ->> 'campaignId')::bigint
+  join v_acquisitions a on a.lead_id = lc.lead_id and a.initial_status = 'completed'
   where e.status = 'open' and e.kind = 'unmapped_spend' and e.branch_id is null`;
 
 export const SIGNAL_RATIO = 1.5;

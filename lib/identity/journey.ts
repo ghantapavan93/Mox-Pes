@@ -148,6 +148,8 @@ export interface Unknown {
   note: string;
 }
 
+export type CampaignMatch = "matched" | "no_campaign_on_platform" | "no_platform" | "conflicting_platforms";
+
 export interface Attribution {
   subscriptionId: number;
   soldAt: string;
@@ -161,8 +163,13 @@ export interface Attribution {
   creditedLeadLinked: boolean;
   leadBranchId: string | null;
   campaignExternalId: string | null;
+  /** The campaign on the platform the credited lead's own record names (R-46); null when none is. */
   campaignName: string | null;
   campaignPlatform: string | null;
+  /** How the campaign id was matched (v_lead_campaigns.status); null when the lead carries no id. */
+  campaignMatch: CampaignMatch | null;
+  /** The ad platforms the credited lead's record names, for explaining an unresolved match. */
+  campaignNamedPlatforms: string[];
   initialStatus: string;
   initialCompletedAt: string | null;
   channelConflict: boolean;
@@ -288,16 +295,19 @@ export async function getCustomerJourney(db: Queryable, crmCustomerId: number, s
       attribution_evidence: string | null; lead_id: string | null; lead_branch_id: string | null; campaign_external_id: string | null;
       initial_status: string; initial_completed_at: Date | null; channel_conflict: boolean; annual_value_cents: string;
       lead_source: string | null; lead_source_id: string | null; lead_at: Date | null; campaign_name: string | null; campaign_platform: string | null;
+      campaign_match: CampaignMatch | null; campaign_platforms: string[] | null;
     }>(
+      // The campaign on the platform the credited lead's own record names (v_lead_campaigns,
+      // R-46). Until 2026-11-13 this took the lowest-numbered campaign with the id, on any
+      // platform: a Meta lead could be shown another branch's Google campaign.
       `select a.crm_subscription_id, a.sold_at, a.channel_code, a.attribution_basis, a.attribution_evidence, a.lead_id,
               a.lead_branch_id, a.campaign_external_id, a.initial_status, a.initial_completed_at, a.channel_conflict,
               a.annual_value_cents, l.source as lead_source, l.source_lead_id as lead_source_id, l.occurred_at as lead_at,
-              cp.name as campaign_name, cp.platform as campaign_platform
+              cp.name as campaign_name, cp.platform as campaign_platform, lc.status as campaign_match, lc.platforms as campaign_platforms
        from v_acquisitions a
        left join leads l on l.id = a.lead_id
-       left join lateral (
-         select name, platform from ad_campaigns where external_campaign_id = a.campaign_external_id order by id limit 1
-       ) cp on true
+       left join v_lead_campaigns lc on lc.lead_id = a.lead_id
+       left join ad_campaigns cp on cp.id = lc.campaign_id
        where a.crm_customer_id = $1`,
       [crmCustomerId],
     ),
@@ -369,6 +379,8 @@ export async function getCustomerJourney(db: Queryable, crmCustomerId: number, s
         campaignExternalId: a.campaign_external_id,
         campaignName: a.campaign_name,
         campaignPlatform: a.campaign_platform,
+        campaignMatch: a.campaign_match,
+        campaignNamedPlatforms: a.campaign_platforms ?? [],
         initialStatus: a.initial_status,
         initialCompletedAt: iso(a.initial_completed_at),
         channelConflict: a.channel_conflict,

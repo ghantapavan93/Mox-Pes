@@ -20,9 +20,9 @@ import { TEST_DATABASE_URL, acquisition, call, crm, freshDb, ingest, one, testPo
 
 /**
  * Independent review of the Reliability Twin, 2026-11-12: every confirmed counterexample, kept as
- * a regression test. First contact: docs/agent-work/twin/REVIEW-FIRST-CONTACT.md. Two are
- * pre-existing attribution rules both the product and the reference apply; they are pinned with
- * `it.fails` and stay open as risks (REMAINING-RISKS R-39, R-46).
+ * a regression test. First contact: docs/agent-work/twin/REVIEW-FIRST-CONTACT.md. Two were
+ * pre-existing attribution rules both the product and the reference applied, pinned with
+ * `it.fails`: R-39 still is (REMAINING-RISKS); R-46 was fixed on 2026-11-13 and now passes.
  */
 const pool: Pool = testPool();
 afterAll(async () => pool.end());
@@ -186,7 +186,7 @@ describe("financial 3 · gate I sees a customer outside the stage whose credit m
   });
 });
 
-describe("pre-existing attribution rules both the product and the reference apply (open risks, pinned)", () => {
+describe("pre-existing attribution rules both the product and the reference applied (R-39 open and pinned; R-46 fixed)", () => {
   it.fails("R-39 · two customers on one phone, each called before the first sale: the second keeps her own call", async () => {
     const SHARED = "+14805557201";
     const a = acquisition(1, "B12", SHARED, at(10));
@@ -196,7 +196,9 @@ describe("pre-existing attribution rules both the product and the reference appl
     expect((await one<{ channel_code: string }>(pool, "select channel_code from v_acquisitions where crm_customer_id = $1", [b.customerId])).channel_code).toBe("meta");
   });
 
-  it.fails("R-46 · a mapped Google campaign keeps its paid customer when a Meta campaign shares its id", async () => {
+  // Fixed 2026-11-13: the call names "Google Ads", so its id is matched on Google Ads only; the
+  // Meta campaign with the same id is another campaign (v_lead_campaigns; campaign-platform-match.test.ts).
+  it("R-46 · a mapped Google campaign keeps its paid customer when a Meta campaign shares its id", async () => {
     const spend = (platform: string): RawRecord => ({
       entity: "spend_day",
       payload: { platform, accountId: "ACC-1", campaignId: "123", campaignName: `${platform} 123`, date: "2026-10-03", costMicros: "50000000", clicks: 3, conversions: 1, fetchedAt: "2026-10-04T06:00:00Z", ...(platform === "google_ads" ? { campaignType: "SEARCH" } : {}) },

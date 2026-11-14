@@ -117,7 +117,8 @@ On the demo database (calls@1.2 everywhere) the reference and the product agree 
 17,111 customers' credits and on prospects, acquired, paid and unknown customers in 44 of 44
 branches (0.6 s). In every stage of every run since, gates A and B compared every customer
 (17,113–17,220) and every call: 0 differences. The reference is **partly** independent (R-45):
-it shares the written rules, so a rule wrong in both passes (R-39, R-46).
+it shares the written rules, so a rule wrong in both passes (R-39; R-46 was one until 2026-11-13, when both moved to
+matching a campaign id on the platform the lead names: `CAMPAIGN-PLATFORM-MATCH.md`).
 
 ## 7 · Faults and recovery
 
@@ -166,7 +167,8 @@ down, or keeping held customers in paid CAC), the twin's own gaps (no runner lea
 abandon a stuck run, ERROR leaving stages "Running", no rollback after a crash between two
 writes, weak gates G and I, twin name collisions, an incomplete base fingerprint) and seven UX
 issues. Not fixed, pinned with `it.fails`: two pre-existing attribution rules both the product
-and the reference apply (R-39, R-46); they need a ruling.
+and the reference apply (R-39, R-46); they need a ruling. **R-46 fixed 2026-11-13** in both
+(`CAMPAIGN-PLATFORM-MATCH.md`); its pin was removed. R-39 stays pinned.
 
 ## 10 · Verification
 

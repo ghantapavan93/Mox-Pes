@@ -31,7 +31,12 @@ mock and connector tests.
 The push intake accepts a CallRail-**shaped** call that an upstream step has already tagged
 with `branch_tag`. It is not a native CallRail webhook receiver.
 
-| ID | State | Evidence | Today (calls@1.1, active) | calls@1.2 (staged) | Mock-verified |
+> **Status, 2026-11-13:** `calls@1.2` and `ads@1.2` are the active mappers (`ACTIVE_VERSION` in
+> `lib/adapters/registry.ts`, switched on in commit `8ce7e62`). The tables and the paragraph
+> below were written before that; their column headings now read "1.1" and "1.2 (active)". Records
+> stored before a version keep the version that mapped them until they are replayed or re-sent.
+
+| ID | State | Evidence | calls@1.1 | calls@1.2 (active) | Mock-verified |
 |---|---|---|---|---|---|
 | C-1 | `start_time` is ISO 8601 with an offset, e.g. `2026-10-14T10:12:33.000-04:00` | DOC | handled | handled | yes |
 | C-2 | A native call object identifies the account by `company_id`, not a branch | DOC | refused `SCHEMA_VIOLATION` | refused | yes |
@@ -58,7 +63,7 @@ must be built before activating either staged mapper.
 There is no Google Ads connector. Spend arrives as `spend_day` records in a documented-like
 shape (the simulation produces them).
 
-| ID | State | Evidence | Today (ads@1.1, active) | ads@1.2 (staged) | Mock-verified |
+| ID | State | Evidence | ads@1.1 | ads@1.2 (active) | Mock-verified |
 |---|---|---|---|---|---|
 | G-1 | `metrics.cost_micros` is int64 (a string in REST JSON); 1,000,000 micros = 1 unit | DOC | handled (exact cents) | handled | yes |
 | G-2 | `metrics.conversions` is a **double** (fractional under data-driven attribution) | DOC | refused `SCHEMA_VIOLATION` | refused `FRACTIONAL_CONVERSIONS` | yes |
@@ -92,8 +97,8 @@ added to the executable contract test.
 
 | Vendor | Blocking before a real account | Not blocking, but open |
 |---|---|---|
-| CallRail | Activate calls@1.2 (C-3). Map `company_id` to branch (C-2). Verify the signature (C-6). Poll by date range to recover dropped webhooks (C-5) | Ordering of Post-Call vs Call Modified (C-4a): re-fetch the call by id after 20 minutes |
-| Google Ads | Activate ads@1.2 (G-3). A numeric conversions column and a `reporting.*_v2` view (G-2). Re-fetch a trailing window of days (G-5) | Account time zone vs branch day (G-4) |
+| CallRail | ~~Activate calls@1.2 (C-3)~~ active since `8ce7e62`. Map `company_id` to branch (C-2). Verify the signature (C-6). Poll by date range to recover dropped webhooks (C-5) | Ordering of Post-Call vs Call Modified (C-4a): re-fetch the call by id after 20 minutes |
+| Google Ads | ~~Activate ads@1.2 (G-3)~~ active since `8ce7e62`. A numeric conversions column and a `reporting.*_v2` view (G-2). Re-fetch a trailing window of days (G-5) | Account time zone vs branch day (G-4) |
 | FieldRoutes | Payment applications (F-2, F-3), statuses 3–7 (F-4), Pacific-time datetimes (G1 in the README) | Tombstones by periodic full-id diff (F-5, F-6, F-7) |
 
 Each of those needs a sandbox account and written authorisation. Neither exists for this work.

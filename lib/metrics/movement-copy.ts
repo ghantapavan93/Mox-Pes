@@ -128,7 +128,9 @@ export function explainCell(series: Pick<Series, "channel">, cell: Cell, week: W
       lines.push(`$0.00, recorded: the platform reported spend on ${cell.daysWithRecord} of ${plural(cell.daysDelivered, "day")}, and it was zero.`);
       break;
     case "missing":
-      lines.push(`No spend record on any of its ${plural(cell.daysDelivered, "day")}. This is not $0: nothing was delivered for this channel here.`);
+      // Not "nothing was delivered": the feed can deliver a day's spend filed under another channel
+      // (B09-RECOVERY.md). The records say only that this channel has none here.
+      lines.push(`No spend record on any of its ${plural(cell.daysDelivered, "day")}. This is not $0: no record here says what this channel spent.`);
       break;
     case "not_delivered":
       lines.push("The ads feed has not delivered this week yet. Unknown, not zero.");

@@ -102,7 +102,9 @@ describe("one point, in words", () => {
   const week = (start: string) => m.weeks.find((w) => w.start === start)!;
   it("missing is not $0; partial names the days; a marker in the week is named", () => {
     expect(explainCell(s, s.cells[7], week("2026-10-19"), m.markers)).toEqual([
-      "No spend record on any of its 7 days. This is not $0: nothing was delivered for this channel here.",
+      // Was "nothing was delivered for this channel here": a delivered day filed under another
+      // channel also has no record here (B09-RECOVERY.md).
+      "No spend record on any of its 7 days. This is not $0: no record here says what this channel spent.",
       "15 lead records from this channel arrived here that week (a count, not dollars).",
     ]);
     const partial = explainCell(s, s.cells[6], week("2026-10-12"), m.markers);

@@ -123,7 +123,10 @@ describe("what the chart draws is what the records say", () => {
     const week = m.weeks.find((w) => w.start === "2026-10-19")!;
     const lines = explainCell(lsa, cell("2026-10-19"), week, m.markers);
     expect(pointTitle(lsa, week, "B09")).toBe("Google Local Services at B09 · Oct 19–Oct 25");
-    expect(lines[0]).toBe("No spend record on any of its 7 days. This is not $0: nothing was delivered for this channel here.");
+    // Changed 2026-11-13 (B09-RECOVERY.md): it said "nothing was delivered for this channel here",
+    // but the feed did deliver these days, filed as Google Search. The records show only that
+    // Local Services has none here.
+    expect(lines[0]).toBe("No spend record on any of its 7 days. This is not $0: no record here says what this channel spent.");
   });
 
   it("B07: a recorded $0.00 is a zero; a week with no record is missing", async () => {

@@ -78,7 +78,16 @@ async function Trace({ params, searchParams }: Props) {
         }
       />
       {selection && (
-        <OverviewSelection branchId={branch.id} channel={channel!} channelLabel={selection.channelLabel} week={week!} days={selection.days} markers={selection.markers} backHref={overviewHref} />
+        <OverviewSelection
+          branchId={branch.id}
+          channel={channel!}
+          channelLabel={selection.channelLabel}
+          week={week!}
+          days={selection.days}
+          markers={selection.markers}
+          backHref={overviewHref}
+          incidentQuery={`?period=${period.key}&channel=${channel}&week=${week}${brandParam ? `&brand=${brandParam}` : ""}`}
+        />
       )}
       <PeriodTabs base={`/branches/${branch.id}/trace`} current={period.key} extra={`&metric=${metric}`} />
 

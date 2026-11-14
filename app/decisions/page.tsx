@@ -11,8 +11,9 @@ import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/s
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
 import { verifiedReadinessSnapshot, type VerifiedReadiness } from "@/lib/decision/verified";
 import { money } from "@/lib/format";
+import { parseChannel, parseWeek } from "@/lib/metrics/movement";
 import { parsePeriod, type Period } from "@/lib/period";
-import { BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type ChannelCode } from "@/lib/reference";
+import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type BrandId, type ChannelCode } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 
@@ -43,6 +44,13 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
     throw error;
   }
   const branch = BRANCH_BY_ID.get(branchId)!;
+  // A selection carried from the Overview through an incident (channel and week), read after the
+  // scope check: Decision Lab does not use it, it only hands it back on the incident links.
+  const channel = parseChannel(first(sp.channel));
+  const week = parseWeek(first(sp.week));
+  const brand = first(sp.brand);
+  const brandQuery = brand && BRAND_BY_ID.has(brand as BrandId) ? `&brand=${brand}` : "";
+  const incidentQuery = `?period=${period.key}${channel && week ? `&channel=${channel}&week=${week}` : ""}${brandQuery}`;
   const branchOptions = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id));
   // Started now, awaited where the card renders: verified readiness (1.2–1.5 s on the seeded world,
   // one snapshot; 3.3–4.0 s before it read the scorecard once, PERFORMANCE.md §6) runs alongside
@@ -102,7 +110,7 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
       />
 
       <Suspense fallback={<Card title="Verdicts"><Skeleton lines={4} /></Card>}>
-        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} verified={verified} />
+        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} verified={verified} incidentQuery={incidentQuery} />
       </Suspense>
 
       <Suspense fallback={<Card title="A/A analysis"><Skeleton lines={5} /></Card>}>
@@ -114,7 +122,7 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
 
 const channelLabel = (code: string) => CHANNEL_BY_CODE.get(code as ChannelCode)?.label ?? code;
 
-async function VerdictsAndScenarios({ viewer, branchId, period, verified }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness> }) {
+async function VerdictsAndScenarios({ viewer, branchId, period, verified, incidentQuery }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness>; incidentQuery: string }) {
   const pool = getPool();
   const [verdicts, saved] = await Promise.all([
     decisionVerdicts(pool, viewer, { branchId, period }),
@@ -124,7 +132,7 @@ async function VerdictsAndScenarios({ viewer, branchId, period, verified }: { vi
 
   return (
     <>
-      <ReadinessSummary verdicts={verdicts} canInvestigate={viewer.can.investigate} />
+      <ReadinessSummary verdicts={verdicts} canInvestigate={viewer.can.investigate} incidentQuery={incidentQuery} />
 
       <Card
         id="verdicts"
@@ -224,7 +232,7 @@ async function VerifiedReadinessCard({ verified }: { verified: Promise<VerifiedR
  * block it. Built from the verdicts' own failing budget-gate reasons, so it can never say
  * something the matrix below does not.
  */
-function ReadinessSummary({ verdicts, canInvestigate }: { verdicts: DecisionVerdicts; canInvestigate: boolean }) {
+function ReadinessSummary({ verdicts, canInvestigate, incidentQuery }: { verdicts: DecisionVerdicts; canInvestigate: boolean; incidentQuery: string }) {
   const notReady = verdicts.channels.filter((c) => c.readiness.status === "not_ready");
   const blockers = new Map<string, string>();
   for (const c of verdicts.channels) {
@@ -258,7 +266,7 @@ function ReadinessSummary({ verdicts, canInvestigate }: { verdicts: DecisionVerd
               return (
                 <li key={href} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span>{text}</span>
-                  <Link href={href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
+                  <Link href={id ? `${href}${incidentQuery}` : href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
                     open incident →
                   </Link>
                   {id && canInvestigate && (

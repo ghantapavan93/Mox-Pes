@@ -21,6 +21,7 @@ export function OverviewSelection({
   days,
   markers,
   backHref,
+  incidentQuery,
 }: {
   branchId: string;
   channel: string;
@@ -29,6 +30,8 @@ export function OverviewSelection({
   days: SpendDay[];
   markers: Marker[];
   backHref: string;
+  /** The selection (period, channel, week), carried to the incident so it can send the reviewer back here. */
+  incidentQuery: string;
 }) {
   const withRecord = days.filter((d) => d.records.length > 0);
   const total = withRecord.reduce((t, d) => t + d.records.reduce((s, r) => s + r.cents, 0), 0);
@@ -103,7 +106,7 @@ export function OverviewSelection({
             {m.successors.length > 0
               ? `Its stored evidence: ${m.successors.map((s) => `${s.externalCampaignId} carries ${dollars(s.spendSinceCents)} since ${shortDay(s.firstSpendDate ?? m.date)}${s.classifiedAs.length ? `, filed as ${s.classifiedAs.join(" and ")}` : ""}`).join("; ")}.`
               : "Its stored evidence names no successor campaign."}{" "}
-            <Link href={`/exceptions/${m.exceptionId}`} className="font-medium text-accent underline">
+            <Link href={`/exceptions/${m.exceptionId}${incidentQuery}#recovery`} className="font-medium text-accent underline" data-testid="selection-incident-link">
               Open incident #{m.exceptionId}
             </Link>
           </Callout>

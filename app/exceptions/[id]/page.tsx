@@ -7,6 +7,7 @@ import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
 import { DriftReview } from "@/components/incidents/DriftReview";
+import { GapRecovery } from "@/components/incidents/GapRecovery";
 import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
@@ -14,8 +15,11 @@ import { quarantineGroupIds } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
 import { acquisitionTrail, getException, lastReplayForException, quarantineSamples, type ExceptionRow } from "@/lib/queries";
 import type { ReplayResult } from "@/lib/ingest/replay";
-import { DECISION_BLOCKING_KINDS } from "@/lib/metrics/decision";
-import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
+import { DECISION_BLOCKING_KINDS, decisionHolds } from "@/lib/metrics/decision";
+import { parseChannel, parseWeek } from "@/lib/metrics/movement";
+import { PERIODS, type PeriodKey } from "@/lib/period";
+import { gapCoverage } from "@/lib/reconcile/gap-coverage";
+import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { parseRecordId } from "@/lib/record-id";
@@ -24,6 +28,12 @@ type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<str
 
 /** Exception kinds that gate a budget decision: their page links to the Decision Lab. */
 const DECISION_KINDS: ReadonlySet<string> = new Set(DECISION_BLOCKING_KINDS);
+
+/** The Monday of an ISO date's week (the Overview's weeks run Monday–Sunday). */
+const mondayOf = (date: string) => {
+  const t = new Date(`${date}T00:00:00Z`);
+  return new Date(t.getTime() - ((t.getUTCDay() + 6) % 7) * 86_400_000).toISOString().slice(0, 10);
+};
 
 export const metadata = { title: "Incident" };
 
@@ -73,6 +83,21 @@ async function ExceptionDetail({ params, searchParams }: Props) {
   const amountLabel = exception.kind === "channel_coverage_gap" || exception.kind === "unmapped_spend" ? "Spend affected" : "Revenue at stake";
   const branch = exception.branchId ? BRANCH_BY_ID.get(exception.branchId) : null;
 
+  // The selection the reviewer arrived with (Overview → daily evidence → here), read only after the
+  // scope check above, and carried on so Decision Lab and the way back keep it.
+  const sp = await searchParams;
+  const periodKey: PeriodKey = typeof sp.period === "string" && Object.hasOwn(PERIODS, sp.period) ? (sp.period as PeriodKey) : "oct";
+  const selected = parseChannel(sp.channel) && parseWeek(sp.week) ? { channel: parseChannel(sp.channel)!, week: parseWeek(sp.week)! } : null;
+  const brandQuery = typeof sp.brand === "string" && BRAND_BY_ID.has(sp.brand as BrandId) ? `&brand=${sp.brand}` : "";
+  const decisionsHref = `/decisions?branch=${exception.branchId}&period=${periodKey}${selected ? `&channel=${selected.channel}&week=${selected.week}` : ""}${brandQuery}`;
+  const traceHref = (channel: string, week: string | null) =>
+    `/branches/${exception.branchId}/trace?period=${periodKey}&metric=paid_spend&channel=${channel}${week ? `&week=${week}` : ""}${brandQuery}#selection`;
+  // A coverage gap's recovery: its window as the accepted records cover it now (lib/reconcile/gap-coverage.ts).
+  const coverage = exception.kind === "channel_coverage_gap" && exception.branchId ? await gapCoverage(getPool(), ev, exception.branchId) : null;
+  const otherHolds = coverage ? (await decisionHolds(getPool(), [exception.branchId!])).filter((h) => h.exceptionId !== exception.id) : [];
+  const firstOpen = coverage ? ([...coverage.missing, ...coverage.recordedZero].sort()[0] ?? coverage.window.from) : null;
+  const recordsWeek = coverage ? (selected?.channel === coverage.channel ? selected.week : parseWeek(mondayOf(firstOpen!))) : null;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -106,12 +131,25 @@ async function ExceptionDetail({ params, searchParams }: Props) {
               <span className="text-xs text-muted">Investigations need any role except guest.</span>
             )}
             {exception.branchId && DECISION_KINDS.has(exception.kind) && (
-              <ButtonLink href={`/decisions?branch=${exception.branchId}`}>Decision readiness for {exception.branchId}</ButtonLink>
+              <ButtonLink href={decisionsHref}>Decision readiness for {exception.branchId}</ButtonLink>
             )}
             {exception.branchId && <ButtonLink href={`/branches/${exception.branchId}`}>Branch {exception.branchId}</ButtonLink>}
           </>
         }
       />
+
+      {coverage && (
+        <GapRecovery
+          exception={exception}
+          coverage={coverage}
+          otherHolds={otherHolds}
+          links={{
+            records: traceHref(coverage.channel, recordsWeek),
+            back: selected ? traceHref(selected.channel, selected.week) : null,
+            decisions: `${decisionsHref}#readiness`,
+          }}
+        />
+      )}
 
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border shadow-raised md:grid-cols-4" data-testid="incident-impact">
         {(

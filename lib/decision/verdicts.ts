@@ -4,6 +4,7 @@ import { getNow, readAll, type Queryable } from "@/lib/db";
 import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type BudgetSignal } from "@/lib/metrics/decision";
 import type { ChannelRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
+import { dateRanges, gapCoverage, type GapCoverage } from "@/lib/reconcile/gap-coverage";
 import { BRANCH_BY_ID, SCENARIO } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
 
@@ -116,6 +117,20 @@ interface OpenException {
   amountCents: number;
   /** For unmapped spend: the channel of the unmapped campaign. */
   campaignChannel: string | null;
+  /** For a coverage gap: its window as the accepted records cover it now (lib/reconcile/gap-coverage.ts). */
+  coverage?: GapCoverage | null;
+}
+
+/**
+ * Why a coverage gap still holds after part of it was repaired, or "": a re-filed week can make a
+ * chart look whole while the incident's window is not. Said only once something was repaired, so
+ * an untouched incident reads exactly as it was recorded.
+ */
+function stillMissing(c: GapCoverage | null | undefined): string {
+  if (!c || c.covered.length === 0 || c.complete) return "";
+  const open = [...c.missing, ...c.recordedZero].sort();
+  const why = open.length > 0 ? `${dateRanges(open)} still ${open.length === 1 ? "has" : "have"} none` : `${c.misfiled.length} successor spend record(s) in it are still filed under another channel`;
+  return ` ${c.covered.length} of ${c.required.length} required dates now have ${c.channelLabel} spend; ${why}, so it still holds.`;
 }
 
 const exceptionHref = (id: number) => `/exceptions/${id}`;
@@ -151,9 +166,10 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
     () => latestAaExperiment(db, branchId, viewer.branchIds),
   ]);
 
+  const stillMissingById = new Map(exceptions.map((e) => [e.id, stillMissing(e.coverage)]));
   const channels = signal.channels.map((c) => {
     const integrity = integrityVerdict(c, exceptions, records, spendCoverage, branchId, period);
-    const readiness = readinessVerdict(c, integrity, signal, feeds, now);
+    const readiness = readinessVerdict(c, integrity, signal, feeds, now, stillMissingById);
     const effectiveness = effectivenessVerdict(c, branchId, period, holdouts, latestAa);
     return {
       channelCode: c.channelCode,
@@ -210,7 +226,7 @@ function integrityVerdict(
     reasons.push({
       code: "coverage_gap",
       status: "fail",
-      text: `#${g.id}: ${g.summary}. Spend is filed under the wrong channel, so the cost per customer of ${label} is wrong until the records are re-mapped.`,
+      text: `#${g.id}: ${g.summary}. Spend is filed under the wrong channel, so the cost per customer of ${label} is wrong until the records are re-mapped.${stillMissing(g.coverage)}`,
       href: exceptionHref(g.id),
     });
   }
@@ -326,7 +342,7 @@ export function staleReason(f: FeedState, now: Date): string | null {
   return null;
 }
 
-function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: BudgetSignal, feeds: FeedState[], now: Date): ReadinessVerdict {
+function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: BudgetSignal, feeds: FeedState[], now: Date, stillMissingById: Map<number, string>): ReadinessVerdict {
   const reasons: Reason[] = [];
 
   // Linked to the first failing integrity check's evidence, so "not ready" always leads somewhere.
@@ -352,7 +368,7 @@ function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: Bu
     reasons.push({
       code: "budget_gate",
       status: "fail",
-      text: `Blocking incident #${b.exceptionId}: ${b.summary}.`,
+      text: `Blocking incident #${b.exceptionId}: ${b.summary}.${stillMissingById.get(b.exceptionId) ?? ""}`,
       href: exceptionHref(b.exceptionId),
     });
   }
@@ -463,14 +479,21 @@ async function openExceptions(db: Queryable, branchId: string): Promise<OpenExce
      order by case e.severity when 'high' then 0 when 'medium' then 1 else 2 end, e.id`,
     [branchId],
   );
-  return rows.map((r) => ({
-    id: Number(r.id),
-    kind: r.kind,
-    summary: r.summary,
-    evidence: r.evidence ?? {},
-    amountCents: Number(r.amount_cents),
-    campaignChannel: r.campaign_channel ?? null,
-  }));
+  const out: OpenException[] = [];
+  // One at a time: `db` may be a single transaction client.
+  for (const r of rows) {
+    const evidence = r.evidence ?? {};
+    out.push({
+      id: Number(r.id),
+      kind: r.kind,
+      summary: r.summary,
+      evidence,
+      amountCents: Number(r.amount_cents),
+      campaignChannel: r.campaign_channel ?? null,
+      ...(r.kind === "channel_coverage_gap" ? { coverage: await gapCoverage(db, evidence, branchId) } : {}),
+    });
+  }
+  return out;
 }
 
 async function recordReconciliation(db: Queryable, branchId: string, period: Period): Promise<RecordCounts> {

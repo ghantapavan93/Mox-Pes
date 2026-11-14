@@ -1,6 +1,7 @@
 import type { Queryable } from "@/lib/db";
 import { currentSnapshot, currentTxid, recordEvent } from "@/lib/events/outbox";
 import { syncCases } from "@/lib/workflow/cases";
+import { gapCoverage, verificationOf, verifiedResolution } from "./gap-coverage";
 
 /**
  * Cross-system reconciliation. Each detector is one SQL statement that states a rule the
@@ -235,6 +236,64 @@ const COVERAGE_GAP = `insert into detected
   left join before_gap bg on bg.branch_id = g.branch_id and bg.channel_code = g.channel_code
   left join acq_gap ag on ag.branch_id = g.branch_id and ag.channel_code = g.channel_code`;
 
+/**
+ * 6a. An open coverage gap stays open until its whole window is verified (lib/reconcile/
+ *     gap-coverage.ts). Rule 6 alone tested only the channel's latest spend date, which is also
+ *     the incident's fingerprint: re-filing the last few days cleared the hold while earlier
+ *     dates were still missing, and re-filing a middle week resolved the incident and opened a new
+ *     one (B09-RECOVERY.md).
+ *
+ *     Runs after rule 6. While rule 6 still finds an incident's own fingerprint (no spend after
+ *     its last spend date), that fresh row stands, exactly as before. Otherwise each open gap, and
+ *     each one verified within the detector's lookback, stays detected with the fingerprint,
+ *     summary and evidence it last had, and any row rule 6 filed for the same branch and channel
+ *     under a newer date is dropped: one gap, one incident, until every required date is covered
+ *     and nothing is misfiled. Then it is verified: the resolution and evidence.verification say
+ *     what was checked and which delivery runs carried it. A verified incident is re-checked over
+ *     the window it was verified on, never a longer one, so a later feed day does not reopen it; a
+ *     later version that un-covers one of those dates does, under the same id, and the earlier
+ *     verification is kept beside the new one. A delivery that changes nothing changes none of it.
+ */
+async function carryCoverageGaps(tx: Queryable, now: Date): Promise<void> {
+  const { rows } = await tx.query<{
+    id: string; fingerprint: string; kind: string; severity: string; branch_id: string; subject_type: string; subject_id: string;
+    summary: string; evidence: Record<string, unknown>; amount_cents: string; customer_ids: string[]; status: string;
+  }>(
+    `select id, fingerprint, kind, severity, branch_id, subject_type, subject_id, summary, evidence, amount_cents, customer_ids, status
+     from exceptions
+     where kind = 'channel_coverage_gap'
+       and (status in ('open', 'acknowledged')
+            or (status = 'resolved' and evidence ? 'verification'
+                and (evidence ->> 'lastSpendDate')::date > (select max(spend_date) from ad_spend_daily) - 60))
+     order by id`,
+  );
+  for (const e of rows) {
+    // Rule 6 still sees this very incident: its fresh evidence stands, as it always did.
+    if ((await tx.query("select 1 from detected where fingerprint = $1", [e.fingerprint])).rowCount) continue;
+    const coverage = await gapCoverage(tx, e.evidence, e.branch_id);
+    if (!coverage || !coverage.complete) {
+      await tx.query("delete from detected where kind = 'channel_coverage_gap' and branch_id = $1 and evidence ->> 'channel' = $2", [e.branch_id, String(e.evidence.channel)]);
+      await tx.query(
+        `insert into detected (fingerprint, kind, severity, branch_id, subject_type, subject_id, summary, evidence, amount_cents, customer_ids)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [e.fingerprint, e.kind, e.severity, e.branch_id, e.subject_type, e.subject_id, e.summary, e.evidence, e.amount_cents, e.customer_ids],
+      );
+    } else if (e.status !== "resolved") {
+      // Resolved by the generic step below, which keeps this resolution. A verification from an
+      // earlier recovery (before a regression reopened it) is kept, not overwritten.
+      await tx.query(
+        `update exceptions set resolution = $2,
+           evidence = case when evidence ? 'verification'
+             then evidence || jsonb_build_object('verification', $3::jsonb,
+                    'previousVerifications', coalesce(evidence -> 'previousVerifications', '[]'::jsonb) || jsonb_build_array(evidence -> 'verification'))
+             else evidence || jsonb_build_object('verification', $3::jsonb) end
+         where id = $1`,
+        [e.id, verifiedResolution(coverage), JSON.stringify(verificationOf(coverage, now))],
+      );
+    }
+  }
+}
+
 export interface ReconcileResult {
   detected: number;
   opened: number;
@@ -256,6 +315,7 @@ export async function reconcile(tx: Queryable, now: Date): Promise<ReconcileResu
   await tx.query("create index on acq (crm_customer_id)");
   for (const sql of DETECTORS) await tx.query(sql);
   await tx.query(COVERAGE_GAP);
+  await carryCoverageGaps(tx, now);
 
   const opened = await tx.query(
     `insert into exceptions as e (kind, severity, fingerprint, branch_id, subject_type, subject_id, summary, evidence,

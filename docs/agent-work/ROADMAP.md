@@ -21,6 +21,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | The Decision Lab's verified verdict in 1.2–2.3 s, not 3.3–5.6 s; the hold was already 0.34–0.49 s (R-34, 2026-11-13) | `PERFORMANCE.md` §6; `decision-lab/`; `verified-readiness.test.ts` |
 | A campaign id is matched on the platform the lead names, not by the id alone (R-46, 2026-11-13) | `CAMPAIGN-PLATFORM-MATCH.md`; `campaign-platform-match.test.ts` |
 | ChangeGuard judges a campaign on its own leads; an unresolved lead is neither support nor drift (R-46, 2026-11-13) | `CAMPAIGN-PLATFORM-MATCH.md` §6; `changeguard-campaign-platform.test.ts` |
+| B09 from decision hold to verified recovery: a coverage gap clears only when its whole window is verified, under its own id; a re-filed week, a duplicate or an older revision cannot clear it (2026-11-14) | `B09-RECOVERY.md`; `b09-recovery.test.ts` |
 
 ## Next, in order
 

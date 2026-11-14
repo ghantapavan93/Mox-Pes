@@ -61,10 +61,12 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     await expect(page.getByTestId("verdict-row-google_lsa").getByTestId("verdict-readiness")).toContainText("Not ready");
 
     const link = summary.getByTestId("readiness-incident-link").first();
-    gapId = Number((await link.getAttribute("href"))!.match(/\/exceptions\/(\d+)$/)![1]);
+    // Since 2026-11-14 the link carries the period (and the Overview's selection, when there is one),
+    // so the incident can link back to the same evidence (B09-RECOVERY.md). It ended at the id before.
+    gapId = Number((await link.getAttribute("href"))!.match(/\/exceptions\/(\d+)\?period=oct$/)![1]);
     expect(gapId).toBeGreaterThan(0);
     await link.click();
-    await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}$`));
+    await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}\\?period=oct$`));
   });
 
   test("c · the incident shows campaign, spend, leads and CRM outcomes evidence", async ({ page }) => {

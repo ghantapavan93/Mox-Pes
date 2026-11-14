@@ -167,7 +167,10 @@ see".
   Google Ads Performance Max campaign stays unresolved.
   - Tying it to that campaign needs a contract saying Local Services leads can belong to a
     Performance Max campaign with local services enabled.
-  - That typing is read by `ads@1.1` (staged), not recorded by the active `ads@1.0`.
+  - The spend side is already typed: `ads@1.1` and the active `ads@1.2` file a Performance Max
+    campaign with Local Services enabled as Local Services (corrected 2026-11-13: this line said
+    `ads@1.1` was staged and `ads@1.0` active; see `B09-RECOVERY.md`). What no contract says is
+    that a call labelled Google LSA belongs to that Google Ads campaign.
   - This is a decision for Moxie, not made here.
 - **A web form with a gclid and a non-Google paid utm_source** is unresolved for its campaign. Its
   channel credit still follows the web mapper (the gclid wins: Google Search). The channel rules
@@ -331,7 +334,8 @@ The "before" column was printed from the old code on this fixture, not inferred.
 
 - **A shared id is never certified** by monitoring, by design. The guard was not weakened.
 - **The 45 B09 Local Services calls stay unresolved.** No contract ties Local Services leads to a
-  Performance Max campaign (`ads@1.1` typing is staged, not active). ChangeGuard now says so for
+  Performance Max campaign (no lead-side contract says so; the spend side is typed by the active
+  `ads@1.2`). ChangeGuard now says so for
   `pmax-lsa-B09` instead of counting them.
 - **Change titles name a campaign by id alone** ("777: unmapped → B20"). Two campaigns that share
   an id read the same in the change list. The change page names the platform. Titles are stored

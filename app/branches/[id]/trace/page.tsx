@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { ArrowLeft } from "lucide-react";
 import { Badge, ButtonLink, Callout, Card, Forbidden, KV, PageHeader, PeriodTabs, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { count, dateTime, money } from "@/lib/format";
 import { CashTraceView } from "@/components/trace/CashTraceView";
-import { OverviewSelection } from "@/components/trace/OverviewSelection";
+import { OverviewSelection, selectionEnd } from "@/components/trace/OverviewSelection";
 import { parseChannel, parseWeek, selectionEvidence } from "@/lib/metrics/movement";
+import { weekLabel } from "@/lib/metrics/movement-copy";
 import { traceCash, type CashTrace } from "@/lib/lineage/cash";
 import { compareTraces, exactDollars, traceBranchMetric, TRACEABLE, type MetricTrace, type TraceableMetric } from "@/lib/lineage/trace";
 import { PERIODS, parsePeriod, type Period } from "@/lib/period";
@@ -62,31 +64,57 @@ async function Trace({ params, searchParams }: Props) {
   const isCac = metric === "paid_cac";
   const headline = isCac ? money(v.scorecard.paidCacCents) : money(v.scorecard.paidSpendCents);
   const question = `Why is ${trace.metric.label.toLowerCase()} ${headline} for ${branch.id} in ${period.label}?`;
+  const traceTitle = `Where does ${headline} come from?`;
+  const traceDescription = `${trace.metric.label}: ${trace.metric.formula}. Every row below is a stored record you can open; the number is recomputed from them and checked against the scorecard.`;
+  // Arrived with a selection: the page leads with the selected dates and their records, and its one
+  // primary action is the selection's own (the incident, when there is one). The trace follows.
+  const traceActions = (
+    <div className="flex flex-wrap gap-2">
+      <ButtonLink href={`/investigator?branch=${branch.id}&q=${encodeURIComponent(question)}`} variant={selection ? "secondary" : "primary"} testId="trace-investigate">Investigate this number</ButtonLink>
+      <ButtonLink href="/changes">Preview a mapping change</ButtonLink>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        crumbs={[{ href: overviewHref, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Trace" }]}
-        eyebrow={`Trace · ${branch.id} ${branch.name} · ${period.label}`}
-        title={`Where does ${headline} come from?`}
-        description={`${trace.metric.label}: ${trace.metric.formula}. Every row below is a stored record you can open; the number is recomputed from them and checked against the scorecard.`}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <ButtonLink href={`/investigator?branch=${branch.id}&q=${encodeURIComponent(question)}`} variant="primary" testId="trace-investigate">Investigate this number</ButtonLink>
-            <ButtonLink href="/changes">Preview a mapping change</ButtonLink>
-          </div>
-        }
-      />
-      {selection && (
-        <OverviewSelection
-          branchId={branch.id}
-          channel={channel!}
-          channelLabel={selection.channelLabel}
-          week={week!}
-          days={selection.days}
-          markers={selection.markers}
-          backHref={overviewHref}
-          incidentQuery={`?period=${period.key}&channel=${channel}&week=${week}${brandParam ? `&brand=${brandParam}` : ""}`}
+      {selection ? (
+        <>
+          <PageHeader
+            crumbs={[{ href: overviewHref, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Daily evidence" }]}
+            eyebrow={`Daily evidence · ${branch.id} ${branch.name} · ${period.label}`}
+            title={`${selection.channelLabel} · ${weekLabel({ start: week!, end: selectionEnd(week!, selection.days) })}`}
+            actions={
+              <ButtonLink href={overviewHref} testId="back-to-overview" icon={<ArrowLeft aria-hidden className="size-4" />}>
+                Back to the Overview selection
+              </ButtonLink>
+            }
+          />
+          <OverviewSelection
+            branchId={branch.id}
+            channel={channel!}
+            channelLabel={selection.channelLabel}
+            week={week!}
+            days={selection.days}
+            markers={selection.markers}
+            recoveries={selection.recoveries}
+            incidentQuery={`?period=${period.key}&channel=${channel}&week=${week}${brandParam ? `&brand=${brandParam}` : ""}`}
+          />
+          <section aria-labelledby="trace-heading" className="space-y-3 border-t border-border pt-6">
+            <div className="max-w-4xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-faint">{`Trace · ${branch.id} ${branch.name} · ${period.label}`}</p>
+              <h2 id="trace-heading" className="mt-0.5 text-lg font-semibold leading-7 tracking-tight text-text">{traceTitle}</h2>
+              <p className="mt-1 text-sm leading-6 text-muted">{traceDescription}</p>
+            </div>
+            {traceActions}
+          </section>
+        </>
+      ) : (
+        <PageHeader
+          crumbs={[{ href: overviewHref, label: "Overview" }, { href: `/branches/${branch.id}?period=${period.key}`, label: `${branch.id} ${branch.name}` }, { label: "Trace" }]}
+          eyebrow={`Trace · ${branch.id} ${branch.name} · ${period.label}`}
+          title={traceTitle}
+          description={traceDescription}
+          actions={traceActions}
         />
       )}
       <PeriodTabs base={`/branches/${branch.id}/trace`} current={period.key} extra={`&metric=${metric}`} />

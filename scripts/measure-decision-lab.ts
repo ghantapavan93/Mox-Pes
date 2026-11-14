@@ -7,6 +7,7 @@ import { decisionVerdicts } from "@/lib/decision/verdicts";
 import { verifiedReadinessSnapshot } from "@/lib/decision/verified";
 import { freshness } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
+import { gapStatusesAt } from "@/lib/reconcile/gap-status";
 import { VIEWERS, type Role } from "@/lib/viewer";
 
 /**
@@ -32,11 +33,12 @@ import { VIEWERS, type Role } from "@/lib/viewer";
  *
  * Usable means all three, at one moment, in the visible document (not the hidden streamed
  * segment, not the skeleton):
- *   1. the hold: the readiness summary with its "Ready" or "Not ready" badge;
+ *   1. the hold: the readiness summary with its "Ready for review" or "Not ready" badge (it read
+ *      "Ready" before 2026-11-14, B09-CROSS-VIEW.md);
  *   2. its reason: the summary's sentence, and for a scenario with a blocking incident the
  *      "Blocking incident #…" line;
- *   3. its evidence link: the summary's first "open incident →" link, with an /exceptions/<id>
- *      href, not covered by another element.
+ *   3. its evidence link: the summary's first "Open incident #…" link, with an /exceptions/<id>
+ *      href (the period, any selection and #recovery may follow it), not covered by another element.
  * Also recorded, not part of "usable": when React has attached to that link (a click is then a
  * client navigation; before it, a plain link that still works), and when the verified-readiness
  * card and the A/A card became visible.
@@ -135,6 +137,8 @@ async function db() {
         at("verifiedReadinessSnapshot", verifiedReadinessSnapshot(pool, viewer, args)),
         at("decisionVerdicts", decisionVerdicts(pool, viewer, args)),
         at("listScenarios", listScenarios(pool, viewer, { branchId: SC.branchId, limit: 10 })),
+        // Since 2026-11-14 the verdicts card also reads the period's verified coverage gaps (B09-CROSS-VIEW.md).
+        at("gapStatusesAt", gapStatusesAt(pool, SC.branchId, { range: { from: period.from.toISOString().slice(0, 10), to: period.to.toISOString().slice(0, 10) } })),
         at("runAaExperiment", runAaExperiment(pool, viewer, { period: SC.period, windowDays: AA_DEFAULTS.windowDays, salt: AA_DEFAULTS.salt })),
         at("listExperiments", listExperiments(pool, viewer)),
       ]);
@@ -232,16 +236,16 @@ const WATCH = `(() => {
     const now = performance.now();
     const hold = document.querySelector('[data-testid="readiness-summary"]');
     if (hold && marks.holdInDom === null) marks.holdInDom = now;
-    // The badge is the paragraph's first element: "Ready" or "Not ready".
+    // The badge is the paragraph's first element: "Ready for review" or "Not ready".
     const badge = hold && hold.querySelector("p > span");
-    if (hold && visible(hold) && badge !== null && visible(badge) && /^(Not ready|Ready)$/.test(badge.textContent.trim())) {
+    if (hold && visible(hold) && badge !== null && visible(badge) && /^(Not ready|Ready for review)$/.test(badge.textContent.trim())) {
       if (marks.holdVisible === null) marks.holdVisible = now;
       // The sentence after the badge (the badge is font-medium too, so match on its colour class).
       const sentence = hold.querySelector("p > span.text-text");
       const line = [...hold.querySelectorAll("li")].find((li) => li.textContent.includes("Blocking incident #"));
       const link = hold.querySelector('[data-testid="readiness-incident-link"]');
       const reasonOk = sentence !== null && visible(sentence) && sentence.textContent.trim().length > 0 && (!needsLink || (line !== undefined && visible(line)));
-      const linkOk = !needsLink || (link !== null && visible(link) && /^\\/exceptions\\/\\d+$/.test(link.getAttribute("href") || "") && uncovered(link));
+      const linkOk = !needsLink || (link !== null && visible(link) && /^\\/exceptions\\/\\d+(\\?[^#]*)?(#recovery)?$/.test(link.getAttribute("href") || "") && uncovered(link));
       if (marks.usable === null && reasonOk && linkOk) {
         marks.usable = now;
         marks.reason = (line || sentence).textContent.trim().slice(0, 160);

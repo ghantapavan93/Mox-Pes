@@ -119,7 +119,15 @@ describe("what the chart draws is what the records say", () => {
     const t = takeaway(m, "B09");
     expect(t.headline).toBe("Google Local Services spend at B09 stopped after Oct 12 while its leads kept arriving.");
     expect(t.detail).toContain("pmax-lsa-B09, which is filed as Google Search");
-    expect(t.trust).toMatchObject({ tone: "review", label: "Investigate before acting" });
+    // Changed 2026-11-14 (B09-CROSS-VIEW.md): the status line is the incident's own, read from its
+    // decision window, with its id for the evidence link. It said "Investigate before acting".
+    expect(m.recoveries?.map((r) => [r.exceptionId, r.state])).toEqual([[m.markers[0].exceptionId, "missing"]]);
+    expect(t.trust).toEqual({
+      tone: "review",
+      label: "Decision held",
+      text: "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.",
+      exceptionId: m.markers[0].exceptionId,
+    });
     const week = m.weeks.find((w) => w.start === "2026-10-19")!;
     const lines = explainCell(lsa, cell("2026-10-19"), week, m.markers);
     expect(pointTitle(lsa, week, "B09")).toBe("Google Local Services at B09 · Oct 19–Oct 25");

@@ -1,6 +1,7 @@
 import { getNow, type Queryable } from "@/lib/db";
 import { feedFreshness, staleReason } from "@/lib/decision/verdicts";
 import { PERIODS, type Period } from "@/lib/period";
+import { gapStatusesAt, type GapStatus } from "@/lib/reconcile/gap-status";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { decisionHolds, type DecisionHold } from "./decision";
@@ -84,6 +85,12 @@ export interface Movement {
   series: Series[];
   /** Only for a single branch: an incident's stored date and scope are the chart's own. */
   markers: Marker[];
+  /**
+   * The marked coverage gaps that are open or were verified, with their decision window as the
+   * records cover it now (lib/reconcile/gap-status.ts): the same status the incident and Decision
+   * Lab show. Single branch only.
+   */
+  recoveries?: GapStatus[];
   /** Open incidents in scope that change what a paid channel cost (the Overview's hold rule). */
   holds: DecisionHold[];
   /** The last spend date the ads feed has delivered, for any campaign. */
@@ -250,6 +257,8 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
 
   // Only a date inside the window, on a channel the chart draws.
   const markers = gaps.filter((m) => m.date >= from && m.date < to && channels.includes(m.channel));
+  // The branch passed the caller's scope check; read only for the incidents the chart marks.
+  const recoveries = args.branchId && markers.length > 0 ? await gapStatusesAt(db, args.branchId, { ids: markers.map((m) => m.exceptionId) }) : [];
 
   const ads = feeds.filter((f) => f.source === "ads");
   const feedStale = ads.map((f) => staleReason(f, now)).find((r) => r !== null) ?? null;
@@ -260,6 +269,7 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
     weeks,
     series,
     markers,
+    recoveries,
     holds,
     deliveredThrough,
     feedStale,
@@ -351,12 +361,18 @@ export async function overviewMovement(
 
 /**
  * The drillthrough for one point (a channel's week at one branch): its day-by-day records, the
- * channel's name, and the coverage-gap incidents of that channel at that branch. Null for a
+ * channel's name, the coverage-gap incidents of that channel at that branch, and the status of
+ * those that are open or were verified (their decision window, as on the incident). Null for a
  * channel that is not a paid-media channel. The caller has checked the branch is in scope.
  */
-export async function selectionEvidence(db: Queryable, args: { branchId: string; channel: string; week: string }): Promise<{ channelLabel: string; days: SpendDay[]; markers: Marker[] } | null> {
+export async function selectionEvidence(
+  db: Queryable,
+  args: { branchId: string; channel: string; week: string },
+): Promise<{ channelLabel: string; days: SpendDay[]; markers: Marker[]; recoveries: GapStatus[] } | null> {
   const ch = await db.query<{ label: string }>("select label from channels where code = $1 and cost_basis = 'media'", [args.channel]);
   if (!ch.rows[0]) return null;
-  const [days, markers] = await Promise.all([spendDays(db, args), coverageMarkers(db, args.branchId)]);
-  return { channelLabel: ch.rows[0].label, days, markers: markers.filter((m) => m.channel === args.channel) };
+  const [days, all] = await Promise.all([spendDays(db, args), coverageMarkers(db, args.branchId)]);
+  const markers = all.filter((m) => m.channel === args.channel);
+  const recoveries = markers.length > 0 ? await gapStatusesAt(db, args.branchId, { ids: markers.map((m) => m.exceptionId) }) : [];
+  return { channelLabel: ch.rows[0].label, days, markers, recoveries };
 }

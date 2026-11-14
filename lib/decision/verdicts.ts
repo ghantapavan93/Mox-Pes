@@ -4,7 +4,8 @@ import { getNow, readAll, type Queryable } from "@/lib/db";
 import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type BudgetSignal } from "@/lib/metrics/decision";
 import type { ChannelRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
-import { dateRanges, gapCoverage, type GapCoverage } from "@/lib/reconcile/gap-coverage";
+import { gapCoverage, type GapCoverage } from "@/lib/reconcile/gap-coverage";
+import { windowProgress } from "@/lib/reconcile/gap-status";
 import { BRANCH_BY_ID, SCENARIO } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
 
@@ -123,14 +124,14 @@ interface OpenException {
 
 /**
  * Why a coverage gap still holds after part of it was repaired, or "": a re-filed week can make a
- * chart look whole while the incident's window is not. Said only once something was repaired, so
- * an untouched incident reads exactly as it was recorded.
+ * chart look whole while the incident's decision window is not. Said only once something was
+ * repaired, so an untouched incident reads exactly as it was recorded. The clause is the one every
+ * view uses for the window (lib/reconcile/gap-status.ts).
  */
 function stillMissing(c: GapCoverage | null | undefined): string {
   if (!c || c.covered.length === 0 || c.complete) return "";
-  const open = [...c.missing, ...c.recordedZero].sort();
-  const why = open.length > 0 ? `${dateRanges(open)} still ${open.length === 1 ? "has" : "have"} none` : `${c.misfiled.length} successor spend record(s) in it are still filed under another channel`;
-  return ` ${c.covered.length} of ${c.required.length} required dates now have ${c.channelLabel} spend; ${why}, so it still holds.`;
+  const progress = windowProgress(c);
+  return ` ${progress.charAt(0).toUpperCase()}${progress.slice(1)}, so it still holds.`;
 }
 
 const exceptionHref = (id: number) => `/exceptions/${id}`;

@@ -128,7 +128,12 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
   await expect(after).toContainText(golden.signalAfter.status);
   const lab = await page.request.get(`/decisions?branch=B09&period=oct`);
   expect(lab.ok()).toBe(true);
-  expect(await lab.text()).not.toContain(`/exceptions/${gapId}"`);
+  // Decision Lab no longer lists the incident as a blocker; it names it as the hold the fix lifted,
+  // with its evidence (B09-CROSS-VIEW.md). Before 2026-11-14 this read
+  // not.toContain(`/exceptions/${gapId}"`), which any link with a query passed whatever it said.
+  const anchors = [...(await lab.text()).matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+  expect(anchors.filter((a) => a.includes('data-testid="readiness-incident-link"') && a.includes(`/exceptions/${gapId}`))).toEqual([]);
+  expect(anchors.some((a) => a.includes('data-testid="readiness-cleared-link"') && a.includes(`/exceptions/${gapId}?period=oct#recovery`))).toBe(true);
 
   // 8 · Audit — one row per actor.
   await next(page, 8);

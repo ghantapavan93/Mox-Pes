@@ -10,6 +10,7 @@ import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
 import { gapCoverage } from "@/lib/reconcile/gap-coverage";
+import { gapStatusesAt } from "@/lib/reconcile/gap-status";
 import { InMemorySourceClient } from "@/lib/sim/clients";
 import { VIEWERS } from "@/lib/viewer";
 import { transitionCase } from "@/lib/workflow/cases";
@@ -156,6 +157,11 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect(signal.blockers.map((b) => String(b.exceptionId))).toContain(original.id);
     const c = await coverageOf(original.id);
     expect([c.window, c.required, c.covered, c.missing, c.misfiledCents, c.complete]).toEqual([{ from: "2026-10-13", to: "2026-10-30" }, days(13, 30), [], days(13, 30), 374_319, false]);
+    // The status every view shows (lib/reconcile/gap-status.ts): held, nothing covered, the money filed as Search.
+    const [s] = await gapStatusesAt(pool, BRANCH);
+    expect(s).toMatchObject({ exceptionId: Number(original.id), state: "missing", held: true });
+    expect(s.conclusion).toBe("Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.");
+    expect(s.change).toBe("Since Oct 13, $3,743.19 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services.");
     expect(await controls()).toEqual(CONTROLS);
   });
 
@@ -178,8 +184,13 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     // Decision Lab says why it still holds.
     const v = await decisionVerdicts(pool, VIEWERS.marketing, { branchId: BRANCH, period: OCT });
     const gate = v.channels.find((x) => x.channelCode === "google_lsa")!.readiness.reasons.find((r) => r.code === "budget_gate" && r.status === "fail")!;
-    expect(gate.text).toContain("5 of 18 required dates now have");
-    expect(gate.text).toContain("Oct 13–Oct 25 still have none, so it still holds.");
+    // Changed 2026-11-14 (B09-CROSS-VIEW.md): the clause is now the one every view uses for the
+    // decision window; it said "5 of 18 required dates now have Google Local Services spend; …".
+    expect(gate.text).toContain(" 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds.");
+    // The incident, the daily evidence and the Overview read the same status: the week is not the window.
+    const [s] = await gapStatusesAt(pool, BRANCH);
+    expect(s.conclusion).toBe("Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none.");
+    expect(s.change).toBe("Originally $3,743.19 was filed as Google Search. Now $1,051.80 (Oct 26–Oct 30) is filed as Google Local Services; $2,691.39 (Oct 13–Oct 25) is still filed as Google Search.");
     expect(await controls()).toEqual(CONTROLS);
   });
 
@@ -206,6 +217,11 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
         { runId: r1, adapterVersion: "ads@1.2", fetchedAt: { first: "2026-10-31T09:00:00Z", last: "2026-10-31T09:00:00Z" }, dates: days(26, 30), cents: 105_180 },
       ],
     });
+    // Cleared, and the same money moved: Decision Lab says it for October, not for September.
+    const [s] = await gapStatusesAt(pool, BRANCH, { range: { from: "2026-10-01", to: "2026-10-31" } });
+    expect(s).toMatchObject({ exceptionId: Number(original.id), state: "verified", held: false, reclassified: true });
+    expect(s.change).toBe("Reclassified, not added: the $3,743.19 first filed as Google Search is now filed as Google Local Services.");
+    expect(await gapStatusesAt(pool, BRANCH, { range: { from: "2026-09-01", to: "2026-10-01" } })).toEqual([]);
     expect(await controls()).toEqual(CONTROLS);
   });
 

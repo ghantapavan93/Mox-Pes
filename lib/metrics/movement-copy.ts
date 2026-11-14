@@ -1,18 +1,33 @@
+import type { GapStatus } from "@/lib/reconcile/gap-status";
 import type { Cell, Marker, Movement, Series, WeekInfo } from "./movement";
 
 /**
  * The words around the "What changed" chart, built only from the scoped Movement (./movement.ts):
  * the takeaway before the chart, whether the figures support an action or call for review, and
  * the explanation of one selected point. Pure, so the same values the chart draws are the values
- * the sentences use. Nothing here names a demo branch, campaign or date.
+ * the sentences use. Nothing here names a demo branch, campaign or date. A coverage gap's decision
+ * status is the incident's own (lib/reconcile/gap-status.ts), quoted, never recomputed here.
  */
 
 export interface Takeaway {
   headline: string;
   detail: string | null;
-  trust: { tone: "review" | "clear" | "unknown"; label: string; text: string };
+  /** The decision status: a label that reads without colour, why, and the incident it rests on (its evidence link). */
+  trust: { tone: "review" | "clear" | "unknown"; label: string; text: string; exceptionId?: number };
   /** A held branch to look at next (company or brand scope only). */
   suggestion: { branchId: string; label: string } | null;
+}
+
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** A coverage gap's status as the Overview's one-line decision status. */
+function gapTrust(s: GapStatus): Takeaway["trust"] {
+  return {
+    tone: s.state === "verified" ? "clear" : "review",
+    label: s.label,
+    text: s.state === "verified" && s.change ? `${s.statusText} ${s.change}` : s.statusText,
+    exceptionId: s.exceptionId,
+  };
 }
 
 /** "$4,539.34": exact cents in words a reader checks against records. */
@@ -41,25 +56,34 @@ function gapStory(m: Movement, marker: Marker, scopeLabel: string): Takeaway | n
   const after = s.cells.filter((c) => c.week > marker.week);
   const stopped = after.length > 0 && after.every((c) => c.status === "missing" || c.status === "not_delivered");
   const leadsAfter = s.cells.filter((c) => c.week >= marker.week).reduce((t, c) => t + c.leads, 0);
-  const headline = stopped
-    ? `${marker.channelLabel} spend at ${scopeLabel} stopped after ${dayBefore(marker.date)}${leadsAfter > 0 ? " while its leads kept arriving" : ""}.`
-    : `${marker.channelLabel} spend at ${scopeLabel} changed from ${day(marker.date)}.`;
+  // The incident's own status, when the movement read it: its decision window as the records cover
+  // it now. Without it (a fixture, or evidence without a window) the marker's stored finding stands.
+  const recovery = m.recoveries?.find((r) => r.exceptionId === marker.exceptionId && r.held) ?? null;
+  const partlyBack = recovery !== null && recovery.covered.length > 0 && recovery.openLabel !== "";
+  const headline = partlyBack
+    ? `${marker.channelLabel} spend at ${scopeLabel} stopped after ${dayBefore(marker.date)}; since then only ${recovery.coveredLabel} ${recovery.covered.length === 1 ? "has" : "have"} any.`
+    : stopped
+      ? `${marker.channelLabel} spend at ${scopeLabel} stopped after ${dayBefore(marker.date)}${leadsAfter > 0 ? " while its leads kept arriving" : ""}.`
+      : `${marker.channelLabel} spend at ${scopeLabel} changed from ${day(marker.date)}.`;
   const succ = marker.successors.filter((x) => x.spendSinceCents > 0);
-  const detail =
-    succ.length > 0
+  const detail = recovery?.change
+    ? `${recovery.change}${recovery.misfiledCents > 0 ? ` Cost per customer is wrong for both channels until it is all filed as ${marker.channelLabel}.` : ""}`
+    : succ.length > 0
       ? `${succ.map((x) => `${dollars(x.spendSinceCents)} has since been spent under ${x.externalCampaignId}${x.classifiedAs.length ? `, which is filed as ${x.classifiedAs.join(" and ")}` : ""}`).join("; ")}. Until it is re-mapped, cost per customer is wrong for both channels.`
       : null;
   return {
     headline,
     detail,
-    trust: {
-      tone: marker.status === "open" ? "review" : "clear",
-      label: marker.status === "open" ? "Investigate before acting" : "Incident closed",
-      text:
-        marker.status === "open"
-          ? `An open incident records a coverage gap here from ${day(marker.date)}. This is a number to investigate, not a budget movement to act on.`
-          : `A ${marker.status} incident recorded a coverage gap here from ${day(marker.date)}.`,
-    },
+    trust: recovery
+      ? gapTrust(recovery)
+      : {
+          tone: marker.status === "open" ? "review" : "clear",
+          label: marker.status === "open" ? "Investigate before acting" : "Incident closed",
+          text:
+            marker.status === "open"
+              ? `An open incident records a coverage gap here from ${day(marker.date)}. This is a number to investigate, not a budget movement to act on.`
+              : `A ${marker.status} incident recorded a coverage gap here from ${day(marker.date)}.`,
+        },
     suggestion: null,
   };
 }
@@ -87,17 +111,20 @@ export function takeaway(m: Movement, scopeLabel: string): Takeaway {
     if (delta !== 0) detail = `The largest change by channel: ${moved.label}, ${delta > 0 ? "+" : "−"}${dollars(Math.abs(delta))}.`;
   }
   const heldBranches = [...new Set(m.holds.map((h) => h.branchId))];
-  const trust =
+  // A coverage gap the chart marks that was verified (or whose verification is now historical):
+  // its status is the decision status, so the reader sees what cleared and that spend moved.
+  const cleared = m.recoveries?.find((r) => r.state === "verified" || r.state === "historical") ?? null;
+  const trust: Takeaway["trust"] =
     m.holds.length > 0
       ? {
           tone: "review" as const,
           label: "Investigate before acting",
           text:
             m.scope.branchId !== null
-              ? `${plural(m.holds.length, "open incident")} here ${m.holds.length === 1 ? "changes" : "change"} what a paid channel cost (incident #${m.holds[0].exceptionId}).`
+              ? `${plural(m.holds.length, "open incident")} here ${m.holds.length === 1 ? "changes" : "change"} what a paid channel cost (incident #${m.holds[0].exceptionId}).${cleared ? ` ${capital(cleared.conclusion)}` : ""}`
               : `${plural(heldBranches.length, "branch", "branches")} in this scope ${heldBranches.length === 1 ? "has" : "have"} an open incident that changes what a paid channel cost: ${heldBranches.slice(0, 4).join(", ")}${heldBranches.length > 4 ? "…" : ""}. Channel totals here include ${heldBranches.length === 1 ? "it" : "them"}.`,
         }
-      : (stale ?? { tone: "clear" as const, label: "No open incident affects these figures", text: "Nothing open changes what these channels cost. The figures are the stored spend records, not a forecast." });
+      : (stale ?? (cleared ? gapTrust(cleared) : { tone: "clear" as const, label: "No open incident affects these figures", text: "Nothing open changes what these channels cost. The figures are the stored spend records, not a forecast." }));
   const suggestion = m.scope.branchId === null && heldBranches[0] ? { branchId: heldBranches[0], label: `See what changed at ${heldBranches[0]}` } : null;
   return { headline, detail, trust, suggestion };
 }
@@ -136,7 +163,8 @@ export function explainCell(series: Pick<Series, "channel">, cell: Cell, week: W
       lines.push("The ads feed has not delivered this week yet. Unknown, not zero.");
       break;
   }
-  if (week.days < 7) lines.push(`Only ${plural(week.days, "day")} of this week are in the window, so it is a partial week.`);
+  // "On the chart", not "in the window": a coverage gap's decision window is another scope.
+  if (week.days < 7) lines.push(`Only ${plural(week.days, "day")} of this week are on the chart, so it is a partial week.`);
   if (cell.leads > 0) lines.push(`${plural(cell.leads, "lead record")} from this channel arrived here that week (a count, not dollars).`);
   for (const m of markers.filter((x) => x.week === cell.week && x.channel === series.channel)) {
     lines.push(`Incident #${m.exceptionId} (${m.status}) records a coverage gap from ${day(m.date)}, in this week.`);

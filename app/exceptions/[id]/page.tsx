@@ -16,9 +16,11 @@ import { planReplay } from "@/lib/ingest/replay-plan";
 import { acquisitionTrail, getException, lastReplayForException, quarantineSamples, type ExceptionRow } from "@/lib/queries";
 import type { ReplayResult } from "@/lib/ingest/replay";
 import { DECISION_BLOCKING_KINDS, decisionHolds } from "@/lib/metrics/decision";
-import { parseChannel, parseWeek } from "@/lib/metrics/movement";
+import { parseChannel, parseWeek, WINDOW, windowWeeks } from "@/lib/metrics/movement";
+import { weekLabel } from "@/lib/metrics/movement-copy";
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { gapCoverage } from "@/lib/reconcile/gap-coverage";
+import { gapStatus } from "@/lib/reconcile/gap-status";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
@@ -92,11 +94,21 @@ async function ExceptionDetail({ params, searchParams }: Props) {
   const decisionsHref = `/decisions?branch=${exception.branchId}&period=${periodKey}${selected ? `&channel=${selected.channel}&week=${selected.week}` : ""}${brandQuery}`;
   const traceHref = (channel: string, week: string | null) =>
     `/branches/${exception.branchId}/trace?period=${periodKey}&metric=paid_spend&channel=${channel}${week ? `&week=${week}` : ""}${brandQuery}#selection`;
-  // A coverage gap's recovery: its window as the accepted records cover it now (lib/reconcile/gap-coverage.ts).
+  // A coverage gap's recovery: its window as the accepted records cover it now (lib/reconcile/gap-coverage.ts),
+  // and its status in the words every view uses (lib/reconcile/gap-status.ts).
   const coverage = exception.kind === "channel_coverage_gap" && exception.branchId ? await gapCoverage(getPool(), ev, exception.branchId) : null;
+  const status = coverage ? gapStatus({ id: exception.id, status: exception.status, evidence: ev, resolution: exception.resolution }, coverage) : null;
   const otherHolds = coverage ? (await decisionHolds(getPool(), [exception.branchId!])).filter((h) => h.exceptionId !== exception.id) : [];
-  const firstOpen = coverage ? ([...coverage.missing, ...coverage.recordedZero].sort()[0] ?? coverage.window.from) : null;
-  const recordsWeek = coverage ? (selected?.channel === coverage.channel ? selected.week : parseWeek(mondayOf(firstOpen!))) : null;
+  // The records to open next: the week of the first date that still needs spend, else the selected
+  // week, else the window's first. The week the reviewer came from stays one link away ("back").
+  const needing = coverage ? [...coverage.missing, ...coverage.recordedZero, ...coverage.misfiled.map((m) => m.date)].sort() : [];
+  const selectedHere = selected && coverage && selected.channel === coverage.channel ? selected.week : null;
+  const recordsWeek = coverage ? ((needing[0] ? parseWeek(mondayOf(needing[0])) : null) ?? selectedHere ?? parseWeek(mondayOf(coverage.window.from))) : null;
+  /** "Oct 12–Oct 18": a week as the daily evidence lists it (the window can end it early). */
+  const recordsWeekLabel = (week: string | null) => {
+    const w = week ? windowWeeks(WINDOW, null).find((x) => x.start === week) : undefined;
+    return w ? weekLabel(w) : "the window";
+  };
 
   return (
     <div className="space-y-6">
@@ -124,7 +136,8 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         actions={
           <>
             {viewer.can.investigate ? (
-              <ButtonLink href={`/investigator?exception=${exception.id}`} variant="primary" testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
+              // Secondary beside a coverage gap's recovery: that panel's next action is the page's one primary.
+              <ButtonLink href={`/investigator?exception=${exception.id}`} variant={coverage ? "secondary" : "primary"} testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
                 Investigate with AI
               </ButtonLink>
             ) : (
@@ -138,13 +151,14 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         }
       />
 
-      {coverage && (
+      {coverage && status && (
         <GapRecovery
           exception={exception}
           coverage={coverage}
+          status={status}
           otherHolds={otherHolds}
           links={{
-            records: traceHref(coverage.channel, recordsWeek),
+            records: { href: traceHref(coverage.channel, recordsWeek), week: recordsWeekLabel(recordsWeek) },
             back: selected ? traceHref(selected.channel, selected.week) : null,
             decisions: `${decisionsHref}#readiness`,
           }}

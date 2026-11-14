@@ -63,10 +63,12 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     const link = summary.getByTestId("readiness-incident-link").first();
     // Since 2026-11-14 the link carries the period (and the Overview's selection, when there is one),
     // so the incident can link back to the same evidence (B09-RECOVERY.md). It ended at the id before.
-    gapId = Number((await link.getAttribute("href"))!.match(/\/exceptions\/(\d+)\?period=oct$/)![1]);
+    // Later that day it also opens the incident at its recovery, the same evidence the Overview and
+    // the daily records open (B09-CROSS-VIEW.md).
+    gapId = Number((await link.getAttribute("href"))!.match(/\/exceptions\/(\d+)\?period=oct#recovery$/)![1]);
     expect(gapId).toBeGreaterThan(0);
     await link.click();
-    await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}\\?period=oct$`));
+    await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}\\?period=oct#recovery$`));
   });
 
   test("c · the incident shows campaign, spend, leads and CRM outcomes evidence", async ({ page }) => {
@@ -208,7 +210,13 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
 
     await page.goto("/decisions?branch=B09&period=oct");
     const summary = page.getByTestId("readiness-summary");
-    await expect(summary).not.toContainText(`#${gapId}`);
+    // Changed 2026-11-14 (B09-CROSS-VIEW.md): the summary now also names the coverage hold the fix
+    // lifted, as cleared and with its evidence, beside what still needs review. So the incident's id
+    // is in it; what must not be is the incident as a blocker. Before, this read: not.toContainText(`#${gapId}`).
+    await expect(summary.getByTestId("readiness-blockers")).toHaveCount(0);
+    await expect(summary.getByTestId("readiness-incident-link")).toHaveCount(0);
+    await expect(summary.getByTestId("readiness-cleared")).toContainText(`Coverage hold cleared, incident #${gapId}.`);
+    await expect(summary.getByTestId("readiness-cleared-link")).toHaveAttribute("href", `/exceptions/${gapId}?period=oct#recovery`);
     await expect(page.getByTestId("verdict-row-google_lsa").getByTestId("verdict-readiness")).not.toContainText(`#${gapId}`);
 
     await page.goto("/?period=oct");

@@ -99,8 +99,10 @@ async function evidenceTotal(page: Page): Promise<string> {
   return usd(cents);
 }
 
+// Changed 2026-11-14 (B09-CROSS-VIEW.md): the daily evidence leads with the selected dates, as the
+// page's own heading. It was the card's: level 2, "Selected on the Overview: <channel> · <week>".
 const evidenceHeading = (page: Page, channelLabel: string, weekLabel: string) =>
-  page.getByRole("heading", { level: 2, name: `Selected on the Overview: ${channelLabel} · ${weekLabel}`, exact: true });
+  page.getByRole("heading", { level: 1, name: `${channelLabel} · ${weekLabel}`, exact: true });
 
 async function selectBranch(page: Page, branch: string) {
   const scope = shown(page, "movement-scope");
@@ -168,7 +170,10 @@ test("desktop: select B09 and October, read what changed, open the point's recor
   await expect(shown(page, "movement-headline")).toHaveText("Google Local Services spend at B09 stopped after Oct 12 while its leads kept arriving.");
   await expect(shown(page, "movement-detail")).toContainText("which is filed as Google Search");
   await expect(shown(page, "movement-trust")).toHaveAttribute("data-tone", "review");
-  await expect(shown(page, "movement-trust")).toContainText("Investigate before acting");
+  // Changed 2026-11-14 (B09-CROSS-VIEW.md): one decision status, the incident's own, and its exact
+  // evidence. It read "Investigate before acting", with a link to the bare incident.
+  await expect(shown(page, "movement-trust")).toContainText("Decision held. None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.");
+  await expect(shown(page, "movement-status-link")).toHaveAttribute("href", /^\/exceptions\/\d+\?period=oct#recovery$/);
   await expect(movement.locator("[data-marker]")).toHaveCount(1);
   await expect(shown(page, "movement-definition")).toContainText("Paid media spend");
   // The chart's values are the stored records'.
@@ -193,6 +198,8 @@ test("desktop: select B09 and October, read what changed, open the point's recor
   await expect(panel).toHaveAttribute("data-selected", "google_lsa|2026-10-19");
   await expect(panel).toContainText("Google Local Services at B09 · Oct 19–Oct 25");
   await expect(panel).toContainText("No spend record on any of its 7 days. This is not $0");
+  // The selected week is not the decision window: the panel says how the one stands against the other.
+  await expect(shown(page, "movement-window")).toHaveText("None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held.");
   await expect(page).toHaveURL(/channel=google_lsa&week=2026-10-19#movement$/);
   await snap(page, "point-selected", "desktop-1440", "marketing");
 
@@ -206,7 +213,10 @@ test("desktop: select B09 and October, read what changed, open the point's recor
   expect(await evidenceDays(page)).toEqual(daysFrom("2026-10-19", 7));
   await expect(selection.locator('tr[data-record="none"]')).toHaveCount(7);
   await expect(shown(page, "selection-summary")).toContainText("No day of this week has a spend record");
+  // Both facts together: this week's records, and the decision window they belong to.
+  await expect(shown(page, "selection-window")).toHaveText("None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held.");
   await expect(shown(page, "selection-incident")).toContainText("coverage gap");
+  await expect(shown(page, "selection-incident-link")).toHaveAttribute("href", /^\/exceptions\/\d+\?period=oct&channel=google_lsa&week=2026-10-19#recovery$/);
   await expect(shown(page, "selection-limits")).toContainText("do not establish");
   expect(await axeViolations(page)).toEqual([]);
   await snap(page, "evidence-selected-point", "desktop-1440", "marketing");
@@ -407,6 +417,9 @@ test("a branch-restricted viewer sees their branch only; another branch is refus
   await expect(shown(page, "movement-unavailable")).toContainText("B09 is outside your scope");
   await expect(page.locator("main")).not.toContainText("Google Local Services spend at B09");
   await page.goto("/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19");
-  await expect(page.locator("main")).not.toContainText("Selected on the Overview");
+  // Nothing of the selection: not its heading, its records or the window it belongs to.
+  for (const text of ["Daily evidence", "Daily records", "Google Local Services · Oct 19–Oct 25", "decision window", "pmax-lsa-B09"]) {
+    await expect(page.locator("main")).not.toContainText(text);
+  }
   await snap(page, "outside-scope", "desktop-1440", "partner");
 });

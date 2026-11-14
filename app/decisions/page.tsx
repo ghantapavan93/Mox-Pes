@@ -4,8 +4,8 @@ import { ExperimentRunner } from "@/components/decisions/ExperimentRunner";
 import { ExperimentHistory, SavedScenarios } from "@/components/decisions/History";
 import { ScenarioBuilder, type ScenarioChannelOption } from "@/components/decisions/ScenarioBuilder";
 import { VerdictMatrix } from "@/components/decisions/VerdictMatrix";
-import { CheckCircle2, XCircle } from "lucide-react";
-import { Badge, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
+import { Info, XCircle } from "lucide-react";
+import { Badge, ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
@@ -13,6 +13,7 @@ import { verifiedReadinessSnapshot, type VerifiedReadiness } from "@/lib/decisio
 import { money } from "@/lib/format";
 import { parseChannel, parseWeek } from "@/lib/metrics/movement";
 import { parsePeriod, type Period } from "@/lib/period";
+import { gapStatusesAt, type GapStatus } from "@/lib/reconcile/gap-status";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type BrandId, type ChannelCode } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
@@ -124,15 +125,18 @@ const channelLabel = (code: string) => CHANNEL_BY_CODE.get(code as ChannelCode)?
 
 async function VerdictsAndScenarios({ viewer, branchId, period, verified, incidentQuery }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness>; incidentQuery: string }) {
   const pool = getPool();
-  const [verdicts, saved] = await Promise.all([
+  const [verdicts, saved, gaps] = await Promise.all([
     decisionVerdicts(pool, viewer, { branchId, period }),
     listScenarios(pool, viewer, { branchId, limit: 10 }),
+    // Coverage gaps verified for a window that overlaps the period: the hold they lifted is said
+    // beside what still needs review. The branch passed the scope check above (and in the verdicts).
+    gapStatusesAt(pool, branchId, { range: { from: period.from.toISOString().slice(0, 10), to: period.to.toISOString().slice(0, 10) } }),
   ]);
   const canModel = viewer.can.investigate || viewer.can.propose;
 
   return (
     <>
-      <ReadinessSummary verdicts={verdicts} canInvestigate={viewer.can.investigate} incidentQuery={incidentQuery} />
+      <ReadinessSummary verdicts={verdicts} cleared={gaps.filter((g) => !g.held)} verified={verified} canInvestigate={viewer.can.investigate} incidentQuery={incidentQuery} />
 
       <Card
         id="verdicts"
@@ -229,10 +233,25 @@ async function VerifiedReadinessCard({ verified }: { verified: Promise<VerifiedR
 
 /**
  * The answer first: is this branch ready to move paid budget, and if not, which incidents
- * block it. Built from the verdicts' own failing budget-gate reasons, so it can never say
- * something the matrix below does not.
+ * block it — built from the verdicts' own failing budget-gate reasons, so it can never say
+ * something the matrix below does not. Then, read together: a coverage hold that was verified and
+ * lifted in this period (the incident's own status, lib/reconcile/gap-status.ts), and what
+ * Verified readiness still asks a person to review (its own states, streamed: the hold above never
+ * waits for them). "Ready" means the readiness rules pass; it is never an approval.
  */
-function ReadinessSummary({ verdicts, canInvestigate, incidentQuery }: { verdicts: DecisionVerdicts; canInvestigate: boolean; incidentQuery: string }) {
+function ReadinessSummary({
+  verdicts,
+  cleared,
+  verified,
+  canInvestigate,
+  incidentQuery,
+}: {
+  verdicts: DecisionVerdicts;
+  cleared: GapStatus[];
+  verified: Promise<VerifiedReadiness>;
+  canInvestigate: boolean;
+  incidentQuery: string;
+}) {
   const notReady = verdicts.channels.filter((c) => c.readiness.status === "not_ready");
   const blockers = new Map<string, string>();
   for (const c of verdicts.channels) {
@@ -241,37 +260,46 @@ function ReadinessSummary({ verdicts, canInvestigate, incidentQuery }: { verdict
     }
   }
   const ready = notReady.length === 0;
-  const Icon = ready ? CheckCircle2 : XCircle;
+  const Icon = ready ? Info : XCircle;
+  // The same incident evidence the Overview and the daily records open, with the selection carried.
+  const incidentHref = (id: string | number) => `/exceptions/${id}${incidentQuery}#recovery`;
   return (
     <section
       id="readiness"
       aria-label="Readiness"
-      className={`scroll-mt-28 flex gap-3 rounded-lg border px-4 py-3 text-sm ${ready ? "border-good/30 bg-good-soft" : "border-bad/30 bg-bad-soft"}`}
+      className={`scroll-mt-28 flex gap-3 rounded-lg border px-4 py-3 text-sm ${ready ? "border-border-strong bg-surface" : "border-bad/30 bg-bad-soft"}`}
       data-testid="readiness-summary"
+      data-state={ready ? "ready" : "not_ready"}
     >
-      <Icon aria-hidden className={`mt-0.5 size-4 shrink-0 ${ready ? "text-good" : "text-bad"}`} />
-      <div className="min-w-0 flex-1">
+      <Icon aria-hidden className={`mt-0.5 size-4 shrink-0 ${ready ? "text-accent" : "text-bad"}`} />
+      <div className="min-w-0 flex-1 space-y-2.5">
         <p className="flex flex-wrap items-center gap-2">
-          {ready ? <Badge tone="good">Ready</Badge> : <Badge tone="bad">Not ready</Badge>}
+          {ready ? <Badge tone="accent">Ready for review</Badge> : <Badge tone="bad">Not ready</Badge>}
           <span className="font-medium text-text">
             {ready
-              ? `Every paid channel at ${verdicts.branchId} passes the readiness checks for ${verdicts.period.label}. Effectiveness is still a separate question.`
+              ? `Every paid channel at ${verdicts.branchId} passes the readiness rules for ${verdicts.period.label}: no open incident holds the decision, so a person can review it. Nothing here approves a budget change.`
               : `${notReady.length} of ${verdicts.channels.length} paid channels at ${verdicts.branchId} are not ready for a budget decision in ${verdicts.period.label}: ${notReady.map((c) => c.label).join(", ")}.`}
           </span>
         </p>
         {blockers.size > 0 && (
-          <ul className="mt-2 space-y-1.5 text-text">
-            {[...blockers].map(([href, text]) => {
+          <ul className="space-y-2 text-text" data-testid="readiness-blockers">
+            {[...blockers].map(([href, text], i) => {
               const id = href.match(/\/exceptions\/(\d+)$/)?.[1];
               return (
-                <li key={href} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span>{text}</span>
-                  <Link href={id ? `${href}${incidentQuery}` : href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
-                    open incident →
-                  </Link>
+                <li key={href} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="basis-full">{text}</span>
+                  {id && i === 0 ? (
+                    <ButtonLink href={incidentHref(id)} variant="primary" testId="readiness-incident-link">
+                      Open incident #{id}
+                    </ButtonLink>
+                  ) : (
+                    <Link href={id ? incidentHref(id) : href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
+                      {id ? `Open incident #${id}` : "Open the evidence"}
+                    </Link>
+                  )}
                   {id && canInvestigate && (
                     <Link href={`/investigator?exception=${id}`} className="font-medium text-accent hover:underline">
-                      investigate →
+                      Investigate
                     </Link>
                   )}
                 </li>
@@ -279,8 +307,60 @@ function ReadinessSummary({ verdicts, canInvestigate, incidentQuery }: { verdict
             })}
           </ul>
         )}
+        {cleared.map((g) => (
+          <p key={g.exceptionId} className="text-text" data-testid="readiness-cleared" data-state={g.state}>
+            <span className="font-semibold">{g.label}, incident #{g.exceptionId}.</span> {g.statusText}
+            {g.change ? ` ${g.change}` : ""}{" "}
+            <Link href={incidentHref(g.exceptionId)} className="font-medium text-accent underline" data-testid="readiness-cleared-link">
+              Open incident #{g.exceptionId}
+            </Link>
+          </p>
+        ))}
+        {ready && (
+          <Suspense
+            fallback={
+              <p className="text-muted" aria-busy="true" data-testid="readiness-other-checks-loading">
+                Checking what else needs review…
+              </p>
+            }
+          >
+            <OtherChecks verified={verified} />
+          </Suspense>
+        )}
       </div>
     </section>
+  );
+}
+
+/**
+ * What Verified readiness (the card below) still asks a person to look at, in the summary, so a
+ * lifted hold is never read as "every check passed". Its own states and first reasons, quoted.
+ */
+async function OtherChecks({ verified }: { verified: Promise<VerifiedReadiness> }) {
+  const v = await verified;
+  const review = v.channels.filter((c) => c.state === "NEEDS_REVIEW" || c.state === "NOT_READY");
+  const rest = v.channels.filter((c) => !review.includes(c));
+  const restByState = [...new Set(rest.map((c) => c.state))].map((s) => `${rest.filter((c) => c.state === s).map((c) => c.label).join(" and ")} ${rest.filter((c) => c.state === s).length === 1 ? "is" : "are"} ${VERIFIED_LABEL[s]}`);
+  return (
+    <div className="space-y-2 text-text" data-testid="readiness-other-checks">
+      <p>
+        <span className="font-semibold">{review.length > 0 ? `Other checks need review: ${review.length} of ${v.channels.length} channels.` : "No other check needs review."}</span>
+        {restByState.length > 0 ? ` ${restByState.join("; ")}.` : ""}
+      </p>
+      {review.length > 0 && (
+        <ul className="list-disc space-y-1 pl-5">
+          {review.map((c) => (
+            <li key={c.channelCode} className="break-words">
+              <span className="font-medium">{c.label}</span> ({VERIFIED_LABEL[c.state]}): {shorten(c.because[0] ?? "", 140)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted">&ldquo;Ready&rdquo; in the table below means a channel&apos;s readiness rules pass. It is not an approval, and it does not cover these checks.</p>
+      <ButtonLink href="#verified" variant="primary" testId="readiness-review-link">
+        {review.length > 0 ? `Review the ${review.length === 1 ? "channel" : `${review.length} channels`}` : "See verified readiness"}
+      </ButtonLink>
+    </div>
   );
 }
 

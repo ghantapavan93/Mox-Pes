@@ -4,6 +4,7 @@ import { Callout, Card, metricAnchor, Skeleton } from "@/components/ui";
 import { METRICS } from "@/lib/metrics/definitions";
 import { shortDay, takeaway } from "@/lib/metrics/movement-copy";
 import type { MovementState } from "@/lib/metrics/movement";
+import { weekAgainstWindow } from "@/lib/reconcile/gap-status";
 import { BRANCH_BY_ID, type Branch } from "@/lib/reference";
 import { MovementChart, type Selection } from "./MovementChart";
 
@@ -97,6 +98,18 @@ export function MovementSection({
   const TrustIcon = t.trust.tone === "review" ? AlertTriangle : t.trust.tone === "clear" ? CheckCircle2 : HelpCircle;
   const evidenceBase = branch ? `/branches/${branch.id}/trace?period=${m.period.key}&metric=paid_spend${brandParam ? `&brand=${brandParam}` : ""}` : null;
   const defaultSelection = selection && m.series.some((s) => s.channel === selection.channel) && m.weeks.some((w) => w.start === selection.week) ? selection : null;
+  // The incident the decision status rests on, at its recovery: the same evidence the daily records
+  // and Decision Lab open. The chart's selection is not carried: the status is about the decision
+  // window, not the week picked here, and the browser's Back returns to that week.
+  const statusHref = t.trust.exceptionId ? `/exceptions/${t.trust.exceptionId}?period=${m.period.key}${brandParam ? `&brand=${brandParam}` : ""}#recovery` : null;
+  // For each week of a channel with a decision window: how that week stands against the window.
+  const windowNotes: Record<string, string> = {};
+  for (const r of m.recoveries ?? []) {
+    for (const w of m.weeks) {
+      const note = weekAgainstWindow(r, w);
+      if (note) windowNotes[`${r.channel}|${w.start}`] = note;
+    }
+  }
 
   return (
     <Card id="movement" title="What changed" subtitle={`${branch ? `${branch.id} ${branch.name}` : scopeLabel} · ${m.period.label}`} action={picker}>
@@ -119,13 +132,23 @@ export function MovementSection({
           <TrustIcon aria-hidden className={`mt-0.5 size-4 shrink-0 ${t.trust.tone === "review" ? "text-warn" : t.trust.tone === "clear" ? "text-good" : "text-muted"}`} />
           <span>
             <span className="font-semibold text-text">{t.trust.label}.</span> <span className="text-text">{t.trust.text}</span>
-            {m.holds[0] && branch && (
+            {statusHref ? (
               <>
                 {" "}
-                <Link href={`/exceptions/${m.holds[0].exceptionId}`} className="font-medium text-accent underline">
-                  Open incident #{m.holds[0].exceptionId}
+                <Link href={statusHref} className="font-medium text-accent underline" data-testid="movement-status-link">
+                  Open incident #{t.trust.exceptionId}
                 </Link>
               </>
+            ) : (
+              m.holds[0] &&
+              branch && (
+                <>
+                  {" "}
+                  <Link href={`/exceptions/${m.holds[0].exceptionId}`} className="font-medium text-accent underline">
+                    Open incident #{m.holds[0].exceptionId}
+                  </Link>
+                </>
+              )
             )}
             {t.suggestion && (
               <>
@@ -152,6 +175,7 @@ export function MovementSection({
             defaultChannel={m.markers[0]?.channel ?? m.series[0].channel}
             evidenceBase={evidenceBase}
             periodLabel={m.period.label.split(",")[0]}
+            windowNotes={windowNotes}
           />
         )}
 

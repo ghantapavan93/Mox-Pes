@@ -44,6 +44,7 @@ export function MovementChart({
   defaultChannel,
   evidenceBase,
   periodLabel,
+  windowNotes = {},
 }: {
   weeks: WeekInfo[];
   series: Series[];
@@ -55,6 +56,12 @@ export function MovementChart({
   /** The branch trace for this scope and period ("…/trace?period=oct&metric=paid_spend"), or null when no single branch is selected. */
   evidenceBase: string | null;
   periodLabel: string;
+  /**
+   * "channel|week" → how that week stands against the channel's decision window (an incident's
+   * required dates), written on the server from the incident's status. The selected week is a
+   * viewing filter; the note keeps it apart from the window the decision rests on.
+   */
+  windowNotes?: Record<string, string>;
 }) {
   const [sel, setSel] = useState<Selection | null>(initial);
   const [channel, setChannel] = useState<string>(initial?.channel ?? defaultChannel);
@@ -110,6 +117,7 @@ export function MovementChart({
   }, [sel, series, weeks]);
 
   const lines = selected ? explainCell(selected.series, selected.cell, selected.week, markers) : [];
+  const windowNote = selected ? (windowNotes[`${selected.series.channel}|${selected.week.start}`] ?? null) : null;
   const focus = sel?.channel ?? channel;
   const colorOf = (c: string) => (c === focus ? FOCUS : OTHER);
   const evidenceHref = selected && evidenceBase ? `${evidenceBase}&channel=${encodeURIComponent(selected.series.channel)}&week=${selected.week.start}` : null;
@@ -278,6 +286,11 @@ export function MovementChart({
                 {l}
               </p>
             ))}
+            {windowNote && (
+              <p className="border-l-2 border-border-strong pl-2.5 text-sm text-text" data-testid="movement-window">
+                {windowNote}
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {evidenceHref ? (
                 <Link href={evidenceHref} className="inline-flex min-h-9 items-center rounded-md bg-accent px-3 text-sm font-semibold text-white hover:bg-accent-hover" data-testid="open-evidence">

@@ -22,6 +22,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | A campaign id is matched on the platform the lead names, not by the id alone (R-46, 2026-11-13) | `CAMPAIGN-PLATFORM-MATCH.md`; `campaign-platform-match.test.ts` |
 | ChangeGuard judges a campaign on its own leads; an unresolved lead is neither support nor drift (R-46, 2026-11-13) | `CAMPAIGN-PLATFORM-MATCH.md` §6; `changeguard-campaign-platform.test.ts` |
 | B09 from decision hold to verified recovery: a coverage gap clears only when its whole window is verified, under its own id; a re-filed week, a duplicate or an older revision cannot clear it (2026-11-14) | `B09-RECOVERY.md`; `b09-recovery.test.ts` |
+| One reading order across the Overview, daily evidence, incident and Decision Lab: one coverage-gap status in the same words everywhere; the selected week set against the decision window; "Ready for review" beside a cleared hold and what still needs review (2026-11-14) | `B09-CROSS-VIEW.md`; `gap-status.test.ts`; `b09-cross-view/` |
 
 ## Next, in order
 

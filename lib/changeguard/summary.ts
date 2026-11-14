@@ -87,7 +87,9 @@ export async function decisionSummary(db: Queryable, viewer: Viewer, change: Cha
     at: view.release.at,
     passed: view.release.passed,
     of: view.release.of,
-    approvedOn: atRelease ? `${describeRows(atRelease.leadEvidence, viewer)} (${atRelease.verdict})` : "the preflight's lead evidence",
+    approvedOn: atRelease
+      ? `${describeRows(atRelease.leadEvidence, viewer)} (${atRelease.verdict})${atRelease.unresolved?.length ? `, not counting ${atRelease.unresolved.reduce((t, r) => t + r.leads, 0)} lead(s) with the id that match no one campaign` : ""}`
+      : "the preflight's lead evidence",
   };
   const concluded = view.latestConclusion ? redactRun(view.latestConclusion, viewer) : null;
   const latest = { state: view.state, at: view.latestConclusion?.ranAt ?? null, runId: view.latestConclusion?.id ?? null, overdue: view.overdue, dueAt: view.nextDueAt };
@@ -127,7 +129,15 @@ export async function decisionSummary(db: Queryable, viewer: Viewer, change: Cha
     if (s && s.revisions > 0) changed.push(`${s.revisions} lead(s) were revised since the release without moving them.`);
   } else if (concluded.run.outcome === "insufficient_evidence") {
     if (reasons.includes("CAMPAIGN_ID_AMBIGUOUS")) {
-      changed.push(`Another platform's campaign (${(e?.sharedId ?? []).map((s) => s.platform).join(", ")}) now uses this campaign's id, so their leads cannot be told apart. Nothing was decided between them (R-46, open).`);
+      changed.push(
+        `Another platform's campaign (${(e?.sharedId ?? []).map((s) => s.platform).join(", ")}) uses this campaign's id. Each lead is matched on the platform its own record names, but while the id is shared nothing is certified, and nothing was decided between them.`,
+      );
+    }
+    if (reasons.includes("LEADS_UNRESOLVED")) {
+      const rows = stored?.unresolved ?? [];
+      changed.push(
+        `${rows.reduce((t, r) => t + r.leads, 0)} lead(s) carry this campaign's id but name no platform, two, or a platform with no campaign of the id (${describeRows(rows, viewer)}). They are neither its leads nor evidence against the mapping, and the answer depends on whether they are, so nothing was certified.`,
+      );
     }
     for (const f of (e?.feeds ?? []).filter((f) => f.stale)) changed.push(f.stale!);
   } else if (concluded.run.outcome === "drift") {
@@ -203,7 +213,14 @@ export async function decisionSummary(db: Queryable, viewer: Viewer, change: Cha
       : { label: "Ask an integration engineer to check the worker", href: null, primary: false, note: `The check due ${dueText} has not run. This is not a drift: nothing was found, nothing was checked.` };
   } else if (view.state === "insufficient_evidence") {
     if (reasons.includes("CAMPAIGN_ID_AMBIGUOUS") && concluded) {
-      next = { label: "Read the shared-id evidence", href: evidencePage(concluded.run.id), primary: false, note: "Nothing can be certified until campaign ids carry a platform (R-46, open)." };
+      next = { label: "Read the shared-id evidence", href: evidencePage(concluded.run.id), primary: false, note: "Nothing is certified while another platform's campaign uses this id. The mapping is unchanged." };
+    } else if (reasons.includes("LEADS_UNRESOLVED") && concluded) {
+      next = {
+        label: "Read the unresolved leads",
+        href: evidencePage(concluded.run.id),
+        primary: false,
+        note: "A lead counts for a campaign only when its own record names the campaign's platform. These do not, so nothing was certified. The mapping is unchanged.",
+      };
     } else if (reasons.includes("FEED_STALE")) {
       next = engineer
         ? { label: "Check the lead feeds", href: "/audit", primary: true, note: "A stale or failing feed hides new evidence; the next check certifies again once it delivers." }

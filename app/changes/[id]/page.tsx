@@ -5,7 +5,7 @@ import { ChangeActions } from "@/components/changes/ChangeActions";
 import { ChangeForm } from "@/components/changes/ChangeForm";
 import { DecisionSummary } from "@/components/changes/DecisionSummary";
 import { MonitoringStatus } from "@/components/changes/MonitoringStatus";
-import { monitorView } from "@/lib/changeguard/monitor";
+import { monitorView, namesOnlyVisibleBranches } from "@/lib/changeguard/monitor";
 import { decisionSummary } from "@/lib/changeguard/summary";
 import { RolloutEvaluation } from "@/components/changes/RolloutEvaluation";
 import { VARIANTS } from "@/lib/twin/scenario";
@@ -16,7 +16,7 @@ import { CHECK_LABEL, type PreflightCheck } from "@/lib/changeguard/model";
 import { getChange, listCampaignOptions, type ChangeRow } from "@/lib/changeguard/service";
 import { dateTime, money } from "@/lib/format";
 import { parseRecordId } from "@/lib/record-id";
-import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
+import { BRANCHES, BRANCH_BY_ID, platformLabel } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import { STATUS_TONE } from "../status";
@@ -48,7 +48,11 @@ function Question({ n, title, children, testId, id }: { n: number | string; titl
   );
 }
 
-function CheckRow({ check }: { check: PreflightCheck }) {
+/** A finding that names a branch outside the viewer's scope is withheld, as on a check's evidence page (lib/changeguard/monitor.ts). */
+const OUTSIDE_SCOPE = "This finding names a branch outside your scope; a company-wide role can read it in full.";
+const shown = (viewer: Pick<Viewer, "branchIds">, detail: string) => (namesOnlyVisibleBranches(viewer, detail) ? detail : OUTSIDE_SCOPE);
+
+function CheckRow({ check, viewer }: { check: PreflightCheck; viewer: Pick<Viewer, "branchIds"> }) {
   return (
     <li className="flex gap-2" data-check={check.id} data-status={check.status}>
       <span aria-hidden className={`w-3 flex-none font-bold ${check.status === "fail" ? "text-bad" : check.status === "warn" ? "text-warn" : check.status === "pass" ? "text-good" : "text-faint"}`}>
@@ -58,7 +62,7 @@ function CheckRow({ check }: { check: PreflightCheck }) {
         <span className="font-medium text-text">{CHECK_LABEL[check.id]}</span>{" "}
         <Badge tone={CHECK_TONE[check.status]}>{check.status.replace("_", " ")}</Badge>
         {check.code && <code className="ml-1 text-[11px] text-muted">{check.code}</code>}
-        <span className="block text-muted">{check.detail}</span>
+        <span className="block text-muted">{shown(viewer, check.detail)}</span>
       </span>
     </li>
   );
@@ -89,11 +93,22 @@ async function Change({ params }: { params: Params }) {
   const pre = change.preflight;
   const payload = change.payload as { campaignId?: number; branchId?: string; source?: string; entity?: string };
   const previous = (change.base.currentBranchId as string | null | undefined) ?? null;
+  const campaign = change.base.campaign as { externalId?: string; name?: string; platform?: string } | null | undefined;
   const failing = pre?.checks.filter((c) => c.status === "fail") ?? [];
   const warnings = pre?.checks.filter((c) => c.status === "warn") ?? [];
-  const correction = correctionOf(change);
+  // The correction names where the campaign's leads arrive: only a viewer who can see that branch is told it.
+  const pointsTo = correctionOf(change);
+  const correction = pointsTo && namesOnlyVisibleBranches(viewer, pointsTo.branchId) ? pointsTo : null;
   const canCorrect = viewer.can.propose && change.status === "preflight_failed" && change.kind === "campaign_mapping" && correction !== null;
   const campaigns = canCorrect ? await listCampaignOptions(getPool(), viewer) : [];
+  // Branches the preview moved, as this viewer may see them: one outside their scope (where the
+  // campaign's leads land, say) is counted, not named.
+  const inScope = (b: string) => viewer.branchIds === null || viewer.branchIds.includes(b);
+  const impact = pre?.impact.filter((i) => inScope(i.branchId)) ?? [];
+  const impactHidden = (pre?.impact.length ?? 0) - impact.length;
+  const unrelated = pre?.unrelatedBranchesChanged.filter(inScope) ?? [];
+  const unrelatedHidden = (pre?.unrelatedBranchesChanged.length ?? 0) - unrelated.length;
+  const listed = (named: string[], hidden: number) => [named.join(", "), hidden > 0 ? `${hidden} outside your scope` : ""].filter(Boolean).join(", and ");
   // Staged rollout evaluations (Reliability Twin): company-scope viewers only.
   const rollout =
     change.kind === "source_contract" && payload.source === "calls" && viewer.branchIds === null
@@ -124,7 +139,9 @@ async function Change({ params }: { params: Params }) {
         <Question n={1} title="What is changing?" testId="q-what">
           {change.kind === "campaign_mapping" ? (
             <p>
-              Campaign <strong>{String((change.base.campaign as { externalId?: string } | null)?.externalId ?? payload.campaignId)}</strong> maps to{" "}
+              {/* A campaign is its platform and its id (R-46): another platform's campaign can share the id. */}
+              Campaign <strong>{String(campaign?.externalId ?? payload.campaignId)}</strong>
+              {campaign?.platform ? ` (${platformLabel(campaign.platform)}, “${campaign.name ?? ""}”)` : ""} maps to{" "}
               <strong>{previous ?? "no branch"}</strong> now; this change maps it to <strong>{payload.branchId} {BRANCH_BY_ID.get(payload.branchId ?? "")?.name}</strong>{" "}
               (brand {BRANCH_BY_ID.get(payload.branchId ?? "")?.brandId}).
             </p>
@@ -140,7 +157,9 @@ async function Change({ params }: { params: Params }) {
 
         <Question n={2} title="What depends on it?">
           <p>Reporting that reads it: {pre?.dependentMetrics.join(", ") || "—"}.</p>
-          {pre && pre.impact.length > 0 && <p className="text-muted">Branches whose numbers move: {pre.impact.map((i) => `${i.branchId} (${i.role})`).join(", ")}.</p>}
+          {pre && pre.impact.length > 0 && (
+            <p className="text-muted">Branches whose numbers move: {listed(impact.map((i) => `${i.branchId} (${i.role})`), impactHidden)}.</p>
+          )}
         </Question>
 
         <Question n={3} title="What did we test?" testId="q-tested">
@@ -152,7 +171,7 @@ async function Change({ params }: { params: Params }) {
               </p>
               <ul className="space-y-1.5" aria-label="Preflight checks">
                 {pre.checks.map((c) => (
-                  <CheckRow key={c.id} check={c} />
+                  <CheckRow key={c.id} check={c} viewer={viewer} />
                 ))}
               </ul>
             </>
@@ -167,7 +186,7 @@ async function Change({ params }: { params: Params }) {
           ) : (
             <ul className="space-y-1.5" aria-label="Failed checks">
               {failing.map((c) => (
-                <CheckRow key={c.id} check={c} />
+                <CheckRow key={c.id} check={c} viewer={viewer} />
               ))}
             </ul>
           )}
@@ -185,7 +204,7 @@ async function Change({ params }: { params: Params }) {
                 </tr>
               </thead>
               <tbody>
-                {pre.impact.map((i) => (
+                {impact.map((i) => (
                   <tr key={i.branchId} className="border-t border-border">
                     <td className="py-1">
                       <Link href={`/branches/${i.branchId}/trace?period=all&metric=paid_cac`} className="text-accent hover:underline" data-testid="impact-trace-link">{i.branchId}</Link>{" "}
@@ -218,10 +237,12 @@ async function Change({ params }: { params: Params }) {
               </ul>
             )
           )}
+          {impactHidden > 0 && <p className="text-xs text-muted">{impactHidden} more branch(es) outside your scope move too; they are counted here, not listed.</p>}
           {pre && change.kind === "campaign_mapping" && (
             <p className="text-muted">
-              Exceptions that would clear: {pre.exceptionsCleared.map((e) => e.summary).join("; ") || "none"}. Would open: {pre.exceptionsOpened.map((e) => e.summary).join("; ") || "none"}.
-              Other branches changed in the preview: {pre.unrelatedBranchesChanged.join(", ") || "none"}.
+              Exceptions that would clear: {pre.exceptionsCleared.map((e) => shown(viewer, e.summary)).join("; ") || "none"}. Would open:{" "}
+              {pre.exceptionsOpened.map((e) => shown(viewer, e.summary)).join("; ") || "none"}.
+              Other branches changed in the preview: {listed(unrelated, unrelatedHidden) || "none"}.
             </p>
           )}
           {pre && <p className="text-xs text-faint">Limits of this preview: {pre.limitations.join(" ")}</p>}
@@ -245,6 +266,8 @@ async function Change({ params }: { params: Params }) {
                 />
               )}
             </>
+          ) : pointsTo ? (
+            <p>The campaign&apos;s leads point to a branch outside your scope; a company-wide role can propose the correction.</p>
           ) : (
             <p>Resolve the failed checks above; the change cannot be reviewed as it stands.</p>
           )}
@@ -293,7 +316,7 @@ async function Change({ params }: { params: Params }) {
                       {c.passed ? "✓" : "✗"}
                     </span>
                     <span>
-                      <span className="font-medium">{c.layer.replace("_", " ")} success</span>: {c.detail}
+                      <span className="font-medium">{c.layer.replace("_", " ")} success</span>: {shown(viewer, c.detail)}
                     </span>
                   </li>
                 ))}

@@ -41,8 +41,21 @@ export interface CampaignBase {
   channelCode: string;
   /** The branch the campaign maps to now (null = unmapped). */
   currentBranchId: string | null;
-  /** Where this campaign's leads actually arrive, by branch. */
+  /**
+   * Where this campaign's leads actually arrive, by branch: the leads whose own record names this
+   * campaign's platform (v_lead_campaigns, R-46). Another platform's leads with the same id are not
+   * this campaign's and are not here.
+   */
   leadEvidence: Array<{ branchId: string; leads: number }>;
+  /**
+   * Leads that carry this campaign's id but match no one campaign: their record names no
+   * platform, two, or a platform with no campaign of this id. They are neither this campaign's
+   * leads nor another's, so never support, contradiction or drift; where counting them would
+   * change an answer, that answer is not certified.
+   */
+  unresolvedEvidence: Array<{ branchId: string; leads: number }>;
+  /** Leads with this id whose record names another platform with a campaign of this id: that campaign's. */
+  otherCampaignLeads: number;
   /** Campaigns this one replaced or was replaced by, and where those map. */
   lineage: Array<{ campaignId: number; relation: "predecessor" | "successor"; branchId: string | null }>;
   spendCents: number;
@@ -60,9 +73,25 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
   if (c.rowCount === 0) return null;
   const row = c.rows[0];
   // Sequential: `db` may be a single transaction client, which must not run queries concurrently.
+  // The campaign's own leads, matched on the platform each lead's record names (v_lead_campaigns,
+  // the resolver the reporting uses), and apart from them the leads with the id that match no one
+  // campaign. Until 2026-11-13 every lead carrying the id counted, another platform's included.
   const evidence = await db.query<{ branch_id: string; n: string }>(
-      "select effective_branch_id as branch_id, count(*) as n from v_leads where campaign_external_id = $1 group by effective_branch_id order by count(*) desc, effective_branch_id",
+      `select l.effective_branch_id as branch_id, count(*) as n from v_leads l join v_lead_campaigns lc on lc.lead_id = l.id
+       where lc.campaign_external_id = $1 and lc.campaign_id = $2
+       group by l.effective_branch_id order by count(*) desc, l.effective_branch_id`,
+      [row.external_campaign_id, campaignId],
+    );
+  const unresolved = await db.query<{ branch_id: string; n: string }>(
+      `select l.effective_branch_id as branch_id, count(*) as n from v_leads l join v_lead_campaigns lc on lc.lead_id = l.id
+       where lc.campaign_external_id = $1 and lc.status <> 'matched'
+       group by l.effective_branch_id order by count(*) desc, l.effective_branch_id`,
       [row.external_campaign_id],
+    );
+  const others = await db.query<{ n: string }>(
+      `select count(*) as n from v_leads l join v_lead_campaigns lc on lc.lead_id = l.id
+       where lc.campaign_external_id = $1 and lc.status = 'matched' and lc.campaign_id <> $2`,
+      [row.external_campaign_id, campaignId],
     );
   const lineage = await db.query<{ campaign_id: string; relation: "predecessor" | "successor"; branch_id: string | null }>(
       `select l.predecessor_campaign_id as campaign_id, 'predecessor' as relation, m.branch_id
@@ -88,6 +117,8 @@ export async function readCampaignBase(db: Queryable, campaignId: number): Promi
     channelCode: row.channel_code,
     currentBranchId: row.branch_id,
     leadEvidence: evidence.rows.map((r) => ({ branchId: r.branch_id, leads: Number(r.n) })),
+    unresolvedEvidence: unresolved.rows.map((r) => ({ branchId: r.branch_id, leads: Number(r.n) })),
+    otherCampaignLeads: Number(others.rows[0].n),
     lineage: lineage.rows.map((r) => ({ campaignId: Number(r.campaign_id), relation: r.relation, branchId: r.branch_id })),
     spendCents: Number(spend.rows[0].cents ?? 0),
     spendDays: { first: spend.rows[0].first, last: spend.rows[0].last, days: Number(spend.rows[0].days) },
@@ -119,7 +150,35 @@ export function evidenceVerdict(base: Pick<CampaignBase, "leadEvidence">, branch
   return at < total ? "split" : "agrees";
 }
 
+type LeadRows = Array<{ branchId: string; leads: number }>;
+
+/**
+ * The campaign's leads as they could read once its unresolved ones (R-46) are known: at best,
+ * every unresolved lead at `branchId` is this campaign's and none elsewhere is; at worst, the
+ * reverse. A lead at the branch never worsens the coverage verdict and a lead elsewhere never
+ * improves it, so however the unresolved leads turn out, the evidence reads between these two.
+ * Never used as evidence: only to ask whether the unresolved leads could change an answer.
+ */
+export function unresolvedBounds(base: Pick<CampaignBase, "leadEvidence" | "unresolvedEvidence">, branchId: string): { best: LeadRows; worst: LeadRows } {
+  const unresolved = base.unresolvedEvidence ?? [];
+  const plus = (rows: LeadRows): LeadRows => {
+    const byBranch = new Map<string, number>();
+    for (const e of [...base.leadEvidence, ...rows]) byBranch.set(e.branchId, (byBranch.get(e.branchId) ?? 0) + e.leads);
+    return [...byBranch].map(([b, leads]) => ({ branchId: b, leads })).sort((a, b) => b.leads - a.leads || a.branchId.localeCompare(b.branchId));
+  };
+  return { best: plus(unresolved.filter((e) => e.branchId === branchId)), worst: plus(unresolved.filter((e) => e.branchId !== branchId)) };
+}
+
+/** Coverage verdicts for `branchId` that the unresolved leads leave possible, besides the one read without them. Empty: they cannot change it. */
+export function unresolvedVerdicts(base: Pick<CampaignBase, "leadEvidence" | "unresolvedEvidence">, branchId: string): EvidenceVerdict[] {
+  if ((base.unresolvedEvidence ?? []).length === 0) return [];
+  const without = evidenceVerdict(base, branchId);
+  const { best, worst } = unresolvedBounds(base, branchId);
+  return [...new Set([evidenceVerdict({ leadEvidence: best }, branchId), evidenceVerdict({ leadEvidence: worst }, branchId)])].filter((v) => v !== without);
+}
+
 export function baseHashOf(base: CampaignBase, branchId: string): string {
+  const possible = unresolvedVerdicts(base, branchId);
   return sha256(
     canonicalJson({
       currentBranchId: base.currentBranchId,
@@ -128,6 +187,10 @@ export function baseHashOf(base: CampaignBase, branchId: string): string {
       evidenceBranches: base.leadEvidence.map((e) => e.branchId).sort(),
       majority: base.leadEvidence[0]?.branchId ?? null,
       lineage: base.lineage,
+      // Unresolved leads (R-46) only when they leave another verdict possible: that is what turns
+      // a certified coverage into an uncertified one. Leads that cannot change the answer are not
+      // what an approval depends on, so an approval over them hashes as it did before.
+      ...(possible.length > 0 ? { unresolvedCouldMake: [...possible].sort() } : {}),
     }),
   );
 }
@@ -237,33 +300,58 @@ export async function preflightCampaignMapping(
   const previousBrand = previous ? BRANCH_BY_ID.get(previous)?.brandId ?? null : null;
   const nameBranch = /^(B\d{2})\b/.exec(base.name)?.[1] ?? null;
   const verdict = evidenceVerdict(base, target.id);
+  // Leads with this id that match no one campaign (R-46) are not this campaign's leads and not
+  // another's: never support or contradiction. If counting some or all of them as its own could
+  // change the verdict, the coverage is not certified; otherwise they are only noted. Without
+  // any, every sentence and evidence object below reads exactly as before.
+  const unresolvedLeads = base.unresolvedEvidence.reduce((t, e) => t + e.leads, 0);
+  const possible = unresolvedVerdicts(base, target.id);
+  const coverageEvidence = unresolvedLeads > 0 ? { leadEvidence: base.leadEvidence, unresolved: base.unresolvedEvidence } : { leadEvidence: base.leadEvidence };
+  const where = (rows: Array<{ branchId: string; leads: number }>) => rows.map((e) => `${e.leads} at ${e.branchId}`).join(", ");
+  const unresolvedNote =
+    (base.otherCampaignLeads > 0 ? ` ${base.otherCampaignLeads} lead(s) with this id name another platform and are that platform's campaign's; they are not counted here.` : "") +
+    (unresolvedLeads > 0 ? ` ${unresolvedLeads} other lead(s) carry this id without a platform that matches one campaign (${where(base.unresolvedEvidence)}); counted or not, they would not change this.` : "");
   if (previous === target.id) {
     checks.push({ id: "mapping_coverage", status: "fail", code: "NO_CHANGE", detail: `The campaign already maps to ${target.id}; this change would do nothing.` });
+  } else if (possible.length > 0) {
+    checks.push({
+      id: "mapping_coverage",
+      status: "warn",
+      code: "LEAD_EVIDENCE_UNRESOLVED",
+      detail:
+        `${unresolvedLeads} lead(s) carry this campaign's id but name no platform, two, or a platform with no campaign of this id (${where(base.unresolvedEvidence)}). ` +
+        `They are neither this campaign's leads nor evidence against the mapping, but counting some or all of them as its own would turn the coverage from ${verdict} to ${possible.join(" or ")}, so it is not certified. ` +
+        `A person must confirm the mapping.`,
+      evidence: coverageEvidence,
+    });
   } else if (verdict === "none") {
     checks.push({
       id: "mapping_coverage",
       status: "warn",
       code: "NO_LEAD_EVIDENCE",
-      detail: "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it.",
+      detail:
+        base.otherCampaignLeads > 0
+          ? `No lead of this campaign carries its id, so the mapping cannot be checked against where its leads arrive. A person must confirm it.${unresolvedNote}`
+          : "No lead carries this campaign's id, so the mapping cannot be checked against where its leads arrive. A person must confirm it.",
     });
   } else if (verdict === "disagrees") {
     checks.push({
       id: "mapping_coverage",
       status: "fail",
       code: "LEAD_EVIDENCE_DISAGREES",
-      detail: `${totalLeads} lead(s) carry this campaign's id; ${atTarget} arrived at ${target.id} and ${majority!.leads} at ${majority!.branchId}. The mapping contradicts the campaign's own leads.`,
-      evidence: { leadEvidence: base.leadEvidence },
+      detail: `${totalLeads} lead(s) carry this campaign's id; ${atTarget} arrived at ${target.id} and ${majority!.leads} at ${majority!.branchId}. The mapping contradicts the campaign's own leads.${unresolvedNote}`,
+      evidence: coverageEvidence,
     });
   } else if (verdict === "split") {
     checks.push({
       id: "mapping_coverage",
       status: "warn",
       code: "LEAD_EVIDENCE_SPLIT",
-      detail: `${atTarget} of ${totalLeads} lead(s) for this campaign arrived at ${target.id}; the rest at ${base.leadEvidence.filter((e) => e.branchId !== target.id).map((e) => e.branchId).join(", ")}.`,
-      evidence: { leadEvidence: base.leadEvidence },
+      detail: `${atTarget} of ${totalLeads} lead(s) for this campaign arrived at ${target.id}; the rest at ${base.leadEvidence.filter((e) => e.branchId !== target.id).map((e) => e.branchId).join(", ")}.${unresolvedNote}`,
+      evidence: coverageEvidence,
     });
   } else {
-    checks.push({ id: "mapping_coverage", status: "pass", detail: `All ${totalLeads} lead(s) carrying this campaign's id arrived at ${target.id}.`, evidence: { leadEvidence: base.leadEvidence } });
+    checks.push({ id: "mapping_coverage", status: "pass", detail: `All ${totalLeads} lead(s) carrying this campaign's id arrived at ${target.id}.${unresolvedNote}`, evidence: coverageEvidence });
   }
 
   // ── Collisions: brand, lineage, name, competing changes ──

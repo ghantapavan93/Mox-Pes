@@ -35,13 +35,21 @@ Four questions, each answered on every run:
 |---|---|---|
 | `still_applied` | the live mapping is the released one | moved without a release → drift; the latest mapping version belongs to another ChangeGuard change → replaced |
 | `campaign_id_unambiguous` | only this campaign uses its external id | another platform's campaign shares the id (R-46) → **unknown**: nothing is certified |
-| `evidence_since_release` | the campaign's leads arrive only at branches the approval saw, with a verdict no worse than at release | a lead at a branch the approval never saw, a worse verdict (agrees → split → disagrees), or the evidence withdrawn → drift |
+| `evidence_since_release` | the campaign's own leads arrive only at branches the approval saw, with a verdict no worse than at release | a lead at a branch the approval never saw, a worse verdict (agrees → split → disagrees), or the evidence withdrawn → drift; unresolved leads that decide the answer → **unknown** |
 | `feeds_current` | every lead feed that carries the campaign delivered within 36 h (same rule as Decision Lab) | stale, never delivered, or its latest run failed → cannot certify |
 
-Outcome precedence: replaced > mapping moved > ambiguous id > evidence drift > stale feed >
-current. Stored records that contradict the mapping are a drift even while a feed is stale (what
-is stored stays true). An ambiguous id blocks both "drift" and "current", because the
-contradicting leads may be the other campaign's.
+**A campaign's own leads (since 2026-11-13, `CAMPAIGN-PLATFORM-MATCH.md` §6).** A lead counts
+for a campaign only when its own record names the campaign's platform (`v_lead_campaigns`, the
+resolver the reporting uses). Another platform's lead with the same id is that platform's
+campaign's. A lead whose record names no platform, two, or one with no campaign of the id is
+unresolved: neither support nor a contradiction. When the answer would differ depending on
+whether those leads are the campaign's, the check says `LEADS_UNRESOLVED` and certifies nothing.
+
+Outcome precedence: replaced > mapping moved > ambiguous id > unresolved leads that decide the
+answer > evidence drift > stale feed > current. Stored records that contradict the mapping are a
+drift even while a feed is stale (what is stored stays true). An ambiguous id blocks both
+"drift" and "current": the guard is unchanged, though another platform's leads no longer count
+as this campaign's.
 
 **What the release is compared with.** The release now records where the leads were when it was
 approved (`verification.releaseEvidence`). Changes released earlier fall back to the preflight's
@@ -99,10 +107,12 @@ mapping version move under the lock and judges again:
 
 Mutation: without the re-check, A recorded a stale "current" and the test failed.
 
-**Ambiguity (R-46 stays open).** A Meta campaign starts using the Google campaign's id, and a
+**Ambiguity (the shared-id guard).** A Meta campaign starts using the Google campaign's id, and a
 lead with that id lands at B05. The check says **insufficient evidence**
-(`CAMPAIGN_ID_AMBIGUOUS`), lists both campaigns and both branches as the affected scope, raises
-no review item and leaves the change verified. It does not decide which campaign the lead is.
+(`CAMPAIGN_ID_AMBIGUOUS`), lists both campaigns in the affected scope, raises no review item and
+leaves the change verified. Since 2026-11-13 the B05 lead, labelled "Facebook", is the Meta
+campaign's: it is not in the Google campaign's evidence, and the scope is B12 alone (it was B05
+and B12 while every lead with the id counted).
 
 **R-39 (shared-phone credit) stays open.** This check reads where a campaign's leads arrive, not
 which customer a lead credits, so it cannot meet that ambiguity. Its evidence page says so.

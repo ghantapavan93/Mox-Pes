@@ -120,7 +120,9 @@ export function branchesNamedBy(run: Pick<MonitorRun, "evidence" | "scope">): st
   add(e.liveBranchId);
   add(e.mapping?.branchId);
   for (const r of e.atRelease?.leadEvidence ?? []) add(r.branchId);
+  for (const r of e.atRelease?.unresolved ?? []) add(r.branchId);
   for (const r of e.now?.leadEvidence ?? []) add(r.branchId);
+  for (const r of e.unresolved ?? []) add(r.branchId);
   for (const b of e.newBranches ?? []) add(b);
   for (const c of e.conflicting ?? []) {
     add(c.branchId);

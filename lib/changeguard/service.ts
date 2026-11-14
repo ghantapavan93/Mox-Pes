@@ -69,10 +69,13 @@ export interface VerificationCheck {
 
 /** What the release was approved and verified on: where the campaign's leads arrived. */
 export interface ReleaseEvidence {
+  /** The campaign's own leads: their record names its platform (R-46, since 2026-11-13; older releases counted every lead with the id). */
   leadEvidence: Array<{ branchId: string; leads: number }>;
   verdict: "none" | "agrees" | "split" | "disagrees";
-  /** Lead sources that carried the campaign's id. */
+  /** Lead sources of the campaign's own leads. */
   sources: string[];
+  /** Leads with the id that matched no one campaign at release, kept apart; absent when there were none. */
+  unresolved?: Array<{ branchId: string; leads: number }>;
 }
 
 export interface Verification {
@@ -388,9 +391,19 @@ export async function releaseChange(pool: Pool, viewer: Viewer, id: number, now?
     // The configuration must apply, or nothing stands. Other misses (new data arriving in the
     // window, an exception still open) are reported as DEGRADED for a person to look at.
     if (!checks[0].passed) throw new ActionError(`Release verification failed, nothing was applied: ${checks[0].detail}`, 409);
-    // What monitoring compares later evidence with: where the leads were when this was released.
-    const sources = await tx.query<{ source: string }>("select distinct source from leads where campaign_external_id = $1 order by source", [base.externalCampaignId]);
-    const releaseEvidence = { leadEvidence: base.leadEvidence, verdict: evidenceVerdict(base, payload.branchId), sources: sources.rows.map((r) => r.source) };
+    // What monitoring compares later evidence with: where the campaign's own leads were when this
+    // was released, matched on the platform each lead names (R-46); unresolved ones kept apart.
+    const sources = await tx.query<{ source: string }>(
+      `select distinct l.source from leads l join v_lead_campaigns lc on lc.lead_id = l.id
+       where lc.campaign_external_id = $1 and lc.campaign_id = $2 order by l.source`,
+      [base.externalCampaignId, base.campaignId],
+    );
+    const releaseEvidence: ReleaseEvidence = {
+      leadEvidence: base.leadEvidence,
+      verdict: evidenceVerdict(base, payload.branchId),
+      sources: sources.rows.map((r) => r.source),
+      ...(base.unresolvedEvidence.length > 0 ? { unresolved: base.unresolvedEvidence } : {}),
+    };
     const verification: Verification = { checks, releaseEvidence, businessImprovement: "not measured", at: at.toISOString() };
     const to: ChangeStatus = checks.every((c) => c.passed) ? "verified" : "degraded";
     const schedule = firstSchedule(at);

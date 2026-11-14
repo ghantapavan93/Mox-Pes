@@ -193,9 +193,24 @@ async function CheckEvidence({ params }: { params: Params }) {
             </Card>
           )}
 
+          {((e.unresolved ?? []).length > 0 || (e.atRelease?.unresolved ?? []).length > 0) && (
+            <Card
+              title="Leads with this id that match no one campaign"
+              subtitle="Their record names no platform, two, or a platform with no campaign of this id (R-46). They are neither this campaign's leads nor evidence against the mapping."
+            >
+              <ul className="text-sm" data-testid="unresolved-leads">
+                <li>At this check: {(e.unresolved ?? []).map((r) => `${r.leads} at ${r.branchId}`).join(", ") || "none in your scope"}</li>
+                {e.atRelease?.unresolved && <li>At release: {e.atRelease.unresolved.map((r) => `${r.leads} at ${r.branchId}`).join(", ") || "none in your scope"}</li>}
+              </ul>
+            </Card>
+          )}
+
           {(e.sharedId ?? []).length > 0 && (
-            <Card title="Other campaigns using this id (R-46, open)" subtitle="Leads carry the id without a platform, so these campaigns' leads cannot be told apart. Nothing was chosen between them.">
-              <ul className="text-sm">
+            <Card
+              title="Other campaigns using this id"
+              subtitle="Each lead is matched on the platform its own record names (R-46), so these campaigns' leads are not counted above. While the id is shared, nothing is certified."
+            >
+              <ul className="text-sm" data-testid="shared-id">
                 {e.sharedId!.map((s) => (
                   <li key={s.campaignId}>
                     {s.platform} · {s.name} · mapped to {s.branchId ?? "no branch"}

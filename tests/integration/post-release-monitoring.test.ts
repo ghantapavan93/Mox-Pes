@@ -452,10 +452,17 @@ describe("an ambiguous campaign id (R-46 stays open): uncertainty and scope, no 
     expect(run.evidence.sharedId).toEqual([expect.objectContaining({ platform: "meta", branchId: null })]);
     const checks = Object.fromEntries(run.checks.map((c: { id: string; status: string }) => [c.id, c.status]));
     expect(checks).toMatchObject({ still_applied: "pass", campaign_id_unambiguous: "unknown", evidence_since_release: "unknown" });
-    expect(run.checks.find((c: { id: string }) => c.id === "evidence_since_release").detail).toContain("may be the other campaign's");
+    // Changed 2026-11-13 (R-46 in ChangeGuard): this expected "may be the other campaign's" and
+    // scope branches ["B05", "B12"]. Both encoded the bare-id rule, which counted AMB-X as this
+    // campaign's lead. Its record says "Facebook", so it is the Meta campaign's lead and is not
+    // this campaign's evidence. The guard is unchanged: outcome, reason, check states and the
+    // two campaigns in scope are as before, and nothing is certified.
+    expect(run.checks.find((c: { id: string }) => c.id === "evidence_since_release").detail).toContain("Not judged while the id is shared. This campaign's own leads: 6 at B12");
+    expect(run.evidence.now.leadEvidence).toEqual([{ branchId: "B12", leads: 6 }]);
+    expect(run.evidence.conflicting).toEqual([]);
     const scope = (await one<{ scope: { branches: string[]; campaignIds: number[] } }>(pool, "select scope from change_monitor_runs where id = $1", [run.id])).scope;
     expect(scope.campaignIds).toHaveLength(2);
-    expect(scope.branches).toEqual(["B05", "B12"]);
+    expect(scope.branches).toEqual(["B12"]);
     // No review item, no status change, no refreshed success, the mapping as released.
     expect(await driftItems()).toEqual([]);
     expect((await getChange(pool, marketing, change.id)).change).toMatchObject({ status: "verified", lastVerifiedAt: T0.toISOString() });

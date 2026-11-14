@@ -7,7 +7,7 @@ import type { Viewer } from "@/lib/viewer";
 import { syncCases, transitionCase } from "@/lib/workflow/cases";
 import { materialFacts, unseenFacts } from "./facts";
 import { assertChangeTransition, CampaignMappingPayload, type ChangeStatus } from "./model";
-import { evidenceVerdict, readCampaignBase, type EvidenceVerdict } from "./preflight";
+import { evidenceVerdict, readCampaignBase, unresolvedBounds, type EvidenceVerdict } from "./preflight";
 import { isOverdue, nextSlot, RETRY_AFTER_MS } from "./schedule";
 import { assertScope, branchesOf, getChangeTx, recordEvent, toRow, type ChangeRow, type ReleaseEvidence, type Verification, type VerificationCheck } from "./service";
 
@@ -19,23 +19,28 @@ import { assertScope, branchesOf, getChangeTx, recordEvent, toRow, type ChangeRo
  *
  *   still_applied            the live mapping is the released one. A newer ChangeGuard release of
  *                            the same campaign REPLACES this change; any other move is a drift.
- *   campaign_id_unambiguous  leads carry a campaign id without a platform (R-46, open). When
- *                            another platform's campaign shares the id, the leads cannot be told
- *                            apart: the check says so and certifies nothing, rather than choosing.
- *   evidence_since_release   where the campaign's leads arrive now, against where they arrived
+ *   campaign_id_unambiguous  whether another platform's campaign uses the same id. Each lead is
+ *                            matched on the platform its own record names (v_lead_campaigns,
+ *                            R-46), so another platform's leads never count here; but while the
+ *                            id is shared the check certifies nothing, rather than choosing.
+ *   evidence_since_release   where the campaign's own leads arrive now, against where they arrived
  *                            when the release was approved: the coverage rule the preflight
  *                            applied (evidenceVerdict) and the evidence branches the approval was
  *                            bound to (baseHashOf). A lead at a branch the approval never saw, a
  *                            verdict that worsened, or evidence withdrawn is a confirmed drift.
+ *                            A lead with the id that matches no one campaign (it names no
+ *                            platform, two, or one with no campaign of the id) is unresolved:
+ *                            neither support nor drift. When the answer would differ depending
+ *                            on whether such leads are this campaign's, nothing is certified.
  *   feeds_current            the lead feeds that carry the campaign delivered recently enough
  *                            (the freshness rule Decision Lab and Shadow Mode use). A stale or
  *                            failing feed means the mapping cannot be certified as current.
  *
  * Outcomes: current · insufficient_evidence · drift · superseded, or error (the check did not
- * run). Precedence: replaced > mapping moved > ambiguous id > evidence drift > stale feed.
- * Stored records that contradict the mapping are a drift even while a feed is stale (what is
- * stored stays true); an ambiguous id blocks both verdicts, because the contradicting leads may
- * be the other campaign's.
+ * run). Precedence: replaced > mapping moved > ambiguous id > unresolved leads that decide the
+ * answer > evidence drift > stale feed. Stored records that contradict the mapping are a drift
+ * even while a feed is stale (what is stored stays true); an ambiguous id blocks both verdicts,
+ * and so do unresolved leads that could turn one into the other.
  *
  * Writes, in one transaction under the mapping lock: the run (change_monitor_runs), the change's
  * monitoring columns and, for a drift, ONE review item (a mapping_drift exception keyed by the
@@ -57,7 +62,8 @@ const RANK: Record<EvidenceVerdict, number> = { none: 0, agrees: 0, split: 1, di
 
 export const LIMITATIONS = [
   "This check reads where the campaign's leads arrive, not which customer each lead credits: the shared-phone credit rule (R-39, open) is outside it.",
-  "Leads carry a campaign id without a platform (R-46, open): when two platforms use one id, the check reports the overlap and certifies nothing.",
+  "A lead counts for this campaign only when its own record names the campaign's platform (R-46). One that names no platform, two, or one with no campaign of the id is unresolved: never support or drift, and where it could change the answer the check certifies nothing.",
+  "While another platform's campaign uses the same id, the check certifies nothing, though each lead is matched on the platform it names.",
   "A record a feed never delivered is invisible here: a stale or failing feed is reported, never read as \"no new evidence\".",
   "A correct mapping is not evidence of more revenue: business improvement is not measured.",
 ];
@@ -82,7 +88,13 @@ export interface MonitorEvidence {
   liveBranchId: string | null;
   mapping: { version: number | null; changeId: number | null; branchId: string | null };
   atRelease: ReleaseEvidence;
+  /** This campaign's own leads: their record names its platform (R-46). Runs before 2026-11-13 counted every lead with the id. */
   now: { leadEvidence: Array<{ branchId: string; leads: number }>; verdict: EvidenceVerdict };
+  /**
+   * Leads with this id that match no one campaign (R-46), by branch: neither support nor drift.
+   * Absent on runs before 2026-11-13.
+   */
+  unresolved?: Array<{ branchId: string; leads: number }>;
   newBranches: string[];
   conflicting: ConflictingLead[];
   /** Lead records of this campaign delivered since the release. */
@@ -172,25 +184,27 @@ const describe = (evidence: Array<{ branchId: string; leads: number }>) => (evid
  * The records that contradict the approval: leads of this campaign at a branch the approval never
  * saw and, when the verdict worsened, leads at any other branch delivered (new or revised) after
  * the release. A lead at a second branch the approval DID see (a split release) contradicts
- * nothing on its own.
+ * nothing on its own. "Of this campaign": the lead's own record names its platform
+ * (v_lead_campaigns, R-46); another platform's lead with the same id never contradicts it.
  */
-async function conflictingLeads(db: Queryable, externalId: string, target: string, newBranches: string[], deliveredAfter: string | null): Promise<ConflictingLead[]> {
+async function conflictingLeads(db: Queryable, campaign: { id: number; externalId: string }, target: string, newBranches: string[], deliveredAfter: string | null): Promise<ConflictingLead[]> {
   const { rows } = await db.query(
     `select l.id as lead_id, l.source, l.source_lead_id, l.effective_branch_id as branch_id, l.branch_overridden, l.raw_event_id,
             cur.last_delivered_at as delivered_at,
             (select min(f.received_at) from raw_events f where f.source = cur.source and f.entity = cur.entity and f.entity_id = cur.entity_id) as first_seen_at,
             prev.id as previous_raw_event_id, payload_branch(prev.payload) as previous_branch_id
      from v_leads l
+     join v_lead_campaigns lc on lc.lead_id = l.id
      join raw_events cur on cur.id = l.raw_event_id
      left join lateral (
        select p.id, p.payload from raw_events p
        where p.source = cur.source and p.entity = cur.entity and p.entity_id = cur.entity_id and p.id <> cur.id and p.received_at <= cur.received_at
        order by p.received_at desc, p.id desc limit 1) prev on true
-     where l.campaign_external_id = $1 and l.effective_branch_id <> $2
+     where lc.campaign_external_id = $1 and lc.campaign_id = $5 and l.effective_branch_id <> $2
        and (l.effective_branch_id = any($3::text[]) or ($4::timestamptz is not null and cur.last_delivered_at > $4::timestamptz))
      order by cur.last_delivered_at desc, l.id
      limit 200`,
-    [externalId, target, newBranches, deliveredAfter],
+    [campaign.externalId, target, newBranches, deliveredAfter, campaign.id],
   );
   return rows.map((r) => ({
     leadId: Number(r.lead_id),
@@ -206,17 +220,19 @@ async function conflictingLeads(db: Queryable, externalId: string, target: strin
   }));
 }
 
-async function sinceRelease(db: Queryable, externalId: string, releasedAt: string): Promise<MonitorEvidence["sinceRelease"]> {
+/** The campaign's own lead records (R-46: the lead names its platform) delivered since the release. */
+async function sinceRelease(db: Queryable, campaign: { id: number; externalId: string }, releasedAt: string): Promise<MonitorEvidence["sinceRelease"]> {
   const { rows } = await db.query<{ new_leads: string; revisions: string; excluded: string }>(
     `select count(*) filter (where l.excluded_code is null and f.first_seen > $2) as new_leads,
             count(*) filter (where l.excluded_code is null and f.first_seen <= $2) as revisions,
             count(*) filter (where l.excluded_code is not null and l.excluded_at > $2) as excluded
      from leads l
+     join v_lead_campaigns lc on lc.lead_id = l.id
      join raw_events cur on cur.id = l.raw_event_id
      cross join lateral (select min(x.received_at) as first_seen from raw_events x
                          where x.source = cur.source and x.entity = cur.entity and x.entity_id = cur.entity_id) f
-     where l.campaign_external_id = $1 and (cur.last_delivered_at > $2 or l.excluded_at > $2)`,
-    [externalId, releasedAt],
+     where lc.campaign_external_id = $1 and lc.campaign_id = $3 and (cur.last_delivered_at > $2 or l.excluded_at > $2)`,
+    [campaign.externalId, releasedAt, campaign.id],
   );
   return { newLeads: Number(rows[0].new_leads), revisions: Number(rows[0].revisions), excluded: Number(rows[0].excluded) };
 }
@@ -243,10 +259,30 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
   const verdictNow = evidenceVerdict(base, target);
   const withdrawn = atRelease.verdict !== "none" && verdictNow === "none";
   const worsened = RANK[verdictNow] > RANK[atRelease.verdict];
-  const conflicting = newBranches.length > 0 || worsened ? await conflictingLeads(db, base.externalCampaignId, target, newBranches, worsened ? change.releasedAt : null) : [];
-  const since = await sinceRelease(db, base.externalCampaignId, change.releasedAt);
+  const campaign = { id: base.campaignId, externalId: base.externalCampaignId };
+  const conflicting = newBranches.length > 0 || worsened ? await conflictingLeads(db, campaign, target, newBranches, worsened ? change.releasedAt : null) : [];
+  const since = await sinceRelease(db, campaign, change.releasedAt);
 
-  const used = await db.query<{ source: string }>("select distinct source from leads where campaign_external_id = $1", [base.externalCampaignId]);
+  // Leads with the id that match no one campaign (R-46) are neither support nor a contradiction.
+  // They block a conclusion only when it depends on them: read with the unresolved leads at the
+  // released branch counted as this campaign's and none elsewhere (the best case), and with the
+  // reverse (the worst), the evidence must give the same answer. Every other way they could turn
+  // out lies between those two (unresolvedBounds).
+  const unresolved = base.unresolvedEvidence;
+  const contradicts = (rows: Array<{ branchId: string; leads: number }>) => {
+    const v = evidenceVerdict({ leadEvidence: rows }, target);
+    return rows.some((e) => !approved.has(e.branchId)) || RANK[v] > RANK[atRelease.verdict] || (atRelease.verdict !== "none" && v === "none");
+  };
+  const bounds = unresolvedBounds(base, target);
+  const unresolvedDecides = unresolved.length > 0 && contradicts(bounds.best) !== contradicts(bounds.worst);
+
+  // The feeds that deliver this campaign's leads, or leads that may be its (unresolved); never
+  // the feeds of another platform's campaign with the same id.
+  const used = await db.query<{ source: string }>(
+    `select distinct l.source from leads l join v_lead_campaigns lc on lc.lead_id = l.id
+     where lc.campaign_external_id = $1 and (lc.campaign_id = $2 or lc.status <> 'matched')`,
+    [campaign.externalId, campaign.id],
+  );
   const sources = [...new Set([...atRelease.sources, ...used.rows.map((r) => r.source)])].sort();
   const watched = sources.length > 0 ? sources : ["calls", "web"];
   const states = await feedFreshness(db);
@@ -274,6 +310,10 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
   } else if (ambiguous) {
     outcome = "insufficient_evidence";
     reasons.push("CAMPAIGN_ID_AMBIGUOUS");
+    if (unresolvedDecides) reasons.push("LEADS_UNRESOLVED");
+  } else if (unresolvedDecides) {
+    outcome = "insufficient_evidence";
+    reasons.push("LEADS_UNRESOLVED");
   } else if (conflict) {
     outcome = "drift";
     if (newBranches.length > 0) reasons.push("LEAD_OUTSIDE_APPROVED_EVIDENCE");
@@ -292,6 +332,10 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
   const total = base.leadEvidence.reduce((t, e) => t + e.leads, 0);
   const atTarget = base.leadEvidence.find((e) => e.branchId === target)?.leads ?? 0;
   const sinceText = `Since the release: ${since.newLeads} new lead(s), ${since.revisions} revised${since.excluded ? `, ${since.excluded} excluded` : ""}.`;
+  // Without unresolved leads, every sentence below reads exactly as it did before R-46 reached monitoring.
+  const unresolvedTotal = unresolved.reduce((t, e) => t + e.leads, 0);
+  const unresolvedNote = unresolvedTotal > 0 ? ` ${unresolvedTotal} other lead(s) carry the id without a platform that matches one campaign (${describe(unresolved)}); counted or not, they would not change this.` : "";
+  const ownLeads = `This campaign's own leads: ${describe(base.leadEvidence)} (approved on: ${describe(atRelease.leadEvidence)}).`;
   const checks: VerificationCheck[] = [
     replaced
       ? { id: "still_applied", layer: "configuration", passed: false, status: "fail", detail: `Replaced by change #${mapping.changeId} (mapping version ${mapping.version}): the live mapping is ${live}. This change is no longer monitored.` }
@@ -304,7 +348,7 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
           layer: "data_integrity",
           passed: false,
           status: "unknown",
-          detail: `Leads carry campaign id ${base.externalCampaignId} without a platform, and ${sharedId.length} other campaign(s) use it (${sharedId.map((s) => s.platform).join(", ")}). Their leads cannot be told apart, so this check certifies nothing (R-46, open).`,
+          detail: `${sharedId.length} other campaign(s) use id ${base.externalCampaignId} (${sharedId.map((s) => s.platform).join(", ")}). Each lead is matched on the platform its own record names (R-46), so another platform's leads are not counted as this campaign's; but while the id is shared, this check certifies nothing.`,
         }
       : { id: "campaign_id_unambiguous", layer: "data_integrity", passed: true, status: "pass", detail: `Only this campaign (${base.platform}) uses id ${base.externalCampaignId}.` },
     ambiguous
@@ -313,22 +357,32 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
           layer: "operational",
           passed: false,
           status: "unknown",
-          detail: `Not judged: the campaign id is ambiguous.${conflicting.length ? ` ${conflicting.length} lead(s) with this id arrive outside the approved evidence; they may be the other campaign's.` : ""} ${sinceText}`,
+          detail: `Not judged while the id is shared. ${ownLeads}${newBranches.length ? ` Not in the approved evidence: ${newBranches.join(", ")}.` : ""}${unresolvedTotal ? ` ${unresolvedTotal} lead(s) with the id match no one campaign (${describe(unresolved)}).` : ""} ${sinceText}`,
         }
-      : conflict
+      : unresolvedDecides
         ? {
             id: "evidence_since_release",
             layer: "operational",
             passed: false,
-            status: "fail",
-            detail: [
-              newBranches.length > 0 ? `${conflicting.filter((c) => newBranches.includes(c.branchId)).length} lead(s) carrying this campaign's id now arrive at ${newBranches.join(", ")}, a branch the approval did not see (approved on: ${describe(atRelease.leadEvidence)}).` : null,
-              worsened ? `The coverage verdict went from ${atRelease.verdict} to ${verdictNow} (${atTarget} of ${total} at ${target}).` : null,
-              withdrawn ? `The leads the release relied on are gone (${since.excluded} excluded since the release).` : null,
-              sinceText,
-            ].filter(Boolean).join(" "),
+            status: "unknown",
+            detail:
+              `Not judged. ${ownLeads} ${unresolved.map((e) => `${e.leads} lead(s) at ${e.branchId}`).join(", ")} carry this campaign's id but name no platform, two, or a platform with no campaign of this id. ` +
+              `They are neither this campaign's leads nor evidence against the mapping, and the answer depends on whether they are, so this check certifies nothing. ${sinceText}`,
           }
-        : { id: "evidence_since_release", layer: "operational", passed: true, status: "pass", detail: `${total} lead(s) carry this campaign's id, all at branches the approval saw (${describe(base.leadEvidence)}). ${sinceText}` },
+        : conflict
+          ? {
+              id: "evidence_since_release",
+              layer: "operational",
+              passed: false,
+              status: "fail",
+              detail: [
+                newBranches.length > 0 ? `${conflicting.filter((c) => newBranches.includes(c.branchId)).length} lead(s) carrying this campaign's id now arrive at ${newBranches.join(", ")}, a branch the approval did not see (approved on: ${describe(atRelease.leadEvidence)}).` : null,
+                worsened ? `The coverage verdict went from ${atRelease.verdict} to ${verdictNow} (${atTarget} of ${total} at ${target}).` : null,
+                withdrawn ? `The leads the release relied on are gone (${since.excluded} excluded since the release).` : null,
+                sinceText + unresolvedNote,
+              ].filter(Boolean).join(" "),
+            }
+          : { id: "evidence_since_release", layer: "operational", passed: true, status: "pass", detail: `${total} lead(s) carry this campaign's id, all at branches the approval saw (${describe(base.leadEvidence)}). ${sinceText}${unresolvedNote}` },
     staleFeeds.length > 0
       ? { id: "feeds_current", layer: "operational", passed: false, status: "fail", detail: staleFeeds.map((f) => f.stale).join(" ") }
       : { id: "feeds_current", layer: "operational", passed: true, status: "pass", detail: `${watched.join(" and ")} delivered within ${FRESHNESS_MAX_AGE_HOURS} h of the check.` },
@@ -339,6 +393,8 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
   for (const b of newBranches) branches.add(b);
   for (const c of conflicting) branches.add(c.branchId);
   if (ambiguous) for (const e of base.leadEvidence) branches.add(e.branchId);
+  // Unresolved leads belong to the scope only when they decide the answer.
+  if (unresolvedDecides) for (const e of unresolved) branches.add(e.branchId);
   for (const s of sharedId) if (s.branchId) branches.add(s.branchId);
 
   return {
@@ -355,6 +411,8 @@ export async function evaluate(db: Queryable, change: ChangeRow, now: Date): Pro
       mapping,
       atRelease,
       now: { leadEvidence: base.leadEvidence, verdict: verdictNow },
+      // Only when there are any, so a run without them stores what it stored before.
+      ...(unresolved.length > 0 ? { unresolved } : {}),
       newBranches,
       conflicting,
       sinceRelease: since,
@@ -711,7 +769,9 @@ export interface RedactedRun {
 
 /**
  * One run, as this viewer may see it: rows at branches outside their scope are counted, not
- * listed, and a check's sentence that names such a branch is replaced. Read-only.
+ * listed, a check's sentence that names such a branch is replaced, and another campaign that
+ * shares the id is named only when it maps inside their scope. Read-only: the stored run, and the
+ * check behind it, are the same for every viewer.
  */
 export function redactRun(run: MonitorRun, viewer: Pick<Viewer, "branchIds">): RedactedRun {
   if (!viewer.branchIds) return { run, hidden: { branches: 0, leads: 0, records: 0 } };
@@ -735,11 +795,15 @@ export function redactRun(run: MonitorRun, viewer: Pick<Viewer, "branchIds">): R
         ...e,
         liveBranchId: ok(e.liveBranchId) || e.liveBranchId === null ? e.liveBranchId : "outside your scope",
         mapping: e.mapping ? { ...e.mapping, branchId: ok(e.mapping.branchId) || e.mapping.branchId === null ? e.mapping.branchId : "outside your scope" } : e.mapping,
-        atRelease: e.atRelease ? { ...e.atRelease, leadEvidence: keepRows(e.atRelease.leadEvidence) } : e.atRelease,
+        atRelease: e.atRelease
+          ? { ...e.atRelease, leadEvidence: keepRows(e.atRelease.leadEvidence), ...(e.atRelease.unresolved ? { unresolved: keepRows(e.atRelease.unresolved) } : {}) }
+          : e.atRelease,
         now: e.now ? { ...e.now, leadEvidence: keepRows(e.now.leadEvidence) } : e.now,
+        ...(e.unresolved ? { unresolved: keepRows(e.unresolved) } : {}),
         newBranches: (e.newBranches ?? []).filter(ok),
         conflicting: conflicting.map((c) => (ok(c.previousBranchId) || c.previousBranchId === null ? c : { ...c, previousBranchId: "outside your scope" })),
-        sharedId: (e.sharedId ?? []).map((s) => (ok(s.branchId) || s.branchId === null ? s : { ...s, branchId: "outside your scope" })),
+        // A campaign mapped outside the viewer's scope is that scope's: its name is withheld with its branch.
+        sharedId: (e.sharedId ?? []).map((s) => (ok(s.branchId) || s.branchId === null ? s : { ...s, name: "a campaign outside your scope", branchId: "outside your scope" })),
       },
       scope: { ...run.scope, branches: (run.scope.branches ?? []).filter(ok), rawEventIds: (run.scope.rawEventIds ?? []).filter((id) => visibleRaw.has(id)) },
     },

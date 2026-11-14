@@ -18,6 +18,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | The 11 critical VP findings reviewed one by one | `vp-acceptance/evidence/CRITICAL-REVIEW.md` |
 | Released mappings re-checked on a schedule; a drift is one review item (R-30) | `POST-RELEASE-MONITORING.md`; `post-release-monitoring.test.ts` |
 | The Overview says what changed at a branch, and opens that week's records and comes back (2026-11-13) | `OVERVIEW-MOVEMENT.md`; `zy-overview-movement.spec.ts` |
+| The Decision Lab's verified verdict in 1.2–2.3 s, not 3.3–5.6 s; the hold was already 0.34–0.49 s (R-34, 2026-11-13) | `PERFORMANCE.md` §6; `decision-lab/`; `verified-readiness.test.ts` |
 
 ## Next, in order
 
@@ -30,7 +31,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | 5 | Correlation ids across upload → monitor; latency and freshness measured per step (mission M5) | Operators cannot follow one record end to end | intake, `lib/events/*`, `audit_log` |
 | 6 | Recurrence and ownership on incidents: owner, due/age, recurrence rule (mission M6). **Drift cases done 2026-11-13** (`DRIFT-REVIEW.md`): a review bound to the check's material facts, needs-investigation with an owner, one reopen per new contradiction, stale saves refused. Other incident kinds and due/age are open | Closing a case is not preventing it again | Action Center cases |
 | 7 | One approval vocabulary for incidents and ChangeGuard (R-32); dry-run scope labels (R-31) | Two flows confuse approvers | `components/changes`, Action Center |
-| 8 | Decision Lab and Overview load time (R-34). Overview re-measured 2026-11-13 with "What changed" (`OVERVIEW-MOVEMENT.md` §5): the B09 hold is 25–50 ms later, at 1.1–1.3 s | 3–4 s first loads | the A/A self-check cache |
+| 8 | ~~Decision Lab and Overview load time (R-34)~~ **Done 2026-11-13.** Overview: `PERFORMANCE.md` §5, re-measured with "What changed" (`OVERVIEW-MOVEMENT.md` §5): the B09 hold is 25–50 ms later, at 1.1–1.3 s. Decision Lab: `PERFORMANCE.md` §6. Its hold was already usable in 0.34–0.49 s. Verified readiness read B09's scorecard row four times and now reads it once (3.3–5.6 s → 1.2–2.3 s), with identical decisions; the A/A self-check was never the cause, and no cache was added. Left: the one scorecard read (0.66–0.86 s) | — | — |
 | 9 | Read-only shadow run against one real office (needs Moxie's approval and data agreement) | R-1 is the largest unproven assumption | Shadow Mode + the mappers |
 
 ## Deliberately not built

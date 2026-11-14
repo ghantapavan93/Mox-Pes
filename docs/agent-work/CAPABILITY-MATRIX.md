@@ -42,7 +42,7 @@ Evidence columns name the test or document; the latest run's numbers are in
 | Action Center: dry run → approve → execute | VERIFIED EXISTING | `os-golden-path`, `zz-b09` | Mixed scopes in dry-run evidence (R-31); two approval models (R-32) |
 | Investigator: tools, proofs, refusals, injection resistance | VERIFIED EXISTING (deterministic) | held-out set (regression), VP-12 | Model mode (R-10); closed reading is patterns (R-27) |
 | Investigation workspace (six hypotheses, versions) | VERIFIED EXISTING | J3, VP-01, VP-04 | Ageing (R-29) |
-| Decision Lab: verified readiness, scenarios | VERIFIED EXISTING | J8, VP-09 | Slow load (R-34) |
+| Decision Lab: verified readiness, scenarios | VERIFIED EXISTING | J8, VP-09 | Verified readiness 1.2–2.3 s, its one scorecard read (R-34) |
 | Server-enforced role and branch scope | VERIFIED EXISTING | J6, VP-07, hostile-input gate | Demo auth (R-2); 403 as HTTP 200 (R-33) |
 | Independent check of another system's metric snapshot | VERIFIED EXISTING (bounded) | `shadow-mode.test.ts` (16), Shadow pack, J9 | Synthetic other system; UTC, Sep–Oct, USD (R-40) |
 | Checking a conversational answer claim by claim against evidence | VERIFIED EXISTING (deterministic) | Shadow pack answers (31 claims), J9 | No model run (R-10) |

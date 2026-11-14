@@ -131,7 +131,7 @@ Seeded demo world (134,088 raw events), one laptop, Postgres with `fsync=off`, m
 | Verified readiness, B09 (one snapshot) | 2.9 s |
 | Investigation workspace, six hypotheses | 3.6 s |
 | Reliability signals | 903 ms |
-| Decision Lab page, server time per request | about 4.3 s (the A/A self-check recomputes on every load) |
+| Decision Lab page, server time per request | about 4.3 s (blamed then on the A/A self-check; corrected 2026-11-13: it was Verified readiness reading the scorecard four times, now 1.3–1.9 s, `PERFORMANCE.md` §6) |
 | Overview page, server time per request | about 3.3 s |
 
 ## Level 4: evidence

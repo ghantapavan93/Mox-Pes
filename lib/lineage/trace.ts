@@ -108,7 +108,30 @@ export const exactDollars = (cents: number) => `${cents < 0 ? "−" : ""}$${Math
 const iso = (d: Date | string | null) => (d === null ? null : new Date(d).toISOString());
 const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 
-export async function traceBranchMetric(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
+/**
+ * A caller that reads several traces of one branch and period inside ONE snapshot (verified
+ * readiness does) may read the branch's scorecard row once and give it to each trace: the same
+ * query with the same arguments on the same snapshot returns the same row. Until 2026-11-13 each
+ * trace read it again, and the row costs 0.7–1.1 s on the demo world whichever branch it is for
+ * (the scorecard aggregates every branch, then selects one): four reads were 2.9–3.5 s of
+ * verified readiness's 3.3–4.0 s (PERFORMANCE.md §6).
+ *
+ * Only with the caller's own client or transaction. From a pool the trace opens its own snapshot,
+ * which a row read elsewhere might not match (independent review F8), so that is refused, as is a
+ * row for another branch.
+ */
+export function checkGivenScorecard(db: Queryable | Pool, scorecard: BranchRow | undefined, branchId: string): void {
+  if (scorecard === undefined) return;
+  if (db instanceof Pool) throw new Error("A scorecard row can be given to a trace only with the caller's own client or transaction, so that both read the same snapshot.");
+  if (scorecard.branchId !== branchId) throw new Error(`The scorecard row given is for ${scorecard.branchId}, not ${branchId}.`);
+}
+
+export async function traceBranchMetric(
+  db: Queryable | Pool,
+  viewer: Viewer,
+  args: { branchId: string; period: Period; metric: TraceableMetric; scorecard?: BranchRow },
+): Promise<MetricTrace> {
+  checkGivenScorecard(db, args.scorecard, args.branchId);
   // From a pool: every query of the trace reads one snapshot (repeatable read, read only), so an
   // ingest landing between the scorecard and the record queries cannot fake a discrepancy
   // (independent review F8). A caller's own client or transaction (including a pool-shaped
@@ -130,7 +153,7 @@ export async function traceBranchMetric(db: Queryable | Pool, viewer: Viewer, ar
   return traceIn(db as Queryable, viewer, args);
 }
 
-async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric }): Promise<MetricTrace> {
+async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period; metric: TraceableMetric; scorecard?: BranchRow }): Promise<MetricTrace> {
   const branch = BRANCH_BY_ID.get(args.branchId);
   if (!branch) throw new TraceError(`Unknown branch ${args.branchId}`, 404);
   if (!(TRACEABLE as readonly string[]).includes(args.metric)) throw new TraceError(`Metric ${args.metric} cannot be traced yet`, 400);
@@ -139,7 +162,8 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
   const params = [from, to, branch.id];
 
   // Sequential: `db` may be one transaction client, which must not run queries concurrently.
-  const [row] = await branchRows(db, { from, to, branchIds: [branch.id] });
+  // The scorecard row: the caller's, read in this same snapshot (checkGivenScorecard), or read here.
+  const row = args.scorecard ?? (await branchRows(db, { from, to, branchIds: [branch.id] }))[0];
   const campaigns = await db.query(
     `with p as (select $1::timestamptz as t0, $2::timestamptz as t1)
      select c.id, c.external_campaign_id, c.name, c.platform, s.channel_code,

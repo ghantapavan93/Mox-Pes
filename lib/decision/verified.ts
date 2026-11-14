@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import { Pool } from "pg";
 import { withTransaction, type Queryable } from "@/lib/db";
 import { traceAttribution, traceCash } from "@/lib/lineage/cash";
 import { traceBranchMetric } from "@/lib/lineage/trace";
@@ -83,12 +83,19 @@ export async function verifiedReadinessSnapshot(pool: Pool, viewer: Viewer, args
 }
 
 export async function verifiedReadiness(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period }): Promise<VerifiedReadiness> {
-  // Sequential reads: `db` may be one transaction client.
+  // Sequential reads: `db` may be one transaction client. The verdicts come first: they check the
+  // viewer's scope and the branch before anything else is read.
   const verdicts = await decisionVerdicts(db, viewer, args);
-  const trace = await traceBranchMetric(db, viewer, { branchId: args.branchId, period: args.period, metric: "paid_cac" });
-  const cash = args.period.key === "all" ? null : await traceCash(db, viewer, { branchId: args.branchId, period: args.period });
-  const attribution = await traceAttribution(db, viewer, { branchId: args.branchId, period: args.period });
+  // The branch's scorecard row, read once. In one snapshot (the client verifiedReadinessSnapshot
+  // gives) the three traces compare with this same row: the same query and arguments on the same
+  // snapshot return the same row, and each trace used to read it again (four reads were 2.9–3.5 s
+  // of the 3.3–4.0 s this took on the demo world; R-34, PERFORMANCE.md §6). Given the pool
+  // instead, each trace still opens its own snapshot and reads its own row.
   const [row] = await branchRows(db, { from: args.period.from, to: args.period.to, branchIds: [args.branchId] });
+  const scorecard = db instanceof Pool ? undefined : row;
+  const trace = await traceBranchMetric(db, viewer, { branchId: args.branchId, period: args.period, metric: "paid_cac", scorecard });
+  const cash = args.period.key === "all" ? null : await traceCash(db, viewer, { branchId: args.branchId, period: args.period, scorecard });
+  const attribution = await traceAttribution(db, viewer, { branchId: args.branchId, period: args.period, scorecard });
   // The branch's most recently TESTED workspace, ties broken by version and id: the business clock
   // can be frozen, so creation time alone picked one arbitrarily (review 2026-11-12,
   // authorization 6). A workspace compares September with October, so it bears on October only.

@@ -2,8 +2,12 @@ import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { mapCampaignToBranch } from "@/lib/actions";
+import type { Queryable } from "@/lib/db";
 import { POLICY, stateOf, verifiedReadiness, type PolicyRule } from "@/lib/decision/verified";
 import { openCacInquiry } from "@/lib/inquiry/store";
+import { traceAttribution, traceCash } from "@/lib/lineage/cash";
+import { traceBranchMetric } from "@/lib/lineage/trace";
+import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
 import { ForbiddenError, VIEWERS } from "@/lib/viewer";
 import { acquisition, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
@@ -73,5 +77,51 @@ describe("verified readiness for a branch", () => {
 
   it("is refused outside the viewer's scope", async () => {
     await expect(verifiedReadiness(pool, partner, { branchId: "B07", period: PERIODS.oct })).rejects.toThrow(ForbiddenError);
+  });
+});
+
+describe("one scorecard row per snapshot (R-34, 2026-11-13)", () => {
+  const args = { branchId: "B07", period: PERIODS.oct };
+  /** The scorecard (branchRows) is the only query with this CTE. */
+  const isScorecard = (text: string) => text.includes("leadagg as (");
+
+  it("reads the branch's scorecard row once, and every trace given that row equals the trace that reads its own", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("begin isolation level repeatable read read only");
+      let scorecards = 0;
+      const counting = {
+        query: (text: string, values?: unknown[]) => {
+          if (isScorecard(text)) scorecards++;
+          return client.query(text, values);
+        },
+      } as Queryable;
+      await verifiedReadiness(counting, marketing, args);
+      // Until 2026-11-13: four, the paid-CAC trace, the cash trace, the attribution trace and then
+      // verified readiness itself, the same row from the same snapshot each time.
+      expect(scorecards).toBe(1);
+
+      const [row] = await branchRows(client, { from: args.period.from, to: args.period.to, branchIds: [args.branchId] });
+      expect(await traceBranchMetric(client, marketing, { ...args, metric: "paid_cac", scorecard: row })).toEqual(await traceBranchMetric(client, marketing, { ...args, metric: "paid_cac" }));
+      expect(await traceCash(client, marketing, { ...args, scorecard: row })).toEqual(await traceCash(client, marketing, args));
+      expect(await traceAttribution(client, marketing, { ...args, scorecard: row })).toEqual(await traceAttribution(client, marketing, args));
+      await client.query("commit");
+    } finally {
+      client.release();
+    }
+  });
+
+  it("refuses a row it cannot know was read in its own snapshot, or a row for another branch", async () => {
+    const [row] = await branchRows(pool, { from: args.period.from, to: args.period.to, branchIds: [args.branchId] });
+    // Given the pool, a trace opens its own snapshot: a row read anywhere else could disagree with it.
+    await expect(traceBranchMetric(pool, marketing, { ...args, metric: "paid_cac", scorecard: row })).rejects.toThrow(/same snapshot/);
+    await expect(traceCash(pool, marketing, { ...args, scorecard: row })).rejects.toThrow(/same snapshot/);
+    await expect(traceAttribution(pool, marketing, { ...args, scorecard: row })).rejects.toThrow(/same snapshot/);
+    const client = await pool.connect();
+    try {
+      await expect(traceBranchMetric(client, marketing, { branchId: "B08", period: PERIODS.oct, metric: "paid_cac", scorecard: row })).rejects.toThrow(/for B07, not B08/);
+    } finally {
+      client.release();
+    }
   });
 });

@@ -2,11 +2,11 @@ import { Pool } from "pg";
 import { evidence } from "@/lib/ai/evidence";
 import type { Queryable } from "@/lib/db";
 import { METRICS } from "@/lib/metrics/definitions";
-import { branchRows } from "@/lib/metrics/scorecard";
+import { branchRows, type BranchRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { BRANCH_BY_ID, branchesOfBrands, BRANDS, type BrandId } from "@/lib/reference";
 import { canSeeBranch, ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
-import { exactDollars, TraceError } from "./trace";
+import { checkGivenScorecard, exactDollars, TraceError } from "./trace";
 
 /**
  * The money traces: collected cash, refunds, new-customer collections and revenue at risk, each
@@ -73,16 +73,18 @@ async function inSnapshot<T>(db: Queryable | Pool, fn: (q: Queryable) => Promise
   }
 }
 
-export function traceCash(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period }): Promise<CashTrace> {
+/** `scorecard`: the branch's row for the period, read by the caller in the same snapshot (checkGivenScorecard). */
+export async function traceCash(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period; scorecard?: BranchRow }): Promise<CashTrace> {
+  checkGivenScorecard(db, args.scorecard, args.branchId);
   return inSnapshot(db, (q) => cashIn(q, viewer, args));
 }
 
-async function cashIn(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period }): Promise<CashTrace> {
+async function cashIn(db: Queryable, viewer: Viewer, args: { branchId: string; period: Period; scorecard?: BranchRow }): Promise<CashTrace> {
   const branch = BRANCH_BY_ID.get(args.branchId);
   if (!branch) throw new TraceError(`Unknown branch ${args.branchId}`, 404);
   resolveScope(viewer, branch.id);
   const { from, to } = args.period;
-  const [row] = await branchRows(db, { from, to, branchIds: [branch.id] });
+  const row = args.scorecard ?? (await branchRows(db, { from, to, branchIds: [branch.id] }))[0];
 
   const payments = await db.query(
     `select p.crm_payment_id, p.crm_customer_id, p.amount_cents, p.paid_at, p.original_payment_id, p.status,
@@ -189,13 +191,17 @@ export interface AttributionTrace {
   invariants: Invariant[];
 }
 
-/** Which new customers have an evidenced channel, which do not, and the share: reproduced from the acquisitions. */
-export function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period }): Promise<AttributionTrace> {
+/**
+ * Which new customers have an evidenced channel, which do not, and the share: reproduced from the
+ * acquisitions. `scorecard`: as for traceCash.
+ */
+export async function traceAttribution(db: Queryable | Pool, viewer: Viewer, args: { branchId: string; period: Period; scorecard?: BranchRow }): Promise<AttributionTrace> {
+  checkGivenScorecard(db, args.scorecard, args.branchId);
   return inSnapshot(db, async (q) => {
     const branch = BRANCH_BY_ID.get(args.branchId);
     if (!branch) throw new TraceError(`Unknown branch ${args.branchId}`, 404);
     resolveScope(viewer, branch.id);
-    const [row] = await branchRows(q, { from: args.period.from, to: args.period.to, branchIds: [branch.id] });
+    const row = args.scorecard ?? (await branchRows(q, { from: args.period.from, to: args.period.to, branchIds: [branch.id] }))[0];
     const { rows } = await q.query(
       `select a.crm_customer_id, a.channel_code, a.attribution_basis from v_acquisitions a
        where a.branch_id = $3 and a.initial_status = 'completed' and a.initial_completed_at >= $1 and a.initial_completed_at < $2

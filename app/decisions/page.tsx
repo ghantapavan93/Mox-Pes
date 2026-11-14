@@ -44,8 +44,9 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
   }
   const branch = BRANCH_BY_ID.get(branchId)!;
   const branchOptions = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id));
-  // Started now, awaited where the card renders: verified readiness (about 3 s on the seeded world,
-  // one snapshot) runs alongside the verdicts instead of after them.
+  // Started now, awaited where the card renders: verified readiness (1.2–1.5 s on the seeded world,
+  // one snapshot; 3.3–4.0 s before it read the scorecard once, PERFORMANCE.md §6) runs alongside
+  // the verdicts instead of after them. The hold above it never waits for it.
   const verified = verifiedReadinessSnapshot(getPool(), viewer, { branchId, period });
   verified.catch(() => undefined); // awaited by the card; an early rejection is not unhandled
 

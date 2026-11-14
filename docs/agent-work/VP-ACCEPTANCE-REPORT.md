@@ -143,6 +143,10 @@ Demo database on one laptop, `fsync` off unless stated, medians of repeated call
 The Decision Lab is slow because its A/A self-check recomputes on every load (R-34). None of
 this was measured on production-class hardware.
 
+**Corrected 2026-11-13** (`PERFORMANCE.md` §6): the A/A self-check takes 56–96 ms. The 4.3 s was the whole response, which
+waited for Verified readiness reading B09's scorecard row four times; it now reads it once, and the hold was usable in
+0.34–0.49 s throughout.
+
 ### 9. Independent reproducibility
 
 | | |

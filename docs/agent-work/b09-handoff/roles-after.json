@@ -1,0 +1,92 @@
+{
+  "build": "XR4Bib0xUk8aLTRhj-X_x",
+  "mode": "roles",
+  "phase": "after",
+  "total": 10,
+  "failed": 0,
+  "checks": [
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "owner's view: the engineer sees the case as theirs",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approv"
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "owner's view: the run is a link for a company-wide role",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct#recovery carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions?owner=engineer carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "partner-fresh",
+      "step": "partner: /api/cases/161 carries no B09 evidence",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct#recovery carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions?owner=engineer carries no B09 evidence",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "after",
+      "viewport": "brand-fresh",
+      "step": "brand: /api/cases/161 carries no B09 evidence",
+      "ok": true,
+      "detail": "405 "
+    }
+  ],
+  "clicks": [],
+  "reentries": [],
+  "repeats": []
+}

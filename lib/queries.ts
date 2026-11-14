@@ -106,12 +106,18 @@ export async function weeklySeries(db: Queryable, branchIds: string[] | null): P
   }));
 }
 
-export async function recentRuns(db: Queryable, limit = 40) {
+/**
+ * The latest ingestion runs, newest first. `include` adds one run however old it is, so a page
+ * that links to a run (an incident's verification names the runs it rests on) always finds it.
+ */
+export async function recentRuns(db: Queryable, limit = 40, include: number | null = null) {
   const { rows } = await db.query(
     `select id, stream, adapter_version, window_start, window_end, started_at, status, fetched, inserted, duplicates,
             conflicts, projected, quarantined, error
-     from ingestion_runs order by started_at desc, id desc limit $1`,
-    [limit],
+     from ingestion_runs
+     where id in (select id from ingestion_runs order by started_at desc, id desc limit $1) or id = $2
+     order by started_at desc, id desc`,
+    [limit, include],
   );
   return rows;
 }

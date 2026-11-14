@@ -161,6 +161,8 @@ async function ExceptionDetail({ params, searchParams }: Props) {
             records: { href: traceHref(coverage.channel, recordsWeek), week: recordsWeekLabel(recordsWeek) },
             back: selected ? traceHref(selected.channel, selected.week) : null,
             decisions: `${decisionsHref}#readiness`,
+            // The run's row on the ingestion pipeline, which only company-wide roles may open.
+            run: viewer.branchIds ? null : (runId) => `/integrations?view=pipeline&run=${runId}#run-${runId}`,
           }}
         />
       )}

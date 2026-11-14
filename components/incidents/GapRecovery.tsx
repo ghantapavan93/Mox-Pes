@@ -32,8 +32,12 @@ export function GapRecovery({
   status: GapStatus;
   /** Open incidents other than this one that hold the branch's budget decision. */
   otherHolds: DecisionHold[];
-  /** `records`: the daily records of the week to look at next, and that week in words; `back`: the selected week the reviewer came from. */
-  links: { records: { href: string; week: string }; back: string | null; decisions: string };
+  /**
+   * `records`: the daily records of the week to look at next, and that week in words; `back`: the
+   * selected week the reviewer came from; `run`: where a delivery run is shown (null for a viewer
+   * who may not open the ingestion pipeline).
+   */
+  links: { records: { href: string; week: string }; back: string | null; decisions: string; run: ((runId: number) => string) | null };
 }) {
   const branch = exception.branchId ?? coverage.branchId;
   const label = coverage.channelLabel;
@@ -179,7 +183,17 @@ export function GapRecovery({
                 <tbody>
                   {runs.map((r) => (
                     <tr key={`${r.runId}-${r.adapterVersion}`}>
-                      <Td className="whitespace-nowrap">{r.runId === null ? "stored without a run" : `ingestion run #${r.runId}`}</Td>
+                      <Td className="whitespace-nowrap">
+                        {r.runId === null ? (
+                          "stored without a run"
+                        ) : links.run ? (
+                          <Link href={links.run(r.runId)} className="font-medium text-accent hover:underline" data-testid="recovery-run-link">
+                            ingestion run #{r.runId}
+                          </Link>
+                        ) : (
+                          `ingestion run #${r.runId}`
+                        )}
+                      </Td>
                       <Td className="whitespace-nowrap font-mono text-xs">{r.adapterVersion}</Td>
                       <Td className="text-xs">{r.fetchedAt.first ? (r.fetchedAt.first === r.fetchedAt.last ? dateTime(r.fetchedAt.first) : `${dateTime(r.fetchedAt.first)} to ${dateTime(r.fetchedAt.last!)}`) : "—"}</Td>
                       <Td className="text-xs">{dateRanges(r.dates)}</Td>

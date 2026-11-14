@@ -19,6 +19,7 @@ import { count } from "@/lib/format";
 import { reliabilitySignals } from "@/lib/health/signals";
 import { PERIODS } from "@/lib/period";
 import { failedRunsWithRecovery, streamTotals } from "@/lib/queries";
+import { parseRecordId } from "@/lib/record-id";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -70,7 +71,10 @@ async function Studio({ searchParams }: { searchParams: SearchParams }) {
   if (viewer.branchIds) {
     return <Forbidden message="Integration health spans every branch, so it is limited to company-wide roles." />;
   }
-  const view = parseView((await searchParams).view);
+  const sp = await searchParams;
+  const view = parseView(sp.view);
+  // A run another page links to (an incident's verification names its runs): listed and marked.
+  const runId = parseRecordId(Array.isArray(sp.run) ? sp.run[0] : sp.run);
   const pool = getPool();
   const scope = null;
   const now = await businessNow();
@@ -118,7 +122,7 @@ async function Studio({ searchParams }: { searchParams: SearchParams }) {
           {/* Signals and currency rules are for the people who act on them, as their APIs are
               (review 2026-11-12, A-4): engineers and approvers. */}
           {(viewer.can.sync || viewer.can.approve) && <Signals now={now} />}
-          <PipelineSections db={pool} />
+          <PipelineSections db={pool} runId={runId} />
           {(viewer.can.sync || viewer.can.approve) && <CurrencySection canPropose={viewer.can.sync} canApprove={viewer.can.approve} subject={viewer.subject} />}
         </Suspense>
       )}

@@ -13,10 +13,11 @@ const AUDIT_PREVIEW = 8;
  * failed-run recovery, recent runs, replays and the audit log. Unchanged in substance; it now
  * lives below the connector sections because connector syncs write into the same log.
  */
-export async function PipelineSections({ db }: { db: Queryable }) {
+export async function PipelineSections({ db, runId = null }: { db: Queryable; runId?: number | null }) {
   const [totals, runs, failures, replays, audit, quarantines] = await Promise.all([
     streamTotals(db),
-    recentRuns(db, 27),
+    // A run linked from elsewhere (`?run=`) is listed even when it is older than the latest 27.
+    recentRuns(db, 27, runId),
     failedRunsWithRecovery(db),
     replayHistory(db),
     auditTrail(db),
@@ -104,8 +105,12 @@ export async function PipelineSections({ db }: { db: Queryable }) {
           </thead>
           <tbody>
             {runs.map((r) => (
-              <tr key={r.id}>
-                <Td className="font-mono text-xs">#{r.id}</Td>
+              // Each run is addressable (#run-<id>); the one a link asked for is marked, in words too.
+              <tr key={r.id} id={`run-${r.id}`} aria-current={Number(r.id) === runId ? "true" : undefined} className={`scroll-mt-28 ${Number(r.id) === runId ? "bg-accent-soft" : ""}`}>
+                <Td className="font-mono text-xs">
+                  #{r.id}
+                  {Number(r.id) === runId && <span className="block font-sans text-[11px] font-medium text-accent">the run you followed</span>}
+                </Td>
                 <Td className="font-mono text-xs">{r.stream}</Td>
                 <Td className="font-mono text-xs">{r.adapter_version}</Td>
                 <Td className="text-xs">{dateTime(r.window_start)} → {dateTime(r.window_end)}</Td>

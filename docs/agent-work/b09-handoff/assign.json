@@ -1,0 +1,28 @@
+{
+  "build": "XR4Bib0xUk8aLTRhj-X_x",
+  "mode": "assign",
+  "phase": "after",
+  "total": 2,
+  "failed": 0,
+  "checks": [
+    {
+      "mode": "assign",
+      "phase": "setup",
+      "viewport": "desktop-1280",
+      "step": "the case is owned by the integration engineer",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-"
+    },
+    {
+      "mode": "assign",
+      "phase": "setup",
+      "viewport": "desktop-1280",
+      "step": "the assignment is on the case timeline",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-map channel — Re-map stored spend to the right channel Mapper ads@1.0 ads@1.1 ads@1.2 (deployed) Rat"
+    }
+  ],
+  "clicks": [],
+  "reentries": [],
+  "repeats": []
+}

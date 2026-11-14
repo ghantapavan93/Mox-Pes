@@ -1,0 +1,427 @@
+{
+  "build": "lFV-pAN0TP9t3eIb0LzBN",
+  "mode": "walk",
+  "phase": "before",
+  "total": 32,
+  "failed": 0,
+  "checks": [
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "incident: the hold was cleared and verified",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "owner: the case names its owner",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "owner: the case timeline says who assigned it and when",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detect"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "owner: the case resolved with the verified incident",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detect"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "runs: the verification names the runs and their source revisions",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "runs: neither the duplicate (#678) nor the older revision (#679) is among them",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "delivery: run #677 is an ads run filed by ads@1.2 that stored 13 new versions and succeeded",
+      "ok": true,
+      "detail": "#677 ads ads@1.2 Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC 13 13 0 0 succeeded"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "delivery: the duplicate run #678 is listed apart",
+      "ok": true,
+      "detail": "#678 ads ads@1.2 Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC 13 0 13 0 succeeded"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "delivery: the run the reviewer followed is marked on the page",
+      "ok": true,
+      "detail": "marked=false"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "return: the incident keeps the period it was opened with",
+      "ok": true,
+      "detail": "http://localhost:3400/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Google Local Services (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "desktop-1280",
+      "step": "what remains: Google Search (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "incident: the hold was cleared and verified",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "owner: the case names its owner",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "owner: the case timeline says who assigned it and when",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detect"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "owner: the case resolved with the verified incident",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detect"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "runs: the verification names the runs and their source revisions",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "runs: neither the duplicate (#678) nor the older revision (#679) is among them",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "delivery: run #677 is an ads run filed by ads@1.2 that stored 13 new versions and succeeded",
+      "ok": true,
+      "detail": "#677 ads ads@1.2 Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC 13 13 0 0 succeeded"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "delivery: the duplicate run #678 is listed apart",
+      "ok": true,
+      "detail": "#678 ads ads@1.2 Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC 13 0 13 0 succeeded"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "delivery: the run the reviewer followed is marked on the page",
+      "ok": true,
+      "detail": "marked=false"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "return: the incident keeps the period it was opened with",
+      "ok": true,
+      "detail": "http://localhost:3400/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Google Local Services (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    },
+    {
+      "mode": "walk",
+      "phase": "before",
+      "viewport": "phone-390",
+      "step": "what remains: Google Search (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 "
+    }
+  ],
+  "clicks": [
+    {
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "Open incident #2455 (the decision status)",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 4,
+      "what": "Fix & approval (incident sections)",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 5,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 6,
+      "what": "Integrations (navigation)",
+      "url": "/integrations"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 7,
+      "what": "Ingestion pipeline view",
+      "url": "/integrations?view=pipeline"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 8,
+      "what": "browser Back",
+      "url": "/integrations"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 9,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 10,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 11,
+      "what": "Open Decision Lab (the incident's next action)",
+      "url": "/decisions?branch=B09&period=oct#readiness"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 3,
+      "what": "Open incident #2455 (the decision status)",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 4,
+      "what": "Fix & approval (incident sections)",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 5,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 6,
+      "what": "Menu (phone navigation)",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 7,
+      "what": "Integrations (navigation)",
+      "url": "/integrations"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 8,
+      "what": "Ingestion pipeline view",
+      "url": "/integrations?view=pipeline"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 9,
+      "what": "browser Back",
+      "url": "/integrations"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 10,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#action-center"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 11,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 12,
+      "what": "Open Decision Lab (the incident's next action)",
+      "url": "/decisions?branch=B09&period=oct#readiness"
+    }
+  ],
+  "reentries": [
+    {
+      "viewport": "desktop-1280",
+      "what": "run #677",
+      "how": "read on the incident, then looked up by number on Integrations → Pipeline"
+    },
+    {
+      "viewport": "phone-390",
+      "what": "run #677",
+      "how": "read on the incident, then looked up by number on Integrations → Pipeline"
+    }
+  ],
+  "repeats": [
+    {
+      "viewport": "desktop-1280",
+      "what": "Back reached /exceptions/2455?period=oct#action-center but the page still showed Integrations; another Back was needed"
+    },
+    {
+      "viewport": "phone-390",
+      "what": "Back reached /exceptions/2455?period=oct#action-center but the page still showed Integrations; another Back was needed"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { runStream } from "@/lib/ingest/ingest";
 import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
+import { recentRuns } from "@/lib/queries";
 import { gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatusesAt } from "@/lib/reconcile/gap-status";
 import { InMemorySourceClient } from "@/lib/sim/clients";
@@ -222,6 +223,10 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect(s).toMatchObject({ exceptionId: Number(original.id), state: "verified", held: false, reclassified: true });
     expect(s.change).toBe("Reclassified, not added: the $3,743.19 first filed as Google Search is now filed as Google Local Services.");
     expect(await gapStatusesAt(pool, BRANCH, { range: { from: "2026-09-01", to: "2026-10-01" } })).toEqual([]);
+    // The handoff (B09-HANDOFF.md): a run the verification names opens on the ingestion pipeline,
+    // listed however many runs came after it.
+    expect((await recentRuns(pool, 1)).map((r) => Number(r.id))).toEqual([r2]);
+    expect((await recentRuns(pool, 1, r1)).map((r) => Number(r.id))).toEqual([r2, r1]);
     expect(await controls()).toEqual(CONTROLS);
   });
 

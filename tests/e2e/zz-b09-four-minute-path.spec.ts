@@ -147,4 +147,21 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
 
   // The automated walk fits well inside the presenter's four minutes.
   expect(Date.now() - started).toBeLessThan(PATH_SECONDS * 1_000);
+
+  // The handoff (B09-HANDOFF.md), after the timed walk: from the verified incident, each delivery
+  // run its verification rests on opens as its own row on the ingestion pipeline, and Back comes
+  // home to the incident, also after an in-page section jump (a plain # anchor broke that).
+  await page.getByRole("navigation", { name: "Incident sections" }).getByRole("link", { name: "Fix & approval" }).click();
+  await expect(page).toHaveURL(/#action-center$/);
+  await page.getByTestId("recovery-details").locator("summary").click();
+  const runLink = page.getByTestId("recovery-run-link").first();
+  const runId = (await runLink.textContent())!.match(/#(\d+)/)![1];
+  await runLink.click();
+  await expect(page).toHaveURL(new RegExp(`/integrations\\?view=pipeline&run=${runId}#run-${runId}$`));
+  const row = page.locator(`tr#run-${runId}`);
+  await expect(row).toHaveAttribute("aria-current", "true");
+  await expect(row).toContainText("the run you followed");
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}\\?.*#action-center$`));
+  await expect(page.getByTestId("gap-recovery").filter({ visible: true })).toBeVisible();
 });

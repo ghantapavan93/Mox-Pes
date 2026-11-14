@@ -144,8 +144,10 @@ export function ButtonLink({ href, children, variant = "secondary", testId, icon
 }
 
 /**
- * Sticky in-page navigation for long pages (incident detail, Audit & Health). Plain anchors, so
- * every section is linkable and the back button works; sections set `scroll-mt` to clear it.
+ * Sticky in-page navigation for long pages (incident detail, Audit & Health). Every section is
+ * linkable; sections set `scroll-mt` to clear it. Router links, not plain anchors: a plain `#`
+ * anchor adds a history entry the router does not own, so Back from another page landed on it
+ * with the other page still shown (B09-HANDOFF.md).
  */
 export function SectionNav({ label, items, testId }: { label: string; items: Array<[href: string, label: string]>; testId?: string }) {
   return (
@@ -153,9 +155,9 @@ export function SectionNav({ label, items, testId }: { label: string; items: Arr
       <ul className="flex gap-1 overflow-x-auto text-sm">
         {items.map(([href, text]) => (
           <li key={href}>
-            <a href={href} className="inline-block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 font-medium text-muted hover:border-border-strong hover:text-text">
+            <Link href={href} className="inline-block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 font-medium text-muted hover:border-border-strong hover:text-text">
               {text}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

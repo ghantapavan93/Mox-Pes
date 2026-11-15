@@ -131,6 +131,13 @@ const SQL: Record<Table, string> = {
   // A spend record carries its own channel classification. The same raw record may be
   // re-projected by a newer mapper version (a replay); that rewrites its classification only,
   // never its money, and never duplicates the row.
+  //
+  // The campaign's own fields (name, latest classification, type) follow the same clock as its
+  // spend days: the newest fetch (VENDOR-CONTRACTS G-5; migration 0031). A version older than the
+  // one the record holds leaves them as they are, yet still files its own day below: the update
+  // always happens, field by field, so RETURNING always yields the campaign id the spend insert
+  // joins. A guard on the whole update would drop that id and lose the day (an older-date
+  // backfill). The Local Services flag is OR-ed, which does not depend on order.
   ad_spend_daily: `
     with rows as (
       select * from jsonb_to_recordset($1::jsonb) as r("platform" text, "adAccountId" text,
@@ -139,16 +146,21 @@ const SQL: Record<Table, string> = {
         "sourceUpdatedAt" timestamptz, "rawEventId" bigint)
     ), campaigns as (
       insert into ad_campaigns (platform, ad_account_id, external_campaign_id, name, channel_code, first_seen_at,
-        campaign_type, local_services_enabled)
+        campaign_type, local_services_enabled, source_updated_at)
       select distinct on (r."platform", r."externalCampaignId")
         r."platform", r."adAccountId", r."externalCampaignId", r."campaignName", r."channelCode", r."sourceUpdatedAt",
-        r."campaignType", r."localServicesEnabled"
+        r."campaignType", r."localServicesEnabled", r."sourceUpdatedAt"
       from rows r
       order by r."platform", r."externalCampaignId", r."sourceUpdatedAt" desc
-      on conflict (platform, external_campaign_id) do update set name = excluded.name,
-        channel_code = excluded.channel_code,
-        campaign_type = coalesce(excluded.campaign_type, ad_campaigns.campaign_type),
-        local_services_enabled = excluded.local_services_enabled or ad_campaigns.local_services_enabled
+      on conflict (platform, external_campaign_id) do update set
+        name = case when ad_campaigns.source_updated_at is null or excluded.source_updated_at >= ad_campaigns.source_updated_at
+                    then excluded.name else ad_campaigns.name end,
+        channel_code = case when ad_campaigns.source_updated_at is null or excluded.source_updated_at >= ad_campaigns.source_updated_at
+                            then excluded.channel_code else ad_campaigns.channel_code end,
+        campaign_type = case when ad_campaigns.source_updated_at is null or excluded.source_updated_at >= ad_campaigns.source_updated_at
+                             then coalesce(excluded.campaign_type, ad_campaigns.campaign_type) else ad_campaigns.campaign_type end,
+        local_services_enabled = excluded.local_services_enabled or ad_campaigns.local_services_enabled,
+        source_updated_at = greatest(ad_campaigns.source_updated_at, excluded.source_updated_at)
       returning id, platform, external_campaign_id
     )
     insert into ad_spend_daily as t (campaign_id, spend_date, cost_cents, clicks, platform_conversions,
@@ -238,10 +250,11 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
     // can be mapped, reviewed and attributed before the spend is authorized. Before 2026-11-12 a
     // campaign whose spend was all held had no record and could not be mapped at all (VP
     // acceptance, first contact: VP-10). An existing record is never changed by a held version.
+    // Its clock is the fetch of the version whose fields it holds (migration 0031).
     await db.query(
-      `insert into ad_campaigns (platform, ad_account_id, external_campaign_id, name, channel_code, first_seen_at, campaign_type, local_services_enabled)
+      `insert into ad_campaigns (platform, ad_account_id, external_campaign_id, name, channel_code, first_seen_at, campaign_type, local_services_enabled, source_updated_at)
        select distinct on (r."platform", r."externalCampaignId")
-         r."platform", r."adAccountId", r."externalCampaignId", r."campaignName", r."channelCode", r."sourceUpdatedAt", r."campaignType", r."localServicesEnabled"
+         r."platform", r."adAccountId", r."externalCampaignId", r."campaignName", r."channelCode", r."sourceUpdatedAt", r."campaignType", r."localServicesEnabled", r."sourceUpdatedAt"
        from jsonb_to_recordset($1::jsonb) as r("platform" text, "adAccountId" text, "externalCampaignId" text, "campaignName" text, "channelCode" text,
          "sourceUpdatedAt" timestamptz, "campaignType" text, "localServicesEnabled" boolean)
        order by r."platform", r."externalCampaignId", r."sourceUpdatedAt"

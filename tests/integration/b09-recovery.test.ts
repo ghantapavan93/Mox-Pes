@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
@@ -7,6 +9,7 @@ import { withTransaction } from "@/lib/db";
 import { dispatchEvents } from "@/lib/events/consumers";
 import { runStream } from "@/lib/ingest/ingest";
 import { runOutcome, verificationSentence } from "@/lib/ingest/run-outcome";
+import { traceBranchMetric } from "@/lib/lineage/trace";
 import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
@@ -305,6 +308,90 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     const v = `Incident #${original.id}'s verification used`;
     expect((await outcomeOf(r2)).slice(1)).toEqual([`${v} Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.`, `${v} Oct 13–Oct 19, Oct 21–Oct 25 (12 of 18 dates) to clear its coverage hold.`]);
     expect(await outcomeOf(repair.runId)).toEqual(["1 change to accepted records", `${v} Oct 20 (1 of 18 dates) to clear its coverage hold.`]);
+  });
+});
+
+describe("B09: the campaign record follows the newest fetch, as each spend day does (release check, 2026-11-15)", () => {
+  let gap: string;
+
+  beforeAll(async () => {
+    await seed();
+    gap = (await gaps())[0].id;
+    await deliverAds(range(26, 30).map((d) => spend("pmax", d, "2026-10-31T09:00:00Z")), at("09:05"));
+    await deliverAds(range(13, 25).map((d) => spend("pmax", d, "2026-10-31T11:00:00Z")), at("11:05"));
+  }, 180_000);
+
+  /** One version of a successor day as the source sends it, with other campaign fields. */
+  const revision = (d: number, fetchedAt: string, fields: Record<string, unknown>, cents?: number): RawRecord => {
+    const r = spend("pmax", d, fetchedAt, cents);
+    return { entity: r.entity, payload: { ...(r.payload as Record<string, unknown>), ...fields } };
+  };
+  const campaign = () =>
+    one<{ name: string; channel_code: string; campaign_type: string | null; local_services_enabled: boolean }>(
+      pool,
+      "select name, channel_code, campaign_type, local_services_enabled from ad_campaigns where external_campaign_id = 'pmax-lsa-B09'",
+    );
+  const dayRow = (d: number) =>
+    one<{ cost_cents: string; channel_code: string; fetched_at: string }>(
+      pool,
+      `select s.cost_cents, s.channel_code, re.payload ->> 'fetchedAt' as fetched_at
+       from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id join raw_events re on re.id = s.raw_event_id
+       where c.external_campaign_id = 'pmax-lsa-B09' and s.spend_date = $1`,
+      [day(d)],
+    );
+  const traced = async () => (await traceBranchMetric(pool, VIEWERS.marketing, { branchId: BRANCH, period: OCT, metric: "paid_spend" })).numerator.campaigns.find((c) => c.externalCampaignId === "pmax-lsa-B09")!;
+  /** What the newest fetch (11:00) says about the campaign. */
+  const NEWEST = { name: CAMPAIGN.pmax.campaignName, channel_code: "google_lsa", campaign_type: "PERFORMANCE_MAX", local_services_enabled: true };
+
+  it("an older revision with another name and a Search campaign's inputs is stored, changes nothing, and leaves the campaign as the newest fetch said", async () => {
+    expect(await campaign()).toEqual(NEWEST);
+    const before = { oct20: await dayRow(20), lsa: await spendOf(BRANCH, "google_lsa"), search: await spendOf(BRANCH, "google_search"), trace: await traced(), controls: await controls() };
+    // Fetched 10:30: older than Oct 20's accepted 11:00 revision, and a version of its own (no other fetch at 10:30).
+    const run = await deliverAds([revision(20, "2026-10-31T10:30:00Z", { campaignName: "B09 | Search", campaignType: "SEARCH", localServicesEnabled: false }, CENTS.pmax(20) + 5_000)], at("12:30"));
+    expect(await runRow(run.runId)).toEqual({ fetched: 1, inserted: 1, duplicates: 0, projected: 1, rows_changed: 0 });
+    expect(await outcomeOf(run.runId)).toEqual(["No change to accepted records", "Stored, but a newer revision was already accepted"]);
+    // Each facet on its own: the accepted day, the allocation, the campaign record, the trace, the decision.
+    expect(await dayRow(20)).toEqual(before.oct20);
+    expect([await spendOf(BRANCH, "google_lsa"), await spendOf(BRANCH, "google_search")]).toEqual([before.lsa, before.search]);
+    // On the code before this check, the late 10:30 version rewrote the campaign: "B09 | Search",
+    // google_search, SEARCH (the B09 world showed the same; RELEASE-CANDIDATE.md §1).
+    expect(await campaign()).toEqual(NEWEST);
+    expect(await traced()).toEqual(before.trace);
+    const [s] = await gapStatusesAt(pool, BRANCH, { range: { from: "2026-10-01", to: "2026-10-31" } });
+    expect(s).toMatchObject({ exceptionId: Number(gap), state: "verified", held: false, reclassified: true });
+    expect((await budgetSignal(pool, BRANCH, OCT)).blockers.map((b) => String(b.exceptionId))).not.toContain(gap);
+    expect(await controls()).toEqual(before.controls);
+  });
+
+  it("a newer revision still renames the campaign, and files its own day", async () => {
+    const run = await deliverAds([revision(30, "2026-10-31T12:00:00Z", { campaignName: "B09 | Local Services (renamed)" })], at("12:35"));
+    expect(await campaign()).toEqual({ ...NEWEST, name: "B09 | Local Services (renamed)" });
+    expect((await dayRow(30)).fetched_at).toBe("2026-10-31T12:00:00Z");
+    expect(await outcomeOf(run.runId)).toEqual(["1 change to accepted records"]);
+    expect((await traced()).name).toBe("B09 | Local Services (renamed)");
+  });
+
+  it("an older-date backfill repairs its own day without rolling back the newer campaign record", async () => {
+    // Oct 14 fetched 11:30: newer than that day's accepted 11:00 revision, older than the 12:00
+    // rename. It still carries the campaign's old name.
+    const lsa = await spendOf(BRANCH, "google_lsa");
+    const run = await deliverAds([revision(14, "2026-10-31T11:30:00Z", {}, CENTS.pmax(14) + 1_000)], at("12:40"));
+    expect(await dayRow(14)).toEqual({ cost_cents: String(CENTS.pmax(14) + 1_000), channel_code: "google_lsa", fetched_at: "2026-10-31T11:30:00Z" });
+    expect(await spendOf(BRANCH, "google_lsa")).toBe(lsa + 1_000);
+    expect(await outcomeOf(run.runId)).toEqual(["1 change to accepted records"]);
+    expect(await campaign()).toEqual({ ...NEWEST, name: "B09 | Local Services (renamed)" });
+  });
+
+  it("history before migration 0031: each campaign's clock is the newest fetch its accepted spend rests on", async () => {
+    const clocks = async () => (await pool.query<{ id: string; c: Date | null }>("select id, source_updated_at as c from ad_campaigns order by id")).rows.map((r) => [r.id, r.c?.toISOString() ?? null]);
+    const recorded = await clocks();
+    expect(Object.fromEntries(recorded)[String((await one<{ id: string }>(pool, "select id from ad_campaigns where external_campaign_id = 'pmax-lsa-B09'")).id)]).toBe("2026-10-31T12:00:00.000Z");
+    const migration = readFileSync(path.join(process.cwd(), "database", "migrations", "0031_campaign_source_clock.sql"), "utf8");
+    await pool.query("update ad_campaigns set source_updated_at = null"); // as if recorded before 0031
+    await pool.query(migration);
+    expect(await clocks()).toEqual(recorded);
+    await pool.query(migration); // applied again: nothing changes
+    expect(await clocks()).toEqual(recorded);
   });
 });
 

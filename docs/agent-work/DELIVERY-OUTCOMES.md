@@ -236,9 +236,13 @@ path.
 - **The stored fields keep their meaning.** `ingestion_runs.projected` and raw
   `status = 'projected'` still include superseded versions; #679's version is `projected`.
   Changing them would move the ledger model and replays. The page no longer shows them (R-51).
-- **Campaign records are not counted, and not guarded.** A spend version rewrites its campaign's
-  own record (name, latest classification) whether or not it is accepted. The outcome counts
-  accepted spend, lead and CRM records only. #679 carried the same values. Seen, not changed.
+- **Campaign records are not counted.** The outcome counts accepted spend, lead and CRM records
+  only.
+  - Until 2026-11-15 they were not guarded either. A spend version rewrote its campaign's own
+    record (name, latest classification) whether or not it was accepted.
+  - Fixed then (`RELEASE-CANDIDATE.md` §1, migration 0031). Only the campaign's newest fetch sets
+    those fields. That fetch is also the newest for its own day, so it changes that day's row too.
+    "No change to accepted records" therefore also means the campaign record is unchanged.
 - **Only coverage-gap verifications name their runs.** Other verifications (an Action Center
   proposal's) do not, so no line is shown for them.
 - **Unchanged:** R-39, R-46 (the 45 Local Services calls carrying a Performance Max id), FI-4/R-50.

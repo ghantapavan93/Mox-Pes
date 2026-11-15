@@ -1,0 +1,427 @@
+{
+  "label": "after2-old-code",
+  "expectationsSha256": "34fde7d2a7f7deaa73667267e1245d9368ca51fe0107b5b92c15df50518fb03f",
+  "clock": "2026-10-31T13:40:00.000Z",
+  "raw": [
+    {
+      "id": "173611",
+      "run": "577",
+      "fetched_at": "2026-10-21T06:00:00.000Z",
+      "cents": "12091",
+      "campaign_name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+      "campaign_type": "PERFORMANCE_MAX",
+      "local_services": "true",
+      "status": "projected",
+      "delivery_count": 4,
+      "adapter_version": "ads@1.0"
+    },
+    {
+      "id": "200027",
+      "run": "677",
+      "fetched_at": "2026-10-31T13:10:00Z",
+      "cents": "12091",
+      "campaign_name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+      "campaign_type": "PERFORMANCE_MAX",
+      "local_services": "true",
+      "status": "projected",
+      "delivery_count": 2,
+      "adapter_version": "ads@1.2"
+    },
+    {
+      "id": "200046",
+      "run": "679",
+      "fetched_at": "2026-10-31T13:05:00Z",
+      "cents": "17091",
+      "campaign_name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+      "campaign_type": "PERFORMANCE_MAX",
+      "local_services": "true",
+      "status": "projected",
+      "delivery_count": 1,
+      "adapter_version": "ads@1.2"
+    },
+    {
+      "id": "200048",
+      "run": "681",
+      "fetched_at": "2026-10-31T13:07:00Z",
+      "cents": "17091",
+      "campaign_name": "B09 Coral | Search",
+      "campaign_type": "SEARCH",
+      "local_services": "false",
+      "status": "projected",
+      "delivery_count": 1,
+      "adapter_version": "ads@1.2"
+    }
+  ],
+  "accepted": {
+    "raw_event_id": "200027",
+    "run": "677",
+    "fetched_at": "2026-10-31T13:10:00Z",
+    "cost_cents": "12091",
+    "channel_code": "google_lsa",
+    "currency_basis": "account_rule_usd",
+    "source_updated_at": "2026-10-31T13:10:00.000Z"
+  },
+  "campaign": {
+    "id": "8677",
+    "platform": "google_ads",
+    "external_campaign_id": "pmax-lsa-B09",
+    "ad_account_id": "LSA-B09",
+    "name": "B09 Coral | Search",
+    "channel_code": "google_search",
+    "campaign_type": "SEARCH",
+    "local_services_enabled": true,
+    "first_seen_at": "2026-10-14T06:00:00.000Z"
+  },
+  "allocation": {
+    "b09ByChannel": {
+      "google_lsa": 361119,
+      "google_search": 1017687,
+      "meta": 150789,
+      "microsoft": 135328
+    },
+    "b09": {
+      "paidSpendCents": 1664923,
+      "acquired": 146,
+      "collectedCents": 1823900
+    },
+    "companySpendCents": 123431864
+  },
+  "trace": {
+    "totalCents": 1664923,
+    "matches": true,
+    "campaigns": [
+      {
+        "externalCampaignId": "pmax-lsa-B09",
+        "name": "B09 Coral | Search",
+        "channelCode": "google_lsa",
+        "spendCents": 212352,
+        "spendDays": 18
+      },
+      {
+        "externalCampaignId": "lsa-B09",
+        "name": "B09 Coral | Local Services",
+        "channelCode": "google_lsa",
+        "spendCents": 148767,
+        "spendDays": 12
+      }
+    ]
+  },
+  "decision": {
+    "budgetSignal": {
+      "trustworthy": true,
+      "blockers": []
+    },
+    "verdicts": {
+      "budgetSignal": {
+        "signal": "shift",
+        "ratio": 2.9154274320844062,
+        "trustworthy": true,
+        "from": {
+          "channelCode": "google_search",
+          "label": "Google Search",
+          "spendCents": 1017687,
+          "acquired": 29,
+          "cacCents": 35093
+        },
+        "to": {
+          "channelCode": "google_lsa",
+          "label": "Google Local Services",
+          "spendCents": 361119,
+          "acquired": 30,
+          "cacCents": 12037
+        }
+      },
+      "channels": [
+        {
+          "channel": "google_lsa",
+          "spendCents": 361119,
+          "integrity": {
+            "status": "warn",
+            "reasons": [
+              {
+                "code": "coverage_gap",
+                "status": "pass",
+                "text": "No open coverage gap moves spend into or out of Google Local Services at B09."
+              },
+              {
+                "code": "reconciled_records",
+                "status": "info",
+                "text": "100.0% of lead records for B09 in the period are projected (326 projected, 0 held)."
+              },
+              {
+                "code": "unmapped_spend",
+                "status": "warn",
+                "text": "#970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not mapped to any branch is excluded from every branch's numbers until someone maps it.",
+                "href": "/exceptions/970"
+              },
+              {
+                "code": "spend_coverage",
+                "status": "info",
+                "text": "Google Local Services has spend records on 30 of 30 days in the period (to the spend feed's latest date), across 5 weeks."
+              }
+            ],
+            "coverage": {
+              "leadRecords": 326,
+              "quarantinedRecords": 0,
+              "reconciledShare": 1,
+              "spendDays": 30,
+              "expectedSpendDays": 30,
+              "weeksWithSpend": 5
+            }
+          },
+          "readiness": {
+            "status": "ready",
+            "reasons": [
+              {
+                "code": "integrity",
+                "status": "pass",
+                "text": "Data integrity passes with caveats for Google Local Services."
+              },
+              {
+                "code": "budget_gate",
+                "status": "pass",
+                "text": "No open incident gates the budget signal at B09."
+              },
+              {
+                "code": "min_customers",
+                "status": "pass",
+                "text": "30 serviced new customers credited to Google Local Services (minimum 5)."
+              },
+              {
+                "code": "freshness",
+                "status": "pass",
+                "text": "Every feed synced successfully within 36 h of the business clock, and no latest sync failed."
+              }
+            ],
+            "blockers": []
+          }
+        },
+        {
+          "channel": "google_search",
+          "spendCents": 1017687,
+          "integrity": {
+            "status": "warn",
+            "reasons": [
+              {
+                "code": "coverage_gap",
+                "status": "pass",
+                "text": "No open coverage gap moves spend into or out of Google Search at B09."
+              },
+              {
+                "code": "reconciled_records",
+                "status": "info",
+                "text": "100.0% of lead records for B09 in the period are projected (326 projected, 0 held)."
+              },
+              {
+                "code": "channel_conflict",
+                "status": "warn",
+                "text": "5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them.",
+                "href": "/exceptions?branch=B09&kind=channel_conflict&status=open"
+              },
+              {
+                "code": "spend_coverage",
+                "status": "info",
+                "text": "Google Search has spend records on 30 of 30 days in the period (to the spend feed's latest date), across 5 weeks."
+              }
+            ],
+            "coverage": {
+              "leadRecords": 326,
+              "quarantinedRecords": 0,
+              "reconciledShare": 1,
+              "spendDays": 30,
+              "expectedSpendDays": 30,
+              "weeksWithSpend": 5
+            }
+          },
+          "readiness": {
+            "status": "ready",
+            "reasons": [
+              {
+                "code": "integrity",
+                "status": "pass",
+                "text": "Data integrity passes with caveats for Google Search."
+              },
+              {
+                "code": "budget_gate",
+                "status": "pass",
+                "text": "No open incident gates the budget signal at B09."
+              },
+              {
+                "code": "min_customers",
+                "status": "pass",
+                "text": "29 serviced new customers credited to Google Search (minimum 5)."
+              },
+              {
+                "code": "freshness",
+                "status": "pass",
+                "text": "Every feed synced successfully within 36 h of the business clock, and no latest sync failed."
+              }
+            ],
+            "blockers": []
+          }
+        },
+        {
+          "channel": "meta",
+          "spendCents": 150789,
+          "integrity": {
+            "status": "pass",
+            "reasons": [
+              {
+                "code": "coverage_gap",
+                "status": "pass",
+                "text": "No open coverage gap moves spend into or out of Meta at B09."
+              },
+              {
+                "code": "reconciled_records",
+                "status": "info",
+                "text": "100.0% of lead records for B09 in the period are projected (326 projected, 0 held)."
+              },
+              {
+                "code": "spend_coverage",
+                "status": "info",
+                "text": "Meta has spend records on 30 of 30 days in the period (to the spend feed's latest date), across 5 weeks."
+              }
+            ],
+            "coverage": {
+              "leadRecords": 326,
+              "quarantinedRecords": 0,
+              "reconciledShare": 1,
+              "spendDays": 30,
+              "expectedSpendDays": 30,
+              "weeksWithSpend": 5
+            }
+          },
+          "readiness": {
+            "status": "ready",
+            "reasons": [
+              {
+                "code": "integrity",
+                "status": "pass",
+                "text": "Data integrity passes for Meta."
+              },
+              {
+                "code": "budget_gate",
+                "status": "pass",
+                "text": "No open incident gates the budget signal at B09."
+              },
+              {
+                "code": "min_customers",
+                "status": "pass",
+                "text": "5 serviced new customers credited to Meta (minimum 5)."
+              },
+              {
+                "code": "freshness",
+                "status": "pass",
+                "text": "Every feed synced successfully within 36 h of the business clock, and no latest sync failed."
+              }
+            ],
+            "blockers": []
+          }
+        },
+        {
+          "channel": "microsoft",
+          "spendCents": 135328,
+          "integrity": {
+            "status": "pass",
+            "reasons": [
+              {
+                "code": "coverage_gap",
+                "status": "pass",
+                "text": "No open coverage gap moves spend into or out of Microsoft Ads at B09."
+              },
+              {
+                "code": "reconciled_records",
+                "status": "info",
+                "text": "100.0% of lead records for B09 in the period are projected (326 projected, 0 held)."
+              },
+              {
+                "code": "spend_coverage",
+                "status": "info",
+                "text": "Microsoft Ads has spend records on 30 of 30 days in the period (to the spend feed's latest date), across 5 weeks."
+              }
+            ],
+            "coverage": {
+              "leadRecords": 326,
+              "quarantinedRecords": 0,
+              "reconciledShare": 1,
+              "spendDays": 30,
+              "expectedSpendDays": 30,
+              "weeksWithSpend": 5
+            }
+          },
+          "readiness": {
+            "status": "ready",
+            "reasons": [
+              {
+                "code": "integrity",
+                "status": "pass",
+                "text": "Data integrity passes for Microsoft Ads."
+              },
+              {
+                "code": "budget_gate",
+                "status": "pass",
+                "text": "No open incident gates the budget signal at B09."
+              },
+              {
+                "code": "min_customers",
+                "status": "pass",
+                "text": "5 serviced new customers credited to Microsoft Ads (minimum 5)."
+              },
+              {
+                "code": "freshness",
+                "status": "pass",
+                "text": "Every feed synced successfully within 36 h of the business clock, and no latest sync failed."
+              }
+            ],
+            "blockers": []
+          }
+        }
+      ]
+    },
+    "gaps": [
+      {
+        "exceptionId": 2455,
+        "state": "verified",
+        "held": false,
+        "conclusion": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC.",
+        "change": "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services."
+      }
+    ],
+    "incident": {
+      "id": "2455",
+      "status": "resolved",
+      "resolution": "Verified: all 18 required dates (Oct 13–Oct 30) have Google Local Services spend at B09 in the accepted source records, from 2 delivery run(s); no successor spend in that window is filed under another channel or at another branch.",
+      "evidenceSha256": "0c70ffa222f6997e86836bbb05b5805b64539afb1bc2890cce24200f3343cef1",
+      "previousVerifications": 0
+    },
+    "case": {
+      "id": "161",
+      "state": "resolved",
+      "owner": "engineer",
+      "events": 4
+    },
+    "exceptionsByKind": {
+      "branch_mismatch": 58,
+      "channel_conflict": 123,
+      "channel_coverage_gap": 1,
+      "payload_conflict": 4,
+      "payment_without_ticket": 10,
+      "quarantined_source_records": 1,
+      "unmapped_spend": 1
+    }
+  },
+  "latestRun": {
+    "id": "681",
+    "stream": "ads",
+    "status": "succeeded",
+    "fetched": 1,
+    "inserted": 1,
+    "duplicates": 0,
+    "projected": 1,
+    "rows_changed": 0,
+    "outcome": [
+      "No change to accepted records",
+      "Stored, but a newer revision was already accepted"
+    ]
+  }
+}

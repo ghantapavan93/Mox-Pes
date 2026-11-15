@@ -1,0 +1,17 @@
+{
+  "build": "-t8FhwvfYGehXmbdri6T7 (91ef06f)",
+  "held": {
+    "world": "revenue_signal (fresh seed, gap open)",
+    "status": 200,
+    "sentence": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap. New customers 17 Initial service completed 14 Invoiced $1,575 Collected (payments − refunds) $1,260 Customer Sold Initial service Invoiced Collected # 414524 lead # 18338 self.",
+    "says_zero": false,
+    "says_no_record": true
+  },
+  "resolved": {
+    "world": "revenue_signal_bive_a (after the lens A walk)",
+    "status": 200,
+    "sentence": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They arrived while the channel had no spend record here. That spend is now re-filed and verified, so they are no longer counted against missing spend.",
+    "says_zero": false,
+    "says_no_record": true
+  }
+}

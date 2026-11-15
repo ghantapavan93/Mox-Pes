@@ -1,0 +1,24 @@
+{
+  "build": "-t8FhwvfYGehXmbdri6T7 (91ef06f)",
+  "world": "revenue_signal (fresh seed)",
+  "refused_posts": [
+    {
+      "role": "partner",
+      "request": "POST /api/cases/161 assign → approver",
+      "status": 403,
+      "body": "{\"error\":\"Branch partner · B20 only cannot assign case owners\"}"
+    },
+    {
+      "role": "brand",
+      "request": "POST /api/cases/161 assign → approver",
+      "status": 403,
+      "body": "{\"error\":\"Brand marketing lead · Joshua's Pest Control only cannot assign case owners\"}"
+    }
+  ],
+  "case_161_after": {
+    "owner": null,
+    "state": "detected",
+    "events": 1
+  },
+  "allowed_baseline": "the analyst's assignment through the incident's Owner control in the lens walks (walk-lensA.json, walk-lensB.json)"
+}

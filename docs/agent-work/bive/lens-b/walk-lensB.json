@@ -1,0 +1,890 @@
+{
+  "build": "-t8FhwvfYGehXmbdri6T7",
+  "base": "http://localhost:3601",
+  "database": "revenue_signal_bive_b",
+  "mode": "lensB",
+  "total": 68,
+  "failed": 0,
+  "checks": [
+    {
+      "stage": "B-start",
+      "viewport": "db",
+      "step": "the walk starts on a fresh world: one coverage gap, open, unassigned",
+      "ok": true,
+      "detail": "{\"b09\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},\"company\":{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},\"incident\":{\"id\":\"2455\",\"status\":\"open\",\"verified_at\":null,\"previous\":0},\"case\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"detected\",\"owner\":null,\"reopen_count\":0,\"events\":1},\"coverageGaps\":[\"2455:open\"],\"casesForGaps\":1,\"exceptionsByKind\":{\"branch_mismatch\""
+    },
+    {
+      "stage": "B-assign",
+      "viewport": "desktop-1280",
+      "step": "B: the case is handed to the integration engineer",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-map channel — Re-map stored spend to the right channel Mapper ads@1.0 ads@1.1 ads@1.2 (deployed) Rat"
+    },
+    {
+      "stage": "B-start",
+      "viewport": "db",
+      "step": "B: $2,123.52 moved Search → Local Services; B09 paid spend unchanged",
+      "ok": true,
+      "detail": "{\"missing\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},\"verified\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}}}"
+    },
+    {
+      "stage": "B-start",
+      "viewport": "db",
+      "step": "B: customers and collected cash unchanged, at B09 and company-wide",
+      "ok": true,
+      "detail": "{\"missing\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}],\"verified\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]}"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: Decision Lab (from the nav) opens on B09 with its status",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: the number on the incident: $2,123.52 reclassified, not added",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Verification details"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: the owner and the history are on the incident",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected Oct 31, 1:00 PM UTC Owner assigned · marketing unassigned → engineer Oct 31, 1:00 PM UTC Detected"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: the verification names its runs, mappers, fetch times and spend",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: pipeline #676 says what it stored, changed and fed",
+      "ok": true,
+      "detail": "{\"Run\":\"#676\",\"Outcome\":\"5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC\",\"Fetched\":\"5\",\"Stored\":\"5\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: pipeline #677 says what it stored, changed and fed",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: Back returns to the incident, details still open",
+      "ok": true,
+      "detail": "http://localhost:3601/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B (recorded, not a pass condition): the resolved case under Owner = engineer with the default State = Active",
+      "ok": true,
+      "detail": "not listed: the case resolved itself, and the default filter shows active cases only"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "step": "B: with State = All, the engineer's B09 case is listed",
+      "ok": true,
+      "detail": "http://localhost:3601/exceptions?state=all&severity=&branch=&kind=&owner=engineer"
+    },
+    {
+      "stage": "B-chain",
+      "viewport": "db",
+      "step": "chain: 212,352¢ = what the source re-sent = the verification's covered cents = the accepted rows ($2,123.52)",
+      "ok": true,
+      "detail": "{\"sent\":212352,\"verified\":212352,\"accepted\":212352}"
+    },
+    {
+      "stage": "B-chain",
+      "viewport": "db",
+      "step": "chain: run #676 (partial): sent = accepted = verified, 5 dates, fetched 2026-10-31T13:00:00Z, ads@1.2",
+      "ok": true,
+      "detail": "{\"sent\":59717,\"verified\":59717,\"accepted\":59717,\"rows\":5}"
+    },
+    {
+      "stage": "B-chain",
+      "viewport": "db",
+      "step": "chain: run #677 (rest): sent = accepted = verified, 13 dates, fetched 2026-10-31T13:10:00Z, ads@1.2",
+      "ok": true,
+      "detail": "{\"sent\":152635,\"verified\":152635,\"accepted\":152635,\"rows\":13}"
+    },
+    {
+      "stage": "B-chain",
+      "viewport": "db",
+      "step": "chain: every one of the 18 accepted days rests on #676 or #677, filed as Local Services",
+      "ok": true,
+      "detail": "[\"2026-10-13:677\",\"2026-10-14:677\",\"2026-10-15:677\",\"2026-10-16:677\",\"2026-10-17:677\",\"2026-10-18:677\",\"2026-10-19:677\",\"2026-10-20:677\",\"2026-10-21:677\",\"2026-10-22:677\",\"2026-10-23:677\",\"2026-10-24:677\",\"2026-10-25:677\",\"2026-10-26:676\",\"2026-10-27:676\",\"2026-10-28:676\",\"2026-10-29:676\",\"2026-10-30:676\"]"
+    },
+    {
+      "stage": "B-chain",
+      "viewport": "db",
+      "step": "chain: the status 'Coverage hold cleared' = the incident resolved by the verification, and the case's last transition says so",
+      "ok": true,
+      "detail": "{\"status\":\"resolved\",\"resolution\":\"Verified: all 18 required dates (Oct 13–Oct 30) have Google Local Services spend at B09 in the accepted source records, from 2 delivery run(s); no successor spend in that window is filed under another channel or at another branch.\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "no change to money, customers or cash at B09 or company-wide",
+      "ok": true,
+      "detail": "{\"before\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}],\"after\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "the same incident, still resolved, with the same single verification",
+      "ok": true,
+      "detail": "{\"id\":\"2455\",\"status\":\"resolved\",\"verified_at\":\"2026-10-31T13:15:00.000Z\",\"previous\":0}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "no second case and no new case transition",
+      "ok": true,
+      "detail": "{\"before\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"resolved\",\"owner\":\"engineer\",\"reopen_count\":0,\"events\":4},\"after\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"resolved\",\"owner\":\"engineer\",\"reopen_count\":0,\"events\":4}}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "nothing opened anywhere",
+      "ok": true,
+      "detail": "{\"before\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1},\"after\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1}}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "the campaign record is still what the newest fetch said",
+      "ok": true,
+      "detail": "{\"name\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"channel_code\":\"google_lsa\",\"campaign_type\":\"PERFORMANCE_MAX\",\"local_services_enabled\":true}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "after a reload and three more deliveries the incident still says: Coverage hold cleared: all 18 dates in the decision window (…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "after a reload and three more deliveries the incident still says: Reclassified, not added: the $2,123.52 first filed as Google…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #676: 5 changes to accepted records Incident #2455's verification …",
+      "ok": true,
+      "detail": "{\"Run\":\"#676\",\"Outcome\":\"5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC\",\"Fetched\":\"5\",\"Stored\":\"5\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #677: 13 changes to accepted records Incident #2455's verification…",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #678: No change to accepted records Duplicate: every delivery was …",
+      "ok": true,
+      "detail": "{\"Run\":\"#678\",\"Outcome\":\"No change to accepted records Duplicate: every delivery was a version already stored\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"0\",\"Dupes\":\"13\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #679: No change to accepted records Stored, but a newer revision w…",
+      "ok": true,
+      "detail": "{\"Run\":\"#679\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:25 PM UTC → Oct 31, 1:30 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #680: No change to accepted records Stored, but a newer revision w…",
+      "ok": true,
+      "detail": "{\"Run\":\"#680\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:30 PM UTC → Oct 31, 1:40 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "a run whose effect was not recorded says so, never 'no change' (#473, failed)",
+      "ok": true,
+      "detail": "{\"Run\":\"#473 the run you followed\",\"Outcome\":\"Effect not recorded\",\"Stream\":\"crm.ticket\",\"Mapper\":\"crm@1.0\",\"Window\":\"Oct 8, 7:30 AM UTC → Oct 9, 8:00 AM UTC\",\"Fetched\":\"0\",\"Stored\":\"0\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"failed\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions?owner=engineer payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions?owner=engineer renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /api/cases/161 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions?owner=engineer payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions?owner=engineer renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /api/cases/161 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: after the switch, the visible page shows no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: Back shows no B09 evidence",
+      "ok": true,
+      "detail": "http://localhost:3601/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: nothing B09 can be newly fetched after the switch (server payloads)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: direct navigation is refused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab (recorded, not a pass condition): earlier B09 text still in the tab's hidden DOM",
+      "ok": true,
+      "detail": "pmax-lsa-B09, lsa-B09, Coral, at B09, $597.17, $1,526.35, $2,123.52, #2455, Oct 13–Oct 30, decision window"
+    },
+    {
+      "stage": "ledger",
+      "viewport": "db",
+      "step": "ledger: the four deliveries against what the source sent (b09o-ledger.ts)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "errors",
+      "viewport": "all",
+      "step": "no console or page errors during the walkthrough",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "clicks": [
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "Open incident #2455 (the cleared hold)",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "B-trace",
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "ingestion run #677",
+      "url": "/integrations?view=pipeline&run=677#run-677"
+    }
+  ],
+  "errors": [],
+  "deliveries": [
+    {
+      "step": "partial",
+      "runId": 676,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 5,
+        "inserted": 5,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 5,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 5
+      }
+    },
+    {
+      "step": "rest",
+      "runId": 677,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 13,
+        "inserted": 13,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 13,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 13
+      }
+    },
+    {
+      "step": "duplicate",
+      "runId": 678,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 13,
+        "inserted": 0,
+        "duplicates": 13,
+        "conflicts": 0,
+        "projected": 0,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    },
+    {
+      "step": "older",
+      "runId": 679,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 1,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    },
+    {
+      "step": "stale2",
+      "runId": 680,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 1,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    }
+  ],
+  "facts": {
+    "missing": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 148767,
+          "google_search": 1230039,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "open",
+        "verified_at": null,
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "detected",
+        "owner": null,
+        "reopen_count": 0,
+        "events": 1
+      },
+      "coverageGaps": [
+        "2455:open"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_search",
+        "campaign_type": null,
+        "local_services_enabled": false
+      }
+    },
+    "verifiedAtArrival": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "caseEvents": [
+      {
+        "id": "161",
+        "case_id": "161",
+        "at": "2026-10-16T08:00:00.000Z",
+        "actor": "reconcile",
+        "event": "transition",
+        "from_state": null,
+        "to_state": "detected",
+        "proposal_id": null,
+        "detail": {
+          "reason": "Exception detected",
+          "exceptionId": 2455
+        },
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "opened_at": "2026-10-16T08:00:00.000Z",
+        "updated_at": "2026-10-31T13:15:00.000Z",
+        "closed_at": "2026-10-31T13:15:00.000Z"
+      },
+      {
+        "id": "161",
+        "case_id": "161",
+        "at": "2026-10-31T13:00:00.000Z",
+        "actor": "marketing",
+        "event": "owner_assigned",
+        "from_state": null,
+        "to_state": null,
+        "proposal_id": null,
+        "detail": {
+          "to": "engineer",
+          "from": null
+        },
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "opened_at": "2026-10-16T08:00:00.000Z",
+        "updated_at": "2026-10-31T13:15:00.000Z",
+        "closed_at": "2026-10-31T13:15:00.000Z"
+      },
+      {
+        "id": "161",
+        "case_id": "161",
+        "at": "2026-10-31T13:00:00.000Z",
+        "actor": "marketing",
+        "event": "transition",
+        "from_state": "detected",
+        "to_state": "investigating",
+        "proposal_id": null,
+        "detail": {
+          "reason": "Owned by engineer"
+        },
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "opened_at": "2026-10-16T08:00:00.000Z",
+        "updated_at": "2026-10-31T13:15:00.000Z",
+        "closed_at": "2026-10-31T13:15:00.000Z"
+      },
+      {
+        "id": "161",
+        "case_id": "161",
+        "at": "2026-10-31T13:15:00.000Z",
+        "actor": "reconcile",
+        "event": "transition",
+        "from_state": "investigating",
+        "to_state": "resolved",
+        "proposal_id": null,
+        "detail": {
+          "reason": "Verified: all 18 required dates (Oct 13–Oct 30) have Google Local Services spend at B09 in the accepted source records, from 2 delivery run(s); no successor spend in that window is filed under another channel or at another branch.",
+          "source": "reconcile"
+        },
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "opened_at": "2026-10-16T08:00:00.000Z",
+        "updated_at": "2026-10-31T13:15:00.000Z",
+        "closed_at": "2026-10-31T13:15:00.000Z"
+      }
+    ],
+    "verified": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "durable": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "sameTabHiddenDom": [
+      "pmax-lsa-B09",
+      "lsa-B09",
+      "Coral",
+      "at B09",
+      "$597.17",
+      "$1,526.35",
+      "$2,123.52",
+      "#2455",
+      "Oct 13–Oct 30",
+      "decision window"
+    ]
+  }
+}

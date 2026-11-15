@@ -1,0 +1,1239 @@
+{
+  "build": "-t8FhwvfYGehXmbdri6T7",
+  "base": "http://localhost:3500",
+  "label": "new-build",
+  "ids": {
+    "customer": "401177",
+    "rawEvent": "200047",
+    "change": "1",
+    "job": "1",
+    "connector": "1"
+  },
+  "shadowChecks": {
+    "b09": {
+      "status": 201,
+      "id": 1
+    },
+    "brand": {
+      "status": 201,
+      "id": 2
+    }
+  },
+  "routes": 61,
+  "controlUrlsWithB09": 31,
+  "restrictedRequests": 122,
+  "leaked": [],
+  "rows": [
+    {
+      "role": "marketing",
+      "url": "/",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral",
+        "at B09",
+        "$597.17",
+        "$2,123.52",
+        "$16,649.23",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/assurance",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/assurance/1",
+      "status": 200,
+      "leaks": [
+        "$16,649.23"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/assurance/2",
+      "status": 200,
+      "leaks": [
+        "Moxie Pest Control paid CAC"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/audit",
+      "status": 200,
+      "leaks": [
+        "at B09"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/audit?subject=case:161",
+      "status": 200,
+      "leaks": [
+        "at B09"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/branches/B09",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral",
+        "at B09",
+        "$597.17",
+        "$16,649.23",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/changes",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/changes/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/customers",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/customers?branch=B09",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/customers/401177",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/decisions",
+      "status": 200,
+      "leaks": [
+        "B09 Coral",
+        "at B09",
+        "$2,123.52",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/decisions?branch=B09&period=oct",
+      "status": 200,
+      "leaks": [
+        "B09 Coral",
+        "at B09",
+        "$2,123.52",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/decisions/opportunities",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/definitions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/demo",
+      "status": 200,
+      "leaks": [
+        "at B09",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/exceptions",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/exceptions?owner=engineer&state=all",
+      "status": 200,
+      "leaks": [
+        "B09 Coral",
+        "at B09",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/exceptions?branch=B09&state=all",
+      "status": 200,
+      "leaks": [
+        "B09 Coral",
+        "at B09",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/exceptions/2455",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral",
+        "at B09",
+        "$597.17",
+        "$1,526.35",
+        "$2,123.52",
+        "#2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/exceptions/2455?period=oct#recovery",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral",
+        "at B09",
+        "$597.17",
+        "$1,526.35",
+        "$2,123.52",
+        "#2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/feedback",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/integrations",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/integrations?view=pipeline&run=677#run-677",
+      "status": 200,
+      "leaks": [
+        "at B09",
+        "/exceptions/2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/integrations/jobs/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/investigator",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/onboarding",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/shadow",
+      "status": 200,
+      "leaks": [
+        "$16,649.23",
+        "Moxie Pest Control paid CAC"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/shadow/1",
+      "status": 200,
+      "leaks": [
+        "$16,649.23"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/shadow/2",
+      "status": 200,
+      "leaks": [
+        "Moxie Pest Control paid CAC"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/changes",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/changes/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/changes/1/rollout",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/connectors/1/compare",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/connectors/1/jobs",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/connectors/faults",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/connectors/jobs/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/currency-rules",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/customers?branch=B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/customers",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/customers/401177",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/customers/401177/raw-events/200047",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/decisions/experiments",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/decisions/scenarios",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/decisions/verdicts?branch=B09&period=oct",
+      "status": 200,
+      "leaks": [
+        "at B09"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/decisions/verdicts?branchId=B09&period=oct",
+      "status": 200,
+      "leaks": [
+        "at B09"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/identity/conflicts",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/inquiries",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/investigations",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/metrics?branch=B09&period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/metrics?period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/metrics/trace?branch=B09&period=oct&metric=paid_spend",
+      "status": 200,
+      "leaks": [
+        "pmax-lsa-B09",
+        "lsa-B09",
+        "B09 Coral",
+        "at B09",
+        "$16,649.23"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/metrics/trace?branchId=B09&period=oct&metric=paid_spend",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/opportunities",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "marketing",
+      "url": "/api/search?q=B09",
+      "status": 200,
+      "leaks": [
+        "B09 Coral",
+        "at B09",
+        "/exceptions/2455",
+        "#2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/search?q=Coral",
+      "status": 200,
+      "leaks": [
+        "B09 Coral"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/search?q=2455",
+      "status": 200,
+      "leaks": [
+        "at B09",
+        "/exceptions/2455",
+        "#2455"
+      ]
+    },
+    {
+      "role": "marketing",
+      "url": "/api/onboarding/uploads",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/assurance",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/assurance/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/assurance/2",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/audit",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/audit?subject=case:161",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/branches/B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/changes",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/changes/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/customers",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/customers?branch=B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/customers/401177",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/decisions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/decisions?branch=B09&period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/decisions/opportunities",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/definitions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/demo",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/exceptions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/exceptions?owner=engineer&state=all",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/exceptions?branch=B09&state=all",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/exceptions/2455",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/exceptions/2455?period=oct#recovery",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/feedback",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/integrations",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/integrations?view=pipeline&run=677#run-677",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/integrations/jobs/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/investigator",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/onboarding",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/shadow",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/shadow/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/shadow/2",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/changes",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/changes/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/changes/1/rollout",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/connectors/1/compare",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/connectors/1/jobs",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/connectors/faults",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/connectors/jobs/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/currency-rules",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/customers?branch=B09",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/customers",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/customers/401177",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/customers/401177/raw-events/200047",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/decisions/experiments",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/decisions/scenarios",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/decisions/verdicts?branch=B09&period=oct",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/decisions/verdicts?branchId=B09&period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/identity/conflicts",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/inquiries",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/investigations",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/metrics?branch=B09&period=oct",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/metrics?period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/metrics/trace?branch=B09&period=oct&metric=paid_spend",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/metrics/trace?branchId=B09&period=oct&metric=paid_spend",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/opportunities",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/search?q=B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/search?q=Coral",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/search?q=2455",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "partner",
+      "url": "/api/onboarding/uploads",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/assurance",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/assurance/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/assurance/2",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/audit",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/audit?subject=case:161",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/branches/B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/changes",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/changes/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/customers",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/customers?branch=B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/customers/401177",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/decisions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/decisions?branch=B09&period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/decisions/opportunities",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/definitions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/demo",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/exceptions",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/exceptions?owner=engineer&state=all",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/exceptions?branch=B09&state=all",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/exceptions/2455",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/exceptions/2455?period=oct#recovery",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/feedback",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/integrations",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/integrations?view=pipeline&run=677#run-677",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/integrations/jobs/1",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/investigator",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/onboarding",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/shadow",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/shadow/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/shadow/2",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/changes",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/changes/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/changes/1/rollout",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/connectors/1/compare",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/connectors/1/jobs",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/connectors/faults",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/connectors/jobs/1",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/currency-rules",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/customers?branch=B09",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/customers",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/customers/401177",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/customers/401177/raw-events/200047",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/decisions/experiments",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/decisions/scenarios",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/decisions/verdicts?branch=B09&period=oct",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/decisions/verdicts?branchId=B09&period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/identity/conflicts",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/inquiries",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/investigations",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/metrics?branch=B09&period=oct",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/metrics?period=oct",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/metrics/trace?branch=B09&period=oct&metric=paid_spend",
+      "status": 403,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/metrics/trace?branchId=B09&period=oct&metric=paid_spend",
+      "status": 404,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/opportunities",
+      "status": 400,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/search?q=B09",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/search?q=Coral",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/search?q=2455",
+      "status": 200,
+      "leaks": []
+    },
+    {
+      "role": "brand",
+      "url": "/api/onboarding/uploads",
+      "status": 403,
+      "leaks": []
+    }
+  ]
+}

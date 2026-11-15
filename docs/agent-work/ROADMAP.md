@@ -25,6 +25,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | One reading order across the Overview, daily evidence, incident and Decision Lab: one coverage-gap status in the same words everywhere; the selected week set against the decision window; "Ready for review" beside a cleared hold and what still needs review (2026-11-14) | `B09-CROSS-VIEW.md`; `gap-status.test.ts`; `b09-cross-view/` |
 | One operational handoff on the B09 case: from the incident to its owner, the delivery runs its verification rests on, and what remains; a run number links to its row, and Back returns after a section jump (2026-11-14) | `B09-HANDOFF.md`; `b09-handoff/`; `zz-b09-four-minute-path.spec.ts` |
 | A run's row says what it changed: "New" is "Stored", and the outcome tells a stored-but-superseded or duplicate run from one that changed accepted records and was used by a verification; recorded with the change, never inferred (2026-11-14) | `DELIVERY-OUTCOMES.md`; `delivery-outcomes/`; `run-effect.test.ts` |
+| Final acceptance: a stale campaign rewrite and two release blockers (a brand-level answer check readable outside its brand; "zero" for missing spend) found and fixed; release walkthrough, route sweep, two lens walks and a full regression on the candidate (2026-11-15) | `RELEASE-CANDIDATE.md`; `BIVE-ACCEPTANCE.md`; `release-candidate/`; `bive/` |
 
 ## Next, in order
 

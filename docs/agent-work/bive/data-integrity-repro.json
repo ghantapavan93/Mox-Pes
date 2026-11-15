@@ -1,0 +1,57 @@
+{
+  "F2": {
+    "gapBefore": [
+      [
+        "1",
+        "open",
+        "2026-10-12"
+      ]
+    ],
+    "statusAfter": {
+      "state": "verified",
+      "held": false,
+      "reclassified": true,
+      "change": "Reclassified, not added: the $3,743.19 first filed as Google Search is now filed as Google Local Services."
+    },
+    "pmaxStillFiledAsSearchCents": 61221,
+    "expectedOverlapCents": 61221,
+    "b09SearchCents": 961221,
+    "trustworthy": true
+  },
+  "F3": {
+    "run": {
+      "fetched": 1,
+      "inserted": 1,
+      "duplicates": 0,
+      "conflicts": 0,
+      "projected": 0,
+      "quarantined": 1,
+      "excluded": 0,
+      "rowsChanged": 0
+    },
+    "oct20Accepted": 20740,
+    "newerRevisionCents": 40000,
+    "quarantine": {
+      "id": "3",
+      "kind": "quarantined_source_records",
+      "branch_id": null,
+      "status": "open",
+      "summary": "1 records from ads quarantined (FRACTIONAL_CONVERSIONS)"
+    },
+    "b09Trustworthy": true,
+    "blockers": []
+  },
+  "F8": {
+    "stats": {
+      "fetched": 13,
+      "inserted": 13,
+      "duplicates": 0,
+      "conflicts": 0,
+      "projected": 13,
+      "quarantined": 0,
+      "excluded": 0,
+      "rowsChanged": 13
+    },
+    "rowsChanged": 13
+  }
+}

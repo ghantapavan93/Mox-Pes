@@ -1,0 +1,122 @@
+[
+  {
+    "viewer": "marketing",
+    "step": "change #3: question 1 names the platform",
+    "ok": true,
+    "detail": "Campaign 777 (Meta, “M777 leads”) maps to no branch now; this change maps it to B20 Heron (brand moxie)."
+  },
+  {
+    "viewer": "marketing",
+    "step": "change #3: approved on its own leads",
+    "ok": true,
+    "detail": "Approved on 8 at B20 (agrees), not counting 2 lead(s) with the id that match no one campaign."
+  },
+  {
+    "viewer": "marketing",
+    "step": "change #3: the shared id, uncertified",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "marketing",
+    "step": "change #3: coverage finding",
+    "ok": true,
+    "detail": "! Brand and branch mapping coverage warnLEAD_EVIDENCE_UNRESOLVED 2 lead(s) carry this campaign's id but name no platform, two, or a platform with no campaign of this id (2 at B12). They are neither this campaign's leads nor evidence against the mapping, but counting some or all of them as its own would turn the coverage from agrees to split, so it is not certified. A person must confirm the mapping."
+  },
+  {
+    "viewer": "marketing",
+    "step": "check: insufficient evidence, the guard",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "marketing",
+    "step": "check: own leads and the unresolved, all named",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "marketing",
+    "step": "change #4 (G888 → B13): unresolved lead, nothing certified",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "marketing",
+    "step": "check (G888): LEADS_UNRESOLVED, no review item",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "partner",
+    "step": "change #3: question 1 names the platform",
+    "ok": true,
+    "detail": "Campaign 777 (Meta, “M777 leads”) maps to no branch now; this change maps it to B20 Heron (brand moxie)."
+  },
+  {
+    "viewer": "partner",
+    "step": "change #3: approved on its own leads",
+    "ok": true,
+    "detail": "Approved on 8 at B20 (agrees), not counting 2 lead(s) with the id that match no one campaign."
+  },
+  {
+    "viewer": "partner",
+    "step": "change #3: the shared id, uncertified",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "partner",
+    "step": "change #3: coverage finding",
+    "ok": true,
+    "detail": "! Brand and branch mapping coverage warnLEAD_EVIDENCE_UNRESOLVED This finding names a branch outside your scope; a company-wide role can read it in full."
+  },
+  {
+    "viewer": "partner",
+    "step": "change #3: page and payload name nothing out of scope",
+    "ok": true,
+    "detail": "none"
+  },
+  {
+    "viewer": "partner",
+    "step": "check: insufficient evidence, the guard",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "partner",
+    "step": "check: B20 rows only, other campaign unnamed",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "partner",
+    "step": "check: page and payload name nothing out of scope",
+    "ok": true,
+    "detail": "none"
+  },
+  {
+    "viewer": "partner",
+    "step": "change #1 (G777 → B20): failed, no branch outside scope named",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "viewer": "partner",
+    "step": "change #1: the branch its leads land at is counted, not named",
+    "ok": true,
+    "detail": "Branches whose numbers move: B20 (proposed), and 1 outside your scope."
+  },
+  {
+    "viewer": "partner",
+    "step": "change #1: page and payload name no branch or record out of scope",
+    "ok": true,
+    "detail": "none"
+  },
+  {
+    "viewer": "partner",
+    "step": "change #2 (G777 → B12): refused",
+    "ok": true,
+    "detail": "Branch partner · B20 only cannot read this change: B12 is outside your branches"
+  }
+]

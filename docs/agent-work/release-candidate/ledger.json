@@ -1,0 +1,761 @@
+{
+  "database": "revenue_signal_rc_b09 (synthetic), freshly seeded, then b09-correct.ts partial, rest, duplicate, older",
+  "total": 27,
+  "failed": 0,
+  "checks": [
+    {
+      "step": "the four steps are runs #676–#679",
+      "ok": true,
+      "detail": "{\"partial\":676,\"rest\":677,\"duplicate\":678,\"older\":679}"
+    },
+    {
+      "step": "#676 sent Oct 26–30, fetched 13:00",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-26\",\"cents\":12333,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-27\",\"cents\":10950,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-28\",\"cents\":12649,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-29\",\"cents\":11968,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-30\",\"cents\":11817,\"fetchedAt\":\"2026-10-31T13:00:00Z\"}]"
+    },
+    {
+      "step": "#676 stored those 5 versions as sent",
+      "ok": true,
+      "detail": "[{\"run\":676,\"date\":\"2026-10-26\",\"cents\":12333,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"deliveries\":1},{\"run\":676,\"date\":\"2026-10-27\",\"cents\":10950,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"deliveries\":1},{\"run\":676,\"date\":\"2026-10-28\",\"cents\":12649,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"deliveries\":1},{\"run\":676,\"date\":\"2026-10-29\",\"cents\":11968,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"deliveries\":1},{\"run\":676,\"date\":\"2026-10-30\",\"cents\":11817,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"deliveries\":1}]"
+    },
+    {
+      "step": "#676 row: stored 5, 5 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"676\",\"fetched\":5,\"inserted\":5,\"duplicates\":0,\"projected\":5,\"rows_changed\":5}"
+    },
+    {
+      "step": "#676 accepted today: the 5 days rest on its versions, filed as Local Services",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-26\",\"channel\":\"google_lsa\",\"cents\":12333,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-27\",\"channel\":\"google_lsa\",\"cents\":10950,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-28\",\"channel\":\"google_lsa\",\"cents\":12649,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-29\",\"channel\":\"google_lsa\",\"cents\":11968,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-30\",\"channel\":\"google_lsa\",\"cents\":11817,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"}]"
+    },
+    {
+      "step": "#677 sent Oct 13–25, fetched 13:10",
+      "ok": true,
+      "detail": "[\"2026-10-13\",\"2026-10-14\",\"2026-10-15\",\"2026-10-16\",\"2026-10-17\",\"2026-10-18\",\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"]"
+    },
+    {
+      "step": "#677 row: stored 13, 13 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"677\",\"fetched\":13,\"inserted\":13,\"duplicates\":0,\"projected\":13,\"rows_changed\":13}"
+    },
+    {
+      "step": "#678 sent exactly #677's versions again",
+      "ok": true,
+      "detail": "13"
+    },
+    {
+      "step": "#678 row: stored 0, 13 duplicates, 0 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"678\",\"fetched\":13,\"inserted\":0,\"duplicates\":13,\"projected\":0,\"rows_changed\":0}"
+    },
+    {
+      "step": "#678 left its deliveries on #677's versions (each delivered twice), storing none of its own",
+      "ok": true,
+      "detail": "[2,2,2,2,2,2,2,2,2,2,2,2,2]"
+    },
+    {
+      "step": "#679 sent Oct 20, fetched 13:05 (before #677's 13:10), $50 more",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-20\",\"cents\":17091,\"fetchedAt\":\"2026-10-31T13:05:00Z\"}]"
+    },
+    {
+      "step": "#679 row: stored 1, 0 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"679\",\"fetched\":1,\"inserted\":1,\"duplicates\":0,\"projected\":1,\"rows_changed\":0}"
+    },
+    {
+      "step": "#679 superseded: Oct 20 is still #677's version and amount",
+      "ok": true,
+      "detail": "{\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"cents\":12091,\"run\":677,\"fetchedAt\":\"2026-10-31T13:10:00Z\"}"
+    },
+    {
+      "step": "one verification, none before it",
+      "ok": true,
+      "detail": "{\"status\":\"resolved\",\"previous\":null}"
+    },
+    {
+      "step": "it names #677 and #676, with the cents the source sent for their dates",
+      "ok": true,
+      "detail": "[[677,152635],[676,59717]]"
+    },
+    {
+      "step": "covered cents = what the source re-sent = $2,123.52",
+      "ok": true,
+      "detail": "{\"covered\":212352,\"sent\":212352}"
+    },
+    {
+      "step": "no verification names #678 or #679",
+      "ok": true,
+      "detail": "[676,677]"
+    },
+    {
+      "step": "#676 label",
+      "ok": true,
+      "detail": "[\"5 changes to accepted records\",\"Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\"]"
+    },
+    {
+      "step": "#677 label",
+      "ok": true,
+      "detail": "[\"13 changes to accepted records\",\"Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\"]"
+    },
+    {
+      "step": "#678 label",
+      "ok": true,
+      "detail": "[\"No change to accepted records\",\"Duplicate: every delivery was a version already stored\"]"
+    },
+    {
+      "step": "#679 label",
+      "ok": true,
+      "detail": "[\"No change to accepted records\",\"Stored, but a newer revision was already accepted\"]"
+    },
+    {
+      "step": "B09's paid spend is 1,664,923¢ after every step",
+      "ok": true,
+      "detail": "[{\"step\":\"partial\",\"b09\":1664923,\"lsa\":208484,\"search\":1170322,\"company\":123431864,\"gaps\":[\"2455:open\"]},{\"step\":\"rest\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]},{\"step\":\"duplicate\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]},{\"step\":\"older\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]}]"
+    },
+    {
+      "step": "company spend is the same after every step",
+      "ok": true,
+      "detail": "[123431864,123431864,123431864,123431864]"
+    },
+    {
+      "step": "Local Services gained exactly what Search lost, step by step",
+      "ok": true,
+      "detail": "[{\"step\":\"partial\",\"b09\":1664923,\"lsa\":208484,\"search\":1170322,\"company\":123431864,\"gaps\":[\"2455:open\"]},{\"step\":\"rest\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]},{\"step\":\"duplicate\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]},{\"step\":\"older\",\"b09\":1664923,\"lsa\":361119,\"search\":1017687,\"company\":123431864,\"gaps\":[\"2455:resolved\"]}]"
+    },
+    {
+      "step": "one coverage-gap incident throughout: #2455, open, then resolved",
+      "ok": true,
+      "detail": "[[\"2455:open\"],[\"2455:resolved\"],[\"2455:resolved\"],[\"2455:resolved\"]]"
+    },
+    {
+      "step": "each reconciliation after a delivery opened nothing; one resolved #2455",
+      "ok": true,
+      "detail": "[{\"opened\":0,\"resolved\":0},{\"opened\":0,\"resolved\":1},{\"opened\":0,\"resolved\":0},{\"opened\":0,\"resolved\":0}]"
+    },
+    {
+      "step": "incidents by kind equal the old code's world after the same deliveries",
+      "ok": true,
+      "detail": "{\"now\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1},\"before\":{\"unmapped_spend\":1,\"branch_mismatch\":58,\"channel_conflict\":123,\"payload_conflict\":3,\"channel_coverage_gap\":1,\"payment_without_ticket\":10,\"quarantined_source_records\":1}}"
+    }
+  ],
+  "ledger": {
+    "partial": [
+      {
+        "date": "2026-10-26",
+        "cents": 12333,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-27",
+        "cents": 10950,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-28",
+        "cents": 12649,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-29",
+        "cents": 11968,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-30",
+        "cents": 11817,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      }
+    ],
+    "rest": [
+      {
+        "date": "2026-10-13",
+        "cents": 10869,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-14",
+        "cents": 11946,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-15",
+        "cents": 10750,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-16",
+        "cents": 13466,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-17",
+        "cents": 12913,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-18",
+        "cents": 12353,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-19",
+        "cents": 13432,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-20",
+        "cents": 12091,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-21",
+        "cents": 12842,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-22",
+        "cents": 13203,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-23",
+        "cents": 9339,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-24",
+        "cents": 9443,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-25",
+        "cents": 9988,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      }
+    ],
+    "duplicate": [
+      {
+        "date": "2026-10-13",
+        "cents": 10869,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-14",
+        "cents": 11946,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-15",
+        "cents": 10750,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-16",
+        "cents": 13466,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-17",
+        "cents": 12913,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-18",
+        "cents": 12353,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-19",
+        "cents": 13432,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-20",
+        "cents": 12091,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-21",
+        "cents": 12842,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-22",
+        "cents": 13203,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-23",
+        "cents": 9339,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-24",
+        "cents": 9443,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-25",
+        "cents": 9988,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      }
+    ],
+    "older": [
+      {
+        "date": "2026-10-20",
+        "cents": 17091,
+        "fetchedAt": "2026-10-31T13:05:00Z"
+      }
+    ]
+  },
+  "runs": [
+    {
+      "id": "676",
+      "fetched": 5,
+      "inserted": 5,
+      "duplicates": 0,
+      "projected": 5,
+      "rows_changed": 5
+    },
+    {
+      "id": "677",
+      "fetched": 13,
+      "inserted": 13,
+      "duplicates": 0,
+      "projected": 13,
+      "rows_changed": 13
+    },
+    {
+      "id": "678",
+      "fetched": 13,
+      "inserted": 0,
+      "duplicates": 13,
+      "projected": 0,
+      "rows_changed": 0
+    },
+    {
+      "id": "679",
+      "fetched": 1,
+      "inserted": 1,
+      "duplicates": 0,
+      "projected": 1,
+      "rows_changed": 0
+    }
+  ],
+  "stored": [
+    {
+      "run": 676,
+      "date": "2026-10-26",
+      "cents": 12333,
+      "fetchedAt": "2026-10-31T13:00:00Z",
+      "deliveries": 1
+    },
+    {
+      "run": 676,
+      "date": "2026-10-27",
+      "cents": 10950,
+      "fetchedAt": "2026-10-31T13:00:00Z",
+      "deliveries": 1
+    },
+    {
+      "run": 676,
+      "date": "2026-10-28",
+      "cents": 12649,
+      "fetchedAt": "2026-10-31T13:00:00Z",
+      "deliveries": 1
+    },
+    {
+      "run": 676,
+      "date": "2026-10-29",
+      "cents": 11968,
+      "fetchedAt": "2026-10-31T13:00:00Z",
+      "deliveries": 1
+    },
+    {
+      "run": 676,
+      "date": "2026-10-30",
+      "cents": 11817,
+      "fetchedAt": "2026-10-31T13:00:00Z",
+      "deliveries": 1
+    },
+    {
+      "run": 677,
+      "date": "2026-10-13",
+      "cents": 10869,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-14",
+      "cents": 11946,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-15",
+      "cents": 10750,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-16",
+      "cents": 13466,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-17",
+      "cents": 12913,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-18",
+      "cents": 12353,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-19",
+      "cents": 13432,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-20",
+      "cents": 12091,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-21",
+      "cents": 12842,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-22",
+      "cents": 13203,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-23",
+      "cents": 9339,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-24",
+      "cents": 9443,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 677,
+      "date": "2026-10-25",
+      "cents": 9988,
+      "fetchedAt": "2026-10-31T13:10:00Z",
+      "deliveries": 2
+    },
+    {
+      "run": 679,
+      "date": "2026-10-20",
+      "cents": 17091,
+      "fetchedAt": "2026-10-31T13:05:00Z",
+      "deliveries": 1
+    }
+  ],
+  "accepted": [
+    {
+      "date": "2026-10-13",
+      "channel": "google_lsa",
+      "cents": 10869,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-14",
+      "channel": "google_lsa",
+      "cents": 11946,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-15",
+      "channel": "google_lsa",
+      "cents": 10750,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-16",
+      "channel": "google_lsa",
+      "cents": 13466,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-17",
+      "channel": "google_lsa",
+      "cents": 12913,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-18",
+      "channel": "google_lsa",
+      "cents": 12353,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-19",
+      "channel": "google_lsa",
+      "cents": 13432,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-20",
+      "channel": "google_lsa",
+      "cents": 12091,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-21",
+      "channel": "google_lsa",
+      "cents": 12842,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-22",
+      "channel": "google_lsa",
+      "cents": 13203,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-23",
+      "channel": "google_lsa",
+      "cents": 9339,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-24",
+      "channel": "google_lsa",
+      "cents": 9443,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-25",
+      "channel": "google_lsa",
+      "cents": 9988,
+      "run": 677,
+      "fetchedAt": "2026-10-31T13:10:00Z"
+    },
+    {
+      "date": "2026-10-26",
+      "channel": "google_lsa",
+      "cents": 12333,
+      "run": 676,
+      "fetchedAt": "2026-10-31T13:00:00Z"
+    },
+    {
+      "date": "2026-10-27",
+      "channel": "google_lsa",
+      "cents": 10950,
+      "run": 676,
+      "fetchedAt": "2026-10-31T13:00:00Z"
+    },
+    {
+      "date": "2026-10-28",
+      "channel": "google_lsa",
+      "cents": 12649,
+      "run": 676,
+      "fetchedAt": "2026-10-31T13:00:00Z"
+    },
+    {
+      "date": "2026-10-29",
+      "channel": "google_lsa",
+      "cents": 11968,
+      "run": 676,
+      "fetchedAt": "2026-10-31T13:00:00Z"
+    },
+    {
+      "date": "2026-10-30",
+      "channel": "google_lsa",
+      "cents": 11817,
+      "run": 676,
+      "fetchedAt": "2026-10-31T13:00:00Z"
+    }
+  ],
+  "verification": {
+    "rule": "every required date has spend in the channel at the branch, and no successor spend in the window is filed under another channel or at another branch",
+    "runs": [
+      {
+        "cents": 152635,
+        "dates": [
+          "2026-10-13",
+          "2026-10-14",
+          "2026-10-15",
+          "2026-10-16",
+          "2026-10-17",
+          "2026-10-18",
+          "2026-10-19",
+          "2026-10-20",
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-24",
+          "2026-10-25"
+        ],
+        "runId": 677,
+        "fetchedAt": {
+          "last": "2026-10-31T13:10:00Z",
+          "first": "2026-10-31T13:10:00Z"
+        },
+        "adapterVersion": "ads@1.2"
+      },
+      {
+        "cents": 59717,
+        "dates": [
+          "2026-10-26",
+          "2026-10-27",
+          "2026-10-28",
+          "2026-10-29",
+          "2026-10-30"
+        ],
+        "runId": 676,
+        "fetchedAt": {
+          "last": "2026-10-31T13:00:00Z",
+          "first": "2026-10-31T13:00:00Z"
+        },
+        "adapterVersion": "ads@1.2"
+      }
+    ],
+    "window": {
+      "to": "2026-10-30",
+      "from": "2026-10-13"
+    },
+    "verifiedAt": "2026-10-31T13:15:00.000Z",
+    "coveredCents": 212352,
+    "coveredDates": 18,
+    "requiredDates": 18
+  },
+  "outcomes": {
+    "676": [
+      "5 changes to accepted records",
+      "Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold."
+    ],
+    "677": [
+      "13 changes to accepted records",
+      "Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold."
+    ],
+    "678": [
+      "No change to accepted records",
+      "Duplicate: every delivery was a version already stored"
+    ],
+    "679": [
+      "No change to accepted records",
+      "Stored, but a newer revision was already accepted"
+    ]
+  },
+  "totals": [
+    {
+      "step": "partial",
+      "b09": 1664923,
+      "lsa": 208484,
+      "search": 1170322,
+      "company": 123431864,
+      "gaps": [
+        "2455:open"
+      ]
+    },
+    {
+      "step": "rest",
+      "b09": 1664923,
+      "lsa": 361119,
+      "search": 1017687,
+      "company": 123431864,
+      "gaps": [
+        "2455:resolved"
+      ]
+    },
+    {
+      "step": "duplicate",
+      "b09": 1664923,
+      "lsa": 361119,
+      "search": 1017687,
+      "company": 123431864,
+      "gaps": [
+        "2455:resolved"
+      ]
+    },
+    {
+      "step": "older",
+      "b09": 1664923,
+      "lsa": 361119,
+      "search": 1017687,
+      "company": 123431864,
+      "gaps": [
+        "2455:resolved"
+      ]
+    }
+  ],
+  "reconciliations": [
+    {
+      "txid": "4125904",
+      "opened": 0,
+      "detected": 184,
+      "resolved": 0,
+      "snapshot": "4125904:4125904:"
+    },
+    {
+      "txid": "4125916",
+      "opened": 0,
+      "detected": 183,
+      "resolved": 1,
+      "snapshot": "4125916:4125916:"
+    },
+    {
+      "txid": "4125936",
+      "opened": 0,
+      "detected": 183,
+      "resolved": 0,
+      "snapshot": "4125936:4125936:"
+    },
+    {
+      "txid": "4125948",
+      "opened": 0,
+      "detected": 183,
+      "resolved": 0,
+      "snapshot": "4125948:4125948:"
+    }
+  ],
+  "incidentsByKind": {
+    "branch_mismatch": 58,
+    "channel_conflict": 123,
+    "channel_coverage_gap": 1,
+    "payload_conflict": 3,
+    "payment_without_ticket": 10,
+    "quarantined_source_records": 1,
+    "unmapped_spend": 1
+  }
+}

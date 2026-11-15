@@ -1,0 +1,2422 @@
+{
+  "build": "-t8FhwvfYGehXmbdri6T7",
+  "base": "http://localhost:3500",
+  "database": "revenue_signal_rc_b09",
+  "mode": "all",
+  "total": 230,
+  "failed": 0,
+  "checks": [
+    {
+      "stage": "missing",
+      "viewport": "db",
+      "step": "the walk starts on a fresh world: one coverage gap, open, unassigned",
+      "ok": true,
+      "detail": "{\"b09\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},\"company\":{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},\"incident\":{\"id\":\"2455\",\"status\":\"open\",\"verified_at\":null,\"previous\":0},\"case\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"detected\",\"owner\":null,\"reopen_count\":0,\"events\":1},\"coverageGaps\":[\"2455:open\"],\"casesForGaps\":1,\"exceptionsByKind\":{\"branch_mismatch\""
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Overview says: Decision held. None of the 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12 while its leads kept arriving. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision held. None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Open incident #2455 Paid media spend per week, by channel · US doll"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held."
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: No day of this week has a spend record for Google Local Serv",
+      "ok": true,
+      "detail": "No day of this week has a spend record for Google Local Services at B09. That is no record, not $0."
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held."
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"none\",\"text\":\"Mon, Oct 26no spend record—\"},{\"day\":\"2026-10-27\",\"record\":\"none\",\"text\":\"Tue, Oct 27no spend record—\"},{\"day\":\"2026-10-28\",\"record\":\"none\",\"text\":\"Wed, Oct 28no spend record—\"},{\"day\":\"2026-10-29\",\"record\":\"none\",\"text\":\"Thu, Oct 29no spend record—\"},{\"day\":\"2026-10-30\",\"record\":\"none\",\"text\":\"Fri, Oct 30no spend record—\"}]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "missing dates read as no record, never as a recorded $0.00",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"none\",\"text\":\"Mon, Oct 26no spend record—\"},{\"day\":\"2026-10-27\",\"record\":\"none\",\"text\":\"Tue, Oct 27no spend record—\"},{\"day\":\"2026-10-28\",\"record\":\"none\",\"text\":\"Wed, Oct 28no spend record—\"},{\"day\":\"2026-10-29\",\"record\":\"none\",\"text\":\"Thu, Oct 29no spend record—\"},{\"day\":\"2026-10-30\",\"record\":\"none\",\"text\":\"Fri, Oct 30no spend record—\"}]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident state is missing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident says: Decision held: none of the 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 "
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident says: Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is fi…",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 "
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "owner: the case is the integration engineer's",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "owner: the timeline says who assigned it, from whom to whom",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-map channel — Re-map stored spend to the right channel Mapper ads@1.0 ads@1.1 ads@1.2 (deployed) Rationale Propose fix CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected O"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Blocking incident #2455",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Overview says: Decision held. None of the 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12 while its leads kept arriving. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision held. None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Open incident #2455 Paid media spend per week, by channel · US doll"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held."
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "daily evidence: No day of this week has a spend record for Google Local Serv",
+      "ok": true,
+      "detail": "No day of this week has a spend record for Google Local Services at B09. That is no record, not $0."
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held."
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"none\",\"text\":\"Mon, Oct 26no spend record—\"},{\"day\":\"2026-10-27\",\"record\":\"none\",\"text\":\"Tue, Oct 27no spend record—\"},{\"day\":\"2026-10-28\",\"record\":\"none\",\"text\":\"Wed, Oct 28no spend record—\"},{\"day\":\"2026-10-29\",\"record\":\"none\",\"text\":\"Thu, Oct 29no spend record—\"},{\"day\":\"2026-10-30\",\"record\":\"none\",\"text\":\"Fri, Oct 30no spend record—\"}]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "missing dates read as no record, never as a recorded $0.00",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"none\",\"text\":\"Mon, Oct 26no spend record—\"},{\"day\":\"2026-10-27\",\"record\":\"none\",\"text\":\"Tue, Oct 27no spend record—\"},{\"day\":\"2026-10-28\",\"record\":\"none\",\"text\":\"Wed, Oct 28no spend record—\"},{\"day\":\"2026-10-29\",\"record\":\"none\",\"text\":\"Thu, Oct 29no spend record—\"},{\"day\":\"2026-10-30\",\"record\":\"none\",\"text\":\"Fri, Oct 30no spend record—\"}]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident state is missing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident says: Decision held: none of the 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 "
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident says: Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is fi…",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 "
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Next: Oct 13–Oct 30 must arrive as Google Local"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Blocking incident #2455",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Overview says: Google Local Services spend at B09 stopped after Oct 12; since then on…",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Overview says: Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct …",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held."
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held."
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "covered dates read as recorded spend",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident state is partial",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident says: Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct …",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closin"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident says: Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–O…",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closin"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed a"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "owner: the case still names its owner",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "owner: the assignment stays on the timeline",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-map channel — Re-map stored spend to the right channel Mapper ads@1.0 ads@1.1 ads@1.2 (deployed) Rationale Propose fix CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected O"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident "
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident "
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Overview says: Google Local Services spend at B09 stopped after Oct 12; since then on…",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Overview says: Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct …",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held."
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "daily evidence: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held."
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "covered dates read as recorded spend",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident state is partial",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident says: Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct …",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closin"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident says: Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–O…",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closin"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed a"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "owner: the case still names its owner",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "owner: the assignment stays on the timeline",
+      "ok": true,
+      "detail": "State Investigating Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign Close without a fix… PROPOSALS No proposals yet. PROPOSE A FIX Fix Re-map channel — Re-map stored spend to the right channel Mapper ads@1.0 ads@1.1 ads@1.2 (deployed) Rationale Propose fix CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected O"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident "
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident "
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "db",
+      "step": "$2,123.52 moved from Search to Local Services; B09's paid spend did not grow",
+      "ok": true,
+      "detail": "{\"missing\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},\"verified\":{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}}}"
+    },
+    {
+      "stage": "verified",
+      "viewport": "db",
+      "step": "customers and collected cash unchanged by the correction, at B09 and company-wide",
+      "ok": true,
+      "detail": "{\"missing\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":148767,\"google_search\":1230039,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}],\"verified\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]}"
+    },
+    {
+      "stage": "verified",
+      "viewport": "db",
+      "step": "the same incident, now resolved, once verified; the same case",
+      "ok": true,
+      "detail": "{\"incident\":{\"id\":\"2455\",\"status\":\"resolved\",\"verified_at\":\"2026-10-31T13:15:00.000Z\",\"previous\":0},\"case\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"resolved\",\"owner\":\"engineer\",\"reopen_count\":0,\"events\":4}}"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Overview says: Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Overview says: Reclassified, not added: the $2,123.52 first filed as Google Search is…",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified Oct 31, 1:15 PM UTC."
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified Oct 31, 1:15 PM UTC."
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "covered dates read as recorded spend",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident state is verified",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident says: Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident says: Reclassified, not added: the $2,123.52 first filed as Google Search is…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget de"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "owner: the case still names its owner",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there "
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "owner: the assignment stays on the timeline",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected Oct 31, 1:00 PM UTC Owner assigned · marketing unassigned → engineer Oct 31, 1:00 PM UTC Detected"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "owner: the timeline closes with the verification",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected Oct 31, 1:00 PM UTC Owner assigned · marketing unassigned → engineer Oct 31, 1:00 PM UTC Detected"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "trace: the verification names runs #677 and #676, not #678 or #679",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "trace: the followed run is marked, in words",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "trace: stored, accepted and used are told apart (Stored 13; 13 changes; the verification used 13 of 18 dates)",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "return: one Back reaches the incident",
+      "ok": true,
+      "detail": "1 Back(s), http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "return: the incident keeps period, channel and week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "return: Verification details is still open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26#readiness"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Reclassified, not added: the $2,123.52 first filed as Google Search is",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Google Local Services (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Google Search (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: Meta and Microsoft Ads are ready, with limitations.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab says: It is not an approval",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: the badge says 'Ready for review', never a bare 'Ready'",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: the unmapped campaign is a named review item",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not… Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim… “Ready” in the table below means a channel's readiness rules "
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: the door-to-door conflicts are a named review item",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not… Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim… “Ready” in the table below means a channel's readiness rules "
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: nothing says approved",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Review the 2 channels\"]"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Overview says: Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Overview says: Reclassified, not added: the $2,123.52 first filed as Google Search is…",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Overview: the selected week is set against the decision window",
+      "ok": true,
+      "detail": "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified Oct 31, 1:15 PM UTC."
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Overview: its status links the incident's evidence",
+      "ok": true,
+      "detail": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "daily evidence leads with the selected dates",
+      "ok": true,
+      "detail": "Google Local Services · Oct 26–Oct 30"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "daily evidence: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "daily evidence: the window fact beside the week fact",
+      "ok": true,
+      "detail": "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified Oct 31, 1:15 PM UTC."
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "daily evidence: five days listed",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "covered dates read as recorded spend",
+      "ok": true,
+      "detail": "[{\"day\":\"2026-10-26\",\"record\":\"present\",\"text\":\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\"},{\"day\":\"2026-10-27\",\"record\":\"present\",\"text\":\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\"},{\"day\":\"2026-10-28\",\"record\":\"present\",\"text\":\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\"},{\"da"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "daily evidence: one primary action",
+      "ok": true,
+      "detail": "[\"Open incident #2455\"]"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident keeps period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident state is verified",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident says: Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident says: Reclassified, not added: the $2,123.52 first filed as Google Search is…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident: branch, channel and the decision window are on the page",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget de"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "owner: the case still names its owner",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there "
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "owner: the assignment stays on the timeline",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected Oct 31, 1:00 PM UTC Owner assigned · marketing unassigned → engineer Oct 31, 1:00 PM UTC Detected"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "owner: the timeline closes with the verification",
+      "ok": true,
+      "detail": "State Resolved Owner Integration engineer · all branches Opened Oct 16, 8:00 AM UTC Re-opened 0 Owner Unassigned Marketing analyst · all branches Integration engineer · all branches Revenue ops approver · all branches Assign PROPOSALS No proposals yet. PROPOSE A FIX The exception is resolved; there is nothing to propose. CASE TIMELINE Oct 16, 8:00 AM UTC new → Detected · reconcile Exception detected Oct 31, 1:00 PM UTC Owner assigned · marketing unassigned → engineer Oct 31, 1:00 PM UTC Detected"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "incident: details hold the statements, the original finding and the runs",
+      "ok": true,
+      "detail": "Verification details Decision window (verification scope): every date from the gap's start to the spend feed's latest date, for Google Local Services at B09; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only choose"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "trace: the verification names runs #677 and #676, not #678 or #679",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "trace: the followed run is marked, in words",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "trace: stored, accepted and used are told apart (Stored 13; 13 changes; the verification used 13 of 18 dates)",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "return: one Back reaches the incident",
+      "ok": true,
+      "detail": "1 Back(s), http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "return: the incident keeps period, channel and week",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "return: Verification details is still open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab keeps branch, period, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26#readiness"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Reclassified, not added: the $2,123.52 first filed as Google Search is",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Google Local Services (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Google Search (needs review)",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: Meta and Microsoft Ads are ready, with limitations.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab says: It is not an approval",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab: the badge says 'Ready for review', never a bare 'Ready'",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab: the unmapped campaign is a named review item",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not… Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim… “Ready” in the table below means a channel's readiness rules "
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab: the door-to-door conflicts are a named review item",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not… Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim… “Ready” in the table below means a channel's readiness rules "
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab: nothing says approved",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "Decision Lab: one primary action in the summary",
+      "ok": true,
+      "detail": "[\"Review the 2 channels\"]"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "return: daily evidence for the same week",
+      "ok": true,
+      "detail": "http://localhost:3500/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "step": "return: the Overview keeps branch, channel, week",
+      "ok": true,
+      "detail": "http://localhost:3500/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "no change to money, customers or cash at B09 or company-wide",
+      "ok": true,
+      "detail": "{\"before\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}],\"after\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "the same incident, still resolved, with the same single verification",
+      "ok": true,
+      "detail": "{\"id\":\"2455\",\"status\":\"resolved\",\"verified_at\":\"2026-10-31T13:15:00.000Z\",\"previous\":0}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "no second case and no new case transition",
+      "ok": true,
+      "detail": "{\"before\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"resolved\",\"owner\":\"engineer\",\"reopen_count\":0,\"events\":4},\"after\":{\"id\":\"161\",\"exception_id\":\"2455\",\"state\":\"resolved\",\"owner\":\"engineer\",\"reopen_count\":0,\"events\":4}}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "nothing opened anywhere",
+      "ok": true,
+      "detail": "{\"before\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1},\"after\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1}}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "db",
+      "step": "the campaign record is still what the newest fetch said",
+      "ok": true,
+      "detail": "{\"name\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"channel_code\":\"google_lsa\",\"campaign_type\":\"PERFORMANCE_MAX\",\"local_services_enabled\":true}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "after a reload and three more deliveries the incident still says: Coverage hold cleared: all 18 dates in the decision window (…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "after a reload and three more deliveries the incident still says: Reclassified, not added: the $2,123.52 first filed as Google…",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Back to the daily evidence Verification details"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #676: 5 changes to accepted records Incident #2455's verification …",
+      "ok": true,
+      "detail": "{\"Run\":\"#676\",\"Outcome\":\"5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC\",\"Fetched\":\"5\",\"Stored\":\"5\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #677: 13 changes to accepted records Incident #2455's verification…",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #678: No change to accepted records Duplicate: every delivery was …",
+      "ok": true,
+      "detail": "{\"Run\":\"#678\",\"Outcome\":\"No change to accepted records Duplicate: every delivery was a version already stored\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"0\",\"Dupes\":\"13\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #679: No change to accepted records Stored, but a newer revision w…",
+      "ok": true,
+      "detail": "{\"Run\":\"#679\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:25 PM UTC → Oct 31, 1:30 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "pipeline #680: No change to accepted records Stored, but a newer revision w…",
+      "ok": true,
+      "detail": "{\"Run\":\"#680\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:30 PM UTC → Oct 31, 1:40 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "a run whose effect was not recorded says so, never 'no change' (#473, failed)",
+      "ok": true,
+      "detail": "{\"Run\":\"#473 the run you followed\",\"Outcome\":\"Effect not recorded\",\"Stream\":\"crm.ticket\",\"Mapper\":\"crm@1.0\",\"Window\":\"Oct 8, 7:30 AM UTC → Oct 9, 8:00 AM UTC\",\"Fetched\":\"0\",\"Stored\":\"0\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"failed\"}"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Coverage hold cleared, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "durable",
+      "viewport": "desktop-1280",
+      "step": "Decision Lab still says: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Open incident #2455 Other checks"
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions?owner=engineer payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions?owner=engineer renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "partner-fresh",
+      "step": "partner: /api/cases/161 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions?owner=engineer payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions?owner=engineer renders no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "brand-fresh",
+      "step": "brand: /api/cases/161 payload carries no B09 evidence or run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: after the switch, the visible page shows no B09 evidence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: Back shows no B09 evidence",
+      "ok": true,
+      "detail": "http://localhost:3500/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: nothing B09 can be newly fetched after the switch (server payloads)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab: direct navigation is refused",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "roles",
+      "viewport": "same-tab",
+      "step": "same tab (recorded, not a pass condition): earlier B09 text still in the tab's hidden DOM",
+      "ok": true,
+      "detail": "pmax-lsa-B09, lsa-B09, Coral, at B09, $597.17, $1,526.35, $2,123.52, #2455, Oct 13–Oct 30, decision window"
+    },
+    {
+      "stage": "ledger",
+      "viewport": "db",
+      "step": "ledger: the four deliveries against what the source sent (b09o-ledger.ts)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "errors",
+      "viewport": "all",
+      "step": "no console or page errors during the walkthrough",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "clicks": [
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 7,
+      "what": "Owner: Integration engineer",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 8,
+      "what": "Assign",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 9,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 10,
+      "what": "Decision readiness for B09",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 11,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 12,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "missing",
+      "viewport": "desktop-1280",
+      "n": 13,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 7,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 8,
+      "what": "Decision readiness for B09",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 9,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 10,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "missing",
+      "viewport": "phone-390",
+      "n": 11,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 7,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 8,
+      "what": "Decision readiness for B09",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 9,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 10,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "partial",
+      "viewport": "desktop-1280",
+      "n": 11,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 7,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 8,
+      "what": "Decision readiness for B09",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 9,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 10,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "partial",
+      "viewport": "phone-390",
+      "n": 11,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 7,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 8,
+      "what": "ingestion run #677 (the verification's run)",
+      "url": "/integrations?view=pipeline&run=677#run-677"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 9,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 10,
+      "what": "Open Decision Lab",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26#readiness"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 11,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 12,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "verified",
+      "viewport": "desktop-1280",
+      "n": 13,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 1,
+      "what": "choose B09 in the What changed branch list",
+      "url": "/?period=oct"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 2,
+      "what": "Show",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 3,
+      "what": "Google Local Services (chart series)",
+      "url": "/?period=oct&branch=B09"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 4,
+      "what": "the week of Oct 26",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 5,
+      "what": "Open evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 6,
+      "what": "Open incident #2455",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 7,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 8,
+      "what": "ingestion run #677 (the verification's run)",
+      "url": "/integrations?view=pipeline&run=677#run-677"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 9,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 10,
+      "what": "Open Decision Lab",
+      "url": "/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26#readiness"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 11,
+      "what": "incident #2455 (Decision Lab's link)",
+      "url": "/exceptions/2455?period=oct&channel=google_lsa&week=2026-10-26#recovery"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 12,
+      "what": "Back to the daily evidence",
+      "url": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26#selection"
+    },
+    {
+      "stage": "verified",
+      "viewport": "phone-390",
+      "n": 13,
+      "what": "Back to Overview",
+      "url": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26#movement"
+    }
+  ],
+  "errors": [],
+  "deliveries": [
+    {
+      "step": "partial",
+      "runId": 676,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 5,
+        "inserted": 5,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 5,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 5
+      }
+    },
+    {
+      "step": "rest",
+      "runId": 677,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 13,
+        "inserted": 13,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 13,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 13
+      }
+    },
+    {
+      "step": "duplicate",
+      "runId": 678,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 13,
+        "inserted": 0,
+        "duplicates": 13,
+        "conflicts": 0,
+        "projected": 0,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    },
+    {
+      "step": "older",
+      "runId": 679,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 1,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    },
+    {
+      "step": "stale2",
+      "runId": 680,
+      "status": "succeeded",
+      "stats": {
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "conflicts": 0,
+        "projected": 1,
+        "quarantined": 0,
+        "excluded": 0,
+        "rowsChanged": 0
+      }
+    }
+  ],
+  "facts": {
+    "missing": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 148767,
+          "google_search": 1230039,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "open",
+        "verified_at": null,
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "detected",
+        "owner": null,
+        "reopen_count": 0,
+        "events": 1
+      },
+      "coverageGaps": [
+        "2455:open"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_search",
+        "campaign_type": null,
+        "local_services_enabled": false
+      }
+    },
+    "verifiedAtArrival": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "verified": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "durable": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": "2455",
+        "status": "resolved",
+        "verified_at": "2026-10-31T13:15:00.000Z",
+        "previous": 0
+      },
+      "case": {
+        "id": "161",
+        "exception_id": "2455",
+        "state": "resolved",
+        "owner": "engineer",
+        "reopen_count": 0,
+        "events": 4
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel_code": "google_lsa",
+        "campaign_type": "PERFORMANCE_MAX",
+        "local_services_enabled": true
+      }
+    },
+    "sameTabHiddenDom": [
+      "pmax-lsa-B09",
+      "lsa-B09",
+      "Coral",
+      "at B09",
+      "$597.17",
+      "$1,526.35",
+      "$2,123.52",
+      "#2455",
+      "Oct 13–Oct 30",
+      "decision window"
+    ]
+  }
+}

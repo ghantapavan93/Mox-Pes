@@ -1,0 +1,329 @@
+{
+    "case": {
+        "id": 198,
+        "owner": "engineer",
+        "state": "detected",
+        "closed_at": null,
+        "opened_at": "2026-11-02T07:05:00-06:00",
+        "exception_id": 6633,
+        "reopen_count": 2
+    },
+    "change": {
+        "id": 2,
+        "kind": "campaign_mapping",
+        "status": "recovery_required"
+    },
+    "source": "revenue_signal_rc after the candidate 91ef06f browser suite (its last spec: zzzzzz-drift-review), synthetic",
+    "reviews": [
+        {
+            "id": 1,
+            "owner": null,
+            "run_id": 2,
+            "actor_role": "marketing",
+            "disposition": "reviewed_no_change",
+            "reviewed_at": "2026-11-02T07:35:00-06:00",
+            "actor_subject": "demo:marketing"
+        },
+        {
+            "id": 2,
+            "owner": "engineer",
+            "run_id": 4,
+            "actor_role": "engineer",
+            "disposition": "needs_investigation",
+            "reviewed_at": "2026-11-04T07:05:00-06:00",
+            "actor_subject": "demo:engineer"
+        },
+        {
+            "id": 3,
+            "owner": null,
+            "run_id": 5,
+            "actor_role": "marketing",
+            "disposition": "reviewed_no_change",
+            "reviewed_at": "2026-11-05T07:05:00-06:00",
+            "actor_subject": "demo:marketing"
+        }
+    ],
+    "audit_rows": [
+        {
+            "at": "2026-11-02T07:05:00-06:00",
+            "id": 244,
+            "actor": "reconcile",
+            "action": "case_transition",
+            "detail": {
+                "to": "detected",
+                "from": null,
+                "reason": "Exception detected",
+                "eventId": 223,
+                "exceptionId": 6633
+            }
+        },
+        {
+            "at": "2026-11-02T07:35:00-06:00",
+            "id": 247,
+            "actor": "marketing",
+            "action": "case_transition",
+            "detail": {
+                "to": "closed_acknowledged",
+                "from": "detected",
+                "runId": 2,
+                "reason": "Reviewed — no mapping change",
+                "eventId": 224,
+                "reviewId": 1,
+                "proposalId": null,
+                "disposition": "reviewed_no_change"
+            }
+        },
+        {
+            "at": "2026-11-02T07:35:00-06:00",
+            "id": 248,
+            "actor": "marketing",
+            "action": "drift_review",
+            "detail": {
+                "by": "demo:marketing",
+                "owner": null,
+                "runId": 2,
+                "reviewId": 1,
+                "disposition": "reviewed_no_change",
+                "exceptionId": 6633,
+                "latestRunId": 2
+            }
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 251,
+            "actor": "monitor",
+            "action": "case_transition",
+            "detail": {
+                "to": "detected",
+                "from": "closed_acknowledged",
+                "runId": 4,
+                "reason": "New evidence since review #1: a contradiction it did not see (check #4)",
+                "eventId": 225,
+                "trigger": "new_material_evidence",
+                "newFacts": 1,
+                "reviewId": 1,
+                "proposalId": null,
+                "reviewedRunId": 2
+            }
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 253,
+            "actor": "engineer",
+            "action": "case_assign",
+            "detail": {
+                "to": "engineer",
+                "from": null,
+                "eventId": 226,
+                "reviewId": 2,
+                "proposalId": null
+            }
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 254,
+            "actor": "engineer",
+            "action": "case_transition",
+            "detail": {
+                "to": "investigating",
+                "from": "detected",
+                "owner": "engineer",
+                "runId": 4,
+                "reason": "Needs investigation",
+                "eventId": 227,
+                "reviewId": 2,
+                "proposalId": null,
+                "disposition": "needs_investigation"
+            }
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 255,
+            "actor": "engineer",
+            "action": "drift_review",
+            "detail": {
+                "by": "demo:engineer",
+                "owner": "engineer",
+                "runId": 4,
+                "reviewId": 2,
+                "disposition": "needs_investigation",
+                "exceptionId": 6633,
+                "latestRunId": 4
+            }
+        },
+        {
+            "at": "2026-11-05T07:05:00-06:00",
+            "id": 258,
+            "actor": "marketing",
+            "action": "case_transition",
+            "detail": {
+                "to": "closed_acknowledged",
+                "from": "investigating",
+                "runId": 5,
+                "reason": "Reviewed — no mapping change",
+                "eventId": 228,
+                "reviewId": 3,
+                "proposalId": null,
+                "disposition": "reviewed_no_change"
+            }
+        },
+        {
+            "at": "2026-11-05T07:05:00-06:00",
+            "id": 259,
+            "actor": "marketing",
+            "action": "drift_review",
+            "detail": {
+                "by": "demo:marketing",
+                "owner": null,
+                "runId": 5,
+                "reviewId": 3,
+                "disposition": "reviewed_no_change",
+                "exceptionId": 6633,
+                "latestRunId": 5
+            }
+        },
+        {
+            "at": "2026-11-06T07:05:00-06:00",
+            "id": 261,
+            "actor": "monitor",
+            "action": "case_transition",
+            "detail": {
+                "to": "detected",
+                "from": "closed_acknowledged",
+                "runId": 6,
+                "reason": "New evidence since review #3: a contradiction it did not see (check #6)",
+                "eventId": 229,
+                "trigger": "new_material_evidence",
+                "newFacts": 1,
+                "reviewId": 3,
+                "proposalId": null,
+                "reviewedRunId": 5
+            }
+        }
+    ],
+    "case_events": [
+        {
+            "at": "2026-11-02T07:05:00-06:00",
+            "id": 223,
+            "to": "detected",
+            "from": null,
+            "actor": "reconcile",
+            "event": "transition",
+            "reason": "Exception detected"
+        },
+        {
+            "at": "2026-11-02T07:35:00-06:00",
+            "id": 224,
+            "to": "closed_acknowledged",
+            "from": "detected",
+            "actor": "marketing",
+            "event": "transition",
+            "reason": "Reviewed — no mapping change"
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 225,
+            "to": "detected",
+            "from": "closed_acknowledged",
+            "actor": "monitor",
+            "event": "transition",
+            "reason": "New evidence since review #1: a contradiction it did not see (check #4)"
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 226,
+            "to": null,
+            "from": null,
+            "actor": "engineer",
+            "event": "owner_assigned",
+            "reason": null
+        },
+        {
+            "at": "2026-11-04T07:05:00-06:00",
+            "id": 227,
+            "to": "investigating",
+            "from": "detected",
+            "actor": "engineer",
+            "event": "transition",
+            "reason": "Needs investigation"
+        },
+        {
+            "at": "2026-11-05T07:05:00-06:00",
+            "id": 228,
+            "to": "closed_acknowledged",
+            "from": "investigating",
+            "actor": "marketing",
+            "event": "transition",
+            "reason": "Reviewed — no mapping change"
+        },
+        {
+            "at": "2026-11-06T07:05:00-06:00",
+            "id": 229,
+            "to": "detected",
+            "from": "closed_acknowledged",
+            "actor": "monitor",
+            "event": "transition",
+            "reason": "New evidence since review #3: a contradiction it did not see (check #6)"
+        }
+    ],
+    "monitor_runs": [
+        {
+            "id": 1,
+            "ran_at": "2026-11-01T07:05:00-06:00",
+            "outcome": "current",
+            "exception_id": null,
+            "mapping_version": 2
+        },
+        {
+            "id": 2,
+            "ran_at": "2026-11-02T07:05:00-06:00",
+            "outcome": "drift",
+            "exception_id": 6633,
+            "mapping_version": 2
+        },
+        {
+            "id": 3,
+            "ran_at": "2026-11-03T07:05:00-06:00",
+            "outcome": "drift",
+            "exception_id": 6633,
+            "mapping_version": 2
+        },
+        {
+            "id": 4,
+            "ran_at": "2026-11-04T07:05:00-06:00",
+            "outcome": "drift",
+            "exception_id": 6633,
+            "mapping_version": 2
+        },
+        {
+            "id": 5,
+            "ran_at": "2026-11-05T07:05:00-06:00",
+            "outcome": "drift",
+            "exception_id": 6633,
+            "mapping_version": 2
+        },
+        {
+            "id": 6,
+            "ran_at": "2026-11-06T07:05:00-06:00",
+            "outcome": "drift",
+            "exception_id": 6633,
+            "mapping_version": 2
+        }
+    ],
+    "mapping_versions": [
+        {
+            "version": 1,
+            "branch_id": null,
+            "change_id": null,
+            "recorded_at": "2026-10-31T08:00:00-05:00",
+            "recorded_by": "as found"
+        },
+        {
+            "version": 2,
+            "branch_id": "B44",
+            "change_id": 2,
+            "recorded_at": "2026-10-31T08:00:00-05:00",
+            "recorded_by": "demo:marketing"
+        }
+    ]
+}

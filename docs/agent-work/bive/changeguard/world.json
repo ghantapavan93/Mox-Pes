@@ -1,0 +1,147 @@
+{
+  "changes": {
+    "wrong": [
+      1,
+      "preflight_failed"
+    ],
+    "g12": [
+      2,
+      "verified"
+    ],
+    "m20": [
+      3,
+      "verified"
+    ],
+    "g13": [
+      4,
+      "verified"
+    ]
+  },
+  "runs": [
+    {
+      "change_id": "2",
+      "id": "1",
+      "outcome": "insufficient_evidence",
+      "reasons": [
+        "CAMPAIGN_ID_AMBIGUOUS"
+      ]
+    },
+    {
+      "change_id": "3",
+      "id": "2",
+      "outcome": "insufficient_evidence",
+      "reasons": [
+        "CAMPAIGN_ID_AMBIGUOUS"
+      ]
+    },
+    {
+      "change_id": "4",
+      "id": "3",
+      "outcome": "insufficient_evidence",
+      "reasons": [
+        "LEADS_UNRESOLVED"
+      ]
+    }
+  ],
+  "driftItems": 0,
+  "beforeRelease": {
+    "spendCents": 120000,
+    "acquired": 2,
+    "collectedCents": 29800,
+    "maps": [
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "777",
+        "branch_id": null,
+        "versions": 0
+      },
+      {
+        "platform": "meta",
+        "external_campaign_id": "777",
+        "branch_id": null,
+        "versions": 0
+      },
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "888",
+        "branch_id": null,
+        "versions": 0
+      }
+    ]
+  },
+  "afterRelease": {
+    "spendCents": 120000,
+    "acquired": 2,
+    "collectedCents": 29800,
+    "maps": [
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "777",
+        "branch_id": "B12",
+        "versions": 2
+      },
+      {
+        "platform": "meta",
+        "external_campaign_id": "777",
+        "branch_id": "B20",
+        "versions": 2
+      },
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "888",
+        "branch_id": "B13",
+        "versions": 2
+      }
+    ]
+  },
+  "beforeCheck": {
+    "spendCents": 120000,
+    "acquired": 2,
+    "collectedCents": 29800,
+    "maps": [
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "777",
+        "branch_id": "B12",
+        "versions": 2
+      },
+      {
+        "platform": "meta",
+        "external_campaign_id": "777",
+        "branch_id": "B20",
+        "versions": 2
+      },
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "888",
+        "branch_id": "B13",
+        "versions": 2
+      }
+    ]
+  },
+  "afterCheck": {
+    "spendCents": 120000,
+    "acquired": 2,
+    "collectedCents": 29800,
+    "maps": [
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "777",
+        "branch_id": "B12",
+        "versions": 2
+      },
+      {
+        "platform": "meta",
+        "external_campaign_id": "777",
+        "branch_id": "B20",
+        "versions": 2
+      },
+      {
+        "platform": "google_ads",
+        "external_campaign_id": "888",
+        "branch_id": "B13",
+        "versions": 2
+      }
+    ]
+  }
+}

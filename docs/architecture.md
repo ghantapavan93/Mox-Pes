@@ -148,7 +148,9 @@ review queue is exercised by `tests/integration/identity.test.ts` and by the e2e
 
 ## Observability (implemented)
 
-- `ingestion_runs`: one row per run with window, counts, status and error.
+- `ingestion_runs`: one row per run with window, counts, status and error. `inserted` counts versions
+  stored for the first time, accepted or not; `rows_changed` (migration 0030) is what the delivery
+  changed in the accepted records, written in the run's own transaction (NULL: not recorded).
 - `raw_events.delivery_count`, `received_at` vs `occurred_at` (two clocks).
 - `audit_log` for every decision, replay, proposal step, identity decision, investigation and sync job.
 - `/audit` (Audit & Health): the filterable audit log, Action Center throughput, stream freshness,

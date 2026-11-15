@@ -3,7 +3,8 @@ import { Badge, Card, KV, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION } from "@/lib/adapters/registry";
 import type { Queryable } from "@/lib/db";
 import { count, dateTime, money } from "@/lib/format";
-import { auditTrail, failedRunsWithRecovery, listExceptions, recentRuns, replayHistory, streamTotals } from "@/lib/queries";
+import { runOutcome } from "@/lib/ingest/run-outcome";
+import { auditTrail, failedRunsWithRecovery, listExceptions, recentRuns, replayHistory, streamTotals, verificationsByRun } from "@/lib/queries";
 
 /** The full, filterable trail is on Audit & Health; this panel previews the latest entries. */
 const AUDIT_PREVIEW = 8;
@@ -14,10 +15,11 @@ const AUDIT_PREVIEW = 8;
  * lives below the connector sections because connector syncs write into the same log.
  */
 export async function PipelineSections({ db, runId = null }: { db: Queryable; runId?: number | null }) {
-  const [totals, runs, failures, replays, audit, quarantines] = await Promise.all([
+  const [totals, { runs, verifications }, failures, replays, audit, quarantines] = await Promise.all([
     streamTotals(db),
     // A run linked from elsewhere (`?run=`) is listed even when it is older than the latest 27.
-    recentRuns(db, 27, runId),
+    // With each run: the stored coverage-gap verifications that used its accepted records.
+    recentRuns(db, 27, runId).then(async (runs) => ({ runs, verifications: await verificationsByRun(db, runs.map((r) => Number(r.id))) })),
     failedRunsWithRecovery(db),
     replayHistory(db),
     auditTrail(db),
@@ -99,28 +101,53 @@ export async function PipelineSections({ db, runId = null }: { db: Queryable; ru
       </Card>
 
       <Card title="Latest scheduled ingestion runs" subtitle="One run per stream per day in the simulation; each is one transaction">
-        <TableWrap label="Latest ingestion runs">
+        <p className="mb-3 max-w-3xl text-xs leading-5 text-muted" data-testid="runs-legend">
+          Stored counts record versions kept for the first time, whether or not they became the accepted version. Outcome says what
+          the run changed in the accepted records every report reads, as recorded when it ran; a revision that restates the same
+          numbers still counts as a change.
+        </p>
+        <TableWrap label="Latest ingestion runs" minWidth={880}>
           <thead>
-            <tr><Th>Run</Th><Th>Stream</Th><Th>Mapper</Th><Th>Window</Th><Th align="right">Fetched</Th><Th align="right">New</Th><Th align="right">Dupes</Th><Th align="right">Quarantined</Th><Th>Status</Th></tr>
+            <tr><Th>Run</Th><Th>Outcome</Th><Th>Stream</Th><Th>Mapper</Th><Th>Window</Th><Th align="right">Fetched</Th><Th align="right">Stored</Th><Th align="right">Dupes</Th><Th align="right">Quarantined</Th><Th>Status</Th></tr>
           </thead>
           <tbody>
-            {runs.map((r) => (
-              // Each run is addressable (#run-<id>); the one a link asked for is marked, in words too.
-              <tr key={r.id} id={`run-${r.id}`} aria-current={Number(r.id) === runId ? "true" : undefined} className={`scroll-mt-28 ${Number(r.id) === runId ? "bg-accent-soft" : ""}`}>
-                <Td className="font-mono text-xs">
-                  #{r.id}
-                  {Number(r.id) === runId && <span className="block font-sans text-[11px] font-medium text-accent">the run you followed</span>}
-                </Td>
-                <Td className="font-mono text-xs">{r.stream}</Td>
-                <Td className="font-mono text-xs">{r.adapter_version}</Td>
-                <Td className="text-xs">{dateTime(r.window_start)} → {dateTime(r.window_end)}</Td>
-                <Td align="right">{count(r.fetched)}</Td>
-                <Td align="right">{count(r.inserted)}</Td>
-                <Td align="right">{count(r.duplicates)}</Td>
-                <Td align="right">{r.quarantined > 0 ? <span className="text-bad">{r.quarantined}</span> : 0}</Td>
-                <Td><Badge tone={r.status === "succeeded" ? "good" : "bad"}>{r.status}</Badge></Td>
-              </tr>
-            ))}
+            {runs.map((r) => {
+              // From what was recorded when the run ran, never from its status or today's records.
+              const outcome = runOutcome(
+                { fetched: r.fetched, inserted: r.inserted, duplicates: r.duplicates, projected: r.projected, rowsChanged: r.rows_changed === null ? null : Number(r.rows_changed) },
+                verifications.get(Number(r.id)),
+              );
+              return (
+                // Each run is addressable (#run-<id>); the one a link asked for is marked, in words too.
+                <tr key={r.id} id={`run-${r.id}`} aria-current={Number(r.id) === runId ? "true" : undefined} className={`scroll-mt-28 ${Number(r.id) === runId ? "bg-accent-soft" : ""}`}>
+                  <Td className="font-mono text-xs">
+                    #{r.id}
+                    {Number(r.id) === runId && <span className="block font-sans text-[11px] font-medium text-accent">the run you followed</span>}
+                  </Td>
+                  <Td className="min-w-40 text-xs">
+                    <div data-testid="run-outcome">
+                      <span className={outcome.recorded ? "font-medium text-text" : "text-muted"}>{outcome.effect}</span>
+                      {outcome.reason && <span className="block text-muted">{outcome.reason}</span>}
+                      {outcome.verifications.map((v) => (
+                        <span key={`${v.exceptionId}${v.used}`} className="block text-muted">
+                          <Link href={`/exceptions/${v.exceptionId}#recovery`} className="font-medium text-accent hover:underline">Incident #{v.exceptionId}</Link>
+                          {v.used}.
+                        </span>
+                      ))}
+                    </div>
+                  </Td>
+                  <Td className="font-mono text-xs">{r.stream}</Td>
+                  <Td className="font-mono text-xs">{r.adapter_version}</Td>
+                  {/* Never squeezed to a word per line by the Outcome column; with it the table still fits 1280 px. */}
+                  <Td className="min-w-32 text-xs">{dateTime(r.window_start)} → {dateTime(r.window_end)}</Td>
+                  <Td align="right">{count(r.fetched)}</Td>
+                  <Td align="right">{count(r.inserted)}</Td>
+                  <Td align="right">{count(r.duplicates)}</Td>
+                  <Td align="right">{r.quarantined > 0 ? <span className="text-bad">{r.quarantined}</span> : 0}</Td>
+                  <Td><Badge tone={r.status === "succeeded" ? "good" : "bad"}>{r.status}</Badge></Td>
+                </tr>
+              );
+            })}
           </tbody>
         </TableWrap>
       </Card>

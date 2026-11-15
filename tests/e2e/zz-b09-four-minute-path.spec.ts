@@ -161,6 +161,16 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
   const row = page.locator(`tr#run-${runId}`);
   await expect(row).toHaveAttribute("aria-current", "true");
   await expect(row).toContainText("the run you followed");
+  // Its outcome (DELIVERY-OUTCOMES.md): what it changed when it ran, recorded then, and the
+  // verification that used it. The table says Stored, not New: a stored version may change nothing.
+  const outcome = row.getByTestId("run-outcome");
+  await expect(outcome).toContainText(/^[\d,]+ changes? to accepted records/);
+  await expect(outcome).toContainText(`Incident #${gapId}'s verification used`);
+  await expect(outcome).toContainText("to clear its coverage hold.");
+  await expect(outcome.getByRole("link", { name: `Incident #${gapId}` })).toHaveAttribute("href", `/exceptions/${gapId}#recovery`);
+  const head = page.locator("table", { has: row }).locator("thead");
+  await expect(head).toContainText("Stored");
+  await expect(head).not.toContainText("New");
   await page.goBack();
   await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}\\?.*#action-center$`));
   await expect(page.getByTestId("gap-recovery").filter({ visible: true })).toBeVisible();

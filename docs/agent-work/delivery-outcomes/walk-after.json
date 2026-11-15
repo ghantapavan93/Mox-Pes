@@ -1,0 +1,479 @@
+{
+  "build": "UUfOJuh4ioDDsyyHgfG8c",
+  "mode": "walk",
+  "phase": "after",
+  "total": 35,
+  "failed": 0,
+  "checks": [
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "incident: the coverage hold was cleared and verified",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as "
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "incident: the money was reclassified, not added",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Verification details"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "runs: the verification names #677 and #676",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "runs: neither #678 nor #679 is among them",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "pipeline: the followed run is marked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "after: New is gone; the column says what it counts",
+      "ok": true,
+      "detail": "Run | Outcome | Stream | Mapper | Window | Fetched | Stored | Dupes | Quarantined | Status"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "after: the outcome sits beside the run",
+      "ok": true,
+      "detail": "Run | Outcome | Stream | Mapper | Window | Fetched | Stored | Dupes | Quarantined | Status"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#676: partial: 5 changes; the verification used 5 of its 18 dates from it",
+      "ok": true,
+      "detail": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold."
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#677: the rest: 13 changes; the verification used the other 13 dates",
+      "ok": true,
+      "detail": "13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold."
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#678: a duplicate: No change to accepted records Duplicate: every delivery was a version already stored",
+      "ok": true,
+      "detail": "No change to accepted records Duplicate: every delivery was a version already stored"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#679: stored but superseded: no change",
+      "ok": true,
+      "detail": "No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#678 and #679 name no verification",
+      "ok": true,
+      "detail": "No change to accepted records Duplicate: every delivery was a version already stored / No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "stored counts: 5, 13, 0, 1",
+      "ok": true,
+      "detail": "5,13,0,1"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "no outcome claims a decision or a budget approval",
+      "ok": true,
+      "detail": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold. / 13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold. / No change to accepted records Duplicate: every delivery was a version already stored / No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "#677's verification names its incident as a link",
+      "ok": true,
+      "detail": "/exceptions/2455#recovery"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "desktop: the runs table fits without scrolling sideways",
+      "ok": true,
+      "detail": "{\"scrollWidth\":990,\"clientWidth\":990}"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "the marked row's outcome is in view without scrolling sideways",
+      "ok": true,
+      "detail": "{\"x\":333.609375,\"y\":1561.5,\"width\":161.140625,\"height\":157}"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "desktop-1280",
+      "step": "return: the incident keeps its period and its open verification",
+      "ok": true,
+      "detail": "http://localhost:3400/exceptions/2455?period=oct#recovery open=true"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "incident: the coverage hold was cleared and verified",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as "
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "incident: the money was reclassified, not added",
+      "ok": true,
+      "detail": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services. Next: See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change. Open Decision Lab Verification details"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "runs: the verification names #677 and #676",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "runs: neither #678 nor #679 is among them",
+      "ok": true,
+      "detail": "RUN FILED BY SOURCE REVISION (FETCHED) DATES SPEND ingestion run #677 ads@1.2 Oct 31, 1:10 PM UTC Oct 13–Oct 25 $1,526.35 ingestion run #676 ads@1.2 Oct 31, 1:00 PM UTC Oct 26–Oct 30 $597.17"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "pipeline: the followed run is marked",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "after: New is gone; the column says what it counts",
+      "ok": true,
+      "detail": "Run | Outcome | Stream | Mapper | Window | Fetched | Stored | Dupes | Quarantined | Status"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "after: the outcome sits beside the run",
+      "ok": true,
+      "detail": "Run | Outcome | Stream | Mapper | Window | Fetched | Stored | Dupes | Quarantined | Status"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#676: partial: 5 changes; the verification used 5 of its 18 dates from it",
+      "ok": true,
+      "detail": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold."
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#677: the rest: 13 changes; the verification used the other 13 dates",
+      "ok": true,
+      "detail": "13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold."
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#678: a duplicate: No change to accepted records Duplicate: every delivery was a version already stored",
+      "ok": true,
+      "detail": "No change to accepted records Duplicate: every delivery was a version already stored"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#679: stored but superseded: no change",
+      "ok": true,
+      "detail": "No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#678 and #679 name no verification",
+      "ok": true,
+      "detail": "No change to accepted records Duplicate: every delivery was a version already stored / No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "stored counts: 5, 13, 0, 1",
+      "ok": true,
+      "detail": "5,13,0,1"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "no outcome claims a decision or a budget approval",
+      "ok": true,
+      "detail": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold. / 13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold. / No change to accepted records Duplicate: every delivery was a version already stored / No change to accepted records Stored, but a newer revision was already accepted"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "#677's verification names its incident as a link",
+      "ok": true,
+      "detail": "/exceptions/2455#recovery"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "the marked row's outcome is in view without scrolling sideways",
+      "ok": true,
+      "detail": "{\"x\":85.421875,\"y\":2202.203125,\"width\":160,\"height\":157}"
+    },
+    {
+      "mode": "walk",
+      "phase": "after",
+      "viewport": "phone-390",
+      "step": "return: the incident keeps its period and its open verification",
+      "ok": true,
+      "detail": "http://localhost:3400/exceptions/2455?period=oct#recovery open=true"
+    }
+  ],
+  "clicks": [
+    {
+      "viewport": "desktop-1280",
+      "n": 1,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 2,
+      "what": "ingestion run #677 (link in the verification's runs)",
+      "url": "/integrations?view=pipeline&run=677#run-677"
+    },
+    {
+      "viewport": "desktop-1280",
+      "n": 3,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 1,
+      "what": "Verification details",
+      "url": "/exceptions/2455?period=oct#recovery"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 2,
+      "what": "ingestion run #677 (link in the verification's runs)",
+      "url": "/integrations?view=pipeline&run=677#run-677"
+    },
+    {
+      "viewport": "phone-390",
+      "n": 3,
+      "what": "browser Back",
+      "url": "/exceptions/2455?period=oct#recovery"
+    }
+  ],
+  "reentries": [],
+  "repeats": [],
+  "rows": {
+    "desktop-1280": {
+      "676": {
+        "Run": "#676",
+        "Outcome": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC",
+        "Fetched": "5",
+        "Stored": "5",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "677": {
+        "Run": "#677 the run you followed",
+        "Outcome": "13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC",
+        "Fetched": "13",
+        "Stored": "13",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "678": {
+        "Run": "#678",
+        "Outcome": "No change to accepted records Duplicate: every delivery was a version already stored",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC",
+        "Fetched": "13",
+        "Stored": "0",
+        "Dupes": "13",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "679": {
+        "Run": "#679",
+        "Outcome": "No change to accepted records Stored, but a newer revision was already accepted",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:25 PM UTC → Oct 31, 1:30 PM UTC",
+        "Fetched": "1",
+        "Stored": "1",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      }
+    },
+    "phone-390": {
+      "676": {
+        "Run": "#676",
+        "Outcome": "5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC",
+        "Fetched": "5",
+        "Stored": "5",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "677": {
+        "Run": "#677 the run you followed",
+        "Outcome": "13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC",
+        "Fetched": "13",
+        "Stored": "13",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "678": {
+        "Run": "#678",
+        "Outcome": "No change to accepted records Duplicate: every delivery was a version already stored",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC",
+        "Fetched": "13",
+        "Stored": "0",
+        "Dupes": "13",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      },
+      "679": {
+        "Run": "#679",
+        "Outcome": "No change to accepted records Stored, but a newer revision was already accepted",
+        "Stream": "ads",
+        "Mapper": "ads@1.2",
+        "Window": "Oct 31, 1:25 PM UTC → Oct 31, 1:30 PM UTC",
+        "Fetched": "1",
+        "Stored": "1",
+        "Dupes": "0",
+        "Quarantined": "0",
+        "Status": "succeeded"
+      }
+    }
+  },
+  "layout": {
+    "desktop-1280": {
+      "outcomeCell": {
+        "x": 333.609375,
+        "y": 1561.5,
+        "width": 161.140625,
+        "height": 157
+      },
+      "viewport": {
+        "key": "desktop-1280",
+        "width": 1280,
+        "height": 800
+      },
+      "tableScroll": {
+        "scrollWidth": 990,
+        "clientWidth": 990
+      },
+      "rowHeights": {
+        "676": 137,
+        "677": 157,
+        "678": 117,
+        "679": 117
+      }
+    },
+    "phone-390": {
+      "outcomeCell": {
+        "x": 85.421875,
+        "y": 2202.203125,
+        "width": 160,
+        "height": 157
+      },
+      "viewport": {
+        "key": "phone-390",
+        "width": 390,
+        "height": 844
+      },
+      "tableScroll": {
+        "scrollWidth": 988,
+        "clientWidth": 356
+      },
+      "rowHeights": {
+        "676": 157,
+        "677": 157,
+        "678": 117,
+        "679": 117
+      }
+    }
+  }
+}

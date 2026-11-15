@@ -1,0 +1,102 @@
+{
+  "build": "PbO3bB5BZmRLZ68TuIsJD",
+  "mode": "roles",
+  "phase": "before",
+  "total": 11,
+  "failed": 0,
+  "checks": [
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "engineer-1280",
+      "step": "owner: the marked row carries its outcome",
+      "ok": true,
+      "detail": "#677 the run you followed ads ads@1.2 Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC 13 13 0 0 succeeded"
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline&run=677#run-677 carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "partner-fresh",
+      "step": "partner: /integrations?view=pipeline carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "partner-fresh",
+      "step": "partner: /exceptions/2455?period=oct#recovery carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "partner-fresh",
+      "step": "partner: /api/cases/161 carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "partner-fresh",
+      "step": "partner: the pipeline page says it is limited to company-wide roles",
+      "ok": true,
+      "detail": "SYSTEMS · COMPANY-WIDE Integrations Every source lands in one raw event log, exactly once per record version, through a versioned mapper. The CRM connector is read-only and office-scoped: it searches for changed ids, gets records in bounded batches, absorbs re-deliveries, quarantines bad records, an"
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline&run=677#run-677 carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "brand-fresh",
+      "step": "brand: /integrations?view=pipeline carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "brand-fresh",
+      "step": "brand: /exceptions/2455?period=oct#recovery carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "200 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "brand-fresh",
+      "step": "brand: /api/cases/161 carries no B09 evidence and no run outcome",
+      "ok": true,
+      "detail": "405 "
+    },
+    {
+      "mode": "roles",
+      "phase": "before",
+      "viewport": "brand-fresh",
+      "step": "brand: the pipeline page says it is limited to company-wide roles",
+      "ok": true,
+      "detail": "SYSTEMS · COMPANY-WIDE Integrations Every source lands in one raw event log, exactly once per record version, through a versioned mapper. The CRM connector is read-only and office-scoped: it searches for changed ids, gets records in bounded batches, absorbs re-deliveries, quarantines bad records, an"
+    }
+  ],
+  "clicks": [],
+  "reentries": [],
+  "repeats": [],
+  "rows": {},
+  "layout": {}
+}

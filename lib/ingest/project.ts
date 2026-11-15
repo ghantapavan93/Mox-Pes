@@ -175,10 +175,10 @@ const SQL: Record<Table, string> = {
  * (the newest observation decides). Every path that projects (intake, replay, re-projection after
  * a rule) goes through here, so none can count unstated money as USD.
  */
-async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ kept: ProjectionItem[]; held: number[] }> {
+async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ kept: ProjectionItem[]; held: number[]; removed: number }> {
   const isSpend = (i: ProjectionItem) => i.projection.table === "ad_spend_daily";
   const unstated = (i: ProjectionItem) => i.projection.table === "ad_spend_daily" && i.projection.row.currencyBasis !== "reported_usd" && i.projection.row.currencyBasis !== "account_rule_usd";
-  if (!items.some(isSpend)) return { kept: items, held: [] };
+  if (!items.some(isSpend)) return { kept: items, held: [], removed: 0 };
   // Held until this transaction ends, so a rule cannot be revoked or authorized between this read
   // and the commit of what it decided (lib/currency/coverage.ts).
   await lockCurrencyShared(db);
@@ -232,6 +232,7 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
     const newer = newestHeld.get(keyOf(row.platform, row.externalCampaignId, row.spendDate));
     return newer === undefined || row.sourceUpdatedAt.getTime() > newer;
   });
+  let removed = 0;
   if (held.length > 0) {
     // The campaign exists whatever its money's currency: its identity is recorded (no spend), so it
     // can be mapped, reviewed and attributed before the spend is authorized. Before 2026-11-12 a
@@ -253,20 +254,24 @@ async function currencyGate(db: Queryable, items: ProjectionItem[]): Promise<{ k
        where id = any($1::bigint[])`,
       [held.map((h) => h.rawEventId), CURRENCY_UNSTATED],
     );
-    await db.query(
+    // An accepted spend day a newer held version supersedes leaves the metrics: a change to the
+    // accepted records, counted with the rows the projection writes (a run's rows_changed).
+    const deleted = await db.query(
       `delete from ad_spend_daily s
        using ad_campaigns c, jsonb_to_recordset($1::jsonb) as r("platform" text, "externalCampaignId" text, "spendDate" date, "sourceUpdatedAt" timestamptz)
        where c.id = s.campaign_id and c.platform = r."platform" and c.external_campaign_id = r."externalCampaignId"
          and s.spend_date = r."spendDate" and s.source_updated_at <= r."sourceUpdatedAt"`,
       [JSON.stringify(held)],
     );
+    removed = deleted.rowCount ?? 0;
   }
-  return { kept: counted, held: held.map((h) => h.rawEventId) };
+  return { kept: counted, held: held.map((h) => h.rawEventId), removed };
 }
 
 /**
  * Projects a batch. `report.held` receives the raw event ids the currency gate held (excluded,
- * not projected), so a caller does not mark or count them as projected.
+ * not projected), so a caller does not mark or count them as projected. Returns the accepted
+ * records written or removed.
  */
 export async function projectAll(db: Queryable, all: ProjectionItem[], report?: { held: number[] }): Promise<number> {
   const gated = await currencyGate(db, all);
@@ -287,8 +292,9 @@ export async function projectAll(db: Queryable, all: ProjectionItem[], report?: 
   const order: Table[] = ["ad_spend_daily", "crm_customers", "crm_subscriptions", "crm_appointments", "crm_tickets", "crm_payments", "leads"];
   // Rows actually written: each upsert skips rows that already point at this raw event or hold
   // a newer version, so an unchanged re-read counts 0. Ingest uses this to tell a re-observed
-  // version that changed live rows (an A -> B -> A flip) from a quiet poll.
-  let changed = 0;
+  // version that changed live rows (an A -> B -> A flip) from a quiet poll. Spend days the
+  // currency gate removed count too: they changed what the metrics read.
+  let changed = gated.removed;
   for (const table of order) {
     const bucket = byTable.get(table);
     if (!bucket || bucket.size === 0) continue;

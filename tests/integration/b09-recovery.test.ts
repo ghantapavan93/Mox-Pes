@@ -6,10 +6,11 @@ import { decisionVerdicts } from "@/lib/decision/verdicts";
 import { withTransaction } from "@/lib/db";
 import { dispatchEvents } from "@/lib/events/consumers";
 import { runStream } from "@/lib/ingest/ingest";
+import { runOutcome, verificationSentence } from "@/lib/ingest/run-outcome";
 import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
-import { recentRuns } from "@/lib/queries";
+import { recentRuns, verificationsByRun } from "@/lib/queries";
 import { gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatusesAt } from "@/lib/reconcile/gap-status";
 import { InMemorySourceClient } from "@/lib/sim/clients";
@@ -135,6 +136,15 @@ const coverageOf = async (id: string) => {
 };
 const days = (from: number, to: number) => range(from, to).map(day);
 const CONTROLS = { b09: { acquired: 2, collected: 29_800, paid: 1_402_119 }, b13: { acquired: 1, collected: 14_900, paid: 750_000 } };
+/** A delivery run's own row, as the Integrations pipeline reads it (DELIVERY-OUTCOMES.md). */
+const runRow = (id: number) =>
+  one<{ fetched: number; inserted: number; duplicates: number; projected: number; rows_changed: number | null }>(pool, "select fetched, inserted, duplicates, projected, rows_changed from ingestion_runs where id = $1", [id]);
+/** The words its row shows: what it changed, why not, and each verification that used it. */
+const outcomeOf = async (id: number) => {
+  const r = await runRow(id);
+  const o = runOutcome({ fetched: r.fetched, inserted: r.inserted, duplicates: r.duplicates, projected: r.projected, rowsChanged: r.rows_changed }, (await verificationsByRun(pool, [id])).get(id));
+  return [o.effect, ...(o.reason ? [o.reason] : []), ...o.verifications.map(verificationSentence)];
+};
 
 describe("B09: a re-fetch clears the hold only when the whole window is covered", () => {
   let original: { id: string; fingerprint: string };
@@ -193,6 +203,10 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect(s.conclusion).toBe("Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none.");
     expect(s.change).toBe("Originally $3,743.19 was filed as Google Search. Now $1,051.80 (Oct 26–Oct 30) is filed as Google Local Services; $2,691.39 (Oct 13–Oct 25) is still filed as Google Search.");
     expect(await controls()).toEqual(CONTROLS);
+    // The run, as recorded when it ran: 5 versions stored, 5 accepted records changed; the hold
+    // stands, so no verification has used it yet.
+    expect(await runRow(r1)).toEqual({ fetched: 5, inserted: 5, duplicates: 0, projected: 5, rows_changed: 5 });
+    expect(await outcomeOf(r1)).toEqual(["5 changes to accepted records"]);
   });
 
   it("sufficient: the rest (Oct 13–25) re-fetched: the original incident resolves under its own id and case", async () => {
@@ -228,6 +242,12 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect((await recentRuns(pool, 1)).map((r) => Number(r.id))).toEqual([r2]);
     expect((await recentRuns(pool, 1, r1)).map((r) => Number(r.id))).toEqual([r2, r1]);
     expect(await controls()).toEqual(CONTROLS);
+    // Each run's row (DELIVERY-OUTCOMES.md): what it changed when it ran, then the share of the
+    // window the verification took from it. The ledger's cents for those dates, by hand:
+    expect([sum(range(26, 30), "pmax"), sum(range(13, 25), "pmax")]).toEqual([105_180, 269_139]);
+    expect(await runRow(r2)).toEqual({ fetched: 13, inserted: 13, duplicates: 0, projected: 13, rows_changed: 13 });
+    expect(await outcomeOf(r1)).toEqual(["5 changes to accepted records", `Incident #${original.id}'s verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.`]);
+    expect(await outcomeOf(r2)).toEqual(["13 changes to accepted records", `Incident #${original.id}'s verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.`]);
   });
 
   it("duplicate replay: the same correction again changes no money, opens nothing, records no second recovery", async () => {
@@ -239,13 +259,23 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect((await one<{ e: unknown }>(pool, "select evidence as e from exceptions where id = $1", [original.id])).e).toEqual(before.evidence);
     expect((await one<{ n: string }>(pool, "select count(*) as n from case_events where case_id = $1", [caseId])).n).toBe(before.events);
     expect(await controls()).toEqual(CONTROLS);
+    // Its row: nothing stored, and recorded as having changed nothing (not inferred from that).
+    expect(await runRow(run.runId)).toEqual({ fetched: 13, inserted: 0, duplicates: 13, projected: 0, rows_changed: 0 });
+    expect(await outcomeOf(run.runId)).toEqual(["No change to accepted records", "Duplicate: every delivery was a version already stored"]);
   });
 
   it("an older revision delivered late cannot replace the accepted correction", async () => {
-    await deliverAds([spend("pmax", 20, "2026-10-31T10:00:00Z", 25_740)], at("12:10"));
+    const run = await deliverAds([spend("pmax", 20, "2026-10-31T10:00:00Z", 25_740)], at("12:10"));
     expect(Number((await one<{ c: string }>(pool, "select s.cost_cents as c from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id where c.external_campaign_id = 'pmax-lsa-B09' and s.spend_date = '2026-10-20'")).c)).toBe(20_740);
     expect([await spendOf(BRANCH, "google_lsa"), await spendOf(BRANCH, "google_search")]).toEqual([502_119, 900_000]);
     expect((await gaps()).map((r) => [r.id, r.status])).toEqual([[original.id, "resolved"]]);
+    // Its row: stored (the pipeline's former "New 1"), but superseded, so it changed nothing; and
+    // the verification still rests on r2 and r1 alone, once (no second verification).
+    expect(await runRow(run.runId)).toEqual({ fetched: 1, inserted: 1, duplicates: 0, projected: 1, rows_changed: 0 });
+    expect(await outcomeOf(run.runId)).toEqual(["No change to accepted records", "Stored, but a newer revision was already accepted"]);
+    expect([...(await verificationsByRun(pool, [r1, r2, run.runId])).keys()].sort((a, b) => a - b)).toEqual([r1, r2]);
+    expect((await one<{ e: Record<string, unknown> }>(pool, "select evidence as e from exceptions where id = $1", [original.id])).e.previousVerifications).toBeUndefined();
+    expect(await controls()).toEqual(CONTROLS);
   });
 
   it("a later feed day does not reopen a verified incident: the verified window stays Oct 13–30", async () => {
@@ -263,13 +293,18 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect((await caseOf(original.id)).id).toBe(caseId);
     expect((await budgetSignal(pool, BRANCH, OCT)).blockers.map((b) => String(b.exceptionId))).toContain(original.id);
     expect((await coverageOf(original.id)).recordedZero).toEqual([day(20)]);
-    await deliverAds([spend("pmax", 20, "2026-10-31T12:50:00Z")], at("12:55"));
+    const repair = await deliverAds([spend("pmax", 20, "2026-10-31T12:50:00Z")], at("12:55"));
     const row = await one<{ status: string; evidence: { previousVerifications?: unknown[]; verification?: { verifiedAt: string } } }>(pool, "select status, evidence from exceptions where id = $1", [original.id]);
     expect(row.status).toBe("resolved");
     expect(row.evidence.previousVerifications).toHaveLength(1);
     expect(row.evidence.verification?.verifiedAt).toBe(at("12:55").toISOString());
     expect((await gaps()).map((r) => r.id)).toEqual([original.id]);
     expect(await controls()).toEqual(CONTROLS);
+    // Both verifications stay on the runs' rows, each with what it used: r2 gave 13 dates to the
+    // first and 12 to the second (Oct 20 now comes from the repair).
+    const v = `Incident #${original.id}'s verification used`;
+    expect((await outcomeOf(r2)).slice(1)).toEqual([`${v} Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.`, `${v} Oct 13–Oct 19, Oct 21–Oct 25 (12 of 18 dates) to clear its coverage hold.`]);
+    expect(await outcomeOf(repair.runId)).toEqual(["1 change to accepted records", `${v} Oct 20 (1 of 18 dates) to clear its coverage hold.`]);
   });
 });
 

@@ -1,4 +1,5 @@
 import type { Queryable } from "@/lib/db";
+import type { RunVerification } from "@/lib/ingest/run-outcome";
 import { PERIODS } from "@/lib/period";
 
 /** Read models for the investigation screens. Branch scope is always applied in SQL. */
@@ -113,13 +114,44 @@ export async function weeklySeries(db: Queryable, branchIds: string[] | null): P
 export async function recentRuns(db: Queryable, limit = 40, include: number | null = null) {
   const { rows } = await db.query(
     `select id, stream, adapter_version, window_start, window_end, started_at, status, fetched, inserted, duplicates,
-            conflicts, projected, quarantined, error
+            conflicts, projected, quarantined, rows_changed, error
      from ingestion_runs
      where id in (select id from ingestion_runs order by started_at desc, id desc limit $1) or id = $2
      order by started_at desc, id desc`,
     [limit, include],
   );
   return rows;
+}
+
+/**
+ * The coverage-gap verifications that name these runs, each as it was stored on its incident when
+ * it cleared the hold (lib/reconcile/gap-coverage.ts, verificationOf): which dates of each run's
+ * accepted records it used. A reopened incident's earlier verifications count too. Read from the
+ * stored verifications only, never from today's accepted records. Company-wide: the one page that
+ * shows it (Integrations) is limited to company-wide roles.
+ */
+export async function verificationsByRun(db: Queryable, runIds: number[]): Promise<Map<number, RunVerification[]>> {
+  const out = new Map<number, RunVerification[]>();
+  if (runIds.length === 0) return out;
+  const { rows } = await db.query<{ run_id: string; exception_id: string; verified_at: string; dates: string[]; required: number }>(
+    `select (r ->> 'runId')::bigint as run_id, x.id as exception_id, v ->> 'verifiedAt' as verified_at,
+            array(select jsonb_array_elements_text(r -> 'dates')) as dates, (v ->> 'requiredDates')::int as required
+     from exceptions x
+     cross join lateral jsonb_array_elements(
+       case when jsonb_typeof(x.evidence -> 'previousVerifications') = 'array' then x.evidence -> 'previousVerifications' else '[]'::jsonb end
+       || case when jsonb_typeof(x.evidence -> 'verification') = 'object' then jsonb_build_array(x.evidence -> 'verification') else '[]'::jsonb end) v
+     cross join lateral jsonb_array_elements(case when jsonb_typeof(v -> 'runs') = 'array' then v -> 'runs' else '[]'::jsonb end) r
+     where x.kind = 'channel_coverage_gap' and jsonb_typeof(r -> 'dates') = 'array' and v ->> 'requiredDates' ~ '^[0-9]{1,9}$'
+       and r ->> 'runId' ~ '^[0-9]{1,18}$' and (r ->> 'runId')::bigint = any($1::bigint[])
+     order by run_id, verified_at, x.id`,
+    [runIds],
+  );
+  for (const r of rows) {
+    const list = out.get(Number(r.run_id)) ?? [];
+    list.push({ exceptionId: Number(r.exception_id), verifiedAt: r.verified_at, dates: r.dates, requiredDates: Number(r.required) });
+    out.set(Number(r.run_id), list);
+  }
+  return out;
 }
 
 export async function failedRunsWithRecovery(db: Queryable) {

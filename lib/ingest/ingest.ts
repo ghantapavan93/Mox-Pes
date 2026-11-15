@@ -10,13 +10,21 @@ import { projectAll, type ProjectionItem } from "./project";
 
 export interface IngestStats {
   fetched: number;
+  /** Record versions stored for the first time, whether or not they became the accepted version. */
   inserted: number;
   duplicates: number;
   conflicts: number;
+  /** Stored versions handed to the projection; one older than the accepted version changes nothing. */
   projected: number;
   quarantined: number;
   /** Records the source itself marks as not counted (e.g. outbound or spam calls); kept as evidence. */
   excluded?: number;
+  /**
+   * Writes and removals of accepted records (the rows every metric reads): versions that became the
+   * accepted one, earlier versions accepted again, exclusions applied, spend the currency gate
+   * removed. 0 when the delivery changed nothing, whatever it stored.
+   */
+  rowsChanged: number;
 }
 
 interface Prepared {
@@ -219,7 +227,7 @@ export async function ingestRecords(
   args: { source: SourceName; records: RawRecord[]; mapper: SourceMapper; ctx: MapContext; runId: number | null; now: Date },
 ): Promise<IngestStats> {
   const { source, records, mapper, runId, now } = args;
-  const stats: IngestStats = { fetched: records.length, inserted: 0, duplicates: 0, conflicts: 0, projected: 0, quarantined: 0, excluded: 0 };
+  const stats: IngestStats = { fetched: records.length, inserted: 0, duplicates: 0, conflicts: 0, projected: 0, quarantined: 0, excluded: 0, rowsChanged: 0 };
   // Lead writers take the lead-write lock FIRST, before any row lock: shared here (deliveries run
   // side by side), exclusive for a file publication (lib/onboarding/service.ts). One lock in one
   // order cannot deadlock; the table lock it replaced was taken in the opposite order to these
@@ -376,6 +384,7 @@ export async function ingestRecords(
   stats.quarantined += items.length - stored.length;
   stats.excluded = (stats.excluded ?? 0) + (stored.length - projected);
   stats.projected = projected;
+  stats.rowsChanged = changed;
   // Published with the batch, in its transaction. An unchanged re-read publishes nothing, so
   // a quiet poll never wakes the consumers; a re-observed version that changed live rows (an
   // A -> B -> A flip of a received-clock record) does, or reconciliation never sees the flip
@@ -654,6 +663,10 @@ export async function runStream(
            updated_at = excluded.updated_at`,
         [client.stream, windowEnd, now],
       );
+      // What the delivery changed in the accepted records, recorded with the change itself: it
+      // commits with it or not at all (then it stays null: not recorded), and it is set, not
+      // added to, so writing it again cannot double it (migration 0030).
+      await tx.query("update ingestion_runs set rows_changed = $2 where id = $1", [runId, s.rowsChanged]);
       return s;
     });
     await pool.query(

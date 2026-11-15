@@ -155,7 +155,13 @@ export async function CoverageGapRecords({ exception }: { exception: ExceptionRo
 
       <Card
         title={`CRM outcomes since ${date(String(ev.gapStart))}`}
-        subtitle={`Customers the CRM shows as acquired at ${branchId} and credited to ${String(ev.channelLabel)} by first evidenced touch. They keep arriving while the channel's recorded spend is zero, which is what makes its cost per customer look cheap.`}
+        // No record is not a recorded $0, and once verified the spend is there (BIVE-ACCEPTANCE.md, F1:
+        // this said "the channel's recorded spend is zero" in every state).
+        subtitle={`Customers the CRM shows as acquired at ${branchId} and credited to ${String(ev.channelLabel)} by first evidenced touch. ${
+          exception.status === "resolved"
+            ? "They arrived while the channel had no spend record here. That spend is now re-filed and verified, so they are no longer counted against missing spend."
+            : "They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap."
+        }`}
       >
         <div className="grid gap-4 2xl:grid-cols-3" data-testid="crm-outcomes">
           <KV

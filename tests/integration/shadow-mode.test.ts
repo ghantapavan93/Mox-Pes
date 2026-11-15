@@ -1,10 +1,12 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import type { Pool } from "pg";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { mapCampaignToBranch } from "@/lib/actions";
 import { assureAnswer } from "@/lib/shadow/answer";
 import { compareSnapshot, type Snapshot } from "@/lib/shadow/snapshot";
-import { listShadowChecks, runShadowCheck } from "@/lib/shadow/store";
+import { getShadowCheck, listShadowChecks, runShadowCheck } from "@/lib/shadow/store";
 import { ForbiddenError, VIEWERS } from "@/lib/viewer";
 import { acquisition, crm, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
@@ -178,5 +180,33 @@ describe("storage", () => {
     expect((await listShadowChecks(pool, marketing)).map((c) => c.id)).toEqual([again.id, first.id]);
     if (!partner.branchIds?.includes("B12")) expect(await listShadowChecks(pool, partner)).toEqual([]);
     await expect(runShadowCheck(pool, VIEWERS.guest, { kind: "snapshot", input: snap() }, NOW)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("an answer that read a brand is listed only to viewers who may see the whole brand (BIVE-ACCEPTANCE.md, F-1)", async () => {
+    const ask = (text: string) => runShadowCheck(pool, marketing, { kind: "answer", input: { system: "atlas-bi", asOf: ASOF, question: "", answer: text } }, NOW);
+    // A company-wide analyst checks a brand-level answer: the check reads Moxie's brand metrics.
+    const brand = await ask("Moxie Pest Control paid CAC was $250.00 in October.");
+    expect((brand.result as { entities: { brands: string[] } }).entities.brands).toEqual(["moxie"]);
+    // The B20 partner sees one Moxie branch and the brand lead none: neither may read it. Before the
+    // fix the check was stored with no branches, and an empty scope is inside every scope.
+    for (const viewer of [partner, VIEWERS.brand]) {
+      expect((await listShadowChecks(pool, viewer)).map((c) => c.id)).not.toContain(brand.id);
+      expect(await getShadowCheck(pool, viewer, brand.id)).toBeNull();
+    }
+    expect(await getShadowCheck(pool, marketing, brand.id)).not.toBeNull();
+    // Control: an answer about the partner's own branch stays the partner's to read.
+    const own = await ask(`${partner.branchIds![0]}'s paid CAC was $250.00 in October.`);
+    expect((await getShadowCheck(pool, partner, own.id))?.id).toBe(own.id);
+    expect(await getShadowCheck(pool, VIEWERS.brand, own.id)).toBeNull();
+    // A check recorded before the fix (no branches stored) is repaired by migration 0032, and applying it again changes nothing.
+    const moxie = (await pool.query<{ id: string }>("select id from branches where brand_id = 'moxie' order by id")).rows.map((r) => r.id);
+    await pool.query("update shadow_checks set branch_ids = '{}' where id = $1", [brand.id]);
+    expect((await getShadowCheck(pool, partner, brand.id))?.id).toBe(brand.id); // the leak, as it was
+    const migration = readFileSync(path.join(process.cwd(), "database", "migrations", "0032_answer_check_brand_scope.sql"), "utf8");
+    await pool.query(migration);
+    await pool.query(migration);
+    expect((await one<{ b: string[] }>(pool, "select branch_ids as b from shadow_checks where id = $1", [brand.id])).b).toEqual(moxie);
+    expect(await getShadowCheck(pool, partner, brand.id)).toBeNull();
+    expect((await one<{ b: string[] }>(pool, "select branch_ids as b from shadow_checks where id = $1", [own.id])).b).toEqual([partner.branchIds![0]]);
   });
 });

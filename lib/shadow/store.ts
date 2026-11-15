@@ -45,9 +45,18 @@ export function parseShadowInput(body: unknown): ShadowInput {
   return kind === "answer" ? { kind, input: AnswerSchema.parse(input) } : { kind: "snapshot", input: SnapshotSchema.parse(input) };
 }
 
-/** The branches a check read: a snapshot's scope, or the answer's branches that were read. */
+/**
+ * The branches a check read: a snapshot's scope, or every branch an answer read, including all the
+ * branches of each brand whose metrics it read. Stored with the check, it decides who may read it
+ * (VISIBLE): an answer that read a brand stored with only its named branches (often none) was
+ * readable by every scoped viewer, since an empty scope is inside every scope (BIVE-ACCEPTANCE.md, F-1).
+ */
 function scopeOf(check: { kind: "snapshot"; result: SnapshotCheck } | { kind: "answer"; result: AnswerCheck }): { branchIds: string[]; company: boolean } {
-  if (check.kind === "answer") return { branchIds: [...check.result.entities.branches], company: false };
+  if (check.kind === "answer") {
+    const brands = new Set<string>(check.result.entities.brands);
+    const read = new Set<string>([...check.result.entities.branches, ...BRANCHES.filter((b) => brands.has(b.brandId)).map((b) => b.id)]);
+    return { branchIds: [...read].sort(), company: false };
+  }
   const s = check.result.scope;
   if (s.kind === "company") return { branchIds: [], company: true };
   if (s.kind === "brand") return { branchIds: BRANCHES.filter((b) => b.brandId === s.id).map((b) => b.id), company: false };

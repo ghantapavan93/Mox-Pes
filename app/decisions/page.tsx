@@ -4,7 +4,7 @@ import { ExperimentRunner } from "@/components/decisions/ExperimentRunner";
 import { ExperimentHistory, SavedScenarios } from "@/components/decisions/History";
 import { ScenarioBuilder, type ScenarioChannelOption } from "@/components/decisions/ScenarioBuilder";
 import { VerdictMatrix } from "@/components/decisions/VerdictMatrix";
-import { Info, XCircle } from "lucide-react";
+import { ChevronRight, Info, ShieldAlert, ShieldCheck, XCircle } from "lucide-react";
 import { Badge, ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
@@ -173,6 +173,7 @@ async function VerdictsAndScenarios({ viewer, branchId, period, verified, incide
 }
 
 const VERIFIED_TONE = { READY: "good", READY_WITH_LIMITATIONS: "accent", NEEDS_REVIEW: "warn", NOT_READY: "bad" } as const;
+const VERIFIED_TINT = { READY: "bg-good-soft text-good", READY_WITH_LIMITATIONS: "bg-accent-soft text-accent", NEEDS_REVIEW: "bg-warn-soft text-warn", NOT_READY: "bg-bad-soft text-bad" } as const;
 /** A reason cut at a word boundary for the collapsed row. */
 const shorten = (text: string, max = 110) => (text.length <= max ? text : `${text.slice(0, text.lastIndexOf(" ", max)).replace(/[,;:]$/, "")}…`);
 const VERIFIED_LABEL = { READY: "ready", READY_WITH_LIMITATIONS: "ready, with limitations", NEEDS_REVIEW: "needs review", NOT_READY: "not ready" } as const;
@@ -186,22 +187,32 @@ async function VerifiedReadinessCard({ verified }: { verified: Promise<VerifiedR
   const v = await verified;
   return (
     <Card id="verified" className="scroll-mt-28" title="Verified readiness" subtitle="Can a budget decision rest on numbers that are proved, not just computed? One fixed policy, every rule shown.">
-      <ul className="space-y-2 text-sm" data-testid="verified-readiness">
-        {v.channels.map((c) => (
-          <li key={c.channelCode} className="rounded border border-border p-2">
-            <details>
-              <summary className="flex cursor-pointer flex-wrap items-center gap-2">
-                <Badge tone={VERIFIED_TONE[c.state]}>{VERIFIED_LABEL[c.state]}</Badge>
-                <span className="font-medium">{c.label}</span>
-                {/* The first reason, short: the full text is one level down (progressive disclosure). */}
-                {c.because[0] && (
-                  <span className="min-w-0 break-words text-xs text-muted">
-                    {shorten(c.because[0])}
-                    {c.because.length > 1 ? ` (+${c.because.length - 1} more)` : ""}
-                  </span>
-                )}
+      {/* Factor rows, like the verdicts above: a mark tinted by the state, the channel, its state in
+          words, the first reason; the row opens in place to every rule of the policy. */}
+      <ul className="-mx-2 space-y-0.5 text-sm" data-testid="verified-readiness">
+        {v.channels.map((c) => {
+          const Mark = c.state === "READY" || c.state === "READY_WITH_LIMITATIONS" ? ShieldCheck : ShieldAlert;
+          return (
+          <li key={c.channelCode}>
+            <details className="group">
+              <summary className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-1.5 transition-colors duration-100 hover:bg-surface-2">
+                <span aria-hidden className={`grid size-7 shrink-0 place-items-center rounded-md ${VERIFIED_TINT[c.state]}`}>
+                  <Mark className="size-4" />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 pt-1">
+                  <span className="font-medium text-text">{c.label}</span>{" "}
+                  <Badge tone={VERIFIED_TONE[c.state]}>{VERIFIED_LABEL[c.state]}</Badge>{" "}
+                  {/* The first reason, short: the full text is one level down (progressive disclosure). */}
+                  {c.because[0] && (
+                    <span className="min-w-0 basis-full break-words text-xs text-muted">
+                      {shorten(c.because[0])}
+                      {c.because.length > 1 ? ` (+${c.because.length - 1} more)` : ""}
+                    </span>
+                  )}
+                </span>
+                <ChevronRight aria-hidden className="mt-1.5 size-4 shrink-0 text-faint transition-transform duration-150 group-open:rotate-90" />
               </summary>
-              <ul className="mt-2 space-y-1 text-xs">
+              <ul className="mb-2 ml-[2.875rem] mt-1 space-y-1 text-xs">
                 {c.rules.map((r) => (
                   <li key={r.code} className="flex gap-2">
                     <span className={r.passed ? "text-good" : "text-bad"} aria-hidden="true">
@@ -217,7 +228,8 @@ async function VerifiedReadinessCard({ verified }: { verified: Promise<VerifiedR
               </ul>
             </details>
           </li>
-        ))}
+          );
+        })}
       </ul>
       <details className="mt-3 text-xs text-muted">
         <summary className="cursor-pointer">The policy, in order</summary>

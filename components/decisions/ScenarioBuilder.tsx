@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 import type { ScenarioAssumptions, ScenarioResult } from "@/lib/decision/scenario";
 import { ScenarioResultView } from "./ScenarioResultView";
 import { usd } from "./fmt";
@@ -171,19 +172,25 @@ export function ScenarioBuilder({
           </p>
         </fieldset>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="submit" disabled={!!busy || !!localProblem} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
-            {busy === "run" ? "Projecting…" : "Run projection"}
-          </button>
-          <button
-            type="button"
-            disabled={!!busy || !!localProblem}
-            onClick={() => void submit(true)}
-            className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 disabled:opacity-50"
-          >
-            {busy === "save" ? "Saving…" : "Save scenario"}
-          </button>
-          {localProblem && <span className="text-xs text-warn">{localProblem}</span>}
+        {/* The form's footer: why it cannot run yet on the left; its actions on the right, the
+            primary one last, where the eye ends (docs/design-system.md, "Decision Lab"). */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-3">
+          <span className="min-w-0 text-xs text-warn">{localProblem}</span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={!!busy || !!localProblem}
+              onClick={() => void submit(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 hover:bg-surface-2 disabled:opacity-50"
+            >
+              {busy === "save" && <LoaderCircle aria-hidden className="size-3.5 animate-spin" />}
+              {busy === "save" ? "Saving…" : "Save scenario"}
+            </button>
+            <button type="submit" disabled={!!busy || !!localProblem} className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
+              {busy === "run" && <LoaderCircle aria-hidden className="size-3.5 animate-spin" />}
+              {busy === "run" ? "Projecting…" : "Run projection"}
+            </button>
+          </div>
         </div>
         {error && (
           <p role="alert" className="text-sm text-bad">

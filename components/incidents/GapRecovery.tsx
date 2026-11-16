@@ -25,6 +25,7 @@ export function GapRecovery({
   coverage,
   status,
   otherHolds,
+  branchSpend,
   links,
 }: {
   exception: ExceptionRow;
@@ -32,6 +33,8 @@ export function GapRecovery({
   status: GapStatus;
   /** Open incidents other than this one that hold the branch's budget decision. */
   otherHolds: DecisionHold[];
+  /** The branch's paid media spend in the period the reader came with, counted now (verified state). */
+  branchSpend: { periodLabel: string; cents: number } | null;
   /**
    * `records`: the daily records of the week to look at next, and that week in words; `back`: the
    * selected week the reviewer came from; `run`: where a delivery run is shown (null for a viewer
@@ -96,20 +99,41 @@ export function GapRecovery({
     ? `${open.length ? dateRanges(open) : "The misfiled dates"} must arrive as ${label} spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it.`
     : historical
       ? `${open.length ? dateRanges(open) : "Part of the window"} no longer ${open.length === 1 ? "has" : "have"} ${label} spend. Reconciliation reopens this incident under the same id while the window is within 60 days of the spend feed's latest date.`
-      : "See in Decision Lab whether the budget decision can go to a person for review. Nothing here approves a budget change.";
+      : otherHolds.length > 0
+        ? `The coverage hold cleared, but the budget decision is still held by ${otherHolds.map((h) => `#${h.exceptionId}`).join(", ")}. Open decision readiness for every check still open. No budget change was approved.`
+        : "Open decision readiness for every check still open. No budget change was approved.";
   const showBack = links.back !== null && (!needsRecords || links.back !== links.records.href);
 
   return (
-    <Card id="recovery" title={<span data-testid="recovery-headline">{status.conclusion}</span>}>
+    <Card
+      id="recovery"
+      className={`border-l-4 ${state === "verified" ? "border-l-good" : held ? "border-l-bad" : "border-l-warn"}`}
+      title={<span data-testid="recovery-headline" className="block text-lg font-semibold leading-7">{status.label}</span>}
+    >
       <div className="space-y-4" data-testid="gap-recovery" data-state={state}>
+        <p className="text-sm leading-6 text-text" data-testid="recovery-status">
+          {status.statusText}
+        </p>
         {status.change && (
           <p className="text-sm leading-6 text-text" data-testid="recovery-change">
             {status.change}
+            {status.reclassified && branchSpend && (
+              <span data-testid="recovery-total">
+                {" "}
+                {branch}&apos;s paid media spend in {branchSpend.periodLabel} stayed {dollars(branchSpend.cents)}.
+              </span>
+            )}
           </p>
         )}
         {!held && otherHolds.length > 0 && (
           <p className="text-sm font-medium text-text" data-testid="recovery-other-holds">
             The budget decision is still held by {otherHolds.map((h) => `#${h.exceptionId}`).join(", ")}.
+          </p>
+        )}
+        {held && verification && (
+          // Reopened under the same id (rule 6a): the earlier verification is history, never a clearance.
+          <p className="text-sm text-muted" data-testid="recovery-history">
+            This window was verified {dateTime(verification.verifiedAt)}, then a later revision un-covered {open.length ? dateRanges(open) : "part of it"}, so the hold is back on this incident. That verification is kept below as history; it is not a clearance.
           </p>
         )}
 
@@ -125,7 +149,7 @@ export function GapRecovery({
               </ButtonLink>
             ) : (
               <ButtonLink href={links.decisions} variant="primary" testId="recovery-decisions">
-                Open Decision Lab
+                Open decision readiness
               </ButtonLink>
             )}
             {showBack && (

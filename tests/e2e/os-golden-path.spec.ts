@@ -215,7 +215,7 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     // is in it; what must not be is the incident as a blocker. Before, this read: not.toContainText(`#${gapId}`).
     await expect(summary.getByTestId("readiness-blockers")).toHaveCount(0);
     await expect(summary.getByTestId("readiness-incident-link")).toHaveCount(0);
-    await expect(summary.getByTestId("readiness-cleared")).toContainText(`Coverage hold cleared, incident #${gapId}.`);
+    await expect(summary.getByTestId("readiness-cleared")).toContainText(`Coverage hold cleared · 18 of 18 days verified, incident #${gapId}.`);
     await expect(summary.getByTestId("readiness-cleared-link")).toHaveAttribute("href", `/exceptions/${gapId}?period=oct#recovery`);
     await expect(page.getByTestId("verdict-row-google_lsa").getByTestId("verdict-readiness")).not.toContainText(`#${gapId}`);
 

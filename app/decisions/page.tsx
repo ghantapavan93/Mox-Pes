@@ -350,8 +350,9 @@ async function OtherChecks({ verified }: { verified: Promise<VerifiedReadiness> 
       {review.length > 0 && (
         <ul className="list-disc space-y-1 pl-5">
           {review.map((c) => (
-            <li key={c.channelCode} className="break-words">
-              <span className="font-medium">{c.label}</span> ({VERIFIED_LABEL[c.state]}): {shorten(c.because[0] ?? "", 140)}
+            // The whole reason, readable here without opening anything (R-56: it was cut at 140 characters).
+            <li key={c.channelCode} className="break-words" data-testid="readiness-other-check">
+              <span className="font-medium">{c.label}</span> ({VERIFIED_LABEL[c.state]}): {c.because.join(" ")}
             </li>
           ))}
         </ul>

@@ -8,6 +8,7 @@ import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
 import { DriftReview } from "@/components/incidents/DriftReview";
 import { GapRecovery } from "@/components/incidents/GapRecovery";
+import { RevisionHold } from "@/components/incidents/RevisionHold";
 import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
@@ -18,9 +19,11 @@ import type { ReplayResult } from "@/lib/ingest/replay";
 import { DECISION_BLOCKING_KINDS, decisionHolds } from "@/lib/metrics/decision";
 import { parseChannel, parseWeek, WINDOW, windowWeeks } from "@/lib/metrics/movement";
 import { weekLabel } from "@/lib/metrics/movement-copy";
+import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatus } from "@/lib/reconcile/gap-status";
+import { correctionsOf, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
@@ -62,8 +65,14 @@ const WHY: Record<string, string> = {
   payment_without_ticket: "A payment arrived for an invoice the CRM feed has not delivered yet — usually ordering. It clears itself when the invoice arrives.",
   payload_conflict: "The source sent two different payloads under the same record version. The first was kept; a person must decide whether the source has a bug.",
   channel_coverage_gap:
-    "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates Google migrating a Local Services campaign into Performance Max: the Google change is real, this branch, date and pipeline failure are invented.",
+    "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates the move Google is making for eligible Local Services advertisers, to Performance Max campaigns with pay-per-lead goals. The branch, dates and amounts are synthetic, and the misfiling is ours: our older mapper filed the migrated campaign's spend as Google Search. Google did not.",
 };
+
+/** A hold on refused spend revisions (lib/reconcile/refused-revisions.ts): spend, not lead records. */
+const REVISION_WHY =
+  "The source sent a newer revision of this spend, and intake refused it. The ledger keeps counting the last accepted amount and never counts the refused one, so the date is neither $0 nor the refused amount. Until a newer revision is accepted, the budget decision that reads this date is held.";
+/** Refused ad spend records that hold no branch's decision (the reasons are on the page). */
+const UNATTRIBUTED_WHY = "Ad spend records failed validation and were held back instead of being guessed at. None of them is a newer revision of spend the ledger counts at a branch.";
 
 async function ExceptionDetail({ params, searchParams }: Props) {
   const { id } = await params;
@@ -98,7 +107,23 @@ async function ExceptionDetail({ params, searchParams }: Props) {
   // and its status in the words every view uses (lib/reconcile/gap-status.ts).
   const coverage = exception.kind === "channel_coverage_gap" && exception.branchId ? await gapCoverage(getPool(), ev, exception.branchId) : null;
   const status = coverage ? gapStatus({ id: exception.id, status: exception.status, evidence: ev, resolution: exception.resolution }, coverage) : null;
-  const otherHolds = coverage ? (await decisionHolds(getPool(), [exception.branchId!])).filter((h) => h.exceptionId !== exception.id) : [];
+  const period = PERIODS[periodKey];
+  const otherHolds = coverage ? (await decisionHolds(getPool(), [exception.branchId!], 8, period)).filter((h) => h.exceptionId !== exception.id) : [];
+  // A hold on refused spend revisions (R-54): the revisions it holds and those already corrected.
+  // A company-level group of refused spend records says why it holds no branch's decision.
+  const isQuarantine = exception.kind === "quarantined_source_records";
+  const corrections = isQuarantine ? correctionsOf(ev) : [];
+  const revisions = isQuarantine && exception.status !== "resolved" ? revisionsOf(ev) : [];
+  const revisionHold = isQuarantine && exception.branchId !== null && (revisions.length > 0 || corrections.length > 0);
+  const unattributed = isQuarantine && exception.branchId === null && ev.source === "ads" ? unattributedSentence(await unattributedSpend(getPool(), await quarantineGroupIds(getPool(), { source: "ads", errorCode: String(ev.errorCode), branchId: null }))) : null;
+  // The branch's paid spend in the reader's period, counted now: said beside a lifted hold, and beside
+  // a verified reclassification (the move added nothing), from the same scorecard row every view uses.
+  const branchSpend =
+    (revisionHold && exception.status === "resolved") || status?.reclassified
+      ? { periodLabel: period.label, cents: (await branchRows(getPool(), { from: period.from, to: period.to, branchIds: [exception.branchId!] }))[0]?.paidSpendCents ?? 0 }
+      : null;
+  const holdWeek = revisions[0] ? parseWeek(mondayOf(revisions[0].date)) : null;
+  const holdMonths = [...new Set(revisions.map((r) => new Date(`${r.date}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })))];
   // The records to open next: the week of the first date that still needs spend, else the selected
   // week, else the window's first. The week the reviewer came from stays one link away ("back").
   const needing = coverage ? [...coverage.missing, ...coverage.recordedZero, ...coverage.misfiled.map((m) => m.date)].sort() : [];
@@ -110,11 +135,38 @@ async function ExceptionDetail({ params, searchParams }: Props) {
     return w ? weekLabel(w) : "the window";
   };
 
+  const why =
+    (exception.evidence as { conflict?: unknown } | null)?.conflict === "earlier_version_after_later"
+      ? HELD_VERSION_WHY
+      : revisionHold
+        ? REVISION_WHY
+        : unattributed
+          ? UNATTRIBUTED_WHY
+          : WHY[exception.kind];
+  // An incident with a decision panel (a coverage gap, a hold on refused revisions) leads with it,
+  // straight after the title: on a phone the decision, why and the one next action come first in
+  // reading and focus order. What was detected, what the kind means and the secondary actions follow.
+  const leadsWithDecision = Boolean((coverage && status) || revisionHold);
+  const headerActions = (
+    <>
+      {viewer.can.investigate ? (
+        // Secondary beside a decision panel: the panel's next action is the page's one primary.
+        <ButtonLink href={`/investigator?exception=${exception.id}`} variant={leadsWithDecision ? "secondary" : "primary"} testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
+          Investigate with AI
+        </ButtonLink>
+      ) : (
+        <span className="text-xs text-muted">Investigations need any role except guest.</span>
+      )}
+      {exception.branchId && DECISION_KINDS.has(exception.kind) && <ButtonLink href={decisionsHref}>Decision readiness for {exception.branchId}</ButtonLink>}
+      {exception.branchId && <ButtonLink href={`/branches/${exception.branchId}`}>Branch {exception.branchId}</ButtonLink>}
+    </>
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
         crumbs={[{ href: "/exceptions", label: "Incidents" }, { label: `#${exception.id}` }]}
-        title={KIND_LABEL[exception.kind] ?? exception.kind}
+        title={revisionHold ? "Spend revision refused" : (KIND_LABEL[exception.kind] ?? exception.kind)}
         badges={
           <>
             <SeverityBadge severity={exception.severity} />
@@ -128,27 +180,14 @@ async function ExceptionDetail({ params, searchParams }: Props) {
           </>
         }
         description={
-          <>
-            <p className="font-medium text-text" data-testid="exception-summary">{exception.summary}</p>
-            <p className="mt-1 max-w-3xl">{(exception.evidence as { conflict?: unknown } | null)?.conflict === "earlier_version_after_later" ? HELD_VERSION_WHY : WHY[exception.kind]}</p>
-          </>
+          leadsWithDecision ? undefined : (
+            <>
+              <p className="font-medium text-text" data-testid="exception-summary">{exception.summary}</p>
+              <p className="mt-1 max-w-3xl">{why}</p>
+            </>
+          )
         }
-        actions={
-          <>
-            {viewer.can.investigate ? (
-              // Secondary beside a coverage gap's recovery: that panel's next action is the page's one primary.
-              <ButtonLink href={`/investigator?exception=${exception.id}`} variant={coverage ? "secondary" : "primary"} testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
-                Investigate with AI
-              </ButtonLink>
-            ) : (
-              <span className="text-xs text-muted">Investigations need any role except guest.</span>
-            )}
-            {exception.branchId && DECISION_KINDS.has(exception.kind) && (
-              <ButtonLink href={decisionsHref}>Decision readiness for {exception.branchId}</ButtonLink>
-            )}
-            {exception.branchId && <ButtonLink href={`/branches/${exception.branchId}`}>Branch {exception.branchId}</ButtonLink>}
-          </>
-        }
+        actions={leadsWithDecision ? undefined : headerActions}
       />
 
       {coverage && status && (
@@ -157,6 +196,7 @@ async function ExceptionDetail({ params, searchParams }: Props) {
           coverage={coverage}
           status={status}
           otherHolds={otherHolds}
+          branchSpend={branchSpend}
           links={{
             records: { href: traceHref(coverage.channel, recordsWeek), week: recordsWeekLabel(recordsWeek) },
             back: selected ? traceHref(selected.channel, selected.week) : null,
@@ -167,13 +207,58 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         />
       )}
 
+      {revisionHold && (
+        <RevisionHold
+          exception={exception}
+          revisions={revisions}
+          corrections={corrections}
+          branchSpend={branchSpend}
+          links={{
+            records: holdWeek && revisions[0] ? { href: traceHref(revisions[0].channel, holdWeek), week: recordsWeekLabel(holdWeek) } : null,
+            decisions: `${decisionsHref}#readiness`,
+            run: viewer.branchIds ? null : (runId) => `/integrations?view=pipeline&run=${runId}#run-${runId}`,
+          }}
+        />
+      )}
+
+      {leadsWithDecision && (
+        <section aria-label="What was detected" className="space-y-2" data-testid="incident-context">
+          <p className="text-sm font-medium text-text" data-testid="exception-summary">
+            {exception.summary}
+          </p>
+          <p className="max-w-3xl text-sm leading-6 text-muted">{why}</p>
+          <div className="flex flex-wrap items-center gap-2">{headerActions}</div>
+        </section>
+      )}
+
+      {unattributed && (
+        <Callout tone="warn" title="Which decision these records affect cannot be verified" testId="unattributed-spend">
+          {unattributed}
+        </Callout>
+      )}
+
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border shadow-raised md:grid-cols-4" data-testid="incident-impact">
         {(
           [
-            [amountLabel, money(exception.amountCents)],
+            revisionHold
+              ? exception.status === "resolved"
+                ? ["Counted now, corrected dates", money(corrections.reduce((t, c) => t + (c.correction.cents ?? 0), 0))]
+                : ["Still counted, held dates", money(revisions.reduce((t, r) => t + r.acceptedCents, 0))]
+              : [amountLabel, money(exception.amountCents)],
             ["First detected", dateTime(exception.firstDetectedAt)],
             [exception.resolvedAt ? "Resolved" : "Last detected", dateTime(exception.resolvedAt ?? exception.lastDetectedAt)],
-            ["Budget decisions", DECISION_KINDS.has(exception.kind) ? (exception.status === "open" ? "On hold while open" : "No longer held") : "Not gated by this kind"],
+            [
+              "Budget decisions",
+              !DECISION_KINDS.has(exception.kind)
+                ? "Not gated by this kind"
+                : exception.status !== "open"
+                  ? "No longer held"
+                  : exception.branchId === null && isQuarantine
+                    ? "Holds no branch's decision"
+                    : revisionHold
+                      ? `On hold for ${holdMonths.join(" and ")}`
+                      : "On hold while open",
+            ],
           ] as Array<[string, ReactNode]>
         ).map(([k, v]) => (
           <div key={k} className="bg-surface px-4 py-3">
@@ -201,13 +286,17 @@ async function ExceptionDetail({ params, searchParams }: Props) {
               items={[
                 ...Object.entries(ev)
                   .filter(([, v]) => v === null || typeof v !== "object")
+                  // A refused spend revision has no lead record and no revenue at stake: those facts belong to held leads.
+                  .filter(([k]) => !revisionHold || !["customersWithoutLead", "annualContractValueCents"].includes(k))
                   .map(([k, v]) => [labelFor(k), formatEvidence(k, v)] as [string, ReactNode]),
               ]}
             />
             {/* The amount is repeated here so the evidence card stands alone when printed or linked. */}
-            <p className="mt-3 text-xs text-muted">
-              {amountLabel}: <span className="font-medium text-text">{money(exception.amountCents)}</span>
-            </p>
+            {!revisionHold && (
+              <p className="mt-3 text-xs text-muted">
+                {amountLabel}: <span className="font-medium text-text">{money(exception.amountCents)}</span>
+              </p>
+            )}
             {exception.resolution && <Callout tone="good" title="Resolution">{exception.resolution}</Callout>}
           </Card>
 

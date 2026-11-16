@@ -172,7 +172,8 @@ test("desktop: select B09 and October, read what changed, open the point's recor
   await expect(shown(page, "movement-trust")).toHaveAttribute("data-tone", "review");
   // Changed 2026-11-14 (B09-CROSS-VIEW.md): one decision status, the incident's own, and its exact
   // evidence. It read "Investigate before acting", with a link to the bare incident.
-  await expect(shown(page, "movement-trust")).toContainText("Decision held. None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.");
+  // Changed 2026-11-16 (HOLD-TO-DECISION.md §1.5): the decision first. It read "Decision held. None of …".
+  await expect(shown(page, "movement-trust")).toContainText("Hold the budget decision. A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.");
   await expect(shown(page, "movement-status-link")).toHaveAttribute("href", /^\/exceptions\/\d+\?period=oct#recovery$/);
   await expect(movement.locator("[data-marker]")).toHaveCount(1);
   await expect(shown(page, "movement-definition")).toContainText("Paid media spend");

@@ -246,7 +246,9 @@ async function Trace({ params, searchParams }: Props) {
             ))}
           </ul>
         </Card>
-        <Card title="Records excluded or held at intake" subtitle={`${period.label}, this branch`}>
+        {/* By each record's own source time, as the trace reads them: a refused revision of an October
+            day fetched on Oct 31 is outside "Oct 1–30" here, and the daily records above name it. */}
+        <Card title="Records excluded or held at intake" subtitle={`${period.label} by each record's own time (for ad spend, when it was fetched), this branch`}>
           {trace.sourceRecords.length === 0 ? (
             <p className="text-sm text-muted">None.</p>
           ) : (

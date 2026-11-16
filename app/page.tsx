@@ -65,7 +65,9 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
     branchRowsReady,
     conversionBridge(pool, scope),
     freshness(pool),
-    decisionHolds(pool, branchIds),
+    // The holds on this period's decisions: a hold on refused spend revisions dated in another
+    // period is that period's (HOLD-TO-DECISION.md, scenario 2b).
+    decisionHolds(pool, branchIds, 8, period),
     // Brand lines from the same branch rows, as soon as they are ready, instead of the whole
     // scorecard recomputed once per brand in turn (R-34: about 2 s of every load).
     brand ? Promise.resolve([]) : branchRowsReady.then((r) => brandRows(pool, scope, r)),
@@ -182,11 +184,11 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                     {h.branchId}
                   </Link>
                   <div className="min-w-0">
-                    <Badge tone="bad" dot>{h.kind === "channel_coverage_gap" ? "Channel imbalance" : KIND_LABEL[h.kind] ?? h.kind}</Badge>
+                    <Badge tone="bad" dot>{h.kind === "channel_coverage_gap" ? "Channel imbalance" : h.refusedRevision ? "Spend revision refused" : KIND_LABEL[h.kind] ?? h.kind}</Badge>
                     <p className="mt-1 leading-5 text-text">{h.summary}</p>
                   </div>
                   <span className="col-start-2 flex gap-3 text-xs sm:col-start-auto sm:flex-col sm:items-end sm:gap-0">
-                    <Link href={`/exceptions/${h.exceptionId}`} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">incident #{h.exceptionId}</Link>
+                    <Link href={`/exceptions/${h.exceptionId}?period=${period.key}#recovery`} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">incident #{h.exceptionId}</Link>
                     <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="inline-flex min-h-6 items-center text-accent hover:underline">readiness</Link>
                   </span>
                 </li>

@@ -221,7 +221,7 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
        group by 1`,
       [iso(args.period.from), iso(args.period.to), compare ? iso(compare.from) : null, compare ? iso(compare.to) : null, scope],
     ),
-    args.holds ? Promise.resolve(args.holds) : decisionHolds(db, scope),
+    args.holds ? Promise.resolve(args.holds) : decisionHolds(db, scope, 8, args.period),
     args.branchId ? coverageMarkers(db, args.branchId) : Promise.resolve([] as Marker[]),
     feedFreshness(db),
     getNow(db),
@@ -283,7 +283,20 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
 export interface SpendDay {
   date: string;
   /** Records on that day (one per campaign of the channel); empty = no record. */
-  records: Array<{ externalCampaignId: string; name: string; platform: string; cents: number; rawEventId: number }>;
+  records: Array<{
+    externalCampaignId: string;
+    name: string;
+    platform: string;
+    /** The counted amount: the last accepted revision. */
+    cents: number;
+    rawEventId: number;
+    /**
+     * Newer revisions of this campaign-day that intake refused (migration 0034): never counted,
+     * and while one is newer than the counted revision, the decision reading this day is held by
+     * `exceptionId` (HOLD-TO-DECISION.md).
+     */
+    refused: Array<{ rawEventId: number; fetchedAt: string; cents: number | null; errorDetail: string | null; exceptionId: number | null }>;
+  }>;
 }
 
 /**
@@ -294,8 +307,15 @@ export interface SpendDay {
 export async function spendDays(db: Queryable, args: { branchId: string; channel: string; week: string }): Promise<SpendDay[]> {
   const first = iso(WINDOW.from);
   const lastExclusive = iso(WINDOW.to);
-  const { rows } = await db.query<{ spend_date: string; external_campaign_id: string; name: string; platform: string; cost_cents: string; raw_event_id: string }>(
-    `select to_char(s.spend_date, 'YYYY-MM-DD') as spend_date, c.external_campaign_id, c.name, c.platform, s.cost_cents, s.raw_event_id
+  const { rows } = await db.query<{ spend_date: string; external_campaign_id: string; name: string; platform: string; cost_cents: string; raw_event_id: string; refused: SpendDay["records"][number]["refused"] | null }>(
+    `select to_char(s.spend_date, 'YYYY-MM-DD') as spend_date, c.external_campaign_id, c.name, c.platform, s.cost_cents, s.raw_event_id,
+            (select jsonb_agg(jsonb_build_object('rawEventId', v.raw_event_id, 'fetchedAt', v.refused_fetched_at, 'cents', v.refused_cents,
+                      'errorDetail', v.error_detail,
+                      'exceptionId', (select min(e.id) from exceptions e where e.kind = 'quarantined_source_records' and e.status = 'open'
+                                        and e.evidence -> 'revisions' @> jsonb_build_array(jsonb_build_object('rawEventId', v.raw_event_id))))
+                    order by v.refused_fetched_at)
+             from v_refused_spend_revisions v
+             where v.campaign_id = s.campaign_id and v.spend_date = s.spend_date and v.standing = 'newer') as refused
      from ad_spend_daily s
      join campaign_branch_map m on m.campaign_id = s.campaign_id
      join ad_campaigns c on c.id = s.campaign_id
@@ -312,7 +332,14 @@ export async function spendDays(db: Queryable, args: { branchId: string; channel
       date,
       records: rows
         .filter((r) => r.spend_date === date)
-        .map((r) => ({ externalCampaignId: r.external_campaign_id, name: r.name, platform: r.platform, cents: Number(r.cost_cents), rawEventId: Number(r.raw_event_id) })),
+        .map((r) => ({
+          externalCampaignId: r.external_campaign_id,
+          name: r.name,
+          platform: r.platform,
+          cents: Number(r.cost_cents),
+          rawEventId: Number(r.raw_event_id),
+          refused: (r.refused ?? []).map((x) => ({ rawEventId: Number(x.rawEventId), fetchedAt: String(x.fetchedAt), cents: x.cents === null ? null : Number(x.cents), errorDetail: x.errorDetail ?? null, exceptionId: x.exceptionId === null ? null : Number(x.exceptionId) })),
+        })),
     });
   }
   return days;

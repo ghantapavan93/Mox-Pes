@@ -1,0 +1,22 @@
+c707290 + the R11 fix (working tree)
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > MATCH when the definition, currency and value agree to the cent 1082ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > MISMATCH names the side that differs: a wrong denominator, not just a wrong value 938ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > a different definition is INCOMPATIBLE, not an error, and lists each differing attribute 930ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > CAD is incompatible; a missing currency, office-local days or no definition cannot be compared 949ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > INCOMPLETE_EVIDENCE when the product's own feed is stale, even though the values agree 957ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > an unreadable ad record dated in the window makes agreeing spend INCOMPLETE, though intake stored it with its receipt time 936ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > office-local days are named as the definition's day basis 907ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > a refund delivered after the snapshot makes it MISMATCH, with the revision named 986ms
+ ✓ tests/integration/shadow-mode.test.ts > metric snapshots, in the contract's verdict order > a viewer outside the scope is refused before anything is computed 928ms
+ ✓ tests/integration/shadow-mode.test.ts > conversational answers, claim by claim > keeps a correct claim, contradicts a wrong one, and never certifies a cause 1090ms
+ ✓ tests/integration/shadow-mode.test.ts > conversational answers, claim by claim > a month the evidence does not hold is not checked against October 1420ms
+ ✓ tests/integration/shadow-mode.test.ts > conversational answers, claim by claim > invoiced amounts are not collected cash 1037ms
+ ✓ tests/integration/shadow-mode.test.ts > conversational answers, claim by claim > a branch outside the viewer's scope is OUT_OF_SCOPE and is not read 893ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > records each check append-only with an audit row, listed only to viewers who may see its scope 930ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > an answer that read a brand is listed only to viewers who may see the whole brand (BIVE-ACCEPTANCE.md, F-1) 1116ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > an answer that read nothing is listed only to company-wide viewers and to the viewer who ran it (BIVE-ACCEPTANCE.md R11) 913ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > a branch a check names but did not read keeps it from viewers who may not see that branch (BIVE-ACCEPTANCE.md R11) 2063ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > a snapshot of a brand the product does not know is listed only to company-wide viewers (BIVE-ACCEPTANCE.md R11) 917ms
+ ✓ tests/integration/shadow-mode.test.ts > storage > a check stored before migration 0033 did not record what it names: only company-wide viewers and the viewer who ran it read it 1468ms
+ Test Files  1 passed (1)
+      Tests  19 passed (19)

@@ -123,3 +123,18 @@ or identifiers are not claims about metrics. The checker answers only for Septem
 A check stores its input, the input's sha256, the viewer, the business time, the verdicts and
 the product's definition versions, append-only, with an audit row. It stores no copy of the
 other system's data beyond the input it was given.
+
+**Who may read a check** (`lib/shadow/store.ts`, `VISIBLE`). A check shows what was entered (the
+answer, the question, the system's name) beside its result, so it is listed by everything it
+names, not only by what it read (`BIVE-ACCEPTANCE.md` F-1 and R11; migrations 0032 and 0033):
+- A company-wide viewer reads every check.
+- A scoped viewer reads a check only when every branch it names or read is in their scope, and
+  there is at least one. A brand counts as all its branches. A check about nothing the product
+  can place, such as an answer that names no branch or a snapshot of an unknown brand, is for
+  company-wide viewers only.
+- Whoever ran a check reads it again while every branch it read is still in their scope. Its
+  text may name what they may not see (those claims are `OUT_OF_SCOPE`), and the form opens the
+  check at once. In demo mode the runner is the role (R-2).
+- A check stored before migration 0033 recorded nothing of what it names. Only company-wide
+  viewers and its runner read it.
+- A check the viewer may not read is "not found", the same as one that does not exist.

@@ -1,0 +1,22 @@
+c707290
+lib/ unchanged from c707290; tests/integration/shadow-mode.test.ts with the four R11 tests added
+ ❯ tests/integration/shadow-mode.test.ts (19 tests | 4 failed) 20506ms
+     × an answer that read nothing is listed only to company-wide viewers and to the viewer who ran it (BIVE-ACCEPTANCE.md R11) 936ms
+     × a branch a check names but did not read keeps it from viewers who may not see that branch (BIVE-ACCEPTANCE.md R11) 1689ms
+     × a snapshot of a brand the product does not know is listed only to company-wide viewers (BIVE-ACCEPTANCE.md R11) 929ms
+     × a check stored before migration 0033 did not record what it names: only company-wide viewers and the viewer who ran it read it 1580ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/integration/shadow-mode.test.ts > storage > an answer that read nothing is listed only to company-wide viewers and to the viewer who ran it (BIVE-ACCEPTANCE.md R11)
+AssertionError: expected [ 2, 1 ] to not include 1
+ ❯ tests/integration/shadow-mode.test.ts:230:38
+ FAIL  tests/integration/shadow-mode.test.ts > storage > a branch a check names but did not read keeps it from viewers who may not see that branch (BIVE-ACCEPTANCE.md R11)
+AssertionError: expected [ 3, 2, 1 ] to not include 1
+ ❯ tests/integration/shadow-mode.test.ts:251:40
+ FAIL  tests/integration/shadow-mode.test.ts > storage > a snapshot of a brand the product does not know is listed only to company-wide viewers (BIVE-ACCEPTANCE.md R11)
+AssertionError: expected [ 1 ] to not include 1
+ ❯ tests/integration/shadow-mode.test.ts:263:42
+ FAIL  tests/integration/shadow-mode.test.ts > storage > a check stored before migration 0033 did not record what it names: only company-wide viewers and the viewer who ran it read it
+error: column "named_branch_ids" does not exist
+ ❯ tests/integration/shadow-mode.test.ts:276:12
+ Test Files  1 failed (1)
+      Tests  4 failed | 15 passed (19)

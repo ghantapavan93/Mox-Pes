@@ -1,0 +1,18 @@
+-- A check is listed by everything it names, not only by what it read (2026-11-15,
+-- docs/agent-work/BIVE-ACCEPTANCE.md R11; REMAINING-RISKS.md R-57).
+--
+-- A check shows its stored text to whoever may read it: the answer, the question, the system's
+-- name. Since 0032 its branch_ids are every branch it read, but the text can name more:
+-- - an answer naming only branches or brands outside the runner's scope reads nothing, so it was
+--   stored with no branches, which every scoped viewer could list (an empty array is inside every
+--   array);
+-- - at most four named branches are read, so a fifth was neither read nor stored;
+-- - a company-wide snapshot of a brand the product does not know was stored with no branches.
+--
+-- named_branch_ids holds every branch the stored check names, read or not, and every branch it
+-- read (lib/shadow/store.ts). A scoped viewer lists a check only when all of them are in scope and
+-- there is at least one. Whoever ran a check reads it again while what it read is in their scope.
+--
+-- Checks stored before this migration did not record what they name. Their column stays null,
+-- which lists them only to company-wide viewers and to the viewer who ran them.
+alter table shadow_checks add column if not exists named_branch_ids text[];

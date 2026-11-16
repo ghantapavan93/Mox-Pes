@@ -64,6 +64,16 @@ function mentions(text: string): { branches: string[]; brands: BrandId[] } {
   return { branches: [...branches].filter((id) => BRANCHES.some((b) => b.id === id)), brands };
 }
 
+/**
+ * Every branch a text names, read the way an answer is read: by id or name, and every branch of
+ * each brand it names. A stored check is listed only to viewers who may see all of them
+ * (lib/shadow/store.ts).
+ */
+export function branchesNamedIn(text: string): string[] {
+  const { branches, brands } = mentions(text);
+  return [...new Set([...branches, ...branchesOfBrands(brands)])];
+}
+
 const canSeeBrand = (viewer: Viewer, brand: BrandId) => branchesOfBrands([brand]).every((id) => canSeeBranch(viewer, id));
 
 /** The pieces of the answer in reading order, each with its proofs (pieces with none included). */

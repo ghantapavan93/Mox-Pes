@@ -150,6 +150,9 @@ export const DATASETS: Record<DatasetId, TargetDataset> = {
       { key: "campaign_name", label: "Campaign name", meaning: "The campaign's name", kind: "text", required: true, synonyms: ["campaign", "campaign name"] },
       { key: "date", label: "Day", meaning: "The day, in the ad account's time zone", kind: "date", required: true, synonyms: ["day", "date", "report date"] },
       { key: "cost", label: "Cost", meaning: "What the platform charged that day", kind: "money", required: true, moneyMeaning: "ad_cost", synonyms: ["cost", "spend", "amount spent", "cost usd", "spend usd"] },
+      // Platforms state the account's currency in a column of its own. Read, it goes to the
+      // deployed mapper, which refuses any currency but USD; nothing is converted (BYOF-WORKFLOW.md).
+      { key: "currency", label: "Currency", meaning: "The currency the cost is stated in, as a three-letter code (USD). Only US dollars are summed; nothing is converted", kind: "text", required: false, synonyms: ["currency", "currency code", "account currency", "cost currency"] },
       { key: "clicks", label: "Clicks", meaning: "Clicks the platform counted that day", kind: "integer", required: true, synonyms: ["clicks", "link clicks"] },
       { key: "conversions", label: "Platform conversions", meaning: "Conversions the platform claims; not verified revenue", kind: "integer", required: true, synonyms: ["conversions", "conv", "results", "all conv"] },
     ],

@@ -59,6 +59,33 @@ export interface DryRunSummary {
   authority: "publish" | "reconcile";
   publishable: number;
   accounted: boolean;
+  /** Ad spend only: what the counted rows cover. Absent on dry runs stored before it existed. */
+  scope?: SpendScope | null;
+}
+
+/** The rows an ad-spend dry run counted: their days, campaigns, accounts and currency basis. */
+export interface SpendScope {
+  firstDay: string;
+  lastDay: string;
+  campaigns: number;
+  accounts: string[];
+  platforms: string[];
+  /** stated: the file said USD. assumed: the file stated no currency, so the mapper read US dollars. */
+  currency: { stated: number; assumed: number };
+}
+
+function spendScope(outcomes: RowOutcome[]): SpendScope | null {
+  const rows = outcomes.flatMap((o) => (o.disposition === "eligible" && o.projection.table === "ad_spend_daily" ? [o.projection.row] : []));
+  if (rows.length === 0) return null;
+  const days = rows.map((r) => r.spendDate).sort();
+  return {
+    firstDay: days[0],
+    lastDay: days[days.length - 1],
+    campaigns: new Set(rows.map((r) => `${r.platform}:${r.externalCampaignId}`)).size,
+    accounts: [...new Set(rows.map((r) => r.adAccountId))].sort(),
+    platforms: [...new Set(rows.map((r) => r.platform))].sort(),
+    currency: { stated: rows.filter((r) => r.currencyBasis === "reported_usd").length, assumed: rows.filter((r) => r.currencyBasis !== "reported_usd").length },
+  };
 }
 
 function requireOnboardingAccess(viewer: Viewer, action: string, kind: "propose" | "approve" | "either" = "either"): void {
@@ -312,6 +339,7 @@ function summarise(outcomes: RowOutcome[], ledger: LedgerComparison, authority: 
     publishable: authority === "publish" ? counts.eligible : 0,
     // Every source row has exactly one disposition: nothing was dropped.
     accounted: Object.values(counts).reduce((s, n) => s + n, 0) === outcomes.length,
+    scope: spendScope(outcomes),
   };
 }
 

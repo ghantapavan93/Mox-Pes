@@ -319,10 +319,20 @@ function compileAdSpend(ctx: Ctx): RawRecord | null {
   const clicks = clicksRaw === undefined ? undefined : take(ctx, F("clicks"), parseCount(clicksRaw));
   const convRaw = required(ctx, F("conversions"));
   const conversions = convRaw === undefined ? undefined : take(ctx, F("conversions"), parseCount(convRaw));
+  // The file's own currency column, stated the way the live feed states it: the deployed mapper
+  // refuses any currency but USD (CURRENCY_UNSUPPORTED) and converts nothing. A file without one
+  // is read as US dollars by the mapper, and the dry run reports it as assumed.
+  const currencyRaw = cell(ctx, F("currency"));
+  const currencyCode =
+    currencyRaw === null
+      ? undefined
+      : /^[A-Za-z]{3}$/.test(currencyRaw)
+        ? currencyRaw.toUpperCase()
+        : issue(ctx, F("currency"), "CURRENCY_UNREADABLE", `Currency "${currencyRaw.slice(0, 20)}" is not a three-letter code`, "Export the report with its currency code (USD, CAD, …)");
   if (ctx.issues.length > 0) return null;
   return {
     entity: "spend_day",
-    payload: { platform, accountId, campaignId, campaignName, date, costMicros: dollarsToMicros(cost!), clicks, conversions, fetchedAt: ctx.spec.exportedAt },
+    payload: { platform, accountId, campaignId, campaignName, date, costMicros: dollarsToMicros(cost!), clicks, conversions, fetchedAt: ctx.spec.exportedAt, ...(currencyCode ? { currencyCode } : {}) },
   };
 }
 
@@ -361,7 +371,15 @@ export function compileRows(table: ParsedTable, spec: MappingSpec, now: Date): R
     const rowRef = table.rowRefs[i];
     const ctx: Ctx = { spec, table, index, row, issues: [], dayGrain: [] };
     if (ragged.has(rowRef)) {
-      outcomes.push({ row: rowRef, disposition: "invalid", issues: [{ field: "*", column: null, code: "RAGGED_ROW", detail: "The row has a different number of cells than the header", suggestion: "A delimiter or quote inside a value probably shifted the columns; fix the export", safeToAutomate: false }] });
+      // A line with one filled cell at most (a report title, a note, a copyright footer) cannot be
+      // a record: every dataset needs several fields. It is left out like a total row, not put to
+      // the user as something to correct (BYOF-WORKFLOW.md).
+      const filled = row.filter((c) => !isBlank(c)).length;
+      outcomes.push(
+        filled <= 1
+          ? { row: rowRef, disposition: "invalid", issues: [{ field: "*", column: null, code: "TEXT_LINE", detail: "A line of text in one cell, not a record (a report title, note or footer)", suggestion: "Excluded; nothing to correct", safeToAutomate: true }] }
+          : { row: rowRef, disposition: "invalid", issues: [{ field: "*", column: null, code: "RAGGED_ROW", detail: "The row has a different number of cells than the header", suggestion: "A delimiter or quote inside a value probably shifted the columns; fix the export", safeToAutomate: false }] },
+      );
       continue;
     }
     // A report's own total line ("Total: Account") is not data. Excluding it is safe to automate.

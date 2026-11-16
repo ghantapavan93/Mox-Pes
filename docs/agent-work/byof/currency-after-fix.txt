@@ -1,0 +1,22 @@
+After the fix: lib/onboarding/targets.ts (currency field), compile.ts (currency to the mapper), service.ts (spend scope).
+ ✓ tests/integration/onboarding.test.ts > onboarding · call export (publishable) > profiles, asks, quarantines, publishes once, and a re-import changes nothing 1001ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · call export (publishable) > a row the ledger gained after the dry run is skipped at publication, not overwritten 802ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · payments export (reconcile only) > never maps Total or Contract Value to cash, explains every cent of difference, and refuses to publish 832ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · ad report with a title, totals and fractional conversions > skips the preamble, excludes total rows, refuses fractional counts, and asks for the account 808ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · an ad report's currency column (BYOF-WORKFLOW.md) > holds back rows stated in another currency instead of summing them as US dollars 799ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · an ad report's currency column (BYOF-WORKFLOW.md) > a report with no currency column is read as US dollars, and the dry run says so 756ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > branch-scoped, read-only and approve-only roles cannot stage; scoped roles cannot read 804ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > the schema itself refuses a mapping decided by the role that proposed it 835ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > refusals are recorded and nothing is staged 801ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > staged rows are deleted after retention, and the accountable summary stays 795ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > retention holds on every path, and the cell text quoted in results goes with the cells (security review #4) 814ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > publication is bound to the dry run the approver reviewed (security review #5) 867ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v1: no more wrong suggestions than the recorded floor, none where money or injection is at stake 327ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v2: no more wrong suggestions than the recorded floor, none where money or injection is at stake 297ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v1: critical wrong suggestions stay at or under 0, and below the baseline's rate 286ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v2: critical wrong suggestions stay at or under 0, and below the baseline's rate 288ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v3: critical wrong suggestions stay at or under 1, and below the baseline's rate 300ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > every suggestion is deterministic: the same dataset gives the same report 544ms
+ ✓ tests/unit/onboarding-eval.test.ts > schema assistant evaluation gate > v3 (held out): stays at or under its first-contact wrong-suggestion count 314ms
+ Test Files  2 passed (2)
+      Tests  19 passed (19)

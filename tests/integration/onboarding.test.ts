@@ -229,6 +229,55 @@ describe("onboarding · ad report with a title, totals and fractional conversion
   });
 });
 
+describe("onboarding · an ad report's currency column (BYOF-WORKFLOW.md)", () => {
+  // A Microsoft Advertising-style daily report: the currency is a column of its own, as Google,
+  // Microsoft and Meta exports state it. Before this, only a currency written inside the cost cell
+  // ("CAD 80.00") was refused; a "Currency code" column was never read, so CAD was summed as USD.
+  const report = (withCurrency: boolean) =>
+    Buffer.from(
+      [
+        '"Report Name: Campaign Performance - Daily"',
+        "",
+        `"Account number","Campaign name","Campaign ID","Gregorian date",${withCurrency ? '"Currency code",' : ""}"Clicks","Spend","Conversions"`,
+        `"B0000001","Search A","9001","10/12/2026",${withCurrency ? '"USD",' : ""}"10","100.00","1"`,
+        `"B0000001","Search A","9001","10/13/2026",${withCurrency ? '"usd",' : ""}"12","50.25","0"`,
+        `"B0000002","Search B","9002","10/12/2026",${withCurrency ? '"CAD",' : ""}"8","80.00","2"`,
+        `"B0000002","Search B","9002","10/13/2026",${withCurrency ? '"CAD",' : ""}"9","40.00","1"`,
+      ].join("\r\n"),
+    );
+  const answers: Partial<MappingSpec> = {
+    constants: { platform: "microsoft_ads" },
+    columns: { account_id: "Account number", campaign_id: "Campaign ID", campaign_name: "Campaign name", date: "Gregorian date", cost: "Spend", clicks: "Clicks", conversions: "Conversions" },
+    moneyMeaning: { cost: "ad_cost" },
+    dateOrder: "MDY",
+    exportedAt: "2026-10-26T12:00:00Z",
+  };
+  async function dryRunOf(bytes: Buffer, name: string) {
+    const r = await stageUpload(pool, { viewer: marketing, filename: name, bytes, now: NOW });
+    if ("refused" in r) throw new Error(`refused: ${r.refused.message}`);
+    const detail = await getUpload(pool, marketing, r.upload.id, NOW);
+    const m = await proposeMapping(pool, { viewer: marketing, uploadId: r.upload.id, spec: specFrom(detail, answers), now: NOW });
+    expect(m.problems).toEqual([]);
+    return { detail, dry: await runDryRun(pool, { viewer: marketing, uploadId: r.upload.id, mappingId: m.mappingId, now: NOW }) };
+  }
+
+  it("holds back rows stated in another currency instead of summing them as US dollars", async () => {
+    const { detail, dry } = await dryRunOf(report(true), "ms-ads-two-accounts.csv");
+    expect(detail.assistant.fields.find((f) => f.field === "currency")?.column).toBe("Currency code");
+    expect(dry.counts).toMatchObject({ eligible: 2, quarantined: 2 });
+    expect(Object.fromEntries(dry.issues.map((i) => [i.code, i.rows]))).toMatchObject({ CURRENCY_UNSUPPORTED: 2 });
+    expect(dry.ledger.money!.fileTotalCents).toBe(10_000 + 5_025);
+    expect(dry.scope).toMatchObject({ firstDay: "2026-10-12", lastDay: "2026-10-13", campaigns: 1, accounts: ["B0000001"], currency: { stated: 2, assumed: 0 } });
+  });
+
+  it("a report with no currency column is read as US dollars, and the dry run says so", async () => {
+    const { dry } = await dryRunOf(report(false), "ms-ads-no-currency.csv");
+    expect(dry.counts).toMatchObject({ eligible: 4, quarantined: 0 });
+    expect(dry.ledger.money!.fileTotalCents).toBe(10_000 + 5_025 + 8_000 + 4_000);
+    expect(dry.scope).toMatchObject({ campaigns: 2, currency: { stated: 0, assumed: 4 } });
+  });
+});
+
 describe("onboarding · access, refusal and retention", () => {
   it("branch-scoped, read-only and approve-only roles cannot stage; scoped roles cannot read", async () => {
     for (const viewer of [partner, brand, guest, approver]) {

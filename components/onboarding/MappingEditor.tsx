@@ -45,6 +45,16 @@ const STATUS: Record<FieldSuggestion["status"], { text: string; className: strin
 const ABSENT = "";
 const LEAVE = "__leave__";
 
+/** Polls for an element for up to ten seconds: the refreshed page arrives after the request ends. */
+async function waitFor<T>(find: () => T | null, ms = 10_000): Promise<T | null> {
+  const end = Date.now() + ms;
+  for (;;) {
+    const found = find();
+    if (found || Date.now() > end) return found;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 /**
  * Human review of a mapping. The assistant's suggestions are pre-selected only when it
  * suggested; anything ambiguous starts empty and must be chosen. Submitting proposes a mapping
@@ -150,10 +160,13 @@ export function MappingEditor(props: {
         return;
       }
       const dry = await fetch(`/api/onboarding/uploads/${props.uploadId}/dry-run`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mappingId: json.mappingId }) });
-      const dj = (await dry.json()) as { error?: string };
+      const dj = (await dry.json()) as { id?: number; error?: string };
       if (!dry.ok) throw new Error(dj.error ?? `HTTP ${dry.status}`);
       router.refresh();
-      document.getElementById("dry-run")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Land on the result of THIS dry run once the refreshed page renders it (BYOF-WORKFLOW.md).
+      // Scrolling straight away left the reader on the mapping form: the result was not there yet.
+      const result = await waitFor(() => document.querySelector<HTMLElement>(`[data-testid="upload-result"][data-dry-run="${dj.id}"]`));
+      (result ?? document.getElementById("dry-run"))?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       setError((err as Error).message);
     } finally {

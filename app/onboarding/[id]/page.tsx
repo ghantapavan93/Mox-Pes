@@ -89,10 +89,104 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
       note: published
         ? `Published ${count((detail.publication!.stats as { published?: number }).published ?? 0)} rows`
         : authority === "reconcile"
-          ? dry ? `${count(dry.counts.differs_from_ledger)} differ from the ledger` : "Compare only: never published"
+          ? dry
+            ? dry.ledger.counts.matches + dry.ledger.counts.differs === 0
+              ? "Nothing to compare: the ledger holds none of these rows"
+              : `${count(dry.counts.differs_from_ledger)} differ from the ledger`
+            : "Compare only: never published"
           : "Approved rows go through intake",
     },
   ];
+}
+
+const PLATFORM: Record<string, string> = { google_ads: "Google Ads", google_lsa: "Google Local Services", microsoft_ads: "Microsoft Ads", meta: "Meta" };
+/** Lines the dry run left out because they are not records at all: a report total, a title or footer line. */
+const NOT_RECORDS = new Set(["SUMMARY_ROW", "TEXT_LINE"]);
+
+const dayLabel = (iso: string, withYear: boolean) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}), timeZone: "UTC" });
+const rangeLabel = (first: string, last: string) => (first === last ? dayLabel(first, true) : `${dayLabel(first, false)}–${dayLabel(last, true)}`);
+const plural = (n: number, one: string, many = `${one}s`) => `${count(n)} ${n === 1 ? one : many}`;
+
+/** Why the first group of held-back rows was not counted, in the reader's words. */
+function heldBackReason(issue: DryRunIssue, rows: number): string {
+  const subject = plural(rows, "row");
+  if (issue.code === "CURRENCY_UNSUPPORTED") {
+    const currency = /account currency ([A-Z]{3})/.exec(issue.example.detail)?.[1];
+    return `${subject} ${rows === 1 ? "was" : "were"} not counted: ${rows === 1 ? "it is" : "they are"} stated in ${currency ?? "another currency"}, and only US dollars are summed. Nothing is converted.`;
+  }
+  return `${subject} ${rows === 1 ? "was" : "were"} not counted. The first: ${issue.example.detail}.`;
+}
+
+type DryRunIssue = NonNullable<UploadDetail["dryRun"]>["issues"][number];
+
+/**
+ * The result of the latest dry run, first on the page: one verified conclusion, one limitation,
+ * one next action (BYOF-WORKFLOW.md). Every figure is the dry run's own; the profile, mapping,
+ * counts and every row stay below it.
+ */
+function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<UploadDetail["dryRun"]> }) {
+  const c = dry.counts;
+  const counted = (c.eligible ?? 0) + (c.matches_ledger ?? 0) + (c.differs_from_ledger ?? 0);
+  const compared = dry.ledger.counts.matches + dry.ledger.counts.differs;
+  const notRecords = dry.issues.filter((i) => NOT_RECORDS.has(i.code)).reduce((t, i) => t + i.rows, 0);
+  const heldBack = (c.invalid ?? 0) + (c.quarantined ?? 0) + (c.conflict_in_file ?? 0) - notRecords;
+  const reasons = dry.issues.filter((i) => !NOT_RECORDS.has(i.code) && i.code !== "DUPLICATE_IN_FILE");
+  const heldDisposition = (c.quarantined ?? 0) > 0 ? "quarantined" : (c.conflict_in_file ?? 0) > 0 ? "conflict_in_file" : "invalid";
+  const spend = dry.scope ?? null;
+  const total = dry.ledger.money?.fileTotalCents ?? null;
+  const platform = spend ? spend.platforms.map((p) => PLATFORM[p] ?? p).join(" and ") : null;
+
+  const conclusion = spend && total !== null
+    ? `${plural(counted, "campaign-day")} of ${platform} spend, ${rangeLabel(spend.firstDay, spend.lastDay)}: ${exact(total)} in US dollars.`
+    : `${count(counted)} of ${count(dry.total - notRecords)} rows passed every check.`;
+  const ledgerLine =
+    compared === 0
+      ? `The ledger holds none of ${counted === 1 ? "it" : "them"}, so nothing was compared.`
+      : `${count(dry.ledger.counts.matches)} match the ledger and ${count(dry.ledger.counts.differs)} differ${dry.ledger.money ? ` (${exact(dry.ledger.money.matchedDifferenceCents)} on the shared rows)` : ""}.`;
+  const support = [
+    spend ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. Every row passed the checks the live feed applies.` : "Every counted row passed the checks the live feed applies.",
+    ledgerLine,
+    dry.authority === "reconcile" ? "Nothing was added to the ledger." : "Nothing is in the ledger until an approver publishes it.",
+    notRecords > 0 ? `${plural(notRecords, "line")} of the file ${notRecords === 1 ? "is not a record" : "are not records"} (a report total, a title or footer line) and ${notRecords === 1 ? "was" : "were"} left out.` : "",
+  ].filter(Boolean).join(" ");
+
+  const limitation =
+    heldBack > 0 && reasons.length > 0
+      ? heldBackReason(reasons[0], heldBack)
+      : spend && spend.currency.assumed > 0
+        ? "The file states no currency, so costs were read as US dollars. The live feed would hold these days until someone confirms the account's currency."
+        : spend
+          ? "Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer."
+          : dry.authority === "reconcile"
+            ? "Compare only: this export can show differences from the ledger; it never changes the ledger."
+            : "An approver, a different role, must approve the mapping before these rows are published.";
+
+  const next =
+    heldBack > 0
+      ? { href: `/onboarding/${uploadId}?rows=${heldDisposition}#rows`, label: `Review the ${plural(heldBack, "row")} not counted` }
+      : { href: `/onboarding/${uploadId}?${compared === 0 ? "rows=eligible" : "page=1"}#rows`, label: `See the ${plural(counted, "row")} behind this result` };
+
+  return (
+    <section id="result" aria-labelledby="result-title" data-testid="upload-result" data-dry-run={dry.id} className="scroll-mt-20 rounded-lg border border-border bg-surface p-4 shadow-raised">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 id="result-title" className="text-xs font-semibold uppercase tracking-wider text-faint">Result</h2>
+        {dry.authority === "reconcile" && <Badge tone="neutral">compare only</Badge>}
+      </div>
+      <p className="mt-2 text-base font-semibold" data-testid="result-conclusion">{conclusion}</p>
+      <p className="mt-1 text-sm text-muted">{support}</p>
+      <p className="mt-3 rounded-md border border-warn/40 bg-warn-soft px-3 py-2 text-sm" data-testid="result-limitation">
+        <span className="font-semibold">Limitation: </span>
+        {limitation}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Link href={next.href} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover" data-testid="result-next">
+          {next.label}
+        </Link>
+        <span className="text-xs text-faint">The file&apos;s profile, the mapping and every row&apos;s outcome are below.</span>
+      </div>
+    </section>
+  );
 }
 
 /** Each step links to the panel where it happens (the upload and outcome live with profile and decision). */
@@ -172,6 +266,8 @@ async function Workspace({ params, searchParams }: Props) {
           )
         }
       />
+
+      {dry && <ResultCard uploadId={uploadId} dry={dry} />}
 
       <nav aria-label="Onboarding steps" className="rounded-lg border border-border bg-surface p-3 shadow-raised" data-testid="step-rail">
         <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">

@@ -1,0 +1,24 @@
+Before the fix: tests/integration/onboarding.test.ts with the two currency tests added; lib/ unchanged (app code = 28e498b).
+ ✓ tests/integration/onboarding.test.ts > onboarding · call export (publishable) > profiles, asks, quarantines, publishes once, and a re-import changes nothing 1470ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · call export (publishable) > a row the ledger gained after the dry run is skipped at publication, not overwritten 821ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · payments export (reconcile only) > never maps Total or Contract Value to cash, explains every cent of difference, and refuses to publish 924ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · ad report with a title, totals and fractional conversions > skips the preamble, excludes total rows, refuses fractional counts, and asks for the account 827ms
+ × tests/integration/onboarding.test.ts > onboarding · an ad report's currency column (BYOF-WORKFLOW.md) > holds back rows stated in another currency instead of summing them as US dollars 785ms
+   → expected undefined to be 'Currency code' // Object.is equality
+ × tests/integration/onboarding.test.ts > onboarding · an ad report's currency column (BYOF-WORKFLOW.md) > a report with no currency column is read as US dollars, and the dry run says so 789ms
+   → expected undefined to match object { campaigns: 2, currency: { …(2) } }
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > branch-scoped, read-only and approve-only roles cannot stage; scoped roles cannot read 834ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > the schema itself refuses a mapping decided by the role that proposed it 807ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > refusals are recorded and nothing is staged 805ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > staged rows are deleted after retention, and the accountable summary stays 794ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > retention holds on every path, and the cell text quoted in results goes with the cells (security review #4) 820ms
+ ✓ tests/integration/onboarding.test.ts > onboarding · access, refusal and retention > publication is bound to the dry run the approver reviewed (security review #5) 821ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+AssertionError: expected undefined to be 'Currency code' // Object.is equality
+- Expected:
++ Received:
+AssertionError: expected undefined to match object { campaigns: 2, currency: { …(2) } }
+- Expected:
++ Received:
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)

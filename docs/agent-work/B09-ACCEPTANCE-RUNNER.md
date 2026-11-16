@@ -145,9 +145,15 @@ Two of those are covered in the repo another way:
 
 The historical records in `release-candidate/` and `bive/` are left as they were.
 
-## The recorded run
+## The recorded runs
 
-Recorded in `b09-acceptance/README.md`. The run was from a fresh worktree at `23617ca`. Port 3000
+**Latest: `b09-acceptance/5b7da9e/`.** A fresh worktree at `5b7da9e` ran the documented steps:
+`npm ci`, `npx playwright install chromium`, `npm run acceptance:b09`. It exited 0 in 189 s with
+108 of 108 checks. That includes the direct checks this commit added: missing is not zero on the
+incident, the row-level reclassification, and accepted evidence identical after each replay. The
+hostile settings and the four refusals held as before.
+
+**First: `b09-acceptance/README.md`,** kept as recorded. The run was from a fresh worktree at `23617ca`. Port 3000
 was held by a sentinel that logs requests, and `DATABASE_URL` pointed at the demo database.
 - **Result:** `npm ci`, then `npm run acceptance:b09`, exited 0 in 235 s, with 97 of 97 checks
   and no console or page errors.

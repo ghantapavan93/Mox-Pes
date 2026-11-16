@@ -1,0 +1,2 @@
+# Fixture files whose exact bytes are part of a recorded expectation (sha256): never normalize line endings.
+tests/fixtures/byof/*.csv -text

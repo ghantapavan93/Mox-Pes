@@ -1,0 +1,24 @@
+=== 1. the demo database is refused
+command: ACCEPTANCE_DATABASE_URL=postgres://postgres@127.0.0.1:54333/revenue_signal npm run acceptance:b09
+> moxie-revenue-signal@0.1.0 acceptance:b09
+> tsx tests/acceptance/b09/prepare.ts && playwright test -c tests/acceptance/b09/playwright.config.ts
+[acceptance] refusing to run: the database is "revenue_signal". The B09 acceptance runner uses only revenue_signal_acceptance or revenue_signal_acceptance_<suffix>, never the demo database.
+exit=1 seconds=2
+=== 2. port 3000 is refused
+command: ACCEPTANCE_PORT=3000 npm run acceptance:b09
+> moxie-revenue-signal@0.1.0 acceptance:b09
+> tsx tests/acceptance/b09/prepare.ts && playwright test -c tests/acceptance/b09/playwright.config.ts
+[acceptance] refusing to run: ACCEPTANCE_PORT is "3000". Use a free port from 1024 to 65535 other than 3000, the demo's.
+exit=1 seconds=1
+=== port 3990 is held by a sentinel for 3 and 4
+=== 3. a busy port is refused by the documented command, before seeding
+command: npm run acceptance:b09
+> moxie-revenue-signal@0.1.0 acceptance:b09
+> tsx tests/acceptance/b09/prepare.ts && playwright test -c tests/acceptance/b09/playwright.config.ts
+[acceptance] refusing to run: something already listens on port 3990. This runner starts its own server and never reuses one. Stop it, or set ACCEPTANCE_PORT to a free port.
+exit=1 seconds=2
+=== 4. a busy port is refused by Playwright alone (reuseExistingServer: false)
+command: npx playwright test -c tests/acceptance/b09/playwright.config.ts
+Error: http://localhost:3990 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer.
+exit=1 seconds=4
+=== HTTP requests that reached the port 3990 sentinel: 0

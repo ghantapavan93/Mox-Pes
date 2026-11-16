@@ -1,0 +1,127 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Temp\\rso-r55\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "-c",
+      "tests/acceptance/b09/playwright.config.ts"
+    ],
+    "configFile": "C:\\Temp\\rso-r55\\tests\\acceptance\\b09\\playwright.config.ts",
+    "rootDir": "C:/Temp/rso-r55/tests/acceptance/b09",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Temp/rso-r55/test-results/acceptance-b09/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Temp/rso-r55/tests/acceptance/b09",
+        "testIgnore": [],
+        "testMatch": [
+          "b09-proof.spec.ts"
+        ],
+        "timeout": 1800000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Temp\\rso-r55\\test-results\\acceptance-b09\\artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "name": "chromium",
+        "testDir": "C:\\Temp\\rso-r55\\tests\\acceptance\\b09",
+        "snapshotDir": "C:\\Temp\\rso-r55\\tests\\acceptance\\b09",
+        "testIgnore": [],
+        "testMatch": "b09-proof.spec.ts",
+        "timeout": 1800000,
+        "use": {
+          "baseURL": "http://localhost:3990",
+          "trace": "retain-on-failure",
+          "viewport": {
+            "width": 1280,
+            "height": 800
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\Temp\\rso-r55\\test-results\\acceptance-b09\\report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run build && npm run start -- -p 3990",
+      "cwd": "C:\\Temp\\rso-r55",
+      "port": 3990,
+      "reuseExistingServer": false,
+      "timeout": 900000,
+      "stdout": "pipe",
+      "stderr": "pipe",
+      "env": {
+        "DEMO_MODE": "1",
+        "DATABASE_URL": "postgres://postgres@127.0.0.1:54333/revenue_signal_acceptance"
+      }
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: http://localhost:3990 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer.",
+      "stack": "Error: http://localhost:3990 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer."
+    }
+  ],
+  "stats": {
+    "startTime": "2026-11-16T02:37:35.219Z",
+    "duration": 19.120000000000005,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

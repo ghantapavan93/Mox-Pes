@@ -319,6 +319,12 @@ as naming it.
   `shadow-mode.test.ts`, and the browser suite (`zz-b09-four-minute-path.spec.ts` follows the run
   link and Back).
 
+  **After the decision:** since `23617ca`, the B09 proof itself runs from the repo with one
+  command, `npm run acceptance:b09`, on its own database and server (`B09-ACCEPTANCE-RUNNER.md`;
+  the recorded run is in `b09-acceptance/`). It pairs each refusal with its allowed request and
+  counts the 30 routes that prove nothing apart. The lens walks and screenshots stay outside the
+  repo (R-55).
+
 **Not established:**
 - production deployment;
 - production access isolation or authentication;

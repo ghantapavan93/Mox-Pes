@@ -188,6 +188,9 @@ Two warnings:
 - **Reseed after any browser test run.** The tests write into `DATABASE_URL`, the demo database by
   default.
 
+To rerun the B09 proof without touching the demo, use `npm run acceptance:b09`. It has its own
+database and its own server on port 3990 (`B09-ACCEPTANCE-RUNNER.md`).
+
 ## 6. Known limitations
 
 See `BIVE-ACCEPTANCE.md` §10.

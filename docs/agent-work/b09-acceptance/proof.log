@@ -1,0 +1,20 @@
+=== 2026-11-16T02:32:31Z the worktree
+23617caf0e1184d393d27436306518f049689e27
+tracked files changed: 0
+=== npm ci
+npm ci exit=0 seconds=44
+=== the demo database before
+content: max run 675, raw events 134088, audit rows 208, max event 708, answer checks 0, incidents 197, clock 2026-10-31 08:00:00-05
+writes since the stats reset: inserted 332907, updated 116408, deleted 10395
+=== port 3000 is held by the sentinel; requests it has received so far: 0
+=== drop the acceptance database, so the runner must create it
+DROP DATABASE
+dropped
+=== 2026-11-16T02:33:15Z the proof, with DATABASE_URL pointing at the demo database
+command: cd C:/Temp/rso-r55 && DATABASE_URL=postgres://postgres@127.0.0.1:54333/revenue_signal npm run acceptance:b09
+npm run acceptance:b09 exit=0 seconds=235
+=== 2026-11-16T02:37:10Z the demo database after
+content: max run 675, raw events 134088, audit rows 208, max event 708, answer checks 0, incidents 197, clock 2026-10-31 08:00:00-05
+writes since the stats reset: inserted 332907, updated 116408, deleted 10395
+=== requests that reached port 3000 during the proof: 0
+=== the acceptance database exists: 1

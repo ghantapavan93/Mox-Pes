@@ -117,8 +117,17 @@ The historical records in `release-candidate/` and `bive/` are left as they were
 
 ## The recorded run
 
-Recorded in `b09-acceptance/` once the runner has run from a fresh worktree at the commit that
-adds it.
+Recorded in `b09-acceptance/README.md`. The run was from a fresh worktree at `23617ca`. Port 3000
+was held by a sentinel that logs requests, and `DATABASE_URL` pointed at the demo database.
+- **Result:** `npm ci`, then `npm run acceptance:b09`, exited 0 in 235 s, with 97 of 97 checks
+  and no console or page errors.
+- **Same world as the release record:** incident #2455 and runs #676–#680.
+- **Scope:** 31 routes prove a refusal, giving 62 denied requests, each paired with its allowed
+  request. 30 routes carry no B09 evidence for either role and are counted apart. Leaks: 0.
+- **Isolation:** the demo database's content and write counters did not change, and no request
+  reached port 3000.
+- **Refusals:** four cases each stopped with exit 1 before seeding or serving. They were the demo
+  database, port 3000, a busy port through the command, and a busy port through Playwright alone.
 
 ## Limits
 
@@ -131,3 +140,6 @@ adds it.
   browser renders after it. A payload without B09 evidence cannot render any.
 - **One seed.** The proof's numbers and run ids belong to the deterministic demo seed. If the seed
   changes, the runner fails loudly and the expectations must be updated with it.
+- **The server listens on all interfaces,** as `npm run start` does. Run it on a trusted network.
+- **The demo's own browser suite is unchanged.** It still reseeds `DATABASE_URL` and reuses a
+  server on port 3000 outside CI (R-55).

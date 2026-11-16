@@ -1,0 +1,5045 @@
+{
+  "proof": "B09 acceptance runner (docs/agent-work/B09-ACCEPTANCE-RUNNER.md)",
+  "sha": "6ed9066e186b05e9d8a18cd758b62060d4c63598",
+  "trackedChanges": [],
+  "command": "npm run acceptance:b09",
+  "build": "1YtM3m5k-65AfCnBQh3a_",
+  "server": "http://localhost:3990",
+  "database": "revenue_signal_acceptance",
+  "postgres": "17.8",
+  "node": "v22.14.0",
+  "playwright": "1.64.1",
+  "started": "2026-11-16T13:50:36.557Z",
+  "finished": "2026-11-16T13:52:31.207Z",
+  "summary": {
+    "checks": 177,
+    "passed": 177,
+    "failed": 0,
+    "consoleOrPageErrors": 0
+  },
+  "failed": [],
+  "gap": 2455,
+  "runs": {
+    "partial": 676,
+    "rest": 677,
+    "duplicate": 678,
+    "older": 679,
+    "stale": 680
+  },
+  "revisionRuns": {
+    "refused": 681,
+    "refusedAgain": 682,
+    "olderWhileHeld": 683,
+    "acceptedAgain": 684,
+    "refusedOther": 685,
+    "corrected": 686,
+    "unmapped": 687,
+    "unidentified": 688
+  },
+  "holds": {
+    "oct20": 5906,
+    "oct22": 6274,
+    "company": [
+      6644,
+      6830
+    ]
+  },
+  "revisionFacts": {
+    "refused": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 2,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "refusedAgain": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 2,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "olderWhileHeld": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 2,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "acceptedAgain": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 2,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "corrected": {
+      "b09": {
+        "paidSpendCents": 1692832,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 389028,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123459773,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 3,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123459773,
+        "md5": "79b256fdef11b3fe5b9ad8734909c545",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 40000,
+            "rawEventId": 200053
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    }
+  },
+  "checks": [
+    {
+      "stage": "missing",
+      "name": "a freshly seeded world: one open coverage gap at B09, and no correction delivered yet",
+      "ok": true,
+      "detail": "{\"gaps\":[{\"id\":\"2455\"}],\"corrections\":0}"
+    },
+    {
+      "stage": "missing",
+      "name": "the Overview, opened with no ids, lists B09's hold (tests/fixtures/b09-golden.json)",
+      "ok": true,
+      "detail": "B09 Channel imbalance Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then incident #2455 readiness"
+    },
+    {
+      "stage": "missing",
+      "name": "Overview says: Hold the budget decision. A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12 while its leads kept arriving. Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Hold the budget decision. A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point "
+    },
+    {
+      "stage": "missing",
+      "name": "Overview sets the selected week against the decision window",
+      "ok": true,
+      "detail": "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held."
+    },
+    {
+      "stage": "missing",
+      "name": "daily evidence says: No day of this week has a spend record for Google Local Services at B09. That is no record, not $0.",
+      "ok": true,
+      "detail": "No day of this week has a spend record for Google Local Services at B09. That is no record, not $0."
+    },
+    {
+      "stage": "missing",
+      "name": "each missing day reads 'no spend record', never a recorded $0.00",
+      "ok": true,
+      "detail": "[\"Mon, Oct 26no spend record—\",\"Tue, Oct 27no spend record—\",\"Wed, Oct 28no spend record—\",\"Thu, Oct 29no spend record—\",\"Fri, Oct 30no spend record—\"]"
+    },
+    {
+      "stage": "missing",
+      "name": "the incident's state is missing",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "missing",
+      "name": "incident says: Hold the budget decision",
+      "ok": true,
+      "detail": "Hold the budget decision A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 0 No record 18 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18"
+    },
+    {
+      "stage": "missing",
+      "name": "incident says: A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.",
+      "ok": true,
+      "detail": "Hold the budget decision A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 0 No record 18 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18"
+    },
+    {
+      "stage": "missing",
+      "name": "incident says: Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services.",
+      "ok": true,
+      "detail": "Hold the budget decision A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one. Next: Oct 13–Oct 30 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 0 No record 18 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18"
+    },
+    {
+      "stage": "missing",
+      "name": "the incident never calls missing spend zero",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap. New customers 17 Initial service completed 14 Invoiced $1,575 Collected (payments − refunds) $1,260 CUSTOMER SOLD INITIAL SERVICE INVOICED COLLECTED #414524 lead #18338 Oct 13 completed $175."
+    },
+    {
+      "stage": "missing",
+      "name": "the incident's CRM card says the channel has no spend record, not $0",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap. New customers 17 Initial service completed 14 Invoiced $1,575 Collected (payments − refunds) $1,260 CUSTOMER SOLD INITIAL SERVICE INVOICED COLLECTED #414524 lead #18338 Oct 13 completed $175."
+    },
+    {
+      "stage": "missing",
+      "name": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "missing",
+      "name": "Decision Lab says: Blocking incident #2455",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "partial",
+      "name": "the same incident, still open",
+      "ok": true,
+      "detail": "{\"id\":2455,\"status\":\"open\",\"verifiedAt\":null,\"previousVerifications\":0}"
+    },
+    {
+      "stage": "partial",
+      "name": "Overview says: Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any.",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record. Open incident #2455 Paid media spend per week, by channel · US doll"
+    },
+    {
+      "stage": "partial",
+      "name": "Overview says: Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.",
+      "ok": true,
+      "detail": "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any. Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search. Cost per customer is wrong for both channels until it is all filed as Google Local Services. Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record. Open incident #2455 Paid media spend per week, by channel · US doll"
+    },
+    {
+      "stage": "partial",
+      "name": "Overview sets the selected week against the decision window",
+      "ok": true,
+      "detail": "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held."
+    },
+    {
+      "stage": "partial",
+      "name": "daily evidence says: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "partial",
+      "name": "each day of the week reads as recorded spend",
+      "ok": true,
+      "detail": "[\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\",\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\",\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\",\"Thu, Oct 29$119.68pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200018\",\"Fri, Oct 30$118.17pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200019\"]"
+    },
+    {
+      "stage": "partial",
+      "name": "the incident's state is partial",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "partial",
+      "name": "incident says: Still on hold · 5 of 18 days verified",
+      "ok": true,
+      "detail": "Still on hold · 5 of 18 days verified Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 5 No record 13 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14"
+    },
+    {
+      "stage": "partial",
+      "name": "incident says: Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.",
+      "ok": true,
+      "detail": "Still on hold · 5 of 18 days verified Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 5 No record 13 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14"
+    },
+    {
+      "stage": "partial",
+      "name": "incident says: Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search.",
+      "ok": true,
+      "detail": "Still on hold · 5 of 18 days verified Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record. Next: Oct 13–Oct 25 must arrive as Google Local Services spend, re-sent by the source or re-mapped in Fix & approval below. The hold lifts by itself once every date is covered; closing the case does not lift it. Open the records for Oct 12–Oct 18 Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 5 No record 13 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14"
+    },
+    {
+      "stage": "partial",
+      "name": "the incident never calls missing spend zero",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap. New customers 17 Initial service completed 14 Invoiced $1,575 Collected (payments − refunds) $1,260 CUSTOMER SOLD INITIAL SERVICE INVOICED COLLECTED #414524 lead #18338 Oct 13 completed $175."
+    },
+    {
+      "stage": "partial",
+      "name": "the incident's CRM card says the channel has no spend record, not $0",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They keep arriving while the channel has no spend record for some or all of those dates, which makes its cost per customer look cheap. New customers 17 Initial service completed 14 Invoiced $1,575 Collected (payments − refunds) $1,260 CUSTOMER SOLD INITIAL SERVICE INVOICED COLLECTED #414524 lead #18338 Oct 13 completed $175."
+    },
+    {
+      "stage": "partial",
+      "name": "Decision Lab says: Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "partial",
+      "name": "Decision Lab says: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds.",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #2455: Google Local Services spend at B09 stopped after Oct 12, but 45 Google Local Services leads kept arriving; a new campaign in the same ad account started then. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds. Open incident #2455 Investigate"
+    },
+    {
+      "stage": "verified",
+      "name": "the same incident, now resolved by its verification",
+      "ok": true,
+      "detail": "{\"id\":2455,\"status\":\"resolved\",\"verifiedAt\":\"2026-10-31T13:15:00.000Z\",\"previousVerifications\":0}"
+    },
+    {
+      "stage": "verified",
+      "name": "reclassified, not added: each of pmax-lsa-B09's 18 accepted days moved from Google Search to Google Local Services with the same cents, $2,123.52 in all",
+      "ok": true,
+      "detail": "{\"was\":[\"2026-10-13:google_search:10869\",\"2026-10-14:google_search:11946\",\"2026-10-15:google_search:10750\",\"2026-10-16:google_search:13466\",\"2026-10-17:google_search:12913\",\"2026-10-18:google_search:12353\",\"2026-10-19:google_search:13432\",\"2026-10-20:google_search:12091\",\"2026-10-21:google_search:12842\",\"2026-10-22:google_search:13203\",\"2026-10-23:google_search:9339\",\"2026-10-24:google_search:9443\",\"2026-10-25:google_search:9988\",\"2026-10-26:google_search:12333\",\"2026-10-27:google_search:10950\",\"2026-10-28:google_search:12649\",\"2026-10-29:google_search:11968\",\"2026-10-30:google_search:11817\"],"
+    },
+    {
+      "stage": "verified",
+      "name": "company-wide accepted spend is the same total before and after: nothing added",
+      "ok": true,
+      "detail": "{\"missing\":123431864,\"verified\":123431864}"
+    },
+    {
+      "stage": "verified",
+      "name": "Overview says: Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point counts fewer than 7 days Google Search Google Local Services Meta Micros"
+    },
+    {
+      "stage": "verified",
+      "name": "Overview says: $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
+      "ok": true,
+      "detail": "Paid media spend at B09: $16,649.23 in Oct 1–30, −12% vs September. The largest change by channel: Google Search, −$1,489.06. Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Paid media spend per week, by channel · US dollars · Aug 31–Oct 30 · Oct 1–30 shaded · a hollow point counts fewer than 7 days Google Search Google Local Services Meta Micros"
+    },
+    {
+      "stage": "verified",
+      "name": "Overview sets the selected week against the decision window",
+      "ok": true,
+      "detail": "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified Oct 31, 1:15 PM UTC."
+    },
+    {
+      "stage": "verified",
+      "name": "daily evidence says: All 5 days have a spend record: $597.17 in all.",
+      "ok": true,
+      "detail": "All 5 days have a spend record: $597.17 in all."
+    },
+    {
+      "stage": "verified",
+      "name": "each day of the week reads as recorded spend",
+      "ok": true,
+      "detail": "[\"Mon, Oct 26$123.33pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200015\",\"Tue, Oct 27$109.50pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200016\",\"Wed, Oct 28$126.49pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200017\",\"Thu, Oct 29$119.68pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200018\",\"Fri, Oct 30$118.17pmax-lsa-B09B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200019\"]"
+    },
+    {
+      "stage": "verified",
+      "name": "the incident's state is verified",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "verified",
+      "name": "incident says: Coverage hold cleared · 18 of 18 days verified",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "verified",
+      "name": "incident says: All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "verified",
+      "name": "incident says: $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "verified",
+      "name": "incident says: B09's paid media spend in Oct 1–30, 2026 (UTC) stayed $16,649.23.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "verified",
+      "name": "incident says: No budget change was approved.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "verified",
+      "name": "the incident never calls missing spend zero",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They arrived while the channel had no spend record here. That spend is now re-filed and verified, so they are no longer counted against missing spend."
+    },
+    {
+      "stage": "verified",
+      "name": "the incident's CRM card says the spend is now re-filed and verified",
+      "ok": true,
+      "detail": "Customers the CRM shows as acquired at B09 and credited to Google Local Services by first evidenced touch. They arrived while the channel had no spend record here. That spend is now re-filed and verified, so they are no longer counted against missing spend."
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: Ready for review",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: Nothing here approves a budget change.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: Coverage hold cleared · 18 of 18 days verified, incident #2455.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: Other checks need review: 2 of 4 channels.",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says: It is not an approval",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab's badge says 'Ready for review', never a bare 'Ready'",
+      "ok": true,
+      "detail": "Ready for review"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab says nothing is approved",
+      "ok": true,
+      "detail": "Ready for review Every paid channel at B09 passes the readiness rules for Oct 1–30, 2026 (UTC): no open incident holds the decision, so a person can review it. Nothing here approves a budget change. Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added. Open incident #2455 Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with lim"
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab names the two review items: #970 and the door-to-door conflicts",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not mapped to any branch is excluded from every branch's numbers until someone maps it. Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them. “Ready” in the table below means a channel's readiness rules pass. It is "
+    },
+    {
+      "stage": "verified",
+      "name": "Decision Lab gives each review item's whole reason, never cut short",
+      "ok": true,
+      "detail": "Other checks need review: 2 of 4 channels. Meta and Microsoft Ads are ready, with limitations. Google Local Services (needs review): Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not mapped to any branch is excluded from every branch's numbers until someone maps it. Google Search (needs review): Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them. “Ready” in the table below means a channel's readiness rules pass. It is "
+    },
+    {
+      "stage": "verified",
+      "name": "the verification's run (#677) says what it stored, changed and was used for",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "after the duplicate replay the accepted spend evidence is identical, row for row: 11422 accepted days company-wide, and pmax-lsa-B09's 18 days keep their channel, cents and source version",
+      "ok": true,
+      "detail": "{\"verified\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"},\"duplicate\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"}}"
+    },
+    {
+      "stage": "replays",
+      "name": "after the older replay the accepted spend evidence is identical, row for row: 11422 accepted days company-wide, and pmax-lsa-B09's 18 days keep their channel, cents and source version",
+      "ok": true,
+      "detail": "{\"verified\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"},\"older\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"}}"
+    },
+    {
+      "stage": "replays",
+      "name": "after the stale replay the accepted spend evidence is identical, row for row: 11422 accepted days company-wide, and pmax-lsa-B09's 18 days keep their channel, cents and source version",
+      "ok": true,
+      "detail": "{\"verified\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"},\"stale\":{\"days\":11422,\"cents\":123431864,\"md5\":\"b9e00857f4b6f3b49bab75648c147f81\"}}"
+    },
+    {
+      "stage": "replays",
+      "name": "no change to money, customers or cash at B09 or company-wide",
+      "ok": true,
+      "detail": "{\"before\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}],\"after\":[{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]}"
+    },
+    {
+      "stage": "replays",
+      "name": "the same incident, still resolved, with its single verification",
+      "ok": true,
+      "detail": "{\"id\":2455,\"status\":\"resolved\",\"verifiedAt\":\"2026-10-31T13:15:00.000Z\",\"previousVerifications\":0}"
+    },
+    {
+      "stage": "replays",
+      "name": "no second case and no case transition",
+      "ok": true,
+      "detail": "{\"before\":{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0},\"after\":{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0}}"
+    },
+    {
+      "stage": "replays",
+      "name": "nothing opened anywhere",
+      "ok": true,
+      "detail": "{\"before\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1},\"after\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1}}"
+    },
+    {
+      "stage": "replays",
+      "name": "the campaign record is still what the newest fetch said",
+      "ok": true,
+      "detail": "{\"name\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"channel\":\"google_lsa\",\"type\":\"PERFORMANCE_MAX\",\"localServices\":true}"
+    },
+    {
+      "stage": "replays",
+      "name": "pipeline #676 (partial): 5 changes to accepted records Incident #2455's verification used Oct 2",
+      "ok": true,
+      "detail": "{\"Run\":\"#676 the run you followed\",\"Outcome\":\"5 changes to accepted records Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 8:00 AM UTC → Oct 31, 1:05 PM UTC\",\"Fetched\":\"5\",\"Stored\":\"5\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "pipeline #677 (rest): 13 changes to accepted records Incident #2455's verification used Oct ",
+      "ok": true,
+      "detail": "{\"Run\":\"#677 the run you followed\",\"Outcome\":\"13 changes to accepted records Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:05 PM UTC → Oct 31, 1:15 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"13\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "pipeline #678 (duplicate): No change to accepted records Duplicate: every delivery was a version ",
+      "ok": true,
+      "detail": "{\"Run\":\"#678 the run you followed\",\"Outcome\":\"No change to accepted records Duplicate: every delivery was a version already stored\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:15 PM UTC → Oct 31, 1:25 PM UTC\",\"Fetched\":\"13\",\"Stored\":\"0\",\"Dupes\":\"13\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "pipeline #679 (older): No change to accepted records Stored, but a newer revision was already",
+      "ok": true,
+      "detail": "{\"Run\":\"#679 the run you followed\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:25 PM UTC → Oct 31, 1:30 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "pipeline #680 (stale): No change to accepted records Stored, but a newer revision was already",
+      "ok": true,
+      "detail": "{\"Run\":\"#680 the run you followed\",\"Outcome\":\"No change to accepted records Stored, but a newer revision was already accepted\",\"Stream\":\"ads\",\"Mapper\":\"ads@1.2\",\"Window\":\"Oct 31, 1:30 PM UTC → Oct 31, 1:40 PM UTC\",\"Fetched\":\"1\",\"Stored\":\"1\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"succeeded\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "a run whose effect was not recorded says so, never 'no change' (#473, failed)",
+      "ok": true,
+      "detail": "{\"Run\":\"#473 the run you followed\",\"Outcome\":\"Effect not recorded\",\"Stream\":\"crm.ticket\",\"Mapper\":\"crm@1.0\",\"Window\":\"Oct 8, 7:30 AM UTC → Oct 9, 8:00 AM UTC\",\"Fetched\":\"0\",\"Stored\":\"0\",\"Dupes\":\"0\",\"Quarantined\":\"0\",\"Status\":\"failed\"}"
+    },
+    {
+      "stage": "replays",
+      "name": "after the replays the incident still says: Coverage hold cleared · 18 of 18 days verified",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "replays",
+      "name": "after the replays the incident still says: All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "replays",
+      "name": "after the replays the incident still says: $2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "replays",
+      "name": "after the replays the incident still says: B09's paid media spend in Oct 1–30, 2026 (UTC) stayed $16,649.23.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "replays",
+      "name": "after the replays the incident still says: No budget change was approved.",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: Open decision readiness for every check still open. No budget change was approved. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 Selected week covered Oct 26–Oct 30 · 5 of 5 dates verified Decision window complete O"
+    },
+    {
+      "stage": "ledger",
+      "name": "the five deliveries are runs #676–#680, as in the recorded proof (RELEASE-CANDIDATE.md §3)",
+      "ok": true,
+      "detail": "{\"partial\":676,\"rest\":677,\"duplicate\":678,\"older\":679,\"stale\":680}"
+    },
+    {
+      "stage": "ledger",
+      "name": "partial sent Oct 26–30, fetched 13:00",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-26\",\"cents\":12333,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"campaignName\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"campaignType\":\"PERFORMANCE_MAX\",\"localServicesEnabled\":true},{\"date\":\"2026-10-27\",\"cents\":10950,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"campaignName\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"campaignType\":\"PERFORMANCE_MAX\",\"localServicesEnabled\":true},{\"date\":\"2026-10-28\",\"cents\":12649,\"fetchedAt\":\"2026-10-31T13:00:00Z\",\"campaignName\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"campaignType\":\"PERFORMANCE_MAX\",\"loc"
+    },
+    {
+      "stage": "ledger",
+      "name": "partial stored those 5 versions as sent",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-26\",\"cents\":12333,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-27\",\"cents\":10950,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-28\",\"cents\":12649,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-29\",\"cents\":11968,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-30\",\"cents\":11817,\"fetchedAt\":\"2026-10-31T13:00:00Z\"}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "partial row: stored 5, 5 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"676\",\"fetched\":5,\"inserted\":5,\"duplicates\":0,\"projected\":5,\"rows_changed\":5}"
+    },
+    {
+      "stage": "ledger",
+      "name": "partial: the 5 days are accepted on its versions, filed as Local Services",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-26\",\"channel\":\"google_lsa\",\"cents\":12333,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-27\",\"channel\":\"google_lsa\",\"cents\":10950,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-28\",\"channel\":\"google_lsa\",\"cents\":12649,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-29\",\"channel\":\"google_lsa\",\"cents\":11968,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"},{\"date\":\"2026-10-30\",\"channel\":\"google_lsa\",\"cents\":11817,\"run\":676,\"fetchedAt\":\"2026-10-31T13:00:00Z\"}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "rest sent Oct 13–25, fetched 13:10",
+      "ok": true,
+      "detail": "[\"2026-10-13\",\"2026-10-14\",\"2026-10-15\",\"2026-10-16\",\"2026-10-17\",\"2026-10-18\",\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "rest stored those 13 versions as sent",
+      "ok": true,
+      "detail": "13"
+    },
+    {
+      "stage": "ledger",
+      "name": "rest row: stored 13, 13 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"677\",\"fetched\":13,\"inserted\":13,\"duplicates\":0,\"projected\":13,\"rows_changed\":13}"
+    },
+    {
+      "stage": "ledger",
+      "name": "duplicate sent exactly rest's versions again",
+      "ok": true,
+      "detail": "13"
+    },
+    {
+      "stage": "ledger",
+      "name": "duplicate row: stored 0, 13 duplicates, 0 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"678\",\"fetched\":13,\"inserted\":0,\"duplicates\":13,\"projected\":0,\"rows_changed\":0}"
+    },
+    {
+      "stage": "ledger",
+      "name": "duplicate stored nothing of its own; rest's versions were each delivered twice",
+      "ok": true,
+      "detail": "[2,2,2,2,2,2,2,2,2,2,2,2,2]"
+    },
+    {
+      "stage": "ledger",
+      "name": "older sent Oct 20, fetched 13:05 (before rest's 13:10), $50 more",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-20\",\"cents\":17091,\"fetchedAt\":\"2026-10-31T13:05:00Z\",\"campaignName\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"campaignType\":\"PERFORMANCE_MAX\",\"localServicesEnabled\":true}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "stale sent Oct 20, fetched 13:07, $50 more, as a Search campaign",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-20\",\"cents\":17091,\"fetchedAt\":\"2026-10-31T13:07:00Z\",\"campaignName\":\"B09 Coral | Search\",\"campaignType\":\"SEARCH\",\"localServicesEnabled\":false}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "older row: stored 1, 0 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"679\",\"fetched\":1,\"inserted\":1,\"duplicates\":0,\"projected\":1,\"rows_changed\":0}"
+    },
+    {
+      "stage": "ledger",
+      "name": "older stored its version as sent",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-20\",\"cents\":17091,\"fetchedAt\":\"2026-10-31T13:05:00Z\"}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "stale row: stored 1, 0 changes recorded",
+      "ok": true,
+      "detail": "{\"id\":\"680\",\"fetched\":1,\"inserted\":1,\"duplicates\":0,\"projected\":1,\"rows_changed\":0}"
+    },
+    {
+      "stage": "ledger",
+      "name": "stale stored its version as sent",
+      "ok": true,
+      "detail": "[{\"date\":\"2026-10-20\",\"cents\":17091,\"fetchedAt\":\"2026-10-31T13:07:00Z\"}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "Oct 20 is still rest's version and amount after older and stale",
+      "ok": true,
+      "detail": "{\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"cents\":12091,\"run\":677,\"fetchedAt\":\"2026-10-31T13:10:00Z\"}"
+    },
+    {
+      "stage": "ledger",
+      "name": "all 18 dates are accepted as Local Services, on partial's or rest's versions",
+      "ok": true,
+      "detail": "[\"2026-10-13:google_lsa:#677\",\"2026-10-14:google_lsa:#677\",\"2026-10-15:google_lsa:#677\",\"2026-10-16:google_lsa:#677\",\"2026-10-17:google_lsa:#677\",\"2026-10-18:google_lsa:#677\",\"2026-10-19:google_lsa:#677\",\"2026-10-20:google_lsa:#677\",\"2026-10-21:google_lsa:#677\",\"2026-10-22:google_lsa:#677\",\"2026-10-23:google_lsa:#677\",\"2026-10-24:google_lsa:#677\",\"2026-10-25:google_lsa:#677\",\"2026-10-26:google_lsa:#676\",\"2026-10-27:google_lsa:#676\",\"2026-10-28:google_lsa:#676\",\"2026-10-29:google_lsa:#676\",\"2026-10-30:google_lsa:#676\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "stale left the campaign record as the newest fetch had it",
+      "ok": true,
+      "detail": "{\"before\":{\"name\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"channel\":\"google_lsa\",\"type\":\"PERFORMANCE_MAX\",\"localServices\":true},\"after\":{\"name\":\"B09 Coral | Local Services (Performance Max, pay-per-lead)\",\"channel\":\"google_lsa\",\"type\":\"PERFORMANCE_MAX\",\"localServices\":true}}"
+    },
+    {
+      "stage": "ledger",
+      "name": "one verification, none before it",
+      "ok": true,
+      "detail": "{\"status\":\"resolved\",\"previous\":null}"
+    },
+    {
+      "stage": "ledger",
+      "name": "it names rest and partial, with the cents the source sent for their dates",
+      "ok": true,
+      "detail": "[[677,152635,13],[676,59717,5]]"
+    },
+    {
+      "stage": "ledger",
+      "name": "covered cents = what the source re-sent = $2,123.52",
+      "ok": true,
+      "detail": "{\"covered\":212352,\"sent\":212352}"
+    },
+    {
+      "stage": "ledger",
+      "name": "no verification names duplicate, older or stale",
+      "ok": true,
+      "detail": "[676,677]"
+    },
+    {
+      "stage": "ledger",
+      "name": "partial (#676) label: 5 changes to accepted records; Incident #2455's verification used Oct 26–Oct 30 (",
+      "ok": true,
+      "detail": "[\"5 changes to accepted records\",\"Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold.\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "rest (#677) label: 13 changes to accepted records; Incident #2455's verification used Oct 13–Oct 25 (",
+      "ok": true,
+      "detail": "[\"13 changes to accepted records\",\"Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold.\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "duplicate (#678) label: No change to accepted records; Duplicate: every delivery was a version already st",
+      "ok": true,
+      "detail": "[\"No change to accepted records\",\"Duplicate: every delivery was a version already stored\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "older (#679) label: No change to accepted records; Stored, but a newer revision was already accepted",
+      "ok": true,
+      "detail": "[\"No change to accepted records\",\"Stored, but a newer revision was already accepted\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "stale (#680) label: No change to accepted records; Stored, but a newer revision was already accepted",
+      "ok": true,
+      "detail": "[\"No change to accepted records\",\"Stored, but a newer revision was already accepted\"]"
+    },
+    {
+      "stage": "ledger",
+      "name": "B09's paid spend is 1,664,923¢ in every state",
+      "ok": true,
+      "detail": "[1664923,1664923,1664923,1664923,1664923,1664923]"
+    },
+    {
+      "stage": "ledger",
+      "name": "company spend, customers and cash are the same in every state",
+      "ok": true,
+      "detail": "[{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900},{\"spendCents\":123431864,\"acquired\":3687,\"collectedCents\":51692900}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "B09's customers and cash are the same in every state",
+      "ok": true,
+      "detail": "[[146,1823900],[146,1823900],[146,1823900],[146,1823900],[146,1823900],[146,1823900]]"
+    },
+    {
+      "stage": "ledger",
+      "name": "Local Services gained exactly what Search lost: partial's then rest's cents",
+      "ok": true,
+      "detail": "[{\"state\":\"missing\",\"lsa\":148767,\"search\":1230039},{\"state\":\"partial\",\"lsa\":208484,\"search\":1170322},{\"state\":\"rest\",\"lsa\":361119,\"search\":1017687},{\"state\":\"duplicate\",\"lsa\":361119,\"search\":1017687},{\"state\":\"older\",\"lsa\":361119,\"search\":1017687},{\"state\":\"stale\",\"lsa\":361119,\"search\":1017687}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "duplicate, older and stale moved no channel's spend",
+      "ok": true,
+      "detail": "[{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328},{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328},{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328},{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "one coverage-gap incident throughout: open, still open, then resolved",
+      "ok": true,
+      "detail": "[[\"2455:open\"],[\"2455:open\"],[\"2455:resolved\"],[\"2455:resolved\"],[\"2455:resolved\"],[\"2455:resolved\"]]"
+    },
+    {
+      "stage": "ledger",
+      "name": "one case for it throughout, never reopened",
+      "ok": true,
+      "detail": "[{\"id\":161,\"state\":\"detected\",\"reopenCount\":0},{\"id\":161,\"state\":\"detected\",\"reopenCount\":0},{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0},{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0},{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0},{\"id\":161,\"state\":\"resolved\",\"reopenCount\":0}]"
+    },
+    {
+      "stage": "ledger",
+      "name": "no incident of any kind opened from first to last",
+      "ok": true,
+      "detail": "{\"missing\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1},\"last\":{\"branch_mismatch\":58,\"channel_conflict\":123,\"channel_coverage_gap\":1,\"payload_conflict\":3,\"payment_without_ticket\":10,\"quarantined_source_records\":1,\"unmapped_spend\":1}}"
+    },
+    {
+      "stage": "ledger",
+      "name": "each reconciliation after a delivery opened nothing; one resolved the gap",
+      "ok": true,
+      "detail": "[{\"opened\":0,\"resolved\":0},{\"opened\":0,\"resolved\":1},{\"opened\":0,\"resolved\":0},{\"opened\":0,\"resolved\":0}]"
+    },
+    {
+      "stage": "scope",
+      "name": "the analyst receives B09 evidence on every core resource (7)",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "scope",
+      "name": "every denied request on a route that carries B09 evidence for the analyst is paired with that allowed request and received none: 31 routes, 62 pairs",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "scope",
+      "name": "routes with no B09 evidence for either role are counted apart, never as refusals: 30 of 61",
+      "ok": true,
+      "detail": "[\"/\",\"/changes/1\",\"/customers/401177\",\"/decisions/opportunities\",\"/definitions\",\"/feedback\",\"/integrations/jobs/1\",\"/onboarding\",\"/api/changes\",\"/api/changes/1\",\"/api/changes/1/rollout\",\"/api/connectors/1/compare\",\"/api/connectors/1/jobs\",\"/api/connectors/faults\",\"/api/connectors/jobs/1\",\"/api/currency-rules\",\"/api/customers?branch=B09\",\"/api/customers\",\"/api/customers/401177\",\"/api/customers/401177/raw-events/200047\",\"/api/decisions/experiments\",\"/api/decisions/scenarios\",\"/api/identity/conflicts\",\"/api/inquiries\",\"/api/investigations\",\"/api/metrics?branch=B09&period=oct\",\"/api/metrics?period"
+    },
+    {
+      "stage": "scope",
+      "name": "no restricted request on any route received B09 evidence",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "refused",
+      "name": "the ledger keeps the counted revision: every accepted spend day is identical, row for row",
+      "ok": true,
+      "detail": "{\"before\":\"b9e00857f4b6f3b49bab75648c147f81\",\"after\":\"b9e00857f4b6f3b49bab75648c147f81\"}"
+    },
+    {
+      "stage": "refused",
+      "name": "B09's money, customers and cash are unchanged",
+      "ok": true,
+      "detail": "{\"paidSpendCents\":1664923,\"acquired\":146,\"collectedCents\":1823900,\"byChannel\":{\"google_lsa\":361119,\"google_search\":1017687,\"meta\":150789,\"microsoft\":135328}}"
+    },
+    {
+      "stage": "refused",
+      "name": "Oct 20 still counts $120.91, as Google Local Services",
+      "ok": true,
+      "detail": "{\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"cents\":12091,\"rawEventId\":200027}"
+    },
+    {
+      "stage": "refused",
+      "name": "one hold at B09 names the refused revision ($400.00) beside the amount that stands ($120.91)",
+      "ok": true,
+      "detail": "{\"id\":5906,\"branchId\":\"B09\",\"status\":\"open\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":null,\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-31T13:20:00+00:00\",\"refusedRunId\":681,\"refusedCents\":40000,\"acceptedRawEventId\":200027,\"acceptedFetchedAt\":\"2026-10-31T1"
+    },
+    {
+      "stage": "refused",
+      "name": "Overview says: Hold the budget decision, held by #5906 on Oct 20",
+      "ok": true,
+      "detail": "Hold the budget decision. Incident #5906 holds it: A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts. Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Open incident #5906"
+    },
+    {
+      "stage": "refused",
+      "name": "Overview keeps the cleared coverage hold apart from the held decision",
+      "ok": true,
+      "detail": "Hold the budget decision. Incident #5906 holds it: A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts. Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Open incident #5906"
+    },
+    {
+      "stage": "refused",
+      "name": "Overview's status link opens incident #5906 at its decision",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "refused",
+      "name": "Overview's holds list names B09's refused revision (#5906)",
+      "ok": true,
+      "detail": "B09 Spend revision refused A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts incident #5906 readiness"
+    },
+    {
+      "stage": "refused",
+      "name": "daily evidence says the held date rests on an earlier revision, and the decision is held",
+      "ok": true,
+      "detail": "Oct 20 rests on an earlier revision: the source sent a newer one and intake refused it, so the amount shown is the one still counted, and the budget decision that reads it is held (incident #5906)."
+    },
+    {
+      "stage": "refused",
+      "name": "daily evidence: Oct 20 shows $120.91 counted and $400.00 only as refused, never $0.00",
+      "ok": true,
+      "detail": "Tue, Oct 20 $120.91 counted · newer revision refused pmax-lsa-B09 B09 Coral | Local Services (Performance Max, pay-per-lead) · google_ads · raw #200027 Refused, not counted: a newer revision fetched Oct 31, 1:20 PM UTC said $400.00, because it reports 2.5 conversions and the ledger stores whole numbers only (raw #200048). Hold: incident #5906"
+    },
+    {
+      "stage": "refused",
+      "name": "daily evidence: one primary action, the hold",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "refused",
+      "name": "incident: held",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "refused",
+      "name": "incident's headline: Hold the budget decision",
+      "ok": true,
+      "detail": "Hold the budget decision"
+    },
+    {
+      "stage": "refused",
+      "name": "incident says why: Oct 20 refused, $120.91 still counts, October held",
+      "ok": true,
+      "detail": "A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. B09's October budget decision is held until a newer revision is accepted."
+    },
+    {
+      "stage": "refused",
+      "name": "incident's one next action opens the records for Oct 19–Oct 25",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "refused",
+      "name": "incident: on hold for October, the counted amount beside it",
+      "ok": true,
+      "detail": "Still counted, held dates $120.91 First detected Oct 31, 1:50 PM UTC Last detected Oct 31, 1:50 PM UTC Budget decisions On hold for October"
+    },
+    {
+      "stage": "refused",
+      "name": "Decision Lab: Not ready, never 'Ready for review'",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #5906: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. Open incident #5906 Investigate Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, v"
+    },
+    {
+      "stage": "refused",
+      "name": "Decision Lab gives the whole reason for #5906",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #5906: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. Open incident #5906 Investigate Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, v"
+    },
+    {
+      "stage": "refused",
+      "name": "Decision Lab keeps the cleared coverage hold apart",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #5906: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. Open incident #5906 Investigate Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, v"
+    },
+    {
+      "stage": "refused",
+      "name": "Decision Lab's first action opens incident #5906",
+      "ok": true,
+      "detail": "[\"/exceptions/5906?period=oct&channel=google_lsa&week=2026-10-19#recovery\"]"
+    },
+    {
+      "stage": "while-held",
+      "name": "refusedAgain: the accepted spend evidence is identical, row for row",
+      "ok": true,
+      "detail": "{\"refused\":\"b9e00857f4b6f3b49bab75648c147f81\",\"refusedAgain\":\"b9e00857f4b6f3b49bab75648c147f81\"}"
+    },
+    {
+      "stage": "while-held",
+      "name": "refusedAgain: the same hold, the same revision, still open; no second hold",
+      "ok": true,
+      "detail": "[{\"id\":5906,\"branchId\":\"B09\",\"status\":\"open\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":null,\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-31T13:20:00+00:00\",\"refusedRunId\":681,\"refusedCents\":40000,\"acceptedRawEventId\":200027,\"acceptedFetchedAt\":\"2026-10-31T"
+    },
+    {
+      "stage": "while-held",
+      "name": "olderWhileHeld: the accepted spend evidence is identical, row for row",
+      "ok": true,
+      "detail": "{\"refused\":\"b9e00857f4b6f3b49bab75648c147f81\",\"olderWhileHeld\":\"b9e00857f4b6f3b49bab75648c147f81\"}"
+    },
+    {
+      "stage": "while-held",
+      "name": "olderWhileHeld: the same hold, the same revision, still open; no second hold",
+      "ok": true,
+      "detail": "[{\"id\":5906,\"branchId\":\"B09\",\"status\":\"open\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":null,\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-31T13:20:00+00:00\",\"refusedRunId\":681,\"refusedCents\":40000,\"acceptedRawEventId\":200027,\"acceptedFetchedAt\":\"2026-10-31T"
+    },
+    {
+      "stage": "while-held",
+      "name": "acceptedAgain: the accepted spend evidence is identical, row for row",
+      "ok": true,
+      "detail": "{\"refused\":\"b9e00857f4b6f3b49bab75648c147f81\",\"acceptedAgain\":\"b9e00857f4b6f3b49bab75648c147f81\"}"
+    },
+    {
+      "stage": "while-held",
+      "name": "acceptedAgain: the same hold, the same revision, still open; no second hold",
+      "ok": true,
+      "detail": "[{\"id\":5906,\"branchId\":\"B09\",\"status\":\"open\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":null,\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-31T13:20:00+00:00\",\"refusedRunId\":681,\"refusedCents\":40000,\"acceptedRawEventId\":200027,\"acceptedFetchedAt\":\"2026-10-31T"
+    },
+    {
+      "stage": "refused-other",
+      "name": "two holds at B09: Oct 20 (fractional conversions) and Oct 22 (CAD)",
+      "ok": true,
+      "detail": "[{\"id\":5906,\"branchId\":\"B09\",\"status\":\"open\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":null,\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-31T13:20:00+00:00\",\"refusedRunId\":681,\"refusedCents\":40000,\"acceptedRawEventId\":200027,\"acceptedFetchedAt\":\"2026-10-31T"
+    },
+    {
+      "stage": "corrected",
+      "name": "before the correction, Decision Lab names both holds",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #5906: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. Open incident #5906 Investigate Blocking incident #6274: A newer revision of Oct 22's Google Local Services spend (pmax-lsa-B09) was refused: it is billed in CAD and only US dollars are summ"
+    },
+    {
+      "stage": "corrected",
+      "name": "refreshed, Decision Lab drops the lifted hold and keeps the other: still Not ready",
+      "ok": true,
+      "detail": "Not ready 4 of 4 paid channels at B09 are not ready for a budget decision in Oct 1–30, 2026 (UTC): Google Local Services, Google Search, Meta, Microsoft Ads. Blocking incident #6274: A newer revision of Oct 22's Google Local Services spend (pmax-lsa-B09) was refused: it is billed in CAD and only US dollars are summed. The ledger still counts the earlier $132.03, so Oct 22 is not confirmed. Open incident #6274 Investigate Coverage hold cleared · 18 of 18 days verified, incident #2455. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1"
+    },
+    {
+      "stage": "corrected",
+      "name": "#5906 is resolved, and its resolution names run #686 and the amount before and after",
+      "ok": true,
+      "detail": "{\"id\":5906,\"branchId\":\"B09\",\"status\":\"resolved\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":\"Corrected. Oct 20: ingestion run #686 accepted a newer revision (fetched Oct 31, 1:30 PM UTC): $120.91 became $400.00.\",\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10-"
+    },
+    {
+      "stage": "corrected",
+      "name": "#6274 is still open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "corrected",
+      "name": "Oct 20 now counts $400.00; B09's paid spend moved by exactly +$279.09",
+      "ok": true,
+      "detail": "{\"oct20\":{\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"cents\":40000,\"rawEventId\":200053},\"before\":1664923,\"after\":1692832}"
+    },
+    {
+      "stage": "corrected",
+      "name": "the lifted hold's page says so",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "corrected",
+      "name": "the lifted hold shows before and after, and the branch's total now",
+      "ok": true,
+      "detail": "Oct 20: ingestion run #686 accepted a newer revision (fetched Oct 31, 1:30 PM UTC): $120.91 became $400.00. The correction changed the amount, so B09's paid media spend in Oct 1–30, 2026 (UTC) is now $16,928.32, +$279.09 against the amount counted before it."
+    },
+    {
+      "stage": "corrected",
+      "name": "the lifted hold's next action is decision readiness",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "corrected",
+      "name": "Revision details open by keyboard, with visible focus, and link the correcting run",
+      "ok": true,
+      "detail": "{\"opened\":true,\"focusVisible\":true,\"runHref\":\"/integrations?view=pipeline&run=686#run-686\"}"
+    },
+    {
+      "stage": "corrected",
+      "name": "closing them by keyboard keeps focus where it was",
+      "ok": true,
+      "detail": "{\"closed\":true,\"stillFocused\":true}"
+    },
+    {
+      "stage": "corrected",
+      "name": "the coverage gap is still cleared, but no longer 'reclassified, not added': an amount changed",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: The coverage hold cleared, but the budget decision is still held by #6274. Open decision readiness for every check still open. No budget change was approved. The budget decision is still held by #6274. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 "
+    },
+    {
+      "stage": "corrected",
+      "name": "the coverage gap's page says the decision is still held by #6274",
+      "ok": true,
+      "detail": "Coverage hold cleared · 18 of 18 days verified All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Next: The coverage hold cleared, but the budget decision is still held by #6274. Open decision readiness for every check still open. No budget change was approved. The budget decision is still held by #6274. Open decision readiness Back to the daily evidence Decision window · Oct 13–Oct 30 Verified 18 No record 0 Recorded $0.00 0 Use the arrow keys to move between dates; the date's evidence follows below. 13 14 15 16 17 18 19 "
+    },
+    {
+      "stage": "corrected",
+      "name": "Overview now names #6274, Oct 22",
+      "ok": true,
+      "detail": "Hold the budget decision. Incident #6274 holds it: A newer revision of pmax-lsa-B09's spend on Oct 22 was refused (CURRENCY_UNSUPPORTED); the earlier $132.03 still counts. Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC. Open incident #6274"
+    },
+    {
+      "stage": "back",
+      "name": "the hold opens with branch, channel, period and week, and the records keep them",
+      "ok": true,
+      "detail": "{\"incidentUrl\":\"/exceptions/6274?period=oct&channel=google_lsa&week=2026-10-26#recovery\",\"recordsUrl\":\"/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19#selection\"}"
+    },
+    {
+      "stage": "back",
+      "name": "Back returns to the hold, then to Decision Lab with the same scope",
+      "ok": true,
+      "detail": "{\"back1\":\"/exceptions/6274?period=oct&channel=google_lsa&week=2026-10-26#recovery\",\"back2\":\"/decisions?branch=B09&period=oct&channel=google_lsa&week=2026-10-26\"}"
+    },
+    {
+      "stage": "ambiguous",
+      "name": "B09's holds are unchanged; the new records hold no branch",
+      "ok": true,
+      "detail": "[{\"id\":5906,\"branchId\":\"B09\",\"status\":\"resolved\",\"summary\":\"A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts\",\"resolution\":\"Corrected. Oct 20: ingestion run #686 accepted a newer revision (fetched Oct 31, 1:30 PM UTC): $120.91 became $400.00.\",\"revisions\":[{\"rawEventId\":200048,\"campaignId\":8677,\"externalCampaignId\":\"pmax-lsa-B09\",\"platform\":\"google_ads\",\"date\":\"2026-10-20\",\"channel\":\"google_lsa\",\"errorDetail\":\"spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only\",\"refusedFetchedAt\":\"2026-10"
+    },
+    {
+      "stage": "ambiguous",
+      "name": "the company-level incident says what cannot be verified, and that no rule decides it",
+      "ok": true,
+      "detail": "Which decision these records affect cannot be verified Which branch's decision these affect cannot be verified: 1 record name a campaign the ledger has never counted. A campaign's name or its ad account is not taken as proof of a branch. No branch's budget decision is held by this incident. Whether records like these should hold one has not been decided."
+    },
+    {
+      "stage": "ambiguous",
+      "name": "its budget-decision tile says it holds none",
+      "ok": true,
+      "detail": "Revenue at stake $0.00 First detected Oct 31, 2:08 PM UTC Last detected Oct 31, 2:09 PM UTC Budget decisions Holds no branch's decision"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "the analyst receives the evidence on /exceptions/6274?period=oct",
+      "ok": true,
+      "detail": "[\"pmax-lsa-B09\",\"$132.03\",\"B09 Coral\"]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "the analyst receives the evidence on /exceptions/5906?period=oct",
+      "ok": true,
+      "detail": "[\"pmax-lsa-B09\",\"$120.91\",\"$400.00\",\"B09 Coral\"]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "the analyst receives the evidence on /exceptions/6644?period=oct",
+      "ok": true,
+      "detail": "[\"pmax-lsa-B09\",\"B09 Coral\"]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "the analyst receives the evidence on /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19",
+      "ok": true,
+      "detail": "[\"pmax-lsa-B09\",\"$132.03\",\"$400.00\",\"B09 Coral\"]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "the analyst receives the evidence on /decisions?branch=B09&period=oct",
+      "ok": true,
+      "detail": "[\"pmax-lsa-B09\",\"$120.91\",\"$132.03\",\"$400.00\",\"B09 Coral\"]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "partner receives none of it on /exceptions/6274?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "partner receives none of it on /exceptions/5906?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "partner receives none of it on /exceptions/6644?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "partner receives none of it on /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "partner receives none of it on /decisions?branch=B09&period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "brand receives none of it on /exceptions/6274?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "brand receives none of it on /exceptions/5906?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "brand receives none of it on /exceptions/6644?period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "brand receives none of it on /branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "revision-scope",
+      "name": "brand receives none of it on /decisions?branch=B09&period=oct",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "stage": "errors",
+      "name": "no console or page errors in the walk",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "errors": [],
+  "facts": {
+    "missing": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 148767,
+          "google_search": 1230039,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "open",
+        "verifiedAt": null,
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "detected",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:open"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_search",
+        "type": null,
+        "localServices": false
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "10d48d860e4fb39c74bc23b6930597f0",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_search",
+            "cents": 10869,
+            "rawEventId": 158811
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_search",
+            "cents": 11946,
+            "rawEventId": 161363
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_search",
+            "cents": 10750,
+            "rawEventId": 161364
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_search",
+            "cents": 13466,
+            "rawEventId": 163905
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_search",
+            "cents": 12913,
+            "rawEventId": 166365
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_search",
+            "cents": 12353,
+            "rawEventId": 171262
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_search",
+            "cents": 13432,
+            "rawEventId": 173610
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_search",
+            "cents": 12091,
+            "rawEventId": 173611
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_search",
+            "cents": 12842,
+            "rawEventId": 175981
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_search",
+            "cents": 13203,
+            "rawEventId": 178359
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_search",
+            "cents": 9339,
+            "rawEventId": 180784
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_search",
+            "cents": 9443,
+            "rawEventId": 183218
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_search",
+            "cents": 9988,
+            "rawEventId": 185576
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_search",
+            "cents": 12333,
+            "rawEventId": 188022
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_search",
+            "cents": 10950,
+            "rawEventId": 190446
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_search",
+            "cents": 12649,
+            "rawEventId": 192949
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_search",
+            "cents": 11968,
+            "rawEventId": 195531
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_search",
+            "cents": 11817,
+            "rawEventId": 198055
+          }
+        ]
+      }
+    },
+    "partial": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 208484,
+          "google_search": 1170322,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "open",
+        "verifiedAt": null,
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "detected",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:open"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "71707b946c0b31cb27fcf3ff6c18694f",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_search",
+            "cents": 10869,
+            "rawEventId": 158811
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_search",
+            "cents": 11946,
+            "rawEventId": 161363
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_search",
+            "cents": 10750,
+            "rawEventId": 161364
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_search",
+            "cents": 13466,
+            "rawEventId": 163905
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_search",
+            "cents": 12913,
+            "rawEventId": 166365
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_search",
+            "cents": 12353,
+            "rawEventId": 171262
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_search",
+            "cents": 13432,
+            "rawEventId": 173610
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_search",
+            "cents": 12091,
+            "rawEventId": 173611
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_search",
+            "cents": 12842,
+            "rawEventId": 175981
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_search",
+            "cents": 13203,
+            "rawEventId": 178359
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_search",
+            "cents": 9339,
+            "rawEventId": 180784
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_search",
+            "cents": 9443,
+            "rawEventId": 183218
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_search",
+            "cents": 9988,
+            "rawEventId": 185576
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "rest": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "duplicate": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "older": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    },
+    "stale": {
+      "b09": {
+        "paidSpendCents": 1664923,
+        "acquired": 146,
+        "collectedCents": 1823900,
+        "byChannel": {
+          "google_lsa": 361119,
+          "google_search": 1017687,
+          "meta": 150789,
+          "microsoft": 135328
+        }
+      },
+      "company": {
+        "spendCents": 123431864,
+        "acquired": 3687,
+        "collectedCents": 51692900
+      },
+      "incident": {
+        "id": 2455,
+        "status": "resolved",
+        "verifiedAt": "2026-10-31T13:15:00.000Z",
+        "previousVerifications": 0
+      },
+      "case": {
+        "id": 161,
+        "state": "resolved",
+        "reopenCount": 0
+      },
+      "coverageGaps": [
+        "2455:resolved"
+      ],
+      "casesForGaps": 1,
+      "exceptionsByKind": {
+        "branch_mismatch": 58,
+        "channel_conflict": 123,
+        "channel_coverage_gap": 1,
+        "payload_conflict": 3,
+        "payment_without_ticket": 10,
+        "quarantined_source_records": 1,
+        "unmapped_spend": 1
+      },
+      "campaign": {
+        "name": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+        "channel": "google_lsa",
+        "type": "PERFORMANCE_MAX",
+        "localServices": true
+      },
+      "acceptedSpend": {
+        "days": 11422,
+        "cents": 123431864,
+        "md5": "b9e00857f4b6f3b49bab75648c147f81",
+        "successor": [
+          {
+            "date": "2026-10-13",
+            "channel": "google_lsa",
+            "cents": 10869,
+            "rawEventId": 200020
+          },
+          {
+            "date": "2026-10-14",
+            "channel": "google_lsa",
+            "cents": 11946,
+            "rawEventId": 200021
+          },
+          {
+            "date": "2026-10-15",
+            "channel": "google_lsa",
+            "cents": 10750,
+            "rawEventId": 200022
+          },
+          {
+            "date": "2026-10-16",
+            "channel": "google_lsa",
+            "cents": 13466,
+            "rawEventId": 200023
+          },
+          {
+            "date": "2026-10-17",
+            "channel": "google_lsa",
+            "cents": 12913,
+            "rawEventId": 200024
+          },
+          {
+            "date": "2026-10-18",
+            "channel": "google_lsa",
+            "cents": 12353,
+            "rawEventId": 200025
+          },
+          {
+            "date": "2026-10-19",
+            "channel": "google_lsa",
+            "cents": 13432,
+            "rawEventId": 200026
+          },
+          {
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "cents": 12091,
+            "rawEventId": 200027
+          },
+          {
+            "date": "2026-10-21",
+            "channel": "google_lsa",
+            "cents": 12842,
+            "rawEventId": 200028
+          },
+          {
+            "date": "2026-10-22",
+            "channel": "google_lsa",
+            "cents": 13203,
+            "rawEventId": 200029
+          },
+          {
+            "date": "2026-10-23",
+            "channel": "google_lsa",
+            "cents": 9339,
+            "rawEventId": 200030
+          },
+          {
+            "date": "2026-10-24",
+            "channel": "google_lsa",
+            "cents": 9443,
+            "rawEventId": 200031
+          },
+          {
+            "date": "2026-10-25",
+            "channel": "google_lsa",
+            "cents": 9988,
+            "rawEventId": 200032
+          },
+          {
+            "date": "2026-10-26",
+            "channel": "google_lsa",
+            "cents": 12333,
+            "rawEventId": 200015
+          },
+          {
+            "date": "2026-10-27",
+            "channel": "google_lsa",
+            "cents": 10950,
+            "rawEventId": 200016
+          },
+          {
+            "date": "2026-10-28",
+            "channel": "google_lsa",
+            "cents": 12649,
+            "rawEventId": 200017
+          },
+          {
+            "date": "2026-10-29",
+            "channel": "google_lsa",
+            "cents": 11968,
+            "rawEventId": 200018
+          },
+          {
+            "date": "2026-10-30",
+            "channel": "google_lsa",
+            "cents": 11817,
+            "rawEventId": 200019
+          }
+        ]
+      }
+    }
+  },
+  "ledger": {
+    "runIds": {
+      "partial": 676,
+      "rest": 677,
+      "duplicate": 678,
+      "older": 679,
+      "stale": 680
+    },
+    "sent": {
+      "partial": [
+        {
+          "date": "2026-10-26",
+          "cents": 12333,
+          "fetchedAt": "2026-10-31T13:00:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-27",
+          "cents": 10950,
+          "fetchedAt": "2026-10-31T13:00:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-28",
+          "cents": 12649,
+          "fetchedAt": "2026-10-31T13:00:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-29",
+          "cents": 11968,
+          "fetchedAt": "2026-10-31T13:00:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-30",
+          "cents": 11817,
+          "fetchedAt": "2026-10-31T13:00:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        }
+      ],
+      "rest": [
+        {
+          "date": "2026-10-13",
+          "cents": 10869,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-14",
+          "cents": 11946,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-15",
+          "cents": 10750,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-16",
+          "cents": 13466,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-17",
+          "cents": 12913,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-18",
+          "cents": 12353,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-19",
+          "cents": 13432,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-20",
+          "cents": 12091,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-21",
+          "cents": 12842,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-22",
+          "cents": 13203,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-23",
+          "cents": 9339,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-24",
+          "cents": 9443,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-25",
+          "cents": 9988,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        }
+      ],
+      "duplicate": [
+        {
+          "date": "2026-10-13",
+          "cents": 10869,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-14",
+          "cents": 11946,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-15",
+          "cents": 10750,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-16",
+          "cents": 13466,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-17",
+          "cents": 12913,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-18",
+          "cents": 12353,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-19",
+          "cents": 13432,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-20",
+          "cents": 12091,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-21",
+          "cents": 12842,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-22",
+          "cents": 13203,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-23",
+          "cents": 9339,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-24",
+          "cents": 9443,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        },
+        {
+          "date": "2026-10-25",
+          "cents": 9988,
+          "fetchedAt": "2026-10-31T13:10:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        }
+      ],
+      "older": [
+        {
+          "date": "2026-10-20",
+          "cents": 17091,
+          "fetchedAt": "2026-10-31T13:05:00Z",
+          "campaignName": "B09 Coral | Local Services (Performance Max, pay-per-lead)",
+          "campaignType": "PERFORMANCE_MAX",
+          "localServicesEnabled": true
+        }
+      ],
+      "stale": [
+        {
+          "date": "2026-10-20",
+          "cents": 17091,
+          "fetchedAt": "2026-10-31T13:07:00Z",
+          "campaignName": "B09 Coral | Search",
+          "campaignType": "SEARCH",
+          "localServicesEnabled": false
+        }
+      ]
+    },
+    "runs": [
+      {
+        "id": "676",
+        "fetched": 5,
+        "inserted": 5,
+        "duplicates": 0,
+        "projected": 5,
+        "rows_changed": 5
+      },
+      {
+        "id": "677",
+        "fetched": 13,
+        "inserted": 13,
+        "duplicates": 0,
+        "projected": 13,
+        "rows_changed": 13
+      },
+      {
+        "id": "678",
+        "fetched": 13,
+        "inserted": 0,
+        "duplicates": 13,
+        "projected": 0,
+        "rows_changed": 0
+      },
+      {
+        "id": "679",
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "projected": 1,
+        "rows_changed": 0
+      },
+      {
+        "id": "680",
+        "fetched": 1,
+        "inserted": 1,
+        "duplicates": 0,
+        "projected": 1,
+        "rows_changed": 0
+      }
+    ],
+    "stored": [
+      {
+        "run": 676,
+        "date": "2026-10-26",
+        "cents": 12333,
+        "fetchedAt": "2026-10-31T13:00:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 676,
+        "date": "2026-10-27",
+        "cents": 10950,
+        "fetchedAt": "2026-10-31T13:00:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 676,
+        "date": "2026-10-28",
+        "cents": 12649,
+        "fetchedAt": "2026-10-31T13:00:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 676,
+        "date": "2026-10-29",
+        "cents": 11968,
+        "fetchedAt": "2026-10-31T13:00:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 676,
+        "date": "2026-10-30",
+        "cents": 11817,
+        "fetchedAt": "2026-10-31T13:00:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 677,
+        "date": "2026-10-13",
+        "cents": 10869,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-14",
+        "cents": 11946,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-15",
+        "cents": 10750,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-16",
+        "cents": 13466,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-17",
+        "cents": 12913,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-18",
+        "cents": 12353,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-19",
+        "cents": 13432,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-20",
+        "cents": 12091,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-21",
+        "cents": 12842,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-22",
+        "cents": 13203,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-23",
+        "cents": 9339,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-24",
+        "cents": 9443,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 677,
+        "date": "2026-10-25",
+        "cents": 9988,
+        "fetchedAt": "2026-10-31T13:10:00Z",
+        "deliveries": 2
+      },
+      {
+        "run": 679,
+        "date": "2026-10-20",
+        "cents": 17091,
+        "fetchedAt": "2026-10-31T13:05:00Z",
+        "deliveries": 1
+      },
+      {
+        "run": 680,
+        "date": "2026-10-20",
+        "cents": 17091,
+        "fetchedAt": "2026-10-31T13:07:00Z",
+        "deliveries": 1
+      }
+    ],
+    "accepted": [
+      {
+        "date": "2026-10-13",
+        "channel": "google_lsa",
+        "cents": 10869,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-14",
+        "channel": "google_lsa",
+        "cents": 11946,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-15",
+        "channel": "google_lsa",
+        "cents": 10750,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-16",
+        "channel": "google_lsa",
+        "cents": 13466,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-17",
+        "channel": "google_lsa",
+        "cents": 12913,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-18",
+        "channel": "google_lsa",
+        "cents": 12353,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-19",
+        "channel": "google_lsa",
+        "cents": 13432,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-20",
+        "channel": "google_lsa",
+        "cents": 12091,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-21",
+        "channel": "google_lsa",
+        "cents": 12842,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-22",
+        "channel": "google_lsa",
+        "cents": 13203,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-23",
+        "channel": "google_lsa",
+        "cents": 9339,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-24",
+        "channel": "google_lsa",
+        "cents": 9443,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-25",
+        "channel": "google_lsa",
+        "cents": 9988,
+        "run": 677,
+        "fetchedAt": "2026-10-31T13:10:00Z"
+      },
+      {
+        "date": "2026-10-26",
+        "channel": "google_lsa",
+        "cents": 12333,
+        "run": 676,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-27",
+        "channel": "google_lsa",
+        "cents": 10950,
+        "run": 676,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-28",
+        "channel": "google_lsa",
+        "cents": 12649,
+        "run": 676,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-29",
+        "channel": "google_lsa",
+        "cents": 11968,
+        "run": 676,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      },
+      {
+        "date": "2026-10-30",
+        "channel": "google_lsa",
+        "cents": 11817,
+        "run": 676,
+        "fetchedAt": "2026-10-31T13:00:00Z"
+      }
+    ],
+    "verification": {
+      "rule": "every required date has spend in the channel at the branch, and no successor spend in the window is filed under another channel or at another branch",
+      "runs": [
+        {
+          "cents": 152635,
+          "dates": [
+            "2026-10-13",
+            "2026-10-14",
+            "2026-10-15",
+            "2026-10-16",
+            "2026-10-17",
+            "2026-10-18",
+            "2026-10-19",
+            "2026-10-20",
+            "2026-10-21",
+            "2026-10-22",
+            "2026-10-23",
+            "2026-10-24",
+            "2026-10-25"
+          ],
+          "runId": 677,
+          "fetchedAt": {
+            "last": "2026-10-31T13:10:00Z",
+            "first": "2026-10-31T13:10:00Z"
+          },
+          "adapterVersion": "ads@1.2"
+        },
+        {
+          "cents": 59717,
+          "dates": [
+            "2026-10-26",
+            "2026-10-27",
+            "2026-10-28",
+            "2026-10-29",
+            "2026-10-30"
+          ],
+          "runId": 676,
+          "fetchedAt": {
+            "last": "2026-10-31T13:00:00Z",
+            "first": "2026-10-31T13:00:00Z"
+          },
+          "adapterVersion": "ads@1.2"
+        }
+      ],
+      "window": {
+        "to": "2026-10-30",
+        "from": "2026-10-13"
+      },
+      "verifiedAt": "2026-10-31T13:15:00.000Z",
+      "coveredCents": 212352,
+      "coveredDates": 18,
+      "requiredDates": 18
+    },
+    "outcomes": {
+      "partial": [
+        "5 changes to accepted records",
+        "Incident #2455's verification used Oct 26–Oct 30 (5 of 18 dates) to clear its coverage hold."
+      ],
+      "rest": [
+        "13 changes to accepted records",
+        "Incident #2455's verification used Oct 13–Oct 25 (13 of 18 dates) to clear its coverage hold."
+      ],
+      "duplicate": [
+        "No change to accepted records",
+        "Duplicate: every delivery was a version already stored"
+      ],
+      "older": [
+        "No change to accepted records",
+        "Stored, but a newer revision was already accepted"
+      ],
+      "stale": [
+        "No change to accepted records",
+        "Stored, but a newer revision was already accepted"
+      ]
+    },
+    "reconciliations": [
+      {
+        "txid": "4722558",
+        "opened": 0,
+        "detected": 184,
+        "resolved": 0,
+        "snapshot": "4722558:4722558:"
+      },
+      {
+        "txid": "4722570",
+        "opened": 0,
+        "detected": 183,
+        "resolved": 1,
+        "snapshot": "4722570:4722570:"
+      },
+      {
+        "txid": "4722586",
+        "opened": 0,
+        "detected": 183,
+        "resolved": 0,
+        "snapshot": "4722586:4722586:"
+      },
+      {
+        "txid": "4722598",
+        "opened": 0,
+        "detected": 183,
+        "resolved": 0,
+        "snapshot": "4722598:4722598:"
+      }
+    ]
+  },
+  "scope": {
+    "ids": {
+      "customer": "401177",
+      "rawEvent": "200047",
+      "change": "1",
+      "job": "1",
+      "connector": "1",
+      "case": 161
+    },
+    "answerChecks": [
+      1,
+      2
+    ],
+    "markers": [
+      "pmax-lsa-B09",
+      "lsa-B09",
+      "B09 Coral",
+      "at B09",
+      "$597.17",
+      "$1,526.35",
+      "$2,123.52",
+      "$16,649.23",
+      "/exceptions/2455",
+      "#2455",
+      "Case #161",
+      "Moxie Pest Control paid CAC"
+    ],
+    "routes": 61,
+    "allowedRole": "marketing",
+    "deniedRoles": [
+      "partner",
+      "brand"
+    ],
+    "provingRoutes": 31,
+    "pairedDeniedRequests": 62,
+    "routesWithNoEvidenceForEitherRole": 30,
+    "leaks": [],
+    "pairs": [
+      {
+        "route": "/",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/?period=oct&branch=B09&channel=google_lsa&week=2026-10-26",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral",
+            "at B09",
+            "$597.17",
+            "$2,123.52",
+            "$16,649.23",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/assurance",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/assurance/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "$16,649.23"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/assurance/2",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "Moxie Pest Control paid CAC"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/audit",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/audit?subject=case:161",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/branches/B09",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-26",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral",
+            "at B09",
+            "$597.17",
+            "$16,649.23",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/changes",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/changes/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/customers",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/customers?branch=B09",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/customers/401177",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/decisions",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral",
+            "at B09",
+            "$2,123.52",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/decisions?branch=B09&period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral",
+            "at B09",
+            "$2,123.52",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/decisions/opportunities",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/definitions",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/demo",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/exceptions",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/exceptions?owner=engineer&state=all",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/exceptions?branch=B09&state=all",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral",
+            "at B09",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/exceptions/2455",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral",
+            "at B09",
+            "$597.17",
+            "$1,526.35",
+            "$2,123.52",
+            "$16,649.23",
+            "#2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/exceptions/2455?period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral",
+            "at B09",
+            "$597.17",
+            "$1,526.35",
+            "$2,123.52",
+            "$16,649.23",
+            "#2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/feedback",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/integrations",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/integrations?view=pipeline&run=677",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09",
+            "/exceptions/2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/integrations/jobs/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/investigator",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/onboarding",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/shadow",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "$16,649.23",
+            "Moxie Pest Control paid CAC"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/shadow/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "$16,649.23"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/shadow/2",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "Moxie Pest Control paid CAC"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/changes",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/changes/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 404,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/changes/1/rollout",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/connectors/1/compare",
+        "allowed": {
+          "role": "marketing",
+          "status": 400,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 400,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 400,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/connectors/1/jobs",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/connectors/faults",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/connectors/jobs/1",
+        "allowed": {
+          "role": "marketing",
+          "status": 404,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/currency-rules",
+        "allowed": {
+          "role": "marketing",
+          "status": 403,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/customers?branch=B09",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/customers",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/customers/401177",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/customers/401177/raw-events/200047",
+        "allowed": {
+          "role": "marketing",
+          "status": 404,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/decisions/experiments",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/decisions/scenarios",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/decisions/verdicts?branch=B09&period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/decisions/verdicts?branchId=B09&period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/identity/conflicts",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/inquiries",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/investigations",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/metrics?branch=B09&period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/metrics?period=oct",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/metrics/trace?branch=B09&period=oct&metric=paid_spend",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "pmax-lsa-B09",
+            "lsa-B09",
+            "B09 Coral",
+            "at B09",
+            "$16,649.23"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/metrics/trace?branchId=B09&period=oct&metric=paid_spend",
+        "allowed": {
+          "role": "marketing",
+          "status": 404,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 404,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 404,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/opportunities",
+        "allowed": {
+          "role": "marketing",
+          "status": 400,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 400,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 400,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      },
+      {
+        "route": "/api/search?q=B09",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral",
+            "at B09",
+            "/exceptions/2455",
+            "#2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/search?q=Coral",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "B09 Coral"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/search?q=2455",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": [
+            "at B09",
+            "/exceptions/2455",
+            "#2455"
+          ]
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 200,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 200,
+            "evidence": []
+          }
+        ],
+        "proves": true
+      },
+      {
+        "route": "/api/onboarding/uploads",
+        "allowed": {
+          "role": "marketing",
+          "status": 200,
+          "evidence": []
+        },
+        "denied": [
+          {
+            "role": "partner",
+            "status": 403,
+            "evidence": []
+          },
+          {
+            "role": "brand",
+            "status": 403,
+            "evidence": []
+          }
+        ],
+        "proves": false
+      }
+    ]
+  }
+}

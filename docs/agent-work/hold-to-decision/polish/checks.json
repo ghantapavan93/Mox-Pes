@@ -1,0 +1,1601 @@
+{
+  "builds": {
+    "before": "ks0842o0526Xv-eQimWYE",
+    "after": "ekfY8a8woILuSdmtlccf8"
+  },
+  "before-5of18-1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": null,
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 168,
+        "bottom": 196,
+        "left": 284,
+        "right": 573
+      },
+      "primary": {
+        "top": 366,
+        "bottom": 400,
+        "left": 284,
+        "right": 546
+      },
+      "strip": null,
+      "factWeek": null,
+      "factWindow": null,
+      "evidence": null,
+      "hint": null,
+      "moved": null,
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "18px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-5of18-1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": {
+      "count": 18,
+      "minWidth": 56,
+      "minHeight": 70,
+      "rows": 1
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 171,
+        "bottom": 207,
+        "left": 264,
+        "right": 1032
+      },
+      "primary": {
+        "top": 331,
+        "bottom": 365,
+        "left": 264,
+        "right": 548
+      },
+      "strip": {
+        "top": 441,
+        "bottom": 511,
+        "left": 284,
+        "right": 1396
+      },
+      "factWeek": {
+        "top": 527,
+        "bottom": 587,
+        "left": 284,
+        "right": 836
+      },
+      "factWindow": {
+        "top": 527,
+        "bottom": 587,
+        "left": 844,
+        "right": 1396
+      },
+      "evidence": {
+        "top": 603,
+        "bottom": 826,
+        "left": 284,
+        "right": 1396
+      },
+      "hint": null,
+      "moved": {
+        "top": 862,
+        "bottom": 1116,
+        "left": 264,
+        "right": 1416
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "28px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "before-18of18-1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": null,
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 168,
+        "bottom": 196,
+        "left": 284,
+        "right": 675
+      },
+      "primary": {
+        "top": 370,
+        "bottom": 404,
+        "left": 284,
+        "right": 470
+      },
+      "strip": null,
+      "factWeek": null,
+      "factWindow": null,
+      "evidence": null,
+      "hint": null,
+      "moved": null,
+      "movedTotal": null,
+      "noBudget": {
+        "top": 342,
+        "bottom": 362,
+        "left": 284,
+        "right": 1399
+      }
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "18px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-18of18-1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": {
+      "count": 18,
+      "minWidth": 56,
+      "minHeight": 70,
+      "rows": 1
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 171,
+        "bottom": 207,
+        "left": 264,
+        "right": 1032
+      },
+      "primary": {
+        "top": 307,
+        "bottom": 341,
+        "left": 264,
+        "right": 472
+      },
+      "strip": {
+        "top": 417,
+        "bottom": 487,
+        "left": 284,
+        "right": 1396
+      },
+      "factWeek": {
+        "top": 503,
+        "bottom": 563,
+        "left": 284,
+        "right": 836
+      },
+      "factWindow": {
+        "top": 503,
+        "bottom": 563,
+        "left": 844,
+        "right": 1396
+      },
+      "evidence": null,
+      "hint": {
+        "top": 575,
+        "bottom": 595,
+        "left": 284,
+        "right": 1396
+      },
+      "moved": {
+        "top": 631,
+        "bottom": 876,
+        "left": 264,
+        "right": 1416
+      },
+      "movedTotal": {
+        "top": 739,
+        "bottom": 813,
+        "left": 1031,
+        "right": 1396
+      },
+      "noBudget": {
+        "top": 271,
+        "bottom": 295,
+        "left": 264,
+        "right": 1032
+      }
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "28px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.75,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "keyboard": {
+    "tabsToStrip": 24,
+    "first": {
+      "focused": "2026-10-13",
+      "checked": "2026-10-13",
+      "evidence": "2026-10-13",
+      "focusVisible": true
+    },
+    "afterArrowRight": {
+      "focused": "2026-10-14",
+      "checked": "2026-10-14",
+      "evidence": "2026-10-14",
+      "focusVisible": true
+    },
+    "afterEnd": {
+      "focused": "2026-10-30",
+      "checked": "2026-10-30",
+      "evidence": "2026-10-30",
+      "focusVisible": true
+    },
+    "afterHome": {
+      "focused": "2026-10-13",
+      "checked": "2026-10-13",
+      "evidence": "2026-10-13",
+      "focusVisible": true
+    },
+    "afterSevenRight": {
+      "focused": "2026-10-20",
+      "checked": "2026-10-20",
+      "evidence": "2026-10-20",
+      "focusVisible": true
+    },
+    "tabLeavesStrip": "day-records",
+    "shiftTabReturnsTo": "2026-10-20"
+  },
+  "keyboard18": {
+    "first": {
+      "focused": "2026-10-13",
+      "checked": null,
+      "evidence": null,
+      "hint": "Every date is verified. Select one to see the record behind it."
+    },
+    "afterSpace": {
+      "focused": "2026-10-13",
+      "checked": "2026-10-13",
+      "evidence": "2026-10-13",
+      "hint": null
+    },
+    "afterArrowLeftAtStart": {
+      "focused": "2026-10-13",
+      "checked": "2026-10-13",
+      "evidence": "2026-10-13",
+      "hint": null
+    }
+  },
+  "after-5of18-390": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [
+      "recovery-runs",
+      "thead",
+      "tr",
+      "th",
+      "th",
+      "th",
+      "tbody",
+      "tr",
+      "td",
+      "td"
+    ],
+    "strip": {
+      "count": 18,
+      "minWidth": 33,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 369,
+        "bottom": 433,
+        "left": 16,
+        "right": 374
+      },
+      "primary": {
+        "top": 629,
+        "bottom": 663,
+        "left": 16,
+        "right": 300
+      },
+      "strip": {
+        "top": 787,
+        "bottom": 931,
+        "left": 32,
+        "right": 358
+      },
+      "factWeek": {
+        "top": 947,
+        "bottom": 1007,
+        "left": 32,
+        "right": 358
+      },
+      "factWindow": {
+        "top": 1015,
+        "bottom": 1095,
+        "left": 32,
+        "right": 358
+      },
+      "evidence": {
+        "top": 1111,
+        "bottom": 1596,
+        "left": 32,
+        "right": 358
+      },
+      "hint": null,
+      "moved": {
+        "top": 1628,
+        "bottom": 2108,
+        "left": 16,
+        "right": 374
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "26px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-5of18-390-evidence": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [
+      "recovery-runs",
+      "thead",
+      "tr",
+      "th",
+      "th",
+      "th",
+      "tbody",
+      "tr",
+      "td",
+      "td"
+    ],
+    "strip": {
+      "count": 18,
+      "minWidth": 33,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 369,
+        "bottom": 433,
+        "left": 16,
+        "right": 374
+      },
+      "primary": {
+        "top": 629,
+        "bottom": 663,
+        "left": 16,
+        "right": 300
+      },
+      "strip": {
+        "top": 787,
+        "bottom": 931,
+        "left": 32,
+        "right": 358
+      },
+      "factWeek": {
+        "top": 947,
+        "bottom": 1007,
+        "left": 32,
+        "right": 358
+      },
+      "factWindow": {
+        "top": 1015,
+        "bottom": 1095,
+        "left": 32,
+        "right": 358
+      },
+      "evidence": {
+        "top": 1111,
+        "bottom": 1596,
+        "left": 32,
+        "right": 358
+      },
+      "hint": null,
+      "moved": {
+        "top": 1628,
+        "bottom": 2108,
+        "left": 16,
+        "right": 374
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "26px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "evidenceLink": {
+    "href": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19#selection",
+    "landed": "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19#selection",
+    "summary": "No day of this week has a spend record for Google Local Services at B09. That is no record, not $0.",
+    "rows": [
+      "Mon, Oct 19no spend record—",
+      "Tue, Oct 20no spend record—",
+      "Wed, Oct 21no spend record—",
+      "Thu, Oct 22no spend record—",
+      "Fri, Oct 23no spend record—",
+      "Sat, Oct 24no spend record—",
+      "Sun, Oct 25no spend record—"
+    ]
+  },
+  "after-5of18-320": {
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [
+      "recovery-runs",
+      "thead",
+      "tr",
+      "th",
+      "th",
+      "th",
+      "tbody",
+      "tr",
+      "td",
+      "td"
+    ],
+    "strip": {
+      "count": 18,
+      "minWidth": 25,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 400,
+        "bottom": 464,
+        "left": 16,
+        "right": 304
+      },
+      "primary": {
+        "top": 708,
+        "bottom": 742,
+        "left": 16,
+        "right": 300
+      },
+      "strip": {
+        "top": 886,
+        "bottom": 1030,
+        "left": 32,
+        "right": 288
+      },
+      "factWeek": {
+        "top": 1046,
+        "bottom": 1106,
+        "left": 32,
+        "right": 288
+      },
+      "factWindow": {
+        "top": 1114,
+        "bottom": 1194,
+        "left": 32,
+        "right": 288
+      },
+      "evidence": {
+        "top": 1210,
+        "bottom": 1784,
+        "left": 32,
+        "right": 288
+      },
+      "hint": null,
+      "moved": {
+        "top": 1816,
+        "bottom": 2320,
+        "left": 16,
+        "right": 304
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "26px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-5of18-320-evidence": {
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [
+      "recovery-runs",
+      "thead",
+      "tr",
+      "th",
+      "th",
+      "th",
+      "tbody",
+      "tr",
+      "td",
+      "td"
+    ],
+    "strip": {
+      "count": 18,
+      "minWidth": 25,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 400,
+        "bottom": 464,
+        "left": 16,
+        "right": 304
+      },
+      "primary": {
+        "top": 708,
+        "bottom": 742,
+        "left": 16,
+        "right": 300
+      },
+      "strip": {
+        "top": 886,
+        "bottom": 1030,
+        "left": 32,
+        "right": 288
+      },
+      "factWeek": {
+        "top": 1046,
+        "bottom": 1106,
+        "left": 32,
+        "right": 288
+      },
+      "factWindow": {
+        "top": 1114,
+        "bottom": 1194,
+        "left": 32,
+        "right": 288
+      },
+      "evidence": {
+        "top": 1210,
+        "bottom": 1784,
+        "left": 32,
+        "right": 288
+      },
+      "hint": null,
+      "moved": {
+        "top": 1816,
+        "bottom": 2320,
+        "left": 16,
+        "right": 304
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "26px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-18of18-390": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [
+      "recovery-runs",
+      "thead",
+      "tr",
+      "th",
+      "th",
+      "th",
+      "tbody",
+      "tr",
+      "td",
+      "td"
+    ],
+    "strip": {
+      "count": 18,
+      "minWidth": 33,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 369,
+        "bottom": 433,
+        "left": 16,
+        "right": 374
+      },
+      "primary": {
+        "top": 581,
+        "bottom": 615,
+        "left": 16,
+        "right": 224
+      },
+      "strip": {
+        "top": 739,
+        "bottom": 883,
+        "left": 32,
+        "right": 358
+      },
+      "factWeek": {
+        "top": 899,
+        "bottom": 959,
+        "left": 32,
+        "right": 358
+      },
+      "factWindow": {
+        "top": 967,
+        "bottom": 1047,
+        "left": 32,
+        "right": 358
+      },
+      "evidence": null,
+      "hint": {
+        "top": 1059,
+        "bottom": 1099,
+        "left": 32,
+        "right": 358
+      },
+      "moved": {
+        "top": 1131,
+        "bottom": 1600,
+        "left": 16,
+        "right": 374
+      },
+      "movedTotal": {
+        "top": 1447,
+        "bottom": 1521,
+        "left": 32,
+        "right": 358
+      },
+      "noBudget": {
+        "top": 521,
+        "bottom": 569,
+        "left": 16,
+        "right": 374
+      }
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "26px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.75,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-5of18-zoom200": {
+    "viewport": {
+      "width": 720,
+      "height": 450
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": {
+      "count": 18,
+      "minWidth": 67,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 349,
+        "bottom": 385,
+        "left": 16,
+        "right": 704
+      },
+      "primary": {
+        "top": 509,
+        "bottom": 543,
+        "left": 16,
+        "right": 300
+      },
+      "strip": {
+        "top": 619,
+        "bottom": 765,
+        "left": 36,
+        "right": 684
+      },
+      "factWeek": {
+        "top": 781,
+        "bottom": 861,
+        "left": 36,
+        "right": 356
+      },
+      "factWindow": {
+        "top": 781,
+        "bottom": 861,
+        "left": 364,
+        "right": 684
+      },
+      "evidence": {
+        "top": 877,
+        "bottom": 1164,
+        "left": 36,
+        "right": 684
+      },
+      "hint": null,
+      "moved": {
+        "top": 1200,
+        "bottom": 1454,
+        "left": 16,
+        "right": 704
+      },
+      "movedTotal": null,
+      "noBudget": null
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "28px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.5,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.89,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "evidenceLabel": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "500"
+      },
+      "evidenceText": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "evidenceRawId": {
+        "ratio": 6.06,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  },
+  "after-18of18-zoom200": {
+    "viewport": {
+      "width": 720,
+      "height": 450
+    },
+    "pageOverflowX": 0,
+    "pastEdge": [],
+    "strip": {
+      "count": 18,
+      "minWidth": 67,
+      "minHeight": 70,
+      "rows": 2
+    },
+    "verdictColor": "rgb(18, 24, 38)",
+    "boxes": {
+      "verdict": {
+        "top": 349,
+        "bottom": 385,
+        "left": 16,
+        "right": 704
+      },
+      "primary": {
+        "top": 485,
+        "bottom": 519,
+        "left": 16,
+        "right": 224
+      },
+      "strip": {
+        "top": 595,
+        "bottom": 741,
+        "left": 36,
+        "right": 684
+      },
+      "factWeek": {
+        "top": 757,
+        "bottom": 837,
+        "left": 36,
+        "right": 356
+      },
+      "factWindow": {
+        "top": 757,
+        "bottom": 837,
+        "left": 364,
+        "right": 684
+      },
+      "evidence": null,
+      "hint": {
+        "top": 849,
+        "bottom": 869,
+        "left": 36,
+        "right": 684
+      },
+      "moved": {
+        "top": 905,
+        "bottom": 1186,
+        "left": 16,
+        "right": 704
+      },
+      "movedTotal": {
+        "top": 1013,
+        "bottom": 1123,
+        "left": 473,
+        "right": 684
+      },
+      "noBudget": {
+        "top": 449,
+        "bottom": 473,
+        "left": 16,
+        "right": 704
+      }
+    },
+    "contrast": {
+      "verdict": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "28px",
+        "weight": "600"
+      },
+      "status": {
+        "ratio": 16.25,
+        "color": "rgb(18, 24, 38)",
+        "size": "15px",
+        "weight": "400"
+      },
+      "next": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "scope": {
+        "ratio": 6.18,
+        "color": "rgb(83, 92, 108)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "legend": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "stripDay": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "11px",
+        "weight": "400"
+      },
+      "factWeekDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "factWindowTitle": {
+        "ratio": 15.75,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "600"
+      },
+      "factWindowDetail": {
+        "ratio": 5.99,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      },
+      "movedLabel": {
+        "ratio": 15.95,
+        "color": "rgb(18, 24, 38)",
+        "size": "12px",
+        "weight": "600"
+      },
+      "movedChange": {
+        "ratio": 17.73,
+        "color": "rgb(18, 24, 38)",
+        "size": "14px",
+        "weight": "400"
+      },
+      "movedFootnote": {
+        "ratio": 6.74,
+        "color": "rgb(83, 92, 108)",
+        "size": "12px",
+        "weight": "400"
+      }
+    }
+  }
+}

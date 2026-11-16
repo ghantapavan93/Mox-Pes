@@ -13,6 +13,8 @@ Synthetic data only. Nothing pushed or deployed.
   affected browser specs; typecheck; lint.
 - **Not run:** the full release regression (the five frozen eval packs and the whole browser
   suite in one run), so `d431e9b` stays the accepted checkpoint (`RELEASE-CANDIDATE.md` §9).
+- **Redrawn since (§9):** the B09 decision view, `6ed9066` (build `ekfY8a8woILuSdmtlccf8`). Same
+  logic, new first screen; also not promoted.
 
 ## 1. Expected outcomes, written before any code changed
 
@@ -371,3 +373,131 @@ Whether a held day should hold the decision too is a policy question (§7). Meas
   - the 320 px and 200% zoom checks.
 - **Full-page captures** of every view are kept locally (`C:/Temp/hold-captures-full`), not in
   git.
+
+## 9. The decision view, redrawn (2026-11-16)
+
+The same workflow, redrawn so the B09 incident's first screen reads as one verdict over its
+evidence, not as an incident form. **No decision logic changed.** Every sentence is the one §4
+lists, from the same functions; the new strip only selects among facts the server computed.
+
+**The brief:**
+- a quiet scope line, one strong verdict, a continuous 18-day evidence strip, one primary action;
+- at 5 of 18, "Selected week covered" and "Decision window incomplete" close enough to compare
+  without narration;
+- a missing date opens through the existing evidence view;
+- at 18 of 18, the same composition, with the emphasis on the reclassification and the unchanged
+  total;
+- "Coverage hold cleared" never looks like budget approval.
+
+Patterns came in and dependencies did not:
+- **UI/UX Pro Max:** its design-system search was run once, from a read-only clone; the plugin
+  was not installed. Kept: the Swiss, minimal dashboard style, 4.5:1 text, visible focus, reduced
+  motion and 150–300 ms transitions. Rejected: its Outfit and Work Sans fonts (Geist stays), its
+  pink accent, and its landing-page "hero and call to action" layout.
+- **The shadcn-fintech template:** a read-only clone of `abderrahimghazali/shadcn-fintech`, remote
+  checked, nothing installed. Kept: its hairline card frame, its title weight and its legends that
+  carry values.
+- **Others:** Linear for the verdict, OpenStatus for the strip, Knock for one event, GitHub's diff
+  and Midday's type for the money, and Sentry for the default selection.
+- **Unchanged:** the light theme, the tokens, Geist, Lucide, and the existing evidence view.
+
+### 9.1 What changed
+
+| Part | Before (`718e4aa`) | After |
+|---|---|---|
+| Title block | "Channel coverage gap" at 22 px over a bordered panel | `PageHeader quiet`: the type and its badges become a 14 px line, then the scope line "B09 Coral · Google Local Services · decision window Oct 13–Oct 30" |
+| Verdict | The panel's 18 px title, with a red or green edge | One `h2` at 26–28 px, always ink. Its reason at 15 px, then "Next:" (with "No budget change was approved." once cleared), and one primary action |
+| Decision window | Dates only in sentences | `DecisionWindow`: 18 dates in one radio group. Each mark has its word, and the legend carries the counts. The picked week is underlined; "Selected week covered" sits beside "Decision window incomplete" |
+| One date | None | The first unresolved date opens: what arrived, why it does not count, what clears it, and **Open the records for {week}** on the daily evidence. With none unresolved, none opens |
+| What moved | One sentence | The same sentence over three tiles: − out of Google Search, + into Google Local Services, = B09's October paid media spend, "unchanged" only with the proof. Amounts are ink; only the signs are coloured |
+| Every panel | `border` and `shadow-raised`, 13 px titles | `ring-1 ring-text/10`, `rounded-xl`, no shadow at rest, 15 px titles |
+| A refused revision's hold | Bordered panel | The same composition: verdict, reason, one action, details one click away |
+
+**Files:**
+- new: `components/incidents/DecisionWindow.tsx` and `lib/reconcile/gap-days.ts` (pure);
+- changed: `lib/reconcile/gap-coverage.ts` (`days`), `components/incidents/GapRecovery.tsx`,
+  `components/incidents/RevisionHold.tsx`, `components/ui.tsx` and
+  `app/exceptions/[id]/page.tsx`;
+- `docs/design-system.md`: behaviour rules 9–12 and the new components.
+
+### 9.2 Review of the rendered screens
+
+The first after-captures were reviewed for hierarchy, contrast, keyboard focus and clipping. Five
+problems were found and fixed before the final captures.
+
+| Found | Fixed |
+|---|---|
+| A selected missing date drew its ring inset, in the mark's red: the selection barely showed | The marks' outlines became borders, so the ring belongs to the selection alone. Under keyboard focus the button's outline replaces the ring, so focus never shows two |
+| At 18 of 18, what moved began at 818 px of a 900 px screen | No date opens when none is unresolved, and what moved became three tiles. It now ends at 876 px |
+| At 320 px a date was 23 px wide (WCAG 2.2 AA asks 24) | 4 px gaps below `sm`: 25 × 70 px |
+| Before anything moved, a tile read "Into Google Local Services $0.00", which looks like recorded zero spend | No out-and-in pair before anything moves, only what is still filed elsewhere |
+| The refused hold's action floated to the far right at 1440 px, while the gap's sat under its reason (and would have floated too on a wider screen) | Both verdict blocks stack: the action sits under its reason at every width |
+
+Measured in the rendered pages (`hold-to-decision/polish/checks.json`, from `harness/polish.cjs`):
+- **Text contrast:** 5.89:1 or more on every measured line (AA 4.5:1). The lowest is a fact's detail
+  line on its red tint.
+- **Marks and focus:** the cross 4.87:1 on its hatch, the check 5.37:1, the 0 5.84:1, the focus
+  outline and selection ring 5.67:1 (AA 3:1). A missing date's own outline is 2.11:1: a second
+  cue only, since the cross and the word carry the state.
+- **Clipping:** no sideways page scroll at 1440, 390 or 320 px, or at 200% zoom.
+- **Keyboard:**
+  - the strip is one tab stop;
+  - arrows, Home and End move the date and its evidence together;
+  - Tab leaves to the date's records link, and Shift+Tab returns to the date;
+  - at 18 of 18, Tab lands on Oct 13 unopened, and Space opens it.
+- **Verdict colour:** ink, `rgb(18, 24, 38)`, in both states at every width.
+- **First screen:**
+  - at 5 of 18 the two facts sit side by side, at 527–587 px;
+  - at 18 of 18, "No budget change was approved." is at 271 px and what moved ends at 876 px.
+- **The existing evidence view:** Oct 20's link opens the daily evidence for Oct 19–Oct 25. All
+  seven rows read "no spend record", never $0.00.
+
+### 9.3 Evidence
+
+All in `hold-to-decision/polish/`.
+- **The same frame, before and after:**
+  - 1440 × 900, the first screen, the same URL and database; only the build differs;
+  - `before-5of18-1440.jpg` and `after-5of18-1440.jpg`;
+  - `before-18of18-1440.jpg` and `after-18of18-1440.jpg`.
+- **The phone, evidence open:**
+  - `after-5of18-390-evidence.jpg` (Oct 20 tapped) and `after-5of18-390-records.jpg` (its records);
+  - also the 390 and 320 px first screens, 200% zoom, `after-18of18-390-moved.jpg`, and the
+    keyboard capture `after-5of18-focus-1440.jpg`.
+- **The refused revision's hold** (#5540, in its own world) in the same composition:
+  `after-refused-{1440,390}.jpg`.
+- **The three-page PDF, `B09-decision-view.pdf`:**
+  - printed by `harness/polish-pdf.cjs`, from those captures only;
+  - its pages: before and after; 5 of 18 against 18 of 18; the phone beside the checks;
+  - every number on page 3 is read from `checks.json`.
+
+**To re-run:**
+1. Build two state databases as `GUIDE.md` says: prepare, then `advance.ts partial`; a second one
+   advanced through `rest`.
+2. Serve each twice in demo mode: from a `718e4aa` worktree on ports 3999 and 4000, and from this
+   build on 3996 and 3997.
+3. Run `node docs/agent-work/hold-to-decision/harness/polish.cjs docs/agent-work/hold-to-decision/polish`.
+4. Run `node docs/agent-work/hold-to-decision/harness/polish-pdf.cjs`.
+
+### 9.4 Verification
+
+Code: `6ed9066`, build `ekfY8a8woILuSdmtlccf8`.
+
+| Check | Result |
+|---|---|
+| Typecheck, lint | Clean |
+| Unit tests | 379 of 379 (36 files), with `gap-days.test.ts` new. One expectation changed on purpose: with no unresolved date, no date is selected by default (rule 11), where the first date used to be |
+| Integration tests on the B09 path | `b09-recovery` and `refused-revision`: 27 of 27 |
+| Browser specs that open incidents, on `revenue_signal_rc` (build `BlhUwlGz4Gr681fx7XKCe`) | 67 passed: the golden path, accessibility regressions, the quality gates (zero axe violations, WCAG 2.2 AA, on every page at 1440, 1280, 768 and 390 px), the B09 four-minute path, twin rollout, post-release monitoring and drift review. `zy-overview-movement` stopped in its setup: it needs B09's gap open, and this subset left out `z-onboarding`, whose reseed runs before it in the full suite. Run alone after a reseed on the final build: 6 of 6. The final build differs from `BlhUwlGz…` only in the two verdict blocks' layout and the scope line of a lifted hold |
+| Pixel baselines (final build) | Re-generated on purpose, since the panel frame changed on every page and the incident's composition changed; then checked against: 8 of 8. The same spec finds no sideways scroll on any page at 1440, 1280, 768 or 390 px |
+| B09 acceptance runner at `6ed9066`, from the clean worktree `C:/Temp/rso-hold` (no tracked changes; its own build `1YtM3m5k-65AfCnBQh3a_`) | **177 of 177 checks**, 0 console or page errors: every state on all four views, the replays, the ledger, scope, and the refused-revision steps through correction, read against the new layout (`hold-to-decision/acceptance/results-6ed9066.json`, `run-6ed9066.log`) |
+
+### 9.5 Not done
+
+- **The spec's other scenes:** the Overview's headline counter, B20's receipt, the incident queue,
+  Decision Lab's factor rows and the right rail.
+- **Other raised elements:** tiles, drawers and KPI cards keep the soft shadow; only `Card` moved
+  to the ring.
+- **The phone shell:** at 390 px the top bar and menu take about 445 px before the breadcrumb.
+  That is the app shell, outside this slice.
+- **Target size:** a date is 33 × 70 px on a phone. That passes AA's 24 px, not the 44 px
+  touch-target aim.

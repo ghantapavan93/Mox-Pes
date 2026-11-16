@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
-import { Bot, MapPin } from "lucide-react";
+import { Bot, Lock, MapPin } from "lucide-react";
 import { CoverageGapRecords } from "@/components/CoverageGap";
 import { WorkflowPanel } from "@/components/actions/WorkflowPanel";
 import { DecisionForm } from "@/components/DecisionForm";
@@ -19,14 +19,15 @@ import type { ReplayResult } from "@/lib/ingest/replay";
 import { DECISION_BLOCKING_KINDS, decisionHolds } from "@/lib/metrics/decision";
 import { parseChannel, parseWeek, WINDOW, windowWeeks } from "@/lib/metrics/movement";
 import { weekLabel } from "@/lib/metrics/movement-copy";
-import { branchRows } from "@/lib/metrics/scorecard";
+import { branchRows, freshness, type StreamFreshness } from "@/lib/metrics/scorecard";
+import { feedAttention } from "@/lib/health/feeds";
 import { PERIODS, type PeriodKey } from "@/lib/period";
 import { dateRanges, gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatus } from "@/lib/reconcile/gap-status";
 import { dayEvidence, defaultDay, windowFacts } from "@/lib/reconcile/gap-days";
 import { correctionsOf, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
-import { getPool, getViewer } from "@/lib/server";
+import { businessNow, getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { parseRecordId } from "@/lib/record-id";
 
@@ -275,7 +276,7 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         </Callout>
       )}
 
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border shadow-raised md:grid-cols-4" data-testid="incident-impact">
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border ring-1 ring-text/10 md:grid-cols-4" data-testid="incident-impact">
         {(
           [
             revisionHold
@@ -351,13 +352,15 @@ async function ExceptionDetail({ params, searchParams }: Props) {
           </div>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start" aria-label="Decision and role">
-          <Card title="Decision" subtitle={actionSubtitle(exception, viewer)}>
+        {/* The rail: a stack of small cards, one job each (docs/design-system.md, "Incident detail"): what this
+            role can do now, who does each step of a fix, and how current the records behind it are. */}
+        <aside className="space-y-3 lg:sticky lg:top-28 lg:self-start" aria-label="Decision and role">
+          <Card size="sm" title="Decision" subtitle={actionSubtitle(exception, viewer)} testId="rail-decision">
             <Suspense fallback={<Skeleton lines={2} />}>
               <Actions exception={exception} viewer={viewer} />
             </Suspense>
           </Card>
-          <Card title="How a fix is applied">
+          <Card size="sm" title="How a fix is applied" subtitle={`Viewing as ${viewer.label}`} testId="rail-steps">
             <ol className="space-y-2 text-xs leading-5 text-muted">
               {[
                 ["Propose", "an analyst or engineer names the fix", viewer.can.propose],
@@ -366,19 +369,99 @@ async function ExceptionDetail({ params, searchParams }: Props) {
                 ["Execute", "the application applies it once and verifies the ledger", viewer.can.approve],
               ].map(([step, what, can], i) => (
                 <li key={String(step)} className="flex gap-2">
-                  <span aria-hidden className="grid size-5 shrink-0 place-items-center rounded-full bg-surface-2 text-[10px] font-semibold text-text">{i + 1}</span>
-                  <span>
-                    <span className="font-medium text-text">{step}</span>: {what}.{" "}
-                    <span className={can ? "text-good" : "text-faint"}>{can ? "You can." : "Not your role."}</span>
+                  <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold ${can ? "bg-good-soft text-good" : "bg-surface-2 text-text"}`}>
+                    {i + 1}
                   </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-medium text-text">{step}</span>: {what}.
+                  </span>{" "}
+                  {can ? (
+                    <span className="shrink-0 whitespace-nowrap font-medium text-good">You can</span>
+                  ) : (
+                    <span className="inline-flex shrink-0 items-center gap-1 self-start whitespace-nowrap pt-0.5 text-faint">
+                      <Lock aria-hidden className="size-3" />
+                      Not your role
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>
-            <p className="mt-3 border-t border-border pt-2 text-[11px] text-faint">Viewing as {viewer.label}. Permissions are checked on the server; these labels only explain them.</p>
+            <p className="mt-2.5 border-t border-border pt-2 text-[11px] text-faint">Permissions are checked on the server; these labels only explain them.</p>
           </Card>
+          <Suspense fallback={null}>
+            <Freshness exception={exception} />
+          </Suspense>
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * The feeds an incident's records come from, when its evidence names them: the source a quarantine
+ * group was held from, the ads feed for spend incidents, the CRM's payments and invoices for a
+ * payment without its invoice. null: the evidence names no single feed, so the card reads them all.
+ */
+function feedsFor(e: ExceptionRow): ((s: StreamFreshness) => boolean) | null {
+  const ev = e.evidence as Record<string, unknown>;
+  if (e.kind === "quarantined_source_records" && typeof ev.source === "string") return (s) => s.source === ev.source;
+  if (e.kind === "channel_coverage_gap" || e.kind === "unmapped_spend") return (s) => s.source === "ads";
+  if (e.kind === "payment_without_ticket") return (s) => s.stream === "crm.payment" || s.stream === "crm.ticket";
+  return null;
+}
+
+/**
+ * Freshness, in the rail: how current the records behind this incident are, by the rule the top bar
+ * uses (lib/health/feeds.ts). Each feed's state is a word beside its dot. When the evidence names no
+ * feed, the card speaks for all of them and lists only those that need attention.
+ */
+async function Freshness({ exception }: { exception: ExceptionRow }) {
+  const [streams, now] = await Promise.all([freshness(getPool()), businessNow()]);
+  const match = feedsFor(exception);
+  const feeds = match ? streams.filter(match) : streams;
+  if (feeds.length === 0) return null;
+  const { stale, failing } = feedAttention(feeds, now);
+  const state = (s: StreamFreshness) => (failing.includes(s) ? "failing" : stale.includes(s) ? "stale" : "fresh");
+  const attention = feeds.filter((s) => state(s) !== "fresh");
+  const listed = match ? feeds : attention;
+  const oldest = feeds.map((s) => s.lastSuccessAt).filter((d): d is Date => d !== null).sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+  return (
+    <Card
+      size="sm"
+      title="Freshness"
+      subtitle={match ? `The feed${feeds.length === 1 ? "" : "s"} these records come from` : `All ${feeds.length} feeds this page reads`}
+      action={
+        <Link href="/audit" className="inline-flex min-h-6 items-center text-xs font-medium text-accent hover:underline">
+          Audit &amp; Health
+        </Link>
+      }
+      testId="rail-freshness"
+    >
+      <ul className="space-y-2 text-xs">
+        {listed.map((s) => (
+          <li key={s.stream}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate font-mono text-[11px] text-text">{s.stream}</span>
+              <Badge dot tone={state(s) === "fresh" ? "good" : state(s) === "stale" ? "warn" : "bad"}>
+                {state(s)}
+              </Badge>
+            </div>
+            <p className="mt-0.5 text-muted">
+              last success {dateTime(s.lastSuccessAt)}
+              {s.quarantined > 0 && <span className="font-medium text-bad"> · {count(s.quarantined)} quarantined in source</span>}
+            </p>
+          </li>
+        ))}
+        {!match && attention.length === 0 && (
+          <li className="flex items-center justify-between gap-2">
+            <span className="text-muted">Every feed succeeded within 36 hours; the oldest success {dateTime(oldest)}</span>
+            <Badge dot tone="good">
+              fresh
+            </Badge>
+          </li>
+        )}
+      </ul>
+    </Card>
   );
 }
 

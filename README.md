@@ -115,6 +115,17 @@ npm run test:e2e
 Unit, database-backed integration (real Postgres, including concurrent replays), a full-seed scenario
 test that checks collected revenue against generated payment truth to the cent, review-regression
 tests, and a Playwright golden path. Details and measured performance: docs/testing.md.
+`test:e2e` reseeds `DATABASE_URL` (the demo database by default) and, outside CI, reuses any
+server already on port 3000.
+
+```bash
+npm run acceptance:b09
+```
+
+The B09 acceptance proof, on its own database (`revenue_signal_acceptance`) and its own freshly
+built server (port 3990), never the demo's. It covers missing → partial hold → verified
+reclassification, a duplicate and stale replays, an independent ledger, and scope checks that pair
+every denied request with an allowed one. See docs/agent-work/B09-ACCEPTANCE-RUNNER.md.
 
 ## Repository map
 

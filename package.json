@@ -13,6 +13,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:e2e": "playwright test",
+    "acceptance:b09": "tsx tests/acceptance/b09/prepare.ts && playwright test -c tests/acceptance/b09/playwright.config.ts",
     "report": "tsx scripts/report.ts",
     "profile": "tsx scripts/profile-queries.ts",
     "demo:numbers": "tsx scripts/demo-numbers.ts",

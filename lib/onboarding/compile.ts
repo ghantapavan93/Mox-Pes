@@ -367,16 +367,19 @@ export function compileRows(table: ParsedTable, spec: MappingSpec, now: Date): R
   const outcomes: RowOutcome[] = [];
   const byExternal = new Map<string, { row: number; hash: string }>();
   const ragged = new Set(table.raggedRows);
+  // The last line shaped like the header: lines after it are the report's trailer.
+  const lastShaped = table.rows.reduce((last, _row, i) => (ragged.has(table.rowRefs[i]) ? last : i), -1);
   for (const [i, row] of table.rows.entries()) {
     const rowRef = table.rowRefs[i];
     const ctx: Ctx = { spec, table, index, row, issues: [], dayGrain: [] };
     if (ragged.has(rowRef)) {
-      // A line with one filled cell at most (a report title, a note, a copyright footer) cannot be
-      // a record: every dataset needs several fields. It is left out like a total row, not put to
-      // the user as something to correct (BYOF-WORKFLOW.md).
+      // A line with one filled cell at most AFTER the last record-shaped line (a copyright footer,
+      // a closing note) cannot be a record: it is left out like a total row, not put to the user as
+      // something to correct (BYOF-WORKFLOW.md). Inside the data, a one-cell line may be a record
+      // whose delimiter broke, so it stays a row to correct.
       const filled = row.filter((c) => !isBlank(c)).length;
       outcomes.push(
-        filled <= 1
+        filled <= 1 && i > lastShaped
           ? { row: rowRef, disposition: "invalid", issues: [{ field: "*", column: null, code: "TEXT_LINE", detail: "A line of text in one cell, not a record (a report title, note or footer)", suggestion: "Excluded; nothing to correct", safeToAutomate: true }] }
           : { row: rowRef, disposition: "invalid", issues: [{ field: "*", column: null, code: "RAGGED_ROW", detail: "The row has a different number of cells than the header", suggestion: "A delimiter or quote inside a value probably shifted the columns; fix the export", safeToAutomate: false }] },
       );

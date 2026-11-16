@@ -231,6 +231,9 @@ test("a cold start brings its own Microsoft Ads export: the valid file, a curren
         const comparedNothing = dry !== null && dry.compared.matches + dry.compared.differs === 0;
         const page2 = await page.locator("main").innerText();
         check("no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")", !(comparedNothing && /\b0 differ from the ledger\b/.test(page2)), (page2.match(/[^\n]*differ from the ledger[^\n]*/) ?? [""])[0]);
+        // The scripted marketing review read a green "Reconcile with ledger · Done" as reconciled.
+        const rail = (await page.getByTestId("step-rail").innerText()).replace(/\s+/g, " ");
+        check("the step rail does not show a comparison with an empty ledger as done", !(comparedNothing && /Reconcile with ledger · Done/.test(rail)), rail.slice(-200));
 
         if (f.key === "valid" || f.key === "duplicate") {
           check(`the stored dry run: ${valid.validRows} valid rows, ${usd(valid.spendCents)}`, dry?.counts.eligible === valid.validRows && dry?.money?.fileTotalCents === valid.spendCents, dry);
@@ -245,6 +248,8 @@ test("a cold start brings its own Microsoft Ads export: the valid file, a curren
           check(`the stored dry run counts only the ${two.usDollarRows.rows} US-dollar rows: ${usd(two.usDollarRows.spendCents)}`, dry?.counts.eligible === two.usDollarRows.rows && dry?.money?.fileTotalCents === two.usDollarRows.spendCents, dry);
           check(`the first screen states the US-dollar total ${usd(two.usDollarRows.spendCents)}, never ${usd(two.usDollarRows.spendCents + two.canadianDollarRows.spendCents)} (Canadian dollars summed as US)`, screen.includes(usd(two.usDollarRows.spendCents)) && !screen.includes(usd(two.usDollarRows.spendCents + two.canadianDollarRows.spendCents)), screen.slice(0, 500));
           check(`the first screen says the ${two.canadianDollarRows.rows} Canadian-dollar rows were not counted`, screen.includes(String(two.canadianDollarRows.rows)) && /\b(CAD|Canadian)\b/.test(screen), screen.slice(0, 500));
+          // The scripted marketing review caught "Every row passed the checks" beside "14 rows were not counted".
+          check("the first screen never says every row passed while rows were not counted", !/Every row passed/i.test(screen), screen.slice(0, 500));
         }
         if (f.key === "duplicate") {
           const first = runs.valid?.dry;

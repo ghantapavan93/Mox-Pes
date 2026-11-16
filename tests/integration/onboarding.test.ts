@@ -270,6 +270,24 @@ describe("onboarding · an ad report's currency column (BYOF-WORKFLOW.md)", () =
     expect(dry.scope).toMatchObject({ firstDay: "2026-10-12", lastDay: "2026-10-13", campaigns: 1, accounts: ["B0000001"], currency: { stated: 2, assumed: 0 } });
   });
 
+  it("a one-cell line after the data is a text line to leave out; one inside the data stays a row to correct", async () => {
+    // The scripted engineering review: a record whose delimiter broke collapses into one cell, and
+    // must not vanish as "not a record". Only the report's trailer (a copyright line) may.
+    const bytes = Buffer.from(
+      [
+        '"Account number","Campaign name","Campaign ID","Gregorian date","Currency code","Clicks","Spend","Conversions"',
+        '"B0000001","Search A","9001","10/12/2026","USD","10","100.00","1"',
+        '"B0000001;Search A;9001;10/13/2026;USD;12;50.25;0"',
+        '"B0000001","Search A","9001","10/14/2026","USD","9","40.00","1"',
+        "",
+        '"©2026 Microsoft Corporation. All rights reserved."',
+      ].join("\r\n"),
+    );
+    const { dry } = await dryRunOf(bytes, "ms-ads-broken-row.csv");
+    expect(dry.counts).toMatchObject({ eligible: 2, invalid: 2 });
+    expect(Object.fromEntries(dry.issues.map((i) => [i.code, i.rows]))).toMatchObject({ RAGGED_ROW: 1, TEXT_LINE: 1 });
+  });
+
   it("a report with no currency column is read as US dollars, and the dry run says so", async () => {
     const { dry } = await dryRunOf(report(false), "ms-ads-no-currency.csv");
     expect(dry.counts).toMatchObject({ eligible: 4, quarantined: 0 });

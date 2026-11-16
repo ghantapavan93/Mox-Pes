@@ -61,6 +61,8 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
   const dryMapping = dry ? detail.mappings.find((m) => m.id === dry.mappingId) ?? null : null;
   const authority = dry?.authority ?? (latest ? DATASETS[latest.spec.dataset].authority : null);
   const published = detail.publication !== null;
+  // A comparison with a ledger that holds none of the rows compared nothing: never shown as done.
+  const comparedNothing = dry !== null && dry.ledger.counts.matches + dry.ledger.counts.differs === 0;
   return [
     { key: "upload", title: "Upload", state: "done" as const, note: `${detail.upload.format.toUpperCase()} · ${count(detail.upload.rowCount)} rows` },
     { key: "profile", title: "Profile", state: "done" as const, note: `${detail.table.columns.length} columns${detail.table.warnings.length ? ` · ${detail.table.warnings.length} warnings` : ""}` },
@@ -85,13 +87,13 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
     {
       key: "outcome",
       title: authority === "reconcile" ? "Reconcile with ledger" : "Publish",
-      state: published ? ("done" as const) : authority === "reconcile" && dry ? ("done" as const) : ("todo" as const),
+      state: published ? ("done" as const) : authority === "reconcile" && dry ? (comparedNothing ? ("none" as const) : ("done" as const)) : ("todo" as const),
       note: published
         ? `Published ${count((detail.publication!.stats as { published?: number }).published ?? 0)} rows`
         : authority === "reconcile"
           ? dry
-            ? dry.ledger.counts.matches + dry.ledger.counts.differs === 0
-              ? "Nothing to compare: the ledger holds none of these rows"
+            ? comparedNothing
+              ? "The ledger holds none of these rows"
               : `${count(dry.counts.differs_from_ledger)} differ from the ledger`
             : "Compare only: never published"
           : "Approved rows go through intake",
@@ -138,14 +140,16 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
   const platform = spend ? spend.platforms.map((p) => PLATFORM[p] ?? p).join(" and ") : null;
 
   const conclusion = spend && total !== null
-    ? `${plural(counted, "campaign-day")} of ${platform} spend, ${rangeLabel(spend.firstDay, spend.lastDay)}: ${exact(total)} in US dollars.`
+    ? `${plural(counted, "campaign-day")} of ${platform} spend, ${rangeLabel(spend.firstDay, spend.lastDay)}: ${exact(total)} ${spend.currency.assumed > 0 ? "read as US dollars (no currency column was mapped)" : "in US dollars"}.`
     : `${count(counted)} of ${count(dry.total - notRecords)} rows passed every check.`;
   const ledgerLine =
     compared === 0
       ? `The ledger holds none of ${counted === 1 ? "it" : "them"}, so nothing was compared.`
       : `${count(dry.ledger.counts.matches)} match the ledger and ${count(dry.ledger.counts.differs)} differ${dry.ledger.money ? ` (${exact(dry.ledger.money.matchedDifferenceCents)} on the shared rows)` : ""}.`;
   const support = [
-    spend ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. Every row passed the checks the live feed applies.` : "Every counted row passed the checks the live feed applies.",
+    spend
+      ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. ${heldBack > 0 ? `The ${plural(counted, "counted row")} passed` : "Every row passed"} the checks the live feed applies.`
+      : "Every counted row passed the checks the live feed applies.",
     ledgerLine,
     dry.authority === "reconcile" ? "Nothing was added to the ledger." : "Nothing is in the ledger until an approver publishes it.",
     notRecords > 0 ? `${plural(notRecords, "line")} of the file ${notRecords === 1 ? "is not a record" : "are not records"} (a report total, a title or footer line) and ${notRecords === 1 ? "was" : "were"} left out.` : "",
@@ -155,7 +159,7 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
     heldBack > 0 && reasons.length > 0
       ? heldBackReason(reasons[0], heldBack)
       : spend && spend.currency.assumed > 0
-        ? "The file states no currency, so costs were read as US dollars. The live feed would hold these days until someone confirms the account's currency."
+        ? "No currency column was mapped, so costs were read as US dollars. If the file states a currency, map it in the review below; the live feed would hold these days until someone confirms the account's currency."
         : spend
           ? "Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer."
           : dry.authority === "reconcile"
@@ -198,6 +202,7 @@ const STEP_STYLE = {
   attention: { dot: "bg-warn", word: "Needs input" },
   waiting: { dot: "bg-accent", word: "Waiting" },
   blocked: { dot: "bg-bad", word: "Rejected" },
+  none: { dot: "bg-border-strong", word: "Nothing compared" },
 };
 
 async function Workspace({ params, searchParams }: Props) {

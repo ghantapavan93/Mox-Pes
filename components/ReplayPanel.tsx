@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LoaderCircle } from "lucide-react";
 import type { MetricSnapshot, ReplayResult } from "@/lib/ingest/replay";
 
 const money = (c: number | null) => (c === null ? "—" : `$${Math.round(c / 100).toLocaleString("en-US")}`);
@@ -119,8 +120,9 @@ export function ReplayPanel({
           type="button"
           aria-disabled={busy || undefined}
           onClick={() => void dryRun()}
-          className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 hover:bg-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
         >
+          {busy && <LoaderCircle aria-hidden className="size-3.5 animate-spin" />}
           {busy ? "Running…" : "Dry run (rolled back)"}
         </button>
       </div>

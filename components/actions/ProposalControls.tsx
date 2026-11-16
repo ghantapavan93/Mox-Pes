@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { CheckCircle2, LoaderCircle, XCircle } from "lucide-react";
 import { useAction } from "./useAction";
+
+/** A busy button's content: a spinner beside its working label. Under reduced motion the spinner holds still; the label says it. */
+function Working({ label }: { label: string }) {
+  return (
+    <>
+      <LoaderCircle aria-hidden className="size-3.5 shrink-0 animate-spin" />
+      {label}
+    </>
+  );
+}
 
 /**
  * The next step for one proposal, as the server allows it for this viewer. Buttons appear
@@ -71,9 +82,9 @@ export function ProposalControls({
               type="button"
               {...busyProps}
               onClick={() => act("dry", { action: "dry_run" })}
-              className="rounded border border-border px-3 py-1.5 hover:bg-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 hover:bg-surface-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             >
-              {busy === "dry" ? "Running…" : dryRunLabel}
+              {busy === "dry" ? <Working label="Running…" /> : dryRunLabel}
             </button>
           )}
           {canExecute && (
@@ -81,9 +92,9 @@ export function ProposalControls({
               type="button"
               {...busyProps}
               onClick={() => act("execute", { action: "execute" })}
-              className="rounded bg-accent px-3 py-1.5 font-medium text-white hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
             >
-              {busy === "execute" ? "Executing…" : "Execute (application, once)"}
+              {busy === "execute" ? <Working label="Executing…" /> : "Execute (application, once)"}
             </button>
           )}
         </div>
@@ -106,18 +117,18 @@ export function ProposalControls({
             {...busyProps}
             disabled={!reasonOk}
             onClick={() => act("approve", { action: "approve", reason })}
-            className="rounded bg-good px-3 py-1.5 font-medium text-white disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md bg-good px-3 py-1.5 font-medium text-white disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           >
-            {busy === "approve" ? "Approving…" : "Approve"}
+            {busy === "approve" ? <Working label="Approving…" /> : "Approve"}
           </button>
           <button
             type="button"
             {...busyProps}
             disabled={!reasonOk}
             onClick={() => act("reject", { action: "reject", reason })}
-            className="rounded border border-bad/40 px-3 py-1.5 font-medium text-bad disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-bad/40 px-3 py-1.5 font-medium text-bad disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           >
-            {busy === "reject" ? "Rejecting…" : "Reject"}
+            {busy === "reject" ? <Working label="Rejecting…" /> : "Reject"}
           </button>
         </div>
       )}
@@ -127,9 +138,11 @@ export function ProposalControls({
             {b}
           </p>
         ))}
-      {/* Always mounted, so assistive tech is already watching it when the message arrives. */}
-      <p role="status" aria-live="polite" className={message ? (message.ok ? "text-good" : "text-bad") : "sr-only"}>
-        {message?.text ?? ""}
+      {/* Always mounted, so assistive tech is already watching it when the message arrives. The icon
+          swaps with the outcome (idle → working → done or refused); the words carry it. */}
+      <p role="status" aria-live="polite" className={message ? `flex items-start gap-1.5 ${message.ok ? "text-good" : "text-bad"}` : "sr-only"}>
+        {message && (message.ok ? <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0" /> : <XCircle aria-hidden className="mt-0.5 size-4 shrink-0" />)}
+        <span>{message?.text ?? ""}</span>
       </p>
     </div>
   );

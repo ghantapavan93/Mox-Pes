@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { CheckCircle2, ChevronRight, XCircle } from "lucide-react";
 import { Badge, Card, KV, TableWrap, Td, Th } from "@/components/ui";
 import type { SourceName } from "@/lib/adapters/contract";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
@@ -223,19 +224,41 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
       )}
 
       {p.execution && (
+        // The execution as a receipt (docs/design-system.md, behaviour rule 15): its outcome in words with
+        // its icon, who ran it and when, what the run did, then the before/after. The repeat-safety
+        // proof (the idempotency key) stays one click away. It takes focus after Execute.
         <div
           id={executionTargetId}
           tabIndex={-1}
-          className={`mt-2 rounded p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${p.execution.status === "succeeded" ? "bg-good-soft" : "bg-bad-soft"}`}
+          className="mt-3 overflow-hidden rounded-lg bg-surface ring-1 ring-text/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           data-testid="execution-result"
         >
-          <p className="text-xs font-medium">
-            Execution {p.execution.status === "succeeded" ? "succeeded and verified" : "failed and was rolled back"} · {p.execution.actor} · {dateTime(p.execution.finishedAt)}
-          </p>
-          <p className="font-mono text-[11px] text-faint">Idempotency-Key: {p.execution.idempotencyKey}</p>
-          {p.execution.error && <p className="text-xs text-bad">{p.execution.error}</p>}
-          {p.execution.result && <ResultLine result={p.execution.result} />}
-          {p.execution.before && <SnapshotDiff before={p.execution.before} after={p.execution.after} verification={p.execution.verification} />}
+          <div className={`flex items-start gap-2 px-3 py-2 ${p.execution.status === "succeeded" ? "bg-good-soft" : "bg-bad-soft"}`}>
+            {p.execution.status === "succeeded" ? (
+              <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-good" />
+            ) : (
+              <XCircle aria-hidden className="mt-0.5 size-4 shrink-0 text-bad" />
+            )}
+            <p className="min-w-0 text-xs leading-5">
+              <span className="font-semibold text-text">Execution {p.execution.status === "succeeded" ? "succeeded and verified" : "failed and was rolled back"}</span>
+              <span className="text-muted"> · {p.execution.actor} · {dateTime(p.execution.finishedAt)}</span>
+            </p>
+          </div>
+          <div className="space-y-2 px-3 py-2.5">
+            {p.execution.error && <p className="text-xs text-bad">{p.execution.error}</p>}
+            {p.execution.result && <ResultLine result={p.execution.result} />}
+            {p.execution.before && <SnapshotDiff before={p.execution.before} after={p.execution.after} verification={p.execution.verification} />}
+            <details className="group border-t border-border pt-2 text-xs" data-testid="idempotency-proof">
+              <summary className="inline-flex items-center gap-1 font-medium text-accent hover:underline">
+                <ChevronRight aria-hidden className="size-3 transition-transform duration-150 group-open:rotate-90" />
+                Run once: the repeat-safety proof
+              </summary>
+              <p className="mt-1.5 text-muted">
+                Executing this proposal again returns the stored result above: nothing runs twice. The key ties this run to the dry run that was approved.
+              </p>
+              <p className="mt-1 break-all font-mono text-[11px] text-faint">Idempotency-Key: {p.execution.idempotencyKey}</p>
+            </details>
+          </div>
         </div>
       )}
 

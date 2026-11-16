@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { ButtonLink, Callout, Card, TableWrap, Td, Th } from "@/components/ui";
+import { ArrowRight } from "lucide-react";
+import { ButtonLink, Callout, TableWrap, Td, Th } from "@/components/ui";
+import { DecisionWindow, type StripDay } from "./DecisionWindow";
 import { dateTime } from "@/lib/format";
 import type { DecisionHold } from "@/lib/metrics/decision";
 import { dollars } from "@/lib/metrics/movement-copy";
 import type { ExceptionRow } from "@/lib/queries";
 import { dateRanges, runDates, type GapCoverage, type StoredVerification } from "@/lib/reconcile/gap-coverage";
+import type { WindowFacts } from "@/lib/reconcile/gap-days";
 import type { GapStatus } from "@/lib/reconcile/gap-status";
 import { CHANNEL_BY_CODE } from "@/lib/reference";
 
@@ -12,9 +15,12 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const channelName = (code: string) => CHANNEL_BY_CODE.get(code as never)?.label ?? code;
 
 /**
- * A channel coverage gap's recovery, for its incident page, in the order a reader needs it: the
- * conclusion (the incident's status, lib/reconcile/gap-status.ts, the same words the Overview, the
- * daily evidence and Decision Lab use), the most useful before/after fact, and one next action.
+ * A channel coverage gap's recovery, for its incident page, in the order a reader needs it
+ * (docs/agent-work/HOLD-TO-DECISION.md §9): one verdict, the incident's status in the same words the
+ * Overview, the daily evidence and Decision Lab use (lib/reconcile/gap-status.ts), with one primary
+ * action beside it; the decision window as a strip of dates, the picked week beside the window, and
+ * the selected date's evidence; then what moved, as a diff. The composition is the same in every
+ * state: only the evidence changes.
  * "Verification details" keeps the rest one click away: the two scopes, the four statements that
  * are never merged (the source delivered, the required dates are covered, the correction
  * reconciles, the decision is no longer held by this incident), the original finding and the
@@ -26,6 +32,7 @@ export function GapRecovery({
   status,
   otherHolds,
   branchSpend,
+  strip,
   links,
 }: {
   exception: ExceptionRow;
@@ -35,6 +42,8 @@ export function GapRecovery({
   otherHolds: DecisionHold[];
   /** The branch's paid media spend in the period the reader came with, counted now (verified state). */
   branchSpend: { periodLabel: string; cents: number } | null;
+  /** The window's dates with their evidence, the two facts, and the date selected first (lib/reconcile/gap-days.ts). */
+  strip: { days: StripDay[]; facts: WindowFacts; defaultDate: string | null };
   /**
    * `records`: the daily records of the week to look at next, and that week in words; `back`: the
    * selected week the reviewer came from; `run`: where a delivery run is shown (null for a viewer
@@ -105,66 +114,67 @@ export function GapRecovery({
   const showBack = links.back !== null && (!needsRecords || links.back !== links.records.href);
 
   return (
-    <Card
-      id="recovery"
-      className={`border-l-4 ${state === "verified" ? "border-l-good" : held ? "border-l-bad" : "border-l-warn"}`}
-      title={<span data-testid="recovery-headline" className="block text-lg font-semibold leading-7">{status.label}</span>}
-    >
-      <div className="space-y-4" data-testid="gap-recovery" data-state={state}>
-        <p className="text-sm leading-6 text-text" data-testid="recovery-status">
-          {status.statusText}
-        </p>
-        {status.change && (
-          <p className="text-sm leading-6 text-text" data-testid="recovery-change">
-            {status.change}
-            {status.reclassified && branchSpend && (
-              <span data-testid="recovery-total">
-                {" "}
-                {branch}&apos;s paid media spend in {branchSpend.periodLabel} stayed {dollars(branchSpend.cents)}.
-              </span>
-            )}
+    <section id="recovery" aria-labelledby="recovery-headline" className="scroll-mt-28 space-y-4" data-testid="gap-recovery" data-state={state}>
+      {/* The verdict: the strongest line on the page, in ink in every state. A lifted coverage hold
+          is not an approval, so it never turns into a green banner. The action sits under its
+          reason at every width, never off at the far edge. */}
+      <div className="space-y-3">
+        <div className="min-w-0 max-w-3xl space-y-2">
+          <h2 id="recovery-headline" className="text-[26px] font-semibold leading-8 tracking-tight text-text sm:text-[28px] sm:leading-9" data-testid="recovery-headline">
+            {status.label}
+          </h2>
+          <p className="text-[15px] leading-6 text-text" data-testid="recovery-status">
+            {status.statusText}
           </p>
-        )}
-        {!held && otherHolds.length > 0 && (
-          <p className="text-sm font-medium text-text" data-testid="recovery-other-holds">
-            The budget decision is still held by {otherHolds.map((h) => `#${h.exceptionId}`).join(", ")}.
-          </p>
-        )}
-        {held && verification && (
-          // Reopened under the same id (rule 6a): the earlier verification is history, never a clearance.
-          <p className="text-sm text-muted" data-testid="recovery-history">
-            This window was verified {dateTime(verification.verifiedAt)}, then a later revision un-covered {open.length ? dateRanges(open) : "part of it"}, so the hold is back on this incident. That verification is kept below as history; it is not a clearance.
-          </p>
-        )}
-
-        <div className="space-y-2 border-t border-border pt-3">
-          <p className="text-sm text-muted" data-testid="recovery-next">
+          {!original && status.change && (
+            <p className="text-sm leading-6 text-text" data-testid="recovery-change">
+              {status.change}
+            </p>
+          )}
+          <p className="text-sm leading-6 text-muted" data-testid="recovery-next">
             <span className="font-medium text-text">Next: </span>
             {next}
           </p>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {needsRecords ? (
-              <ButtonLink href={links.records.href} variant="primary" testId="recovery-records">
-                Open the records for {links.records.week}
-              </ButtonLink>
-            ) : (
-              <ButtonLink href={links.decisions} variant="primary" testId="recovery-decisions">
-                Open decision readiness
-              </ButtonLink>
-            )}
-            {showBack && (
-              <Link href={links.back!} className="text-sm font-medium text-accent hover:underline" data-testid="recovery-back">
-                Back to the daily evidence
-              </Link>
-            )}
-          </div>
+          {!held && otherHolds.length > 0 && (
+            <p className="text-sm font-medium text-text" data-testid="recovery-other-holds">
+              The budget decision is still held by {otherHolds.map((h) => `#${h.exceptionId}`).join(", ")}.
+            </p>
+          )}
+          {held && verification && (
+            // Reopened under the same id (rule 6a): the earlier verification is history, never a clearance.
+            <p className="text-sm text-muted" data-testid="recovery-history">
+              This window was verified {dateTime(verification.verifiedAt)}, then a later revision un-covered {open.length ? dateRanges(open) : "part of it"}, so the hold is back on this incident. That verification is kept below as history; it is not a clearance.
+            </p>
+          )}
         </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {needsRecords ? (
+            <ButtonLink href={links.records.href} variant="primary" testId="recovery-records" icon={<ArrowRight aria-hidden className="order-last size-4" />}>
+              Open the records for {links.records.week}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={links.decisions} variant="primary" testId="recovery-decisions" icon={<ArrowRight aria-hidden className="order-last size-4" />}>
+              Open decision readiness
+            </ButtonLink>
+          )}
+          {showBack && (
+            <Link href={links.back!} className="text-sm font-medium text-accent hover:underline" data-testid="recovery-back">
+              Back to the daily evidence
+            </Link>
+          )}
+        </div>
+      </div>
 
-        <details className="group rounded-md border border-border" data-testid="recovery-details">
-          <summary className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+      <DecisionWindow days={strip.days} facts={strip.facts} defaultDate={strip.defaultDate} verifiedNote={state === "verified" && verification ? `verified ${dateTime(verification.verifiedAt)}` : null} />
+
+      {original && <MoneyMoved status={status} coverage={coverage} branch={branch} branchSpend={branchSpend} />}
+
+      <div className="rounded-xl bg-surface ring-1 ring-text/10">
+        <details className="group" data-testid="recovery-details">
+          <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-medium text-text hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             Verification details
           </summary>
-          <div className="space-y-4 border-t border-border p-3">
+          <div className="space-y-4 border-t border-border p-4">
             <p className="text-xs leading-5 text-muted">
               Decision window (verification scope): every date from the gap&apos;s start to the spend feed&apos;s latest date, for {label} at {branch}; once verified, the dates that were verified. Correction scope: whatever a delivery or re-map sent. The week picked on the Overview only chooses what to look at.
             </p>
@@ -230,6 +240,102 @@ export function GapRecovery({
           </div>
         </details>
       </div>
-    </Card>
+    </section>
+  );
+}
+
+interface MoveTile {
+  sign: string;
+  tone: "bad" | "good" | "muted" | "ink";
+  label: string;
+  cents: number | null;
+  note: string | null;
+  testId: string;
+  /** The branch total, proven unchanged: the tile the verified state leads with. */
+  strong?: boolean;
+}
+const SIGN_TONE = { bad: "text-bad", good: "text-good", muted: "text-muted", ink: "text-text" } as const;
+
+/**
+ * What moved, in a diff's grammar and money type: out of the channel it was filed under, into the
+ * channel it belongs to, and a third fact. That is the branch total "unchanged" only with the proof
+ * (`status.reclassified`: verified, nothing misfiled, every day's amount kept); before it, what is
+ * still filed elsewhere, or the amounts that changed. Amounts stay in ink and only the sign carries
+ * the diff colour, so a move never reads as a loss or a gain. The incident's own sentence
+ * (`status.change`) stays above the tiles, word for word.
+ */
+function MoneyMoved({ status, coverage, branch, branchSpend }: { status: GapStatus; coverage: GapCoverage; branch: string; branchSpend: { periodLabel: string; cents: number } | null }) {
+  const original = status.original!;
+  const moved = coverage.coveredCents;
+  const verified = status.state === "verified";
+  const changes = coverage.amountChanges;
+  const changeList = changes
+    .slice(0, 3)
+    .map((a) => `${dateRanges([a.date])}: ${dollars(a.beforeCents)} → ${dollars(a.afterCents)}`)
+    .join(" · ");
+  const tiles: MoveTile[] = [];
+  // Before anything moves there is no out/in pair: "Into Google Local Services $0.00" would read as
+  // recorded zero spend, which a missing record never is. Only what is still filed elsewhere shows.
+  if (moved > 0) {
+    tiles.push(
+      { sign: "−", tone: "bad", label: `Out of ${original.filedAs}`, cents: verified ? original.cents : moved, note: verified ? null : "moved so far", testId: "moved-out" },
+      { sign: "+", tone: "good", label: `Into ${coverage.channelLabel}`, cents: moved, note: null, testId: "moved-in" },
+    );
+  }
+  if (status.reclassified && branchSpend) {
+    tiles.push({ sign: "=", tone: "ink", label: `${branch} paid media spend, ${branchSpend.periodLabel.split(",")[0]}`, cents: branchSpend.cents, note: "unchanged", testId: "moved-total", strong: true });
+  } else if (coverage.misfiledCents > 0) {
+    tiles.push({ sign: "·", tone: "muted", label: `Still filed as ${original.filedAs}`, cents: coverage.misfiledCents, note: dateRanges([...new Set(coverage.misfiled.map((m) => m.date))]), testId: "moved-still" });
+  } else if (changes.length > 0) {
+    tiles.push({ sign: "≠", tone: "bad", label: "Amounts changed", cents: null, note: changeList, testId: "moved-changed" });
+  }
+  // Under the tiles, the amounts, unless a tile already says them or nothing has moved.
+  const amounts = moved === 0 || status.reclassified || tiles.some((t) => t.testId === "moved-changed") ? null : changes.length > 0 ? `Amounts changed: ${changeList}.` : "No amount changed on the dates moved.";
+  return (
+    <section aria-labelledby="moved-title" className="rounded-xl bg-surface p-4 ring-1 ring-text/10 sm:p-5" data-testid="money-moved" data-reclassified={status.reclassified}>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+        <h3 id="moved-title" className="text-[15px] font-semibold leading-6 tracking-tight text-text">
+          What moved
+        </h3>
+        <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-semibold text-text ring-1 ring-text/10" data-testid="moved-label">
+          {status.reclassified ? "Reclassified, not added" : verified ? "Verified, with changed amounts" : moved > 0 ? "Correction in progress" : "Nothing moved yet"}
+        </span>
+      </div>
+      {status.change && (
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-text" data-testid="recovery-change">
+          {status.change}
+          {status.reclassified && branchSpend && (
+            <span data-testid="recovery-total">
+              {" "}
+              {branch}&apos;s paid media spend in {branchSpend.periodLabel} stayed {dollars(branchSpend.cents)}.
+            </span>
+          )}
+        </p>
+      )}
+      {/* Three columns in every state, so a tile keeps its size and place as the evidence changes. */}
+      <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label={`Spend moved between channels at ${branch}`} data-testid="moved-rows">
+        {tiles.map((t) => (
+          <li key={t.testId} className={`min-w-0 rounded-lg px-3.5 py-3 ${t.strong ? "bg-surface ring-1 ring-text/20" : "bg-surface-2"}`} data-testid={t.testId}>
+            <p className="flex items-start gap-1.5 text-xs font-medium leading-4 text-muted">
+              <span aria-hidden className={`w-3 shrink-0 text-center font-mono text-sm font-semibold leading-4 ${SIGN_TONE[t.tone]}`}>
+                {t.sign}
+              </span>
+              <span className="min-w-0">{t.label}</span>
+            </p>
+            <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-[22px] font-semibold leading-7 tracking-tight tabular-nums text-text">
+              {t.cents === null ? "—" : dollars(t.cents)}
+              {t.strong && t.note && <span className="rounded-md bg-surface-2 px-1.5 py-0.5 text-xs font-semibold leading-4 tracking-normal text-text">{t.note}</span>}
+            </p>
+            {!t.strong && t.note && <p className="mt-0.5 text-xs leading-5 text-muted [overflow-wrap:anywhere]">{t.note}</p>}
+          </li>
+        ))}
+      </ul>
+      {amounts && <p className="mt-2.5 text-xs leading-5 text-muted">{amounts}</p>}
+      {!status.held && (
+        <p className="mt-3 border-t border-border pt-2.5 text-xs leading-5 text-muted">
+          A cleared coverage hold lets a person review the decision. It moves no budget; Decision Lab weighs the rest.
+        </p>
+      )}
+    </section>
   );
 }

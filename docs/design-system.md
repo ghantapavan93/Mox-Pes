@@ -2,7 +2,11 @@
 
 How Revenue Signal OS looks and behaves, and why. Patterns are studied from IBM Carbon (density,
 tables, accessibility), Elastic Kibana and Sentry (investigation and issue detail) and shadcn/ui
-(composable React primitives). Nothing is copied: no third-party branding, no template.
+(composable React primitives). The B09 incident's decision view (HOLD-TO-DECISION.md §9) also
+studies Linear (a quiet scope line over one verdict), OpenStatus (a strip of days), Knock (one
+event: what arrived, why it did not count), GitHub's diff and Midday's money type (what moved),
+and the shadcn-fintech template's card frame and legends. Patterns come in, dependencies do not,
+and nothing is copied: no third-party branding, no template.
 
 **The test every screen must pass:** can a marketing leader understand the business problem in
 15 seconds, investigate it in a few clicks, and trust what the screen says?
@@ -11,7 +15,7 @@ tables, accessibility), Elastic Kibana and Sentry (investigation and issue detai
 
 | Group | Tokens | Rule |
 |---|---|---|
-| Surfaces | `bg`, `surface`, `surface-2`, `sunken`, `border`, `border-strong` | Neutral. Elevation is one soft shadow (`shadow-raised`), never gradients. |
+| Surfaces | `bg`, `surface`, `surface-2`, `sunken`, `border`, `border-strong` | Neutral. A panel (`Card`) is framed by a hairline ring, `ring-1 ring-text/10`, with no shadow at rest, so the frame recedes and the data carries the colour. Tiles and overlays keep the one soft shadow (`shadow-raised`). Never gradients. |
 | Text | `text`, `muted`, `faint` | All three pass 4.5:1 on every surface they sit on (tested). |
 | Interaction | `accent`, `accent-hover`, `accent-soft` | Blue means "you can act here": links, primary buttons, focus ring. Nothing decorative is blue. |
 | States | `bad`, `warn`, `good` + `-soft` | Red, amber, green only for a state the data is in. Never the only signal: every state also has a word. |
@@ -22,8 +26,10 @@ tables, accessibility), Elastic Kibana and Sentry (investigation and issue detai
 it is used on (4.5:1), white on accent and shell (4.5:1), and the focus ring and meaningful chart
 colours against the surface (3:1). A token change that breaks contrast fails the build.
 
-**Type scale.** Page title 22/32 semibold · panel title 13/20 semibold · body 14/20 · meta and
-table headers 11–12 · KPI values 26/32 semibold. Numbers are tabular everywhere (`tnum`).
+**Type scale.** Page title 22/32 semibold (14/24 medium in `muted` when `PageHeader quiet` hands
+the page to a verdict) · verdict 26–28/32–36 semibold · panel title 15/24 semibold · body 14/20,
+a verdict's status 15/24 · meta and table headers 11–12 · KPI values 26/32 semibold · money in a
+diff 22/28 semibold. Numbers are tabular everywhere (`tnum`). One family, Geist and Geist Mono.
 
 **Density.** Tables 8 px vertical cell padding (about 36 px rows), panels 16 px padding, 24 px
 between sections. Dense where people compare rows, spacious where they read a sentence.
@@ -32,8 +38,10 @@ between sections. Dense where people compare rows, spacious where they read a se
 
 | Component | Use it for | Notes |
 |---|---|---|
-| `PageHeader` | Every page's title block | Breadcrumbs, eyebrow (scope · period), title, one-paragraph description, actions, a toolbar row for filters |
-| `Card` | Any titled panel | `flush` for edge-to-edge tables; `action` slot for a link or button |
+| `PageHeader` | Every page's title block | Breadcrumbs, eyebrow (scope · period), title, one-paragraph description, actions, a toolbar row for filters. `quiet` turns the title into a scope line when a verdict below leads the page |
+| `Card` | Any titled panel | Hairline ring, `rounded-xl`; `flush` for edge-to-edge tables; the `action` slot sits at the header's right, for one link or button |
+| `DecisionWindow` (`components/incidents/DecisionWindow.tsx`) | The dates a decision needs, one at a time | One radio group (arrow keys, Home, End; the selection follows focus; one tab stop). Each date is a mark and a word: verified is filled with a check, no record is hatched with a cross, a recorded $0.00 is sunken with a 0. The legend carries the counts. The selected week is underlined in accent and named in its own fact beside the window's. The selected date's evidence follows: received, why it does or does not count, what clears it, and its records on the daily evidence. 9 columns below `md`, 18 from it |
+| `MoneyMoved` (`components/incidents/GapRecovery.tsx`) | What a correction moved | A diff in three tiles: − out of, + into, then the branch total, "unchanged" only with the proof. Amounts stay in ink; only the sign is coloured, so a move never reads as a loss or a gain. Before anything moves there is no out/in pair, only what is still filed elsewhere: a "$0.00" tile would read as recorded zero spend |
 | `Segmented` / `PeriodTabs` | Choices that live in the URL (brand, period) | Links, not buttons: shareable, back-button safe; `aria-current` marks the choice |
 | `ButtonLink` | Navigation that looks like an action | primary / secondary / ghost |
 | `Stat` | Every headline number that is a defined metric | Definition one click away (formula, source, caveat, link to its `/definitions` entry); optional `delta` with which direction is good |
@@ -86,6 +94,19 @@ between sections. Dense where people compare rows, spacious where they read a se
    risk is a defined metric on Overview.
 8. **Numbers carry their definition.** Every KPI opens to its formula, source and caveat;
    `/definitions` is the dictionary.
+9. **A verdict is ink, never a colour.** A decision-led incident opens on one verdict ("Hold the
+   budget decision", "Still on hold · 5 of 18 days verified", "Coverage hold cleared · 18 of 18
+   days verified"), the strongest line on the page, always in `text`. A cleared hold lets a person
+   review a decision; it approves nothing, so it never turns green, and "No budget change was
+   approved." sits under it. Colour belongs to the evidence, and every colour has a word.
+10. **Legends carry values.** A legend lists each mark with its count: it is the summary of what it
+    labels, not decoration.
+11. **Open the first thing that needs attention.** Where a view lists many items, the first
+    unresolved one is selected by default (Sentry's rule). With none unresolved nothing opens by
+    itself, and the next fact (what moved) keeps the first screen.
+12. **Two scopes side by side, never merged.** A filter the reader picked (the selected week) and
+    the rule the decision needs (the decision window) are separate facts, each with its own word:
+    "Selected week covered" next to "Decision window incomplete".
 
 ## Screens
 
@@ -97,7 +118,7 @@ before showing detail, and keeps filters in the URL.
 | Shell | Grouped sidebar (Operate, Understand, Systems), collapsible rail, top bar with scope and freshness, guide bar on `?guide=b09` |
 | Overview | Headline answer, trust callout, KPIs vs September, issues requiring review, weekly composition, bridge, branch and brand tables |
 | Incidents | KPI strip (open, high severity, needs approval, closed; no money total, because case amounts mix spend and revenue and overlap), the fix workflow as a left-to-right state strip with side exits, amount at stake by incident type (click to filter), approval lane, then the filterable queue with removable filter chips |
-| Incident detail | Impact strip, sticky section navigation (evidence, fix & approval, records, audit), rail with the decision and role-by-role fix steps |
+| Incident detail | Decision-led incidents (a coverage gap, a refused spend revision): a quiet scope line, one verdict, one primary action. For a coverage gap, the decision window follows as a strip of dates, with the selected week set against the window and the selected date's evidence, then what moved, as a diff. Then the details, the story, the impact strip and the sections. Others: impact strip, sticky section navigation (evidence, fix & approval, records, audit), rail with the decision and role-by-role fix steps |
 | AI Investigator | Model/deterministic mode stated first, incident scope callout, ask panel, recent investigations as a list with confidence and proposals |
 | Customer Journeys | Lifecycle tiles (click to filter), identity review queue *above* the directory (decisions before browsing), directory with search, branch and lifecycle filters |
 | Decision Lab | Branch and period in the header toolbar; sections numbered by the three questions (records right? enough evidence? did spend cause it?); readiness verdict first, blocking incidents linked |

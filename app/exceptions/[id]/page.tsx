@@ -21,8 +21,9 @@ import { parseChannel, parseWeek, WINDOW, windowWeeks } from "@/lib/metrics/move
 import { weekLabel } from "@/lib/metrics/movement-copy";
 import { branchRows } from "@/lib/metrics/scorecard";
 import { PERIODS, type PeriodKey } from "@/lib/period";
-import { gapCoverage } from "@/lib/reconcile/gap-coverage";
+import { dateRanges, gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatus } from "@/lib/reconcile/gap-status";
+import { dayEvidence, defaultDay, windowFacts } from "@/lib/reconcile/gap-days";
 import { correctionsOf, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
@@ -39,6 +40,11 @@ const mondayOf = (date: string) => {
   const t = new Date(`${date}T00:00:00Z`);
   return new Date(t.getTime() - ((t.getUTCDay() + 6) % 7) * 86_400_000).toISOString().slice(0, 10);
 };
+
+/** "Oct 13–Oct 30": the decision window's dates in words. */
+const dateRangesLabel = (c: { required: string[]; window: { from: string } }) => dateRanges(c.required.length ? c.required : [c.window.from]);
+/** "October": a date's month, in UTC like every date on the page. */
+const monthOf = (date: string) => new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
 
 export const metadata = { title: "Incident" };
 
@@ -123,7 +129,7 @@ async function ExceptionDetail({ params, searchParams }: Props) {
       ? { periodLabel: period.label, cents: (await branchRows(getPool(), { from: period.from, to: period.to, branchIds: [exception.branchId!] }))[0]?.paidSpendCents ?? 0 }
       : null;
   const holdWeek = revisions[0] ? parseWeek(mondayOf(revisions[0].date)) : null;
-  const holdMonths = [...new Set(revisions.map((r) => new Date(`${r.date}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })))];
+  const holdMonths = [...new Set(revisions.map((r) => monthOf(r.date)))];
   // The records to open next: the week of the first date that still needs spend, else the selected
   // week, else the window's first. The week the reviewer came from stays one link away ("back").
   const needing = coverage ? [...coverage.missing, ...coverage.recordedZero, ...coverage.misfiled.map((m) => m.date)].sort() : [];
@@ -134,6 +140,30 @@ async function ExceptionDetail({ params, searchParams }: Props) {
     const w = week ? windowWeeks(WINDOW, null).find((x) => x.start === week) : undefined;
     return w ? weekLabel(w) : "the window";
   };
+
+  // The decision window, date by date: each date's evidence, whether it is in the week the reader
+  // picked, and its records on the daily evidence (the existing view of that week's records).
+  const pickedWeek = selectedHere ? windowWeeks(WINDOW, null).find((w) => w.start === selectedHere) ?? null : null;
+  const stripDays = coverage
+    ? coverage.days.map((d) => {
+        const week = parseWeek(mondayOf(d.date));
+        return {
+          ...dayEvidence(d, { branchId: coverage.branchId, channelLabel: coverage.channelLabel }),
+          inWeek: pickedWeek !== null && d.date >= pickedWeek.start && d.date <= pickedWeek.end,
+          records: week ? { href: traceHref(coverage.channel, week), week: recordsWeekLabel(week) } : null,
+        };
+      })
+    : [];
+  const strip = coverage ? { days: stripDays, facts: windowFacts(coverage, pickedWeek ? { start: pickedWeek.start, end: pickedWeek.end } : null), defaultDate: defaultDay(stripDays) } : null;
+  // The quiet scope line above the verdict: the branch, then the channel and the window the decision
+  // needs, or, for a refused-revision hold, the campaign-days it holds or held and their months.
+  const branchName = branch ? `${branch.id} ${branch.name}` : (coverage?.branchId ?? exception.branchId ?? "");
+  const heldDays = [...revisions, ...corrections];
+  const scopeLine = coverage
+    ? `${branchName} · ${coverage.channelLabel} · decision window ${dateRangesLabel(coverage)}`
+    : revisionHold && heldDays.length > 0
+      ? `${branchName} · ${heldDays.length === 1 ? "one campaign-day" : `${heldDays.length} campaign-days`} · ${[...new Set(heldDays.map((d) => monthOf(d.date)))].join(" and ")}`
+      : null;
 
   const why =
     (exception.evidence as { conflict?: unknown } | null)?.conflict === "earlier_version_after_later"
@@ -167,6 +197,7 @@ async function ExceptionDetail({ params, searchParams }: Props) {
       <PageHeader
         crumbs={[{ href: "/exceptions", label: "Incidents" }, { label: `#${exception.id}` }]}
         title={revisionHold ? "Spend revision refused" : (KIND_LABEL[exception.kind] ?? exception.kind)}
+        quiet={leadsWithDecision}
         badges={
           <>
             <SeverityBadge severity={exception.severity} />
@@ -180,7 +211,13 @@ async function ExceptionDetail({ params, searchParams }: Props) {
           </>
         }
         description={
-          leadsWithDecision ? undefined : (
+          leadsWithDecision ? (
+            scopeLine && (
+              <p className="text-sm text-muted" data-testid="incident-scope">
+                {scopeLine}
+              </p>
+            )
+          ) : (
             <>
               <p className="font-medium text-text" data-testid="exception-summary">{exception.summary}</p>
               <p className="mt-1 max-w-3xl">{why}</p>
@@ -190,13 +227,14 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         actions={leadsWithDecision ? undefined : headerActions}
       />
 
-      {coverage && status && (
+      {coverage && status && strip && (
         <GapRecovery
           exception={exception}
           coverage={coverage}
           status={status}
           otherHolds={otherHolds}
           branchSpend={branchSpend}
+          strip={strip}
           links={{
             records: { href: traceHref(coverage.channel, recordsWeek), week: recordsWeekLabel(recordsWeek) },
             back: selected ? traceHref(selected.channel, selected.week) : null,

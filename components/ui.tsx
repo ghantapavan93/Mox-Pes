@@ -31,11 +31,13 @@ export function Card({
   return (
     // min-w-0: as a grid or flex item a panel may shrink below its widest table, which then
     // scrolls inside the panel instead of widening the page.
-    <section id={id} className={`min-w-0 scroll-mt-20 rounded-lg border border-border bg-surface shadow-raised ${className}`}>
+    // A hairline ring at 10% of the text colour, no shadow at rest: the frame recedes and the data
+    // carries the colour (docs/design-system.md, "Surfaces"). Shadows are for overlays only.
+    <section id={id} className={`min-w-0 scroll-mt-20 rounded-xl bg-surface ring-1 ring-text/10 ${className}`}>
       {(title || action) && (
         <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border px-4 py-3">
           <div className="min-w-0">
-            {title && <h2 className="text-[13px] font-semibold leading-5 text-text">{title}</h2>}
+            {title && <h2 className="text-[15px] font-semibold leading-6 tracking-tight text-text">{title}</h2>}
             {subtitle && <p className="mt-0.5 max-w-3xl text-xs leading-5 text-muted">{subtitle}</p>}
           </div>
           {action && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{action}</div>}
@@ -55,6 +57,7 @@ export function PageHeader({
   badges,
   actions,
   toolbar,
+  quiet = false,
 }: {
   crumbs?: Array<{ href?: string; label: ReactNode }>;
   eyebrow?: ReactNode;
@@ -63,6 +66,8 @@ export function PageHeader({
   badges?: ReactNode;
   actions?: ReactNode;
   toolbar?: ReactNode;
+  /** Render the title as a quiet scope line, for a page whose verdict below is its strongest line. */
+  quiet?: boolean;
 }) {
   return (
     <div className="space-y-3">
@@ -86,7 +91,8 @@ export function PageHeader({
         <div className="min-w-0 max-w-4xl">
           {eyebrow && <p className="text-[11px] font-semibold uppercase tracking-wider text-faint">{eyebrow}</p>}
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
-            <h1 className="text-[22px] font-semibold leading-8 tracking-tight text-text">{title}</h1>
+            {/* `quiet`: the page's verdict sits below and is the strongest line; the title becomes its scope. */}
+            <h1 className={quiet ? "text-sm font-medium leading-6 text-muted" : "text-[22px] font-semibold leading-8 tracking-tight text-text"}>{title}</h1>
             {badges}
           </div>
           {description && <div className="mt-1 text-sm leading-6 text-muted">{description}</div>}

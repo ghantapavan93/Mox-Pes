@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ButtonLink, Card, TableWrap, Td, Th } from "@/components/ui";
+import { ArrowRight } from "lucide-react";
+import { ButtonLink, TableWrap, Td, Th } from "@/components/ui";
 import { dateTime } from "@/lib/format";
 import { dollars } from "@/lib/metrics/movement-copy";
 import type { ExceptionRow } from "@/lib/queries";
@@ -57,55 +58,61 @@ export function RevisionHold({
     );
 
   return (
-    <Card id="recovery" className={`border-l-4 ${held ? "border-l-bad" : "border-l-good"}`} title={<span data-testid="hold-headline" className="block text-lg font-semibold leading-7">{headline}</span>}>
-      <div className="space-y-4" data-testid="revision-hold" data-state={held ? "held" : "lifted"}>
-        {held ? (
-          <>
-            <p className="text-sm leading-6 text-text" data-testid="hold-reason">
-              {holdSentence(revisions)} {branch}&apos;s {months} budget decision is held until a newer revision is accepted.
-            </p>
-            {corrections.length > 0 && (
-              // A campaign-day already corrected in this incident stays visible, with its delivery.
-              <p className="text-sm leading-6 text-muted" data-testid="hold-corrected">
-                Already corrected, and no longer holding it: {corrections.map(correctionClause).join("; ")}.
+    // The same composition as a coverage gap's recovery: one verdict in ink, why, one action, then
+    // the records one click away. A lifted hold never turns into a green banner.
+    <section id="recovery" aria-labelledby="hold-headline" className="scroll-mt-28 space-y-4" data-testid="revision-hold" data-state={held ? "held" : "lifted"}>
+      <div className="space-y-3">
+        <div className="min-w-0 max-w-3xl space-y-2">
+          <h2 id="hold-headline" className="text-[26px] font-semibold leading-8 tracking-tight text-text sm:text-[28px] sm:leading-9" data-testid="hold-headline">
+            {headline}
+          </h2>
+          {held ? (
+            <>
+              <p className="text-[15px] leading-6 text-text" data-testid="hold-reason">
+                {holdSentence(revisions)} {branch}&apos;s {months} budget decision is held until a newer revision is accepted.
               </p>
-            )}
-          </>
-        ) : (
-          <div className="space-y-1.5 text-sm leading-6 text-text" data-testid="hold-reason">
-            <p>{corrections.length > 0 ? `${corrections.map(correctionClause).join("; ")}.` : (exception.resolution ?? "No refused revision holds this decision any more.")}</p>
-            {branchSpend && (
-              <p data-testid="hold-total">
-                {changed.length === 0
-                  ? `No amount changed: ${branch}'s paid media spend in ${branchSpend.periodLabel} is ${dollars(branchSpend.cents)}.`
-                  : `The correction changed the amount, so ${branch}'s paid media spend in ${branchSpend.periodLabel} is now ${dollars(branchSpend.cents)}, ${delta >= 0 ? "+" : "−"}${dollars(Math.abs(delta))} against the amount counted before it.`}
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="space-y-2 border-t border-border pt-3">
-          <p className="text-sm text-muted" data-testid="hold-next">
+              {corrections.length > 0 && (
+                // A campaign-day already corrected in this incident stays visible, with its delivery.
+                <p className="text-sm leading-6 text-muted" data-testid="hold-corrected">
+                  Already corrected, and no longer holding it: {corrections.map(correctionClause).join("; ")}.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="space-y-1.5 text-[15px] leading-6 text-text" data-testid="hold-reason">
+              <p>{corrections.length > 0 ? `${corrections.map(correctionClause).join("; ")}.` : (exception.resolution ?? "No refused revision holds this decision any more.")}</p>
+              {branchSpend && (
+                <p data-testid="hold-total">
+                  {changed.length === 0
+                    ? `No amount changed: ${branch}'s paid media spend in ${branchSpend.periodLabel} is ${dollars(branchSpend.cents)}.`
+                    : `The correction changed the amount, so ${branch}'s paid media spend in ${branchSpend.periodLabel} is now ${dollars(branchSpend.cents)}, ${delta >= 0 ? "+" : "−"}${dollars(Math.abs(delta))} against the amount counted before it.`}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="text-sm leading-6 text-muted" data-testid="hold-next">
             <span className="font-medium text-text">Next: </span>
             {held
               ? `The source has to send a newer revision of ${dateRanges(revisions.map((r) => r.date))} that intake accepts; the hold then lifts by itself. Nothing on this page lifts it, and closing the case does not.`
               : "See in Decision Lab what still prevents a decision. Lifting this hold approves no budget change."}
           </p>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            {held && links.records ? (
-              <ButtonLink href={links.records.href} variant="primary" testId="hold-records">
-                Open the records for {links.records.week}
-              </ButtonLink>
-            ) : (
-              <ButtonLink href={links.decisions} variant="primary" testId="hold-decisions">
-                Open decision readiness
-              </ButtonLink>
-            )}
-          </div>
         </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          {held && links.records ? (
+            <ButtonLink href={links.records.href} variant="primary" testId="hold-records" icon={<ArrowRight aria-hidden className="order-last size-4" />}>
+              Open the records for {links.records.week}
+            </ButtonLink>
+          ) : (
+            <ButtonLink href={links.decisions} variant="primary" testId="hold-decisions" icon={<ArrowRight aria-hidden className="order-last size-4" />}>
+              Open decision readiness
+            </ButtonLink>
+          )}
+        </div>
+      </div>
 
-        <details className="group rounded-md border border-border" data-testid="hold-details">
-          <summary className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium text-text hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+      <div className="rounded-xl bg-surface ring-1 ring-text/10">
+        <details className="group" data-testid="hold-details">
+          <summary className="cursor-pointer rounded-xl px-4 py-3 text-sm font-medium text-text hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             Revision details
           </summary>
           <div className="space-y-4 border-t border-border p-3">
@@ -188,6 +195,6 @@ export function RevisionHold({
           </div>
         </details>
       </div>
-    </Card>
+    </section>
   );
 }

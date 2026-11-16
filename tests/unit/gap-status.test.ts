@@ -33,6 +33,7 @@ function coverage(over: Partial<GapCoverage> = {}): GapCoverage {
     misfiledCents: 180_000,
     complete: false,
     amountChanges: [],
+    days: [],
     ...over,
   };
 }

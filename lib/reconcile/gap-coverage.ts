@@ -65,6 +65,35 @@ export interface GapCoverage {
    * amount, which is what "reclassified, not added" needs (HOLD-TO-DECISION.md, scenario 6).
    */
   amountChanges: Array<{ date: string; externalCampaignId: string; beforeCents: number; afterCents: number }>;
+  /**
+   * Every required date, in order, with what the accepted records say about it: the channel's own
+   * records at the branch, and any successor spend that day filed elsewhere. The same facts as
+   * `covered`, `missing`, `recordedZero` and `misfiled`, one date at a time, for a view that
+   * explains a single date (components/incidents/DecisionWindow.tsx).
+   */
+  days: GapDay[];
+}
+
+/** One accepted spend record, as a date's evidence names it. */
+export interface GapDayRecord {
+  externalCampaignId: string;
+  channel: string;
+  branchId: string | null;
+  cents: number;
+  rawEventId: number | null;
+  runId: number | null;
+  fetchedAt: string | null;
+  adapterVersion: string | null;
+}
+
+/** One required date of the window. */
+export interface GapDay {
+  date: string;
+  /** covered: channel spend above $0.00 at the branch; zero: only a recorded $0.00; missing: no record. */
+  state: "covered" | "zero" | "missing";
+  records: GapDayRecord[];
+  /** Successor spend that day filed under another channel or at another branch. */
+  misfiled: GapDayRecord[];
 }
 
 /** What reconciliation stores when it verifies a gap. */
@@ -89,6 +118,7 @@ interface Row {
   fetched_at: string | null;
   adapter_version: string | null;
   replaced_cents: string | null;
+  raw_event_id: string | null;
 }
 
 const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -126,7 +156,8 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
   // the same payload and cannot change its amount.
   const { rows } = await db.query<Row>(
     `select s.spend_date::text as date, c.external_campaign_id, s.campaign_id, s.channel_code, s.cost_cents, m.branch_id,
-            re.ingestion_run_id as run_id, re.payload ->> 'fetchedAt' as fetched_at, re.adapter_version, prev.cents as replaced_cents
+            re.ingestion_run_id as run_id, re.payload ->> 'fetchedAt' as fetched_at, re.adapter_version, prev.cents as replaced_cents,
+            s.raw_event_id
      from ad_spend_daily s
      join ad_campaigns c on c.id = s.campaign_id
      left join campaign_branch_map m on m.campaign_id = s.campaign_id
@@ -152,9 +183,8 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
   const covered = required.filter((d) => (spendByDate.get(d) ?? 0) > 0);
   const recordedZero = required.filter((d) => spendByDate.has(d) && spendByDate.get(d) === 0);
   const missing = required.filter((d) => !spendByDate.has(d));
-  const misfiled = rows
-    .filter((r) => successors.includes(Number(r.campaign_id)) && Number(r.cost_cents) > 0 && (r.channel_code !== channel || !atBranch(r)))
-    .map((r) => ({ date: r.date, externalCampaignId: r.external_campaign_id, channel: r.channel_code, branchId: r.branch_id, cents: Number(r.cost_cents) }));
+  const misfiledRows = rows.filter((r) => successors.includes(Number(r.campaign_id)) && Number(r.cost_cents) > 0 && (r.channel_code !== channel || !atBranch(r)));
+  const misfiled = misfiledRows.map((r) => ({ date: r.date, externalCampaignId: r.external_campaign_id, channel: r.channel_code, branchId: r.branch_id, cents: Number(r.cost_cents) }));
 
   const coveredSet = new Set(covered);
   const byRun = new Map<string, GapRun>();
@@ -175,6 +205,23 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
   const amountChanges = inChannel
     .filter((r) => coveredSet.has(r.date) && r.replaced_cents !== null && Number(r.replaced_cents) !== Number(r.cost_cents))
     .map((r) => ({ date: r.date, externalCampaignId: r.external_campaign_id, beforeCents: Number(r.replaced_cents), afterCents: Number(r.cost_cents) }));
+  const record = (r: Row): GapDayRecord => ({
+    externalCampaignId: r.external_campaign_id,
+    channel: r.channel_code,
+    branchId: r.branch_id,
+    cents: Number(r.cost_cents),
+    rawEventId: r.raw_event_id === null ? null : Number(r.raw_event_id),
+    runId: r.run_id === null ? null : Number(r.run_id),
+    fetchedAt: r.fetched_at,
+    adapterVersion: r.adapter_version,
+  });
+  const zeroSet = new Set(recordedZero);
+  const days: GapDay[] = required.map((date) => ({
+    date,
+    state: coveredSet.has(date) ? "covered" : zeroSet.has(date) ? "zero" : "missing",
+    records: inChannel.filter((r) => r.date === date).map(record),
+    misfiled: misfiledRows.filter((r) => r.date === date).map(record),
+  }));
   return {
     branchId,
     channel,
@@ -193,6 +240,7 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
     misfiledCents,
     complete: required.length > 0 && covered.length === required.length && misfiled.length === 0,
     amountChanges,
+    days,
   };
 }
 

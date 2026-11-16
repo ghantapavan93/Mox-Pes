@@ -1,0 +1,258 @@
+{
+  "branchId": "B09",
+  "period": "oct",
+  "gate": {
+    "trustworthy": false,
+    "blockers": [
+      {
+        "exceptionId": 5724,
+        "kind": "quarantined_source_records",
+        "summary": "A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts",
+        "revisions": [
+          {
+            "rawEventId": 200033,
+            "campaignId": 8677,
+            "externalCampaignId": "pmax-lsa-B09",
+            "platform": "google_ads",
+            "date": "2026-10-20",
+            "channel": "google_lsa",
+            "errorDetail": "spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only",
+            "refusedFetchedAt": "2026-10-31T13:20:00+00:00",
+            "refusedRunId": 678,
+            "refusedCents": 40000,
+            "acceptedRawEventId": 200027,
+            "acceptedFetchedAt": "2026-10-31T13:10:00+00:00",
+            "acceptedRunId": 677,
+            "acceptedCents": 12091
+          }
+        ]
+      }
+    ]
+  },
+  "overviewHolds": [
+    {
+      "exceptionId": 1063,
+      "branchId": "B20",
+      "kind": "quarantined_source_records",
+      "summary": "119 records from calls quarantined (MISSING_FIELD); 53 new customers lose their lead record",
+      "amountCents": 286100
+    },
+    {
+      "exceptionId": 5724,
+      "branchId": "B09",
+      "kind": "quarantined_source_records",
+      "summary": "A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts",
+      "amountCents": 0
+    }
+  ],
+  "decisionLab": [
+    {
+      "channel": "Google Local Services",
+      "integrity": "fail",
+      "integrityFails": [
+        "#5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed. Until a newer revision is accepted, Google Local Services spend here is not confirmed."
+      ],
+      "readiness": "not_ready",
+      "readinessBlockers": [
+        "Data integrity fails for Google Local Services: the records this decision would rest on are known to be wrong.",
+        "Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ]
+    },
+    {
+      "channel": "Google Search",
+      "integrity": "warn",
+      "integrityFails": [],
+      "readiness": "not_ready",
+      "readinessBlockers": [
+        "Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ]
+    },
+    {
+      "channel": "Meta",
+      "integrity": "pass",
+      "integrityFails": [],
+      "readiness": "not_ready",
+      "readinessBlockers": [
+        "Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ]
+    },
+    {
+      "channel": "Microsoft Ads",
+      "integrity": "pass",
+      "integrityFails": [],
+      "readiness": "not_ready",
+      "readinessBlockers": [
+        "Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ]
+    }
+  ],
+  "verified": [
+    {
+      "channel": "Google Local Services",
+      "state": "NOT_READY",
+      "because": [
+        "Readiness blockers: Data integrity fails for Google Local Services: the records this decision would rest on are known to be wrong. Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed.",
+        "Data integrity fails for this channel."
+      ],
+      "failed": [
+        "readiness: Readiness blockers: Data integrity fails for Google Local Services: the records this decision would rest on are known to be wrong. Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed.",
+        "integrity: Data integrity fails for this channel.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association."
+      ]
+    },
+    {
+      "channel": "Google Search",
+      "state": "NOT_READY",
+      "because": [
+        "Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ],
+      "failed": [
+        "readiness: Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed.",
+        "integrity_warnings: Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association."
+      ]
+    },
+    {
+      "channel": "Meta",
+      "state": "NOT_READY",
+      "because": [
+        "Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ],
+      "failed": [
+        "readiness: Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association."
+      ]
+    },
+    {
+      "channel": "Microsoft Ads",
+      "state": "NOT_READY",
+      "because": [
+        "Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed."
+      ],
+      "failed": [
+        "readiness: Readiness blockers: Blocking incident #5724: A newer revision of Oct 20's Google Local Services spend (pmax-lsa-B09) was refused: it reports 2.5 conversions and the ledger stores whole numbers only. The ledger still counts the earlier $120.91, so Oct 20 is not confirmed.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association."
+      ]
+    }
+  ],
+  "scorecard": {
+    "paidSpendCents": 1664923,
+    "heldCampaignAcquired": 0,
+    "partlyHeldAcquired": 0
+  },
+  "gaps": [
+    {
+      "id": 2455,
+      "state": "verified",
+      "conclusion": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC.",
+      "change": "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services."
+    }
+  ],
+  "ledger": [
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-09-20",
+      "channel_code": "google_search",
+      "cost_cents": "40994",
+      "raw_event_id": "97024",
+      "fetched_at": "2026-09-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-10-20",
+      "channel_code": "google_search",
+      "cost_cents": "29622",
+      "raw_event_id": "173609",
+      "fetched_at": "2026-10-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-10-22",
+      "channel_code": "google_search",
+      "cost_cents": "31390",
+      "raw_event_id": "180782",
+      "fetched_at": "2026-10-24T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-09-20",
+      "channel_code": "google_search",
+      "cost_cents": "13220",
+      "raw_event_id": "97030",
+      "fetched_at": "2026-09-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-10-20",
+      "channel_code": "google_search",
+      "cost_cents": "12107",
+      "raw_event_id": "175985",
+      "fetched_at": "2026-10-22T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-10-22",
+      "channel_code": "google_search",
+      "cost_cents": "14321",
+      "raw_event_id": "180787",
+      "fetched_at": "2026-10-24T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "lsa-B09",
+      "date": "2026-09-20",
+      "channel_code": "google_lsa",
+      "cost_cents": "10578",
+      "raw_event_id": "99593",
+      "fetched_at": "2026-09-22T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "pmax-lsa-B09",
+      "date": "2026-10-20",
+      "channel_code": "google_lsa",
+      "cost_cents": "12091",
+      "raw_event_id": "200027",
+      "fetched_at": "2026-10-31T13:10:00Z"
+    },
+    {
+      "external_campaign_id": "pmax-lsa-B09",
+      "date": "2026-10-22",
+      "channel_code": "google_lsa",
+      "cost_cents": "13203",
+      "raw_event_id": "200029",
+      "fetched_at": "2026-10-31T13:10:00Z"
+    }
+  ],
+  "held": [
+    {
+      "id": "200033",
+      "status": "quarantined",
+      "code": "FRACTIONAL_CONVERSIONS",
+      "entity_id": "google_ads:pmax-lsa-B09:2026-10-20",
+      "fetched_at": "2026-10-31T13:20:00Z",
+      "ingestion_run_id": "678"
+    }
+  ],
+  "incidents": [
+    {
+      "id": "1063",
+      "kind": "quarantined_source_records",
+      "branch_id": "B20",
+      "status": "open",
+      "summary": "119 records from calls quarantined (MISSING_FIELD); 53 new customers lose their lead record"
+    },
+    {
+      "id": "5540",
+      "kind": "quarantined_source_records",
+      "branch_id": null,
+      "status": "resolved",
+      "summary": "1 records from ads quarantined (FRACTIONAL_CONVERSIONS)"
+    },
+    {
+      "id": "5724",
+      "kind": "quarantined_source_records",
+      "branch_id": "B09",
+      "status": "open",
+      "summary": "A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $120.91 still counts"
+    }
+  ]
+}

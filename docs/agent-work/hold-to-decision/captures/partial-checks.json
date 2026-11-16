@@ -1,0 +1,138 @@
+{
+  "state": "partial",
+  "base": "http://localhost:3996",
+  "incident": "2455",
+  "capturedAt": "2026-11-16T12:08:54.566Z",
+  "widths": {
+    "overview-1440": {
+      "file": "partial-overview-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "evidence-1440": {
+      "file": "partial-evidence-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "incident-1440": {
+      "file": "partial-incident-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "lab-1440": {
+      "file": "partial-lab-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "overview-390": {
+      "file": "partial-overview-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "evidence-390": {
+      "file": "partial-evidence-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "incident-390": {
+      "file": "partial-incident-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "lab-390": {
+      "file": "partial-lab-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    }
+  },
+  "zoom200": {
+    "overview": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "evidence": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "incident": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "lab": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    }
+  },
+  "w320": {
+    "overview": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "evidence": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "incident": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "lab": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    }
+  },
+  "foldDesktop": {
+    "viewport": 900,
+    "headline": {
+      "top": 168,
+      "bottom": 196,
+      "text": "Still on hold · 5 of 18 days verified"
+    },
+    "primary": {
+      "top": 366,
+      "bottom": 400,
+      "text": "Open the records for Oct 12–Oct 18"
+    }
+  },
+  "phoneOrder": {
+    "headline": 377,
+    "primary": 755,
+    "impact": 1324,
+    "evidence": 1592,
+    "workflow": 2067,
+    "records": 2964
+  },
+  "evidenceOpen": {
+    "file": "partial-incident-390-evidence-open.jpg",
+    "opened": true,
+    "focusVisible": true,
+    "closed": true,
+    "focusKept": true,
+    "overflow": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    }
+  },
+  "keyboardPrimary": {
+    "text": "Open the records for Oct 12–Oct 18",
+    "visible": true,
+    "outline": "solid"
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "branchId": "B09",
+  "period": "oct",
+  "gate": {
+    "trustworthy": true,
+    "blockers": []
+  },
+  "overviewHolds": [
+    {
+      "exceptionId": 1063,
+      "branchId": "B20",
+      "kind": "quarantined_source_records",
+      "summary": "119 records from calls quarantined (MISSING_FIELD); 53 new customers lose their lead record",
+      "amountCents": 286100
+    }
+  ],
+  "decisionLab": [
+    {
+      "channel": "Google Local Services",
+      "integrity": "warn",
+      "integrityFails": [],
+      "readiness": "ready",
+      "readinessBlockers": []
+    },
+    {
+      "channel": "Google Search",
+      "integrity": "warn",
+      "integrityFails": [],
+      "readiness": "ready",
+      "readinessBlockers": []
+    },
+    {
+      "channel": "Meta",
+      "integrity": "pass",
+      "integrityFails": [],
+      "readiness": "ready",
+      "readinessBlockers": []
+    },
+    {
+      "channel": "Microsoft Ads",
+      "integrity": "pass",
+      "integrityFails": [],
+      "readiness": "ready",
+      "readinessBlockers": []
+    }
+  ],
+  "verified": [
+    {
+      "channel": "Google Local Services",
+      "state": "NEEDS_REVIEW",
+      "because": [
+        "Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not mapped to any branch is excluded from every branch's numbers until someone maps it."
+      ],
+      "failed": [
+        "integrity_warnings: Integrity warnings: #970: Campaign \"B44 | Local Services | Expansion\" has spend but no branch mapping. Google Local Services spend not mapped to any branch is excluded from every branch's numbers until someone maps it.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "complete: 18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ]
+    },
+    {
+      "channel": "Google Search",
+      "state": "NEEDS_REVIEW",
+      "because": [
+        "Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them."
+      ],
+      "failed": [
+        "integrity_warnings: Integrity warnings: 5 customers credited to Google Search (first touch) were signed by a door-to-door rep: commission and media both claim them.",
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "complete: 18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ]
+    },
+    {
+      "channel": "Meta",
+      "state": "READY_WITH_LIMITATIONS",
+      "because": [
+        "No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ],
+      "failed": [
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "complete: 18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ]
+    },
+    {
+      "channel": "Microsoft Ads",
+      "state": "READY_WITH_LIMITATIONS",
+      "because": [
+        "No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ],
+      "failed": [
+        "measured_effect: No experiment measured this channel's effect: the decision rests on attribution, an association.",
+        "complete: 18 paid customer(s) are counted while some of their campaign's spend is held at intake, so the CAC is understated."
+      ]
+    }
+  ],
+  "scorecard": {
+    "paidSpendCents": 1664923,
+    "heldCampaignAcquired": 0,
+    "partlyHeldAcquired": 18
+  },
+  "gaps": [
+    {
+      "id": 2455,
+      "state": "verified",
+      "conclusion": "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified Oct 31, 1:15 PM UTC.",
+      "change": "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services."
+    }
+  ],
+  "ledger": [
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-09-20",
+      "channel_code": "google_search",
+      "cost_cents": "40994",
+      "raw_event_id": "97024",
+      "fetched_at": "2026-09-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-10-20",
+      "channel_code": "google_search",
+      "cost_cents": "29622",
+      "raw_event_id": "173609",
+      "fetched_at": "2026-10-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B09",
+      "date": "2026-10-22",
+      "channel_code": "google_search",
+      "cost_cents": "31390",
+      "raw_event_id": "180782",
+      "fetched_at": "2026-10-24T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-09-20",
+      "channel_code": "google_search",
+      "cost_cents": "13220",
+      "raw_event_id": "97030",
+      "fetched_at": "2026-09-21T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-10-20",
+      "channel_code": "google_search",
+      "cost_cents": "12107",
+      "raw_event_id": "175985",
+      "fetched_at": "2026-10-22T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "gs-B10",
+      "date": "2026-10-22",
+      "channel_code": "google_search",
+      "cost_cents": "14321",
+      "raw_event_id": "180787",
+      "fetched_at": "2026-10-24T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "lsa-B09",
+      "date": "2026-09-20",
+      "channel_code": "google_lsa",
+      "cost_cents": "10578",
+      "raw_event_id": "99593",
+      "fetched_at": "2026-09-22T06:00:00.000Z"
+    },
+    {
+      "external_campaign_id": "pmax-lsa-B09",
+      "date": "2026-10-20",
+      "channel_code": "google_lsa",
+      "cost_cents": "12091",
+      "raw_event_id": "200027",
+      "fetched_at": "2026-10-31T13:10:00Z"
+    },
+    {
+      "external_campaign_id": "pmax-lsa-B09",
+      "date": "2026-10-22",
+      "channel_code": "google_lsa",
+      "cost_cents": "13203",
+      "raw_event_id": "200029",
+      "fetched_at": "2026-10-31T13:10:00Z"
+    }
+  ],
+  "held": [
+    {
+      "id": "200033",
+      "status": "quarantined",
+      "code": "CURRENCY_UNSUPPORTED",
+      "entity_id": "google_lsa:lsa-B09:2026-10-20",
+      "fetched_at": "2026-10-31T13:20:00Z",
+      "ingestion_run_id": "678"
+    }
+  ],
+  "incidents": [
+    {
+      "id": "1063",
+      "kind": "quarantined_source_records",
+      "branch_id": "B20",
+      "status": "open",
+      "summary": "119 records from calls quarantined (MISSING_FIELD); 53 new customers lose their lead record"
+    },
+    {
+      "id": "5540",
+      "kind": "quarantined_source_records",
+      "branch_id": null,
+      "status": "open",
+      "summary": "1 records from ads quarantined (CURRENCY_UNSUPPORTED)"
+    }
+  ]
+}

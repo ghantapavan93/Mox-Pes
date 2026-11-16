@@ -270,3 +270,32 @@ Every step's exit code, the summaries and the pack comparison are in
 **Result: it passed.** The local synthetic demo checkpoint moves from `28e498b` to `d431e9b`,
 build `cVimzqQcl7kG4UNywLQfF` (§4). What stays open is in `BYOF-WORKFLOW.md` §8–§9 (R-58) and
 `SUITE-STABILIZATION.md` §5 (what is left of R-41).
+
+## 9. The hold-to-decision candidate (`718e4aa`), not promoted
+
+Since the checkpoint (`HOLD-TO-DECISION.md`):
+- **R-54's refused-newer-spend case is fixed.** It was reproduced first: on `d431e9b` every view
+  read B09's decision as free.
+- **B09's three states lead with the decision.**
+- **The incident opens on its decision.**
+- **The B09 acceptance runner takes the world past verification**, to a refused revision and its
+  correction.
+
+| Step | `718e4aa`, build `ks0842o0526Xv-eQimWYE` |
+|---|---|
+| `npm run acceptance:b09`, from a fresh worktree | 177 of 177; 0 console or page errors |
+| Unit and integration (vitest) | 951 passed, plus the 1 known expected failure (R-39) |
+| Affected browser specs, on `revenue_signal_rc` | 34 passed. The two incident pixel baselines were updated on purpose (the decision panel moved above the finding), then passed |
+| Typecheck, lint | Pass |
+| The five frozen eval packs; the full browser suite in one run | **Not run** |
+
+**Result: a candidate.** The promotion gate (§2, §8) needs the full regression in one run, which
+was not run. `d431e9b` stays the accepted local synthetic demo checkpoint.
+
+**What the full regression would settle:**
+- **The eval packs.** Migration 0034 changes which branch a refused ads record is filed under,
+  and drops refusals a counted revision superseded. The demo world has no ads quarantine, so its
+  outputs cannot move. Several held-out scenarios do have ads quarantines, and only the packs
+  show whether any is a refused newer revision.
+- **The full browser suite.**
+

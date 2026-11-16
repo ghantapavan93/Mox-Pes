@@ -1,0 +1,138 @@
+{
+  "state": "refused",
+  "base": "http://localhost:3998",
+  "incident": "5540",
+  "capturedAt": "2026-11-16T12:09:52.658Z",
+  "widths": {
+    "overview-1440": {
+      "file": "refused-overview-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "evidence-1440": {
+      "file": "refused-evidence-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "incident-1440": {
+      "file": "refused-incident-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "lab-1440": {
+      "file": "refused-lab-1440.jpg",
+      "scrollWidth": 1440,
+      "innerWidth": 1440,
+      "overflows": false
+    },
+    "overview-390": {
+      "file": "refused-overview-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "evidence-390": {
+      "file": "refused-evidence-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "incident-390": {
+      "file": "refused-incident-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    },
+    "lab-390": {
+      "file": "refused-lab-390.jpg",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    }
+  },
+  "zoom200": {
+    "overview": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "evidence": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "incident": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    },
+    "lab": {
+      "scrollWidth": 720,
+      "innerWidth": 720,
+      "overflows": false
+    }
+  },
+  "w320": {
+    "overview": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "evidence": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "incident": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    },
+    "lab": {
+      "scrollWidth": 320,
+      "innerWidth": 320,
+      "overflows": false
+    }
+  },
+  "foldDesktop": {
+    "viewport": 900,
+    "headline": {
+      "top": 168,
+      "bottom": 196,
+      "text": "Hold the budget decision"
+    },
+    "primary": {
+      "top": 330,
+      "bottom": 364,
+      "text": "Open the records for Oct 19–Oct 25"
+    }
+  },
+  "phoneOrder": {
+    "headline": 377,
+    "primary": 719,
+    "impact": 1168,
+    "evidence": 1436,
+    "workflow": 1824,
+    "records": 2721
+  },
+  "evidenceOpen": {
+    "file": "refused-incident-390-evidence-open.jpg",
+    "opened": true,
+    "focusVisible": true,
+    "closed": true,
+    "focusKept": true,
+    "overflow": {
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "overflows": false
+    }
+  },
+  "keyboardPrimary": {
+    "text": "Open the records for Oct 19–Oct 25",
+    "visible": true,
+    "outline": "solid"
+  }
+}

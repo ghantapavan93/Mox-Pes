@@ -1,0 +1,163 @@
+Full regression of 60cb483 in the worktree C:/Temp/rso-rc (C:/Temp/rc-verify.sh phase1, phase2), 2026-11-15.
+Each step's exit code and duration as logged; the summary lines of vitest, the seed and the browser suite;
+the eval packs compared with the accepted checkpoint's run (28e498b) by C:/Temp/rc-compare-28e498b.py;
+the browser suite's one failure; then the browser suite run again on the same build (C:/Temp/rc-e2e-rerun.sh).
+
+## phase1
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP install
+=== END install rc=0 seconds=37
+=== STEP migrate-empty
+Applied 33 migration(s).
+=== END migrate-empty rc=0 seconds=2
+=== STEP build
+=== END build rc=0 seconds=17
+=== STEP build-id
+G9Bf3P9KDbzRlLWzydKQc=== END build-id rc=0 seconds=0
+=== ALL DONE
+
+## phase2, run 1
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP build-id
+G9Bf3P9KDbzRlLWzydKQc=== END build-id rc=0 seconds=0
+=== STEP typecheck
+=== END typecheck rc=0 seconds=7
+=== STEP lint
+=== END lint rc=0 seconds=26
+=== STEP vitest
+=== END vitest rc=0 seconds=845
+=== STEP seed
+=== END seed rc=0 seconds=57
+=== STEP eval-ai
+=== END eval-ai rc=0 seconds=15
+=== STEP investigator-heldout
+=== END investigator-heldout rc=0 seconds=67
+=== STEP changeguard-heldout
+=== END changeguard-heldout rc=0 seconds=52
+=== STEP vp-acceptance
+=== END vp-acceptance rc=0 seconds=46
+=== STEP shadow-acceptance
+=== END shadow-acceptance rc=0 seconds=35
+=== STEP e2e
+=== END e2e rc=1 seconds=1661
+=== ALL DONE
+
+## summaries, run 1
+ Test Files  79 passed (79)
+      Tests  940 passed | 1 expected fail (941)
+      5 [seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined
+      1 seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined
+  1 failed
+  1 skipped
+  2 did not run
+  122 passed (27.6m)
+
+## eval packs against 28e498b
+[log] eval-ai: 23 vs 23 lines, 7 diff lines
+--- 28e498b
++++ 60cb483
+@@ -4,3 +4,3 @@
+ PASS  duplicate-events                     tools 100.0% recall / 100.0% precision · evidence 100.0% · _
+-(node:17012) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
++(node:23980) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+ (Use `node --trace-deprecation ...` to show where the warning was created)
+[log] investigator-heldout: 63 vs 63 lines, IDENTICAL
+[log] changeguard-heldout: 51 vs 51 lines, IDENTICAL
+[log] vp-acceptance: 32 vs 32 lines, IDENTICAL
+[log] shadow-acceptance: 14 vs 14 lines, IDENTICAL
+[json] investigator: 11854 vs 11854 lines, IDENTICAL
+[json] changeguard: 4637 vs 4637 lines, IDENTICAL
+[json] vp: 2765 vs 2765 lines, 7 diff lines
+--- 28e498b
++++ 60cb483
+@@ -4,3 +4,3 @@
+   "code": {
+-   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "commit": "60cb483261ab280a7b331add209d0a58610c8621",
+    "dirty": false
+[json] shadow: 2382 vs 2382 lines, 7 diff lines
+--- 28e498b
++++ 60cb483
+@@ -4,3 +4,3 @@
+   "code": {
+-   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "commit": "60cb483261ab280a7b331add209d0a58610c8621",
+    "dirty": false
+compare exit=1 (any difference exits 1; the differences above are the recorded commit and a process id)
+
+## browser suite, run 1: the one failure (trace kept at C:/Temp/rc-e2e-60cb483-run1/)
+  1) [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:323:5 › stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves 
+    Error: expect(locator).toBeFocused() failed
+    Locator:  getByTestId('stale-conflict').visible()
+    Expected: focused
+    Received: inactive
+    Timeout:  5000ms
+    Call log:
+      - Expect "toBeFocused" getByTestId('stale-conflict').visible() with timeout 5000ms
+      - waiting for getByTestId('stale-conflict').visible()
+        14 × locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">…</div>
+           - unexpected value "inactive"
+      339 |   const conflict = shown(page, "stale-conflict");
+      340 |   await expect(conflict).toContainText("Not saved: newer evidence arrived");
+    > 341 |   await expect(conflict).toBeFocused();
+          |                          ^
+      342 |   await expect(form.getByTestId("decision-rationale")).toHaveValue(note);
+      343 |   await expect(page).toHaveURL(/\?since=\d+$/);
+      344 |   await expect(shown(page, "since-check")).toContainText("one more lead");
+        at C:\Temp\rso-rc\tests\e2e\zzzzzz-drift-review.spec.ts:341:26
+Did not run: the two tests after it in that serial file (zzzzzz-drift-review.spec.ts:363 and :397).
+
+## browser suite, run 2 (the same build, reseeded by the suite's own setup; C:/Temp/rc-e2e-rerun.sh)
+=== STEP e2e: env CI=1 VISUAL=1 npx playwright test --reporter=line at 60cb483 Lint skips the evidence harnesses kept with the acceptance runs
+=== END e2e rc=1 seconds=1642
+  2 failed
+  1 skipped
+  4 did not run
+  119 passed (27.3m)
+The two failures (their traces were cleared by the next run; the logged errors follow):
+  1) [chromium] › tests\e2e\golden-path.spec.ts:31:7 › investigate → replay → verify › an engineer dry-runs; the panel cannot commit; the fix applies through approval, once 
+    Error: expect(locator).toContainText(expected) failed
+    Locator: getByTestId('replay-panel').getByTestId('replay-result')
+    Expected substring: "Dry run — nothing was saved"
+    Timeout: 5000ms
+    Error: element(s) not found
+    Call log:
+      - Expect "toContainText" getByTestId('replay-panel').getByTestId('replay-result') with timeout 5000ms
+      - waiting for getByTestId('replay-panel').getByTestId('replay-result')
+      38 |
+      39 |     await panel.getByRole("button", { name: "Dry run (rolled back)" }).click();
+    > 40 |     await expect(panel.getByTestId("replay-result")).toContainText("Dry run — nothing was saved");
+         |                                                      ^
+      41 |     await expect(panel.getByTestId("replay-result")).toContainText("still quarantined 0");
+      42 |     await expect(panel.getByTestId("replay-preview-note")).toBeVisible();
+      43 |     await expect(panel.getByRole("button", { name: /^Replay \d+ records$/ })).toHaveCount(0);
+        at C:\Temp\rso-rc\tests\e2e\golden-path.spec.ts:40:54
+  2) [chromium] › tests\e2e\golden-path.spec.ts:111:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged 
+    Error: expect(locator).toContainText(expected) failed
+    Locator: getByTestId('replay-panel').getByTestId('replay-result')
+    Expected substring: "Dry run — nothing was saved"
+    Timeout: 5000ms
+    Error: element(s) not found
+    Call log:
+      - Expect "toContainText" getByTestId('replay-panel').getByTestId('replay-result') with timeout 5000ms
+      - waiting for getByTestId('replay-panel').getByTestId('replay-result')
+      116 |     const panel = page.getByTestId("replay-panel");
+      117 |     await panel.getByRole("button", { name: "Dry run (rolled back)" }).click();
+    > 118 |     await expect(panel.getByTestId("replay-result")).toContainText("Dry run — nothing was saved");
+          |                                                      ^
+      119 |     await expect(panel.getByRole("button", { name: /^Re-map \d+ records$/ })).toHaveCount(0);
+      120 |
+      121 |     await fixThroughActionCenter(page, {
+        at C:\Temp\rso-rc\tests\e2e\golden-path.spec.ts:118:54
+Did not run: the four tests after golden-path.spec.ts:31 in its serial describe (:62, :69, :80, :92).
+Each test that failed or did not run in one full run passed in the other.
+
+## the two spec files that failed, alone, twice (C:/Temp/rc-e2e-alone.sh)
+=== STEP alone-1: golden-path.spec.ts and zzzzzz-drift-review.spec.ts at 60cb483 Lint skips the evidence harnesses kept with the acceptance runs
+  14 passed (2.8m)
+=== END alone-1 rc=0 seconds=170
+=== STEP alone-2: golden-path.spec.ts and zzzzzz-drift-review.spec.ts at 60cb483 Lint skips the evidence harnesses kept with the acceptance runs
+  14 passed (3.1m)
+=== END alone-2 rc=0 seconds=187

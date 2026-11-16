@@ -128,6 +128,16 @@ reclassification, a duplicate and stale replays, an independent ledger, and scop
 every denied request with an allowed one. It needs Postgres as above and Playwright's Chromium
 (`npx playwright install chromium`, once). See docs/agent-work/B09-ACCEPTANCE-RUNNER.md.
 
+```bash
+npm run acceptance:byof
+```
+
+Bring your own file from a cold start: on an empty workspace (`revenue_signal_acceptance_byof`,
+migrations only) with its own server (port 3991), a new visitor uploads an unseen synthetic
+Microsoft Ads export through the upload screen. It does so three times: the valid file, the same
+report with a Canadian-dollar account, and the file again. The run checks each result against
+totals frozen before the first upload. See docs/agent-work/BYOF-WORKFLOW.md.
+
 ## Repository map
 
 | Path | What |

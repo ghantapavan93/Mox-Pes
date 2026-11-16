@@ -1,0 +1,256 @@
+
+> moxie-revenue-signal@0.1.0 acceptance:byof
+> tsx tests/acceptance/byof/prepare.ts && playwright test -c tests/acceptance/byof/playwright.config.ts
+
+[migrate] applied 0001_init.sql
+[migrate] applied 0002_attribution_views.sql
+[migrate] applied 0003_channel_classification.sql
+[migrate] applied 0004_identity.sql
+[migrate] applied 0005_connectors.sql
+[migrate] applied 0006_action_center.sql
+[migrate] applied 0007_decision_lab.sql
+[migrate] applied 0008_investigations.sql
+[migrate] applied 0009_organization_and_events.sql
+[migrate] applied 0010_reporting_contract.sql
+[migrate] applied 0011_sync_requests.sql
+[migrate] applied 0012_audit_corrections.sql
+[migrate] applied 0013_onboarding.sql
+[migrate] applied 0014_subjects_and_append_only_audit.sql
+[migrate] applied 0015_cross_brand_crm_identity.sql
+[migrate] applied 0016_opportunity_overrides.sql
+[migrate] applied 0017_config_changes.sql
+[migrate] applied 0018_source_semantics.sql
+[migrate] applied 0019_source_semantics_backfill.sql
+[migrate] applied 0020_currency_rules.sql
+[migrate] applied 0021_inquiries.sql
+[migrate] applied 0022_unambiguous_touch.sql
+[migrate] applied 0023_shadow_checks.sql
+[migrate] applied 0024_one_lead_one_customer.sql
+[migrate] applied 0025_rollout_evaluations.sql
+[migrate] applied 0026_latest_identity_decision.sql
+[migrate] applied 0027_post_release_monitoring.sql
+[migrate] applied 0028_drift_reviews.sql
+[migrate] applied 0029_campaign_platform_match.sql
+[migrate] applied 0030_run_effect.sql
+[migrate] applied 0031_campaign_source_clock.sql
+[migrate] applied 0032_answer_check_brand_scope.sql
+[migrate] applied 0033_shadow_check_named_scope.sql
+[acceptance] revenue_signal_acceptance_byof is empty: migrations only. The server will use port 3991.
+[WebServer] 
+[WebServer] > moxie-revenue-signal@0.1.0 build
+[WebServer] > next build
+[WebServer] 
+[WebServer] ▲ Next.js 16.4.3 (Turbopack)
+[WebServer] ✓ Running next.config.ts took 54ms
+[WebServer] - Cache Components enabled
+[WebServer] - Partial Prefetching enabled
+[WebServer] 
+[WebServer]   Creating an optimized production build ...
+[WebServer] ✓ Compiled successfully in 6.8s
+[WebServer]   Running TypeScript ...
+[WebServer]   Finished TypeScript in 15.6s ...
+[WebServer]   Collecting page data using 15 workers ...
+[WebServer]   Generating static pages using 15 workers (0/49) ...
+[WebServer]   Generating static pages using 15 workers (12/49) 
+[WebServer]   Generating static pages using 15 workers (24/49) 
+[WebServer]   Generating static pages using 15 workers (36/49) 
+[WebServer] ✓ Generating static pages using 15 workers (49/49) in 1770ms
+[WebServer] Turbopack build encountered 3 warnings:
+[WebServer] ./lib/twin/world.ts:48:25
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   46 | ...t: string[] = [];
+[WebServer]   47 | ...lk = (rel: string) => {
+[WebServer] > 48 | ...onst entry of readdirSync(path.join(root, rel), { withFileTypes: true }).sort((a, b) =>...
+[WebServer]      |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   49 | ...t child = `${rel}/${entry.name}`;
+[WebServer]   50 | ...skip(child)) continue;
+[WebServer]   51 | ...entry.isDirectory()) walk(child);
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: fs.readdir(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer] ./lib/twin/world.ts:48:37
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   46 | ...onst out: string[] = [];
+[WebServer]   47 | ...onst walk = (rel: string) => {
+[WebServer] > 48 | ... for (const entry of readdirSync(path.join(root, rel), { withFileTypes: true }).sort((a...
+[WebServer]      |                                     ^^^^^^^^^^^^^^^^^^^^
+[WebServer]   49 | ...   const child = `${rel}/${entry.name}`;
+[WebServer]   50 | ...   if (skip(child)) continue;
+[WebServer]   51 | ...   if (entry.isDirectory()) walk(child);
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer] ./lib/twin/world.ts:52:53
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   50 | ...)) continue;
+[WebServer]   51 | ...rectory()) walk(child);
+[WebServer] > 52 | ...`${child}:${sha256(readFileSync(path.join(root, child), "utf8").replace(/\r\n/g, "\n"))...
+[WebServer]      |                                    ^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   53 | ...
+[WebServer]   54 | ...
+[WebServer]   55 | ...
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer]   Finalizing page optimization ...
+[WebServer] 
+[WebServer] Route (app)
+[WebServer] ┌ ◐ /
+[WebServer] ├ ◐ /_not-found
+[WebServer] ├ ƒ /api/cases/[id]
+[WebServer] ├ ƒ /api/changes
+[WebServer] ├ ƒ /api/changes/[id]
+[WebServer] ├ ƒ /api/changes/[id]/rollout
+[WebServer] ├ ƒ /api/connectors/[id]/compare
+[WebServer] ├ ƒ /api/connectors/[id]/jobs
+[WebServer] ├ ƒ /api/connectors/[id]/sync
+[WebServer] ├ ƒ /api/connectors/faults
+[WebServer] ├ ƒ /api/connectors/jobs/[jobId]
+[WebServer] ├ ƒ /api/currency-rules
+[WebServer] ├ ƒ /api/currency-rules/[id]
+[WebServer] ├ ƒ /api/customers
+[WebServer] ├ ƒ /api/customers/[id]
+[WebServer] ├ ƒ /api/customers/[id]/raw-events/[rawEventId]
+[WebServer] ├ ƒ /api/decisions/experiments
+[WebServer] ├ ƒ /api/decisions/scenarios
+[WebServer] ├ ƒ /api/decisions/verdicts
+[WebServer] ├ ƒ /api/exceptions/[id]/actions
+[WebServer] ├ ƒ /api/exceptions/[id]/review
+[WebServer] ├ ƒ /api/health
+[WebServer] ├ ƒ /api/identity/conflicts
+[WebServer] ├ ƒ /api/identity/conflicts/[id]/decision
+[WebServer] ├ ƒ /api/ingest/[source]
+[WebServer] ├ ƒ /api/inquiries
+[WebServer] ├ ƒ /api/inquiries/[id]
+[WebServer] ├ ƒ /api/investigations
+[WebServer] ├ ƒ /api/investigations/[id]
+[WebServer] ├ ƒ /api/investigations/[id]/evidence
+[WebServer] ├ ƒ /api/metrics
+[WebServer] ├ ƒ /api/metrics/trace
+[WebServer] ├ ƒ /api/mock/fieldroutes/[...path]
+[WebServer] ├ ƒ /api/onboarding/mappings/[id]/decision
+[WebServer] ├ ƒ /api/onboarding/uploads
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/dry-run
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/mappings
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/publish
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/rows
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/values
+[WebServer] ├ ƒ /api/opportunities
+[WebServer] ├ ƒ /api/proposals
+[WebServer] ├ ƒ /api/proposals/[id]
+[WebServer] ├ ƒ /api/reconcile
+[WebServer] ├ ƒ /api/replays
+[WebServer] ├ ƒ /api/role
+[WebServer] ├ ƒ /api/search
+[WebServer] ├ ƒ /api/shadow
+[WebServer] ├ ƒ /api/shadow/[id]
+[WebServer] ├ ◐ /assurance
+[WebServer] ├   /assurance/[id]
+[WebServer] │ └ ◐ /assurance/[id]
+[WebServer] ├ ◐ /audit
+[WebServer] ├   /branches/[id]
+[WebServer] │ └ ◐ /branches/[id]
+[WebServer] ├   /branches/[id]/trace
+[WebServer] │ └ ◐ /branches/[id]/trace
+[WebServer] ├ ◐ /changes
+[WebServer] ├   /changes/[id]
+[WebServer] │ └ ◐ /changes/[id]
+[WebServer] ├   /changes/[id]/checks/[runId]
+[WebServer] │ └ ◐ /changes/[id]/checks/[runId]
+[WebServer] ├ ◐ /customers
+[WebServer] ├   /customers/[id]
+[WebServer] │ └ ◐ /customers/[id]
+[WebServer] ├ ◐ /decisions
+[WebServer] ├ ◐ /decisions/opportunities
+[WebServer] ├ ◐ /definitions
+[WebServer] ├ ◐ /demo
+[WebServer] ├ ◐ /exceptions
+[WebServer] ├   /exceptions/[id]
+[WebServer] │ └ ◐ /exceptions/[id]
+[WebServer] ├ ◐ /feedback
+[WebServer] ├ ◐ /integrations
+[WebServer] ├   /integrations/jobs/[id]
+[WebServer] │ └ ◐ /integrations/jobs/[id]
+[WebServer] ├ ◐ /investigator
+[WebServer] ├   /investigator/[id]
+[WebServer] │ └ ◐ /investigator/[id]
+[WebServer] ├   /investigator/inquiries/[id]
+[WebServer] │ └ ◐ /investigator/inquiries/[id]
+[WebServer] ├ ◐ /onboarding
+[WebServer] └   /onboarding/[id]
+[WebServer]   └ ◐ /onboarding/[id]
+[WebServer] 
+[WebServer] 
+[WebServer] ƒ Proxy (Middleware)
+[WebServer] 
+[WebServer] ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+[WebServer] ƒ  (Dynamic)            server-rendered on demand
+[WebServer] 
+[WebServer] 
+[WebServer] > moxie-revenue-signal@0.1.0 start
+[WebServer] > next start -p 3991
+[WebServer] 
+[WebServer] ▲ Next.js 16.4.3
+[WebServer] - Local:         http://localhost:3991
+[WebServer] - Network:       http://<lan address>:3991
+[WebServer] ✓ Ready in 476ms
+[WebServer] ✓ Running next.config.ts took 61ms
+
+Running 1 test using 1 worker
+
+[acceptance] 50 of 50 checks passed at 284c46e (build 8b9Fw8DITX42aG_CxRoUT); record: test-results\acceptance-byof\results.json
+  ok 1 [chromium] › tests\acceptance\byof\byof-proof.spec.ts:174:5 › a cold start brings its own Microsoft Ads export: the valid file, a currency problem, then the same file again (22.2s)
+
+  1 passed (57.1s)

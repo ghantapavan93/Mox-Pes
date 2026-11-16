@@ -1,0 +1,11 @@
+=== 2026-11-16T03:55:17Z the worktree C:/Temp/rso-byof2
+60cb483261ab280a7b331add209d0a58610c8621
+tracked files changed: 0; .next present: no; node_modules present: no
+demo database: max run 675, raw events 134088, uploads 0, audit rows 208
+=== step 1: npm ci
+npm ci exit=0 seconds=31
+=== step 2: npx playwright install chromium
+exit=0 seconds=3
+=== 2026-11-16T03:55:52Z step 3: npm run acceptance:byof
+npm run acceptance:byof exit=0 seconds=61
+demo database: max run 675, raw events 134088, uploads 0, audit rows 208

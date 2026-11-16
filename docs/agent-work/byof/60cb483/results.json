@@ -1,0 +1,586 @@
+{
+  "proof": "Bring-your-own-file workflow (docs/agent-work/BYOF-WORKFLOW.md); scripted, not a person",
+  "sha": "60cb483261ab280a7b331add209d0a58610c8621",
+  "trackedChanges": [],
+  "command": "npm run acceptance:byof",
+  "build": "IIsMZ-6l2DwuPHZDTA3Kj",
+  "server": "http://localhost:3991",
+  "database": "revenue_signal_acceptance_byof",
+  "node": "v22.14.0",
+  "started": "2026-11-16T03:56:30.162Z",
+  "finished": "2026-11-16T03:56:51.236Z",
+  "summary": {
+    "checks": 54,
+    "passed": 54,
+    "failed": 0,
+    "consoleOrPageErrors": 0
+  },
+  "failed": [],
+  "checks": [
+    {
+      "stage": "setup",
+      "name": "microsoft-ads-daily.csv is the frozen file (sha256)",
+      "ok": true,
+      "detail": "7027e2c5b426403e1f08ced4cc277d1a4bdf559bf8ceeea067432d346a7dcd18"
+    },
+    {
+      "stage": "setup",
+      "name": "microsoft-ads-daily-two-accounts.csv is the frozen file (sha256)",
+      "ok": true,
+      "detail": "ce89b6e6361288cb98fda48d62e26507c7c6866eb1fb4d1edc8d909cde0a0df7"
+    },
+    {
+      "stage": "setup",
+      "name": "the workspace is empty: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "setup",
+      "name": "no upload exists yet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "cold start",
+      "name": "the Overview's navigation leads to Data onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "cold start",
+      "name": "as a guest, the page says which roles may upload",
+      "ok": true,
+      "detail": "Systems Data onboarding Data onboarding synthetic data only Bring an export the system has never seen. It is profiled, its columns are matched to business meanings with the evidence shown, ambiguous meanings are put to you as questions, and every row is checked with the same rules a live feed meets."
+    },
+    {
+      "stage": "cold start",
+      "name": "after choosing Marketing analyst in the header, the upload form is there",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "valid",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "valid",
+      "name": "the file's Currency code column was mapped without the user touching it",
+      "ok": true,
+      "detail": "{\"platform\":null,\"account_id\":\"Account number\",\"campaign_id\":\"Campaign ID\",\"campaign_name\":\"Campaign name\",\"date\":null,\"cost\":\"Spend\",\"clicks\":\"Clicks\",\"conversions\":\"Conversions\",\"currency\":\"Currency code\"}"
+    },
+    {
+      "stage": "valid",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"See the 42 rows behind this result\"]"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "valid",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "valid",
+      "name": "the step rail does not show a comparison with an empty ledger as done",
+      "ok": true,
+      "detail": " run · Done 42 new · 2 held back 5. Independent approval · Waiting Waiting for a role other than marketing (an approver) 6. Reconcile with ledger · Nothing compared The ledger holds none of these rows"
+    },
+    {
+      "stage": "valid",
+      "name": "the stored dry run: 42 valid rows, $3,548.80",
+      "ok": true,
+      "detail": "{\"id\":1,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"TEXT_LINE\",\"n\":1}]}"
+    },
+    {
+      "stage": "valid",
+      "name": "no data row was refused: only the report's Total row and copyright line were left out",
+      "ok": true,
+      "detail": "[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"TEXT_LINE\",\"n\":1}]"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Li"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen says the file added nothing to the ledger",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "valid",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": true,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/1\",\"back\":\"microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 20\"}"
+    },
+    {
+      "stage": "valid",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "valid",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": true,
+      "detail": "Data onboarding microsoft-ads-daily.csv Upload #1 · Marketing analyst · all branches microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 i"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the file's Currency code column was mapped without the user touching it",
+      "ok": true,
+      "detail": "{\"platform\":null,\"account_id\":\"Account number\",\"campaign_id\":\"Campaign ID\",\"campaign_name\":\"Campaign name\",\"date\":\"Gregorian date\",\"cost\":\"Spend\",\"clicks\":\"Clicks\",\"conversions\":\"Conversions\",\"currency\":\"Currency code\"}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing "
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"Review the 14 rows not counted\"]"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing "
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the step rail does not show a comparison with an empty ledger as done",
+      "ok": true,
+      "detail": "run · Done 28 new · 16 held back 5. Independent approval · Waiting Waiting for a role other than marketing (an approver) 6. Reconcile with ledger · Nothing compared The ledger holds none of these rows"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the stored dry run counts only the 28 US-dollar rows: $2,674.02",
+      "ok": true,
+      "detail": "{\"id\":2,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":28,\"quarantined\":14,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"2 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":267402,\"notInLedgerRows\":28,\"matchedFileCents\":0,\"notInLedgerCents\":267402,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":28},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":28},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"TEXT_LINE\",\"n\":1},{\"dispo"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen states the US-dollar total $2,674.02, never $3,548.80 (Canadian dollars summed as US)",
+      "ok": true,
+      "detail": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen says the 14 Canadian-dollar rows were not counted",
+      "ok": true,
+      "detail": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen never says every row passed while rows were not counted",
+      "ok": true,
+      "detail": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": true,
+      "detail": "{\"rowsShown\":14,\"url\":\"/onboarding/2\",\"back\":\"microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct \"}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": true,
+      "detail": "Data onboarding microsoft-ads-daily-two-accounts.csv Upload #2 · Marketing analyst · all branches microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12"
+    },
+    {
+      "stage": "duplicate",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the file's Currency code column was mapped without the user touching it",
+      "ok": true,
+      "detail": "{\"platform\":null,\"account_id\":\"Account number\",\"campaign_id\":\"Campaign ID\",\"campaign_name\":\"Campaign name\",\"date\":\"Gregorian date\",\"cost\":\"Spend\",\"clicks\":\"Clicks\",\"conversions\":\"Conversions\",\"currency\":\"Currency code\"}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"See the 42 rows behind this result\"]"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "duplicate",
+      "name": "the step rail does not show a comparison with an empty ledger as done",
+      "ok": true,
+      "detail": " run · Done 42 new · 2 held back 5. Independent approval · Waiting Waiting for a role other than marketing (an approver) 6. Reconcile with ledger · Nothing compared The ledger holds none of these rows"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the stored dry run: 42 valid rows, $3,548.80",
+      "ok": true,
+      "detail": "{\"id\":3,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"TEXT_LINE\",\"n\":1}]}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no data row was refused: only the report's Total row and copyright line were left out",
+      "ok": true,
+      "detail": "[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"TEXT_LINE\",\"n\":1}]"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Li"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen says the file added nothing to the ledger",
+      "ok": true,
+      "detail": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "duplicate",
+      "name": "the duplicate upload gives the same result as the first upload of the file",
+      "ok": true,
+      "detail": "{\"first\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"again\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0}}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "nothing adds the two uploads together (no $7,097.60 anywhere)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "duplicate",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": true,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/3\",\"back\":\"microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 20\"}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "duplicate",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": true,
+      "detail": "Data onboarding microsoft-ads-daily.csv Upload #3 · Marketing analyst · all branches microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 i"
+    },
+    {
+      "stage": "errors",
+      "name": "no console or page errors",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "errors": [],
+  "record": {
+    "ledgerBefore": {
+      "rawEvents": 0,
+      "spendDays": 0,
+      "campaigns": 0,
+      "leads": 0,
+      "payments": 0
+    },
+    "valid": {
+      "uploadId": 1,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": null,
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions",
+          "currency": "Currency code"
+        }
+      },
+      "firstScreen": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer. See the 42 rows behind this result The file's profile, the mapping and every row's outcome are below. 1 . Upload · Done CSV · 44 rows 2 . Profile · Done 10 columns · 2 warnings 3 . Map meanings · Done Version 1 · proposed 4 . Dry run · Done 42 new · 2 held back 5 . Independent approval · Waiting Waiting for a role other than marketing (an approver) 6 . Reconcile with ledger · Nothing compared The ledger holds none of these rows What is in the file Every row was profiled; nothing was sampled. Personal columns show shapes and counts, never values. Rows 44 Columns 10 Encoding utf-8 Delimiter , Worksheet n/a Exact duplicate rows 0 2 things the file did that a person should know 8 line(s) above the header (a report title or date range) were skipped Row 55 has 1 cells; the header has 10 Column Looks like Filled Distinct Findings Values (shape or top values) Account name text · personal 100% 3 none Aa+ Aa+ Aa Aa+",
+      "primaryActions": [
+        "See the 42 rows behind this result"
+      ],
+      "dryRun": {
+        "id": 1,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 42,
+          "quarantined": 0,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "3 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 354880,
+          "notInLedgerRows": 42,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 354880,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 42
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 42
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "TEXT_LINE",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "validPhone": {
+      "text": "Data onboarding microsoft-ads-daily.csv Upload #1 · Marketing analyst · all branches microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer. See the 42 rows behind this result The file's profile, the mapping and every row's outcome are below.",
+      "overflow": 0
+    },
+    "twoAccounts": {
+      "uploadId": 2,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": "Gregorian date",
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions",
+          "currency": "Currency code"
+        }
+      },
+      "firstScreen": "microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: 14 rows were not counted: they are stated in CAD, and only US dollars are summed. Nothing is converted. Review the 14 rows not counted The file's profile, the mapping and every row's outcome are below. 1 . Upload · Done CSV · 44 rows 2 . Profile · Done 10 columns · 2 warnings 3 . Map meanings · Done Version 1 · proposed 4 . Dry run · Done 28 new · 16 held back 5 . Independent approval · Waiting Waiting for a role other than marketing (an approver) 6 . Reconcile with ledger · Nothing compared The ledger holds none of these rows What is in the file Every row was profiled; nothing was sampled. Personal columns show shapes and counts, never values. Rows 44 Columns 10 Encoding utf-8 Delimiter , Worksheet n/a Exact duplicate rows 0 2 things the file did that a person should know 8 line(s) above the header (a report title or date range) were skipped Row 55 has 1 cells; the header has 10 Column Looks like Filled Distinct Findings Values (shape or top values) Account name text · personal 100% 4 none Aa+ Aa+ Aa Aa+ Aa+ Aa (Aa+)",
+      "primaryActions": [
+        "Review the 14 rows not counted"
+      ],
+      "dryRun": {
+        "id": 2,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 28,
+          "quarantined": 14,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "2 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 267402,
+          "notInLedgerRows": 28,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 267402,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 28
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 28
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "TEXT_LINE",
+            "n": 1
+          },
+          {
+            "disposition": "quarantined",
+            "code": "CURRENCY_UNSUPPORTED",
+            "n": 14
+          }
+        ]
+      }
+    },
+    "twoAccountsPhone": {
+      "text": "Data onboarding microsoft-ads-daily-two-accounts.csv Upload #2 · Marketing analyst · all branches microsoft-ads-daily-two-accounts.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 28 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $2,674.02 in US dollars. 2 campaigns in account B0123456. The 28 counted rows passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: 14 rows were not counted: they are stated in CAD, and only US dollars are summed. Nothing is converted. Review the 14 rows not counted The file's profile, the mapping and every row's outcome are below.",
+      "overflow": 0
+    },
+    "duplicate": {
+      "uploadId": 3,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": "Gregorian date",
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions",
+          "currency": "Currency code"
+        }
+      },
+      "firstScreen": "microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer. See the 42 rows behind this result The file's profile, the mapping and every row's outcome are below. 1 . Upload · Done CSV · 44 rows 2 . Profile · Done 10 columns · 2 warnings 3 . Map meanings · Done Version 1 · proposed 4 . Dry run · Done 42 new · 2 held back 5 . Independent approval · Waiting Waiting for a role other than marketing (an approver) 6 . Reconcile with ledger · Nothing compared The ledger holds none of these rows What is in the file Every row was profiled; nothing was sampled. Personal columns show shapes and counts, never values. Rows 44 Columns 10 Encoding utf-8 Delimiter , Worksheet n/a Exact duplicate rows 0 2 things the file did that a person should know 8 line(s) above the header (a report title or date range) were skipped Row 55 has 1 cells; the header has 10 Column Looks like Filled Distinct Findings Values (shape or top values) Account name text · personal 100% 3 none Aa+ Aa+ Aa Aa+",
+      "primaryActions": [
+        "See the 42 rows behind this result"
+      ],
+      "dryRun": {
+        "id": 3,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 42,
+          "quarantined": 0,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "3 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 354880,
+          "notInLedgerRows": 42,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 354880,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 42
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 42
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "TEXT_LINE",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "duplicateNamed": false,
+    "duplicatePhone": {
+      "text": "Data onboarding microsoft-ads-daily.csv Upload #3 · Marketing analyst · all branches microsoft-ads-daily.csv staged synthetic Staged until Nov 17, 3:56 AM UTC . Nothing in this file has touched the ledger . Result compare only 42 campaign-days of Microsoft Ads spend, Oct 12–Oct 25, 2026: $3,548.80 in US dollars. 3 campaigns in account B0123456. Every row passed the checks the live feed applies. The ledger holds none of them, so nothing was compared. Nothing was added to the ledger. 2 lines of the file are not records (a report total, a title or footer line) and were left out. Limitation: Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer. See the 42 rows behind this result The file's profile, the mapping and every row's outcome are below.",
+      "overflow": 0
+    }
+  }
+}

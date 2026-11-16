@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Evidence harnesses: the exact scripts an acceptance run used, kept as records, not as code.
     "docs/agent-work/**/harness/**",
+    // Private research, git-ignored: never part of a checkout, so never part of its lint.
+    "research/**",
   ]),
 ]);
 

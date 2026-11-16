@@ -4,8 +4,9 @@ import path from "node:path";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import type { Pool } from "pg";
 import { createPool } from "@/lib/db";
+import { correctionsOf, revisionsOf, type RefusedRevision } from "@/lib/reconcile/refused-revisions";
 import { setRole, type Role } from "../../e2e/action-center";
-import { deliver, type Delivery, type Step } from "./deliveries";
+import { deliver, type Delivery, type RevisionStep, type Step } from "./deliveries";
 import { acceptanceDatabaseName, acceptanceDatabaseUrl, acceptanceOut, acceptancePort, REPO } from "./env";
 import { expectedOutcomes, ledgerChecks, worldFacts, type Check, type States, type WorldFacts } from "./ledger";
 
@@ -32,6 +33,8 @@ const STEPS: Step[] = ["partial", "rest", "duplicate", "older", "stale"];
 const checks: Check[] = [];
 const errors: Array<{ stage: string; url: string; text: string }> = [];
 const deliveries = {} as Record<Step, Delivery>;
+const revisionDeliveries: Partial<Record<RevisionStep, Delivery>> = {};
+const revisionFacts: Partial<Record<RevisionStep, WorldFacts>> = {};
 const facts = {} as Record<States, WorldFacts>;
 let stage = "setup";
 
@@ -52,15 +55,19 @@ function watch(page: Page) {
   page.on("pageerror", (e) => errors.push({ stage, url: page.url().replace(BASE, ""), text: `pageerror: ${String(e.message).slice(0, 400)}` }));
 }
 
-/** What each state must say on each view (B09-CROSS-VIEW.md), as the release walkthrough checked it. */
+/**
+ * What each state must say on each view (B09-CROSS-VIEW.md; the headlines since 2026-11-16,
+ * HOLD-TO-DECISION.md §1.5): the decision first, then why.
+ */
 function expected(gap: number) {
   return {
     missing: {
-      overview: ["Decision held. None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09."],
+      overview: ["Hold the budget decision. A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one."],
       window: "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend, this week's included. The decision stays held.",
       trace: "No day of this week has a spend record for Google Local Services at B09. That is no record, not $0.",
       incident: [
-        "Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.",
+        "Hold the budget decision",
+        "A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.",
         "Since Oct 13, $2,123.52 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services.",
       ],
       lab: ["Not ready", `Blocking incident #${gap}`],
@@ -68,32 +75,36 @@ function expected(gap: number) {
     partial: {
       overview: [
         "Google Local Services spend at B09 stopped after Oct 12; since then only Oct 26–Oct 30 have any.",
-        "Decision still held. 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none.",
+        "Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.",
       ],
       window: "This week's dates in the decision window are covered, but the window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services spend. The decision stays held.",
       trace: "All 5 days have a spend record: $597.17 in all.",
       incident: [
-        "Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none.",
+        "Still on hold · 5 of 18 days verified",
+        "Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.",
         "Originally $2,123.52 was filed as Google Search. Now $597.17 (Oct 26–Oct 30) is filed as Google Local Services; $1,526.35 (Oct 13–Oct 25) is still filed as Google Search.",
       ],
       lab: ["Not ready", "5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds."],
     },
     verified: {
       overview: [
-        "Coverage hold cleared. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
-        "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services.",
+        "Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
+        "$2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
       ],
       window: "The decision window (Oct 13–Oct 30) has Google Local Services spend on all 18 dates, verified",
       trace: "All 5 days have a spend record: $597.17 in all.",
       incident: [
-        "Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
-        "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services.",
+        "Coverage hold cleared · 18 of 18 days verified",
+        "All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09, verified",
+        "$2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
+        "B09's paid media spend in Oct 1–30, 2026 (UTC) stayed $16,649.23.",
+        "No budget change was approved.",
       ],
       lab: [
         "Ready for review",
         "Nothing here approves a budget change.",
-        `Coverage hold cleared, incident #${gap}.`,
-        "Reclassified, not added: the $2,123.52 first filed as Google Search is now filed as Google Local Services.",
+        `Coverage hold cleared · 18 of 18 days verified, incident #${gap}.`,
+        "$2,123.52 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.",
         "Other checks need review: 2 of 4 channels.",
         "It is not an approval",
       ],
@@ -144,7 +155,92 @@ async function views(page: Page, gap: number, state: "missing" | "partial" | "ve
     check("Decision Lab says nothing is approved", !/\bapproved\b/i.test(lab.replace("It is not an approval", "")), lab);
     const other = await textOf(page, '[data-testid="readiness-other-checks"]');
     check("Decision Lab names the two review items: #970 and the door-to-door conflicts", /#970/.test(other) && /has spend but no branch mapping/.test(other) && /door-to-door/i.test(other), other);
+    check("Decision Lab gives each review item's whole reason, never cut short", !other.includes("…") && /until someone maps it\./.test(other), other);
   }
+}
+
+/** The quarantine incidents of refused ad spend records, with what each holds (HOLD-TO-DECISION.md). */
+async function revisionHolds(pool: Pool) {
+  const { rows } = await pool.query<{ id: string; branch_id: string | null; status: string; summary: string; resolution: string | null; evidence: Record<string, unknown> }>(
+    "select id, branch_id, status, summary, resolution, evidence from exceptions where kind = 'quarantined_source_records' and evidence ->> 'source' = 'ads' order by id",
+  );
+  return rows.map((r) => ({ id: Number(r.id), branchId: r.branch_id, status: r.status, summary: r.summary, resolution: r.resolution, revisions: revisionsOf(r.evidence) as RefusedRevision[], corrections: correctionsOf(r.evidence) }));
+}
+
+/**
+ * One refused-revision state across the four views. `hold` is the incident that holds B09's
+ * October decision; `dayLabel` and `counted` the held date and the amount still counted; `refused`
+ * what the refused revision said, which must never read as counted.
+ */
+async function revisionViews(page: Page, gap: number, h: { hold: number; day: string; dayLabel: string; counted: string; refused: string; code: string; reason: string; week: string; weekLabel: string }) {
+  const ctx = `period=oct&channel=google_lsa&week=${h.week}`;
+  // Overview: the decision first, in the holding incident's words, then the coverage hold that cleared.
+  await page.goto(`/?period=oct&branch=B09&channel=google_lsa&week=${h.week}#movement`);
+  await visible(page, '[data-testid="movement-trust"]').waitFor({ timeout: 60_000 });
+  const trust = await textOf(page, '[data-testid="movement-trust"]');
+  check(
+    `Overview says: Hold the budget decision, held by #${h.hold} on ${h.dayLabel}`,
+    trust.startsWith(`Hold the budget decision. Incident #${h.hold} holds it: A newer revision of pmax-lsa-B09's spend on ${h.dayLabel} was refused (${h.code}); the earlier ${h.counted} still counts.`),
+    trust,
+  );
+  check("Overview keeps the cleared coverage hold apart from the held decision", trust.includes("Coverage hold cleared · 18 of 18 days verified.") && !/\bready\b|approved/i.test(trust), trust);
+  check(`Overview's status link opens incident #${h.hold} at its decision`, (await visible(page, '[data-testid="movement-status-link"]').getAttribute("href")) === `/exceptions/${h.hold}?period=oct#recovery`);
+  await page.goto("/?period=oct");
+  const row = visible(page, '[data-testid="decision-holds"]').locator("li", { hasText: `incident #${h.hold}` });
+  await row.first().waitFor({ timeout: 60_000 });
+  const rowText = (await row.first().innerText()).replace(/\s+/g, " ");
+  check(`Overview's holds list names B09's refused revision (#${h.hold})`, /B09/.test(rowText) && rowText.includes("Spend revision refused") && rowText.includes(`the earlier ${h.counted} still counts`), rowText);
+
+  // Daily evidence: the held day shows the counted amount, the refused revision as refused, and the hold.
+  await page.goto(`/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=${h.week}`);
+  await visible(page, '[data-testid="overview-selection"]').waitFor({ timeout: 60_000 });
+  const refusedNote = await textOf(page, '[data-testid="selection-refused"]');
+  check(
+    "daily evidence says the held date rests on an earlier revision, and the decision is held",
+    refusedNote === `${h.dayLabel} rests on an earlier revision: the source sent a newer one and intake refused it, so the amount shown is the one still counted, and the budget decision that reads it is held (incident #${h.hold}).`,
+    refusedNote,
+  );
+  const dayRow = visible(page, `[data-testid="overview-selection"] tr[data-day="${h.day}"]`);
+  const dayText = (await dayRow.innerText()).replace(/\s+/g, " ");
+  check(
+    `daily evidence: ${h.dayLabel} shows ${h.counted} counted and ${h.refused} only as refused, never $0.00`,
+    (await dayRow.getAttribute("data-refused")) === "true" && dayText.includes(h.counted) && dayText.includes("counted · newer revision refused") && dayText.includes("Refused, not counted") && dayText.includes(`said ${h.refused}`) && !dayText.includes("$0.00"),
+    dayText,
+  );
+  check("daily evidence: one primary action, the hold", (await visible(page, '[data-testid="selection-hold-link"]').getAttribute("href")) === `/exceptions/${h.hold}?${ctx}#recovery`);
+
+  // Incident: the decision, why, one next action; the refused amount only in the details.
+  await page.goto(`/exceptions/${h.hold}?${ctx}#recovery`);
+  await visible(page, '[data-testid="revision-hold"]').waitFor({ timeout: 60_000 });
+  check("incident: held", (await visible(page, '[data-testid="revision-hold"]').getAttribute("data-state")) === "held");
+  const headline = await textOf(page, '[data-testid="hold-headline"]');
+  const reason = await textOf(page, '[data-testid="hold-reason"]');
+  check("incident's headline: Hold the budget decision", headline === "Hold the budget decision", headline);
+  check(
+    `incident says why: ${h.dayLabel} refused, ${h.counted} still counts, October held`,
+    reason === `A newer revision of ${h.dayLabel}'s Google Local Services spend (pmax-lsa-B09) was refused: ${h.reason}. The ledger still counts the earlier ${h.counted}, so ${h.dayLabel} is not confirmed. B09's October budget decision is held until a newer revision is accepted.` && !reason.includes(h.refused),
+    reason,
+  );
+  check(
+    `incident's one next action opens the records for ${h.weekLabel}`,
+    (await visible(page, '[data-testid="hold-records"]').getAttribute("href")) === `/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=${h.week}#selection` && (await textOf(page, '[data-testid="hold-records"]')) === `Open the records for ${h.weekLabel}`,
+  );
+  const impact = await textOf(page, '[data-testid="incident-impact"]');
+  check("incident: on hold for October, the counted amount beside it", impact.includes("On hold for October") && impact.includes(h.counted), impact);
+
+  // Decision Lab: not ready, the whole reason, the cleared coverage hold apart from it.
+  await page.goto(`/decisions?branch=B09&${ctx}`);
+  await visible(page, '[data-testid="readiness-summary"]').waitFor({ timeout: 60_000 });
+  const lab = await textOf(page, '[data-testid="readiness-summary"]');
+  check("Decision Lab: Not ready, never 'Ready for review'", (await visible(page, '[data-testid="readiness-summary"]').getAttribute("data-state")) === "not_ready" && lab.startsWith("Not ready") && !lab.includes("Ready for review"), lab);
+  check(
+    `Decision Lab gives the whole reason for #${h.hold}`,
+    lab.includes(`Blocking incident #${h.hold}: A newer revision of ${h.dayLabel}'s Google Local Services spend (pmax-lsa-B09) was refused: ${h.reason}. The ledger still counts the earlier ${h.counted}, so ${h.dayLabel} is not confirmed.`),
+    lab,
+  );
+  check("Decision Lab keeps the cleared coverage hold apart", lab.includes(`Coverage hold cleared · 18 of 18 days verified, incident #${gap}.`), lab);
+  const links = await page.locator('[data-testid="readiness-summary"] [data-testid="readiness-incident-link"]').evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  check(`Decision Lab's first action opens incident #${h.hold}`, links[0] === `/exceptions/${h.hold}?${ctx}#recovery`, links);
 }
 
 /** A run's row on the ingestion pipeline, by column header (headers are CSS-uppercased: read textContent). */
@@ -263,6 +359,7 @@ test("B09 acceptance: missing → partial hold → verified reclassification, re
   let ledger: Awaited<ReturnType<typeof ledgerChecks>> | null = null;
   let scoped: Awaited<ReturnType<typeof scope>> | null = null;
   let gap = 0;
+  const holds = { oct20: 0, oct22: 0, company: [] as number[] };
   try {
     watch(page);
     await setRole(page, "marketing");
@@ -353,6 +450,188 @@ test("B09 acceptance: missing → partial hold → verified reclassification, re
       scoped = await scope(browser, pool, gap, deliveries.rest.runId);
     });
 
+
+    await test.step("refused: a newer Oct 20 revision intake refuses holds B09's October decision on every view", async () => {
+      stage = "refused";
+      const before = await worldFacts(pool, gap);
+      revisionDeliveries.refused = await deliver(pool, "refused");
+      const after = await worldFacts(pool, gap);
+      revisionFacts.refused = after;
+      const [hold] = (await revisionHolds(pool)).filter((x) => x.status === "open");
+      check("the ledger keeps the counted revision: every accepted spend day is identical, row for row", same(after.acceptedSpend, before.acceptedSpend), { before: before.acceptedSpend.md5, after: after.acceptedSpend.md5 });
+      check("B09's money, customers and cash are unchanged", same(after.b09, before.b09), after.b09);
+      const oct20 = after.acceptedSpend.successor.find((d) => d.date === "2026-10-20");
+      check("Oct 20 still counts $120.91, as Google Local Services", oct20?.cents === 12_091 && oct20.channel === "google_lsa", oct20);
+      check(
+        "one hold at B09 names the refused revision ($400.00) beside the amount that stands ($120.91)",
+        !!hold && hold.branchId === "B09" && hold.revisions.length === 1 && hold.revisions[0].refusedCents === 40_000 && hold.revisions[0].acceptedCents === 12_091 && hold.revisions[0].refusedRunId === revisionDeliveries.refused.runId,
+        hold,
+      );
+      holds.oct20 = hold?.id ?? 0;
+      await revisionViews(page, gap, { hold: holds.oct20, day: "2026-10-20", dayLabel: "Oct 20", counted: "$120.91", refused: "$400.00", code: "FRACTIONAL_CONVERSIONS", reason: "it reports 2.5 conversions and the ledger stores whole numbers only", week: "2026-10-19", weekLabel: "Oct 19–Oct 25" });
+    });
+
+    await test.step("while held: an exact duplicate, an older revision and a re-send of the counted one change nothing", async () => {
+      stage = "while-held";
+      const held = await revisionHolds(pool);
+      for (const s of ["refusedAgain", "olderWhileHeld", "acceptedAgain"] as const) {
+        revisionDeliveries[s] = await deliver(pool, s);
+        const now = await worldFacts(pool, gap);
+        revisionFacts[s] = now;
+        check(`${s}: the accepted spend evidence is identical, row for row`, same(now.acceptedSpend, revisionFacts.refused!.acceptedSpend), { refused: revisionFacts.refused!.acceptedSpend.md5, [s]: now.acceptedSpend.md5 });
+        check(`${s}: the same hold, the same revision, still open; no second hold`, same(await revisionHolds(pool), held), await revisionHolds(pool));
+      }
+    });
+
+    await test.step("a second refusal (Oct 22, billed in CAD) is its own hold", async () => {
+      stage = "refused-other";
+      revisionDeliveries.refusedOther = await deliver(pool, "refusedOther");
+      const open = (await revisionHolds(pool)).filter((x) => x.status === "open");
+      const other = open.find((x) => x.id !== holds.oct20);
+      check(
+        "two holds at B09: Oct 20 (fractional conversions) and Oct 22 (CAD)",
+        open.length === 2 && other?.branchId === "B09" && other.revisions[0]?.date === "2026-10-22" && other.summary === "A newer revision of pmax-lsa-B09's spend on Oct 22 was refused (CURRENCY_UNSUPPORTED); the earlier $132.03 still counts",
+        open,
+      );
+      holds.oct22 = other?.id ?? 0;
+    });
+
+    await test.step("corrected: Oct 20's newer accepted revision lifts its own hold and names the delivery; Oct 22's stays", async () => {
+      stage = "corrected";
+      // A page open before the correction, then refreshed: it shows the evidence as it is now.
+      await page.goto(`/decisions?branch=B09&${CTX}`);
+      await visible(page, '[data-testid="readiness-summary"]').waitFor({ timeout: 60_000 });
+      const beforeLab = await textOf(page, '[data-testid="readiness-summary"]');
+      check("before the correction, Decision Lab names both holds", beforeLab.includes(`Blocking incident #${holds.oct20}`) && beforeLab.includes(`Blocking incident #${holds.oct22}`), beforeLab);
+      revisionDeliveries.corrected = await deliver(pool, "corrected");
+      const corrected = await worldFacts(pool, gap);
+      revisionFacts.corrected = corrected;
+      await page.reload();
+      await visible(page, '[data-testid="readiness-summary"]').waitFor({ timeout: 60_000 });
+      const lab = await textOf(page, '[data-testid="readiness-summary"]');
+      check("refreshed, Decision Lab drops the lifted hold and keeps the other: still Not ready", lab.startsWith("Not ready") && !lab.includes(`Blocking incident #${holds.oct20}`) && lab.includes(`Blocking incident #${holds.oct22}`), lab);
+
+      const all = await revisionHolds(pool);
+      const lifted = all.find((x) => x.id === holds.oct20);
+      const run = revisionDeliveries.corrected.runId;
+      check(
+        `#${holds.oct20} is resolved, and its resolution names run #${run} and the amount before and after`,
+        lifted?.status === "resolved" && lifted.resolution === `Corrected. Oct 20: ingestion run #${run} accepted a newer revision (fetched Oct 31, 1:30 PM UTC): $120.91 became $400.00.`,
+        lifted,
+      );
+      check(`#${holds.oct22} is still open`, all.find((x) => x.id === holds.oct22)?.status === "open");
+      const oct20 = corrected.acceptedSpend.successor.find((d) => d.date === "2026-10-20");
+      check(
+        "Oct 20 now counts $400.00; B09's paid spend moved by exactly +$279.09",
+        oct20?.cents === 40_000 && corrected.b09.paidSpendCents - revisionFacts.refused!.b09.paidSpendCents === 27_909,
+        { oct20, before: revisionFacts.refused!.b09.paidSpendCents, after: corrected.b09.paidSpendCents },
+      );
+
+      await page.goto(`/exceptions/${holds.oct20}?${CTX}#recovery`);
+      await visible(page, '[data-testid="revision-hold"]').waitFor({ timeout: 60_000 });
+      check("the lifted hold's page says so", (await visible(page, '[data-testid="revision-hold"]').getAttribute("data-state")) === "lifted" && (await textOf(page, '[data-testid="hold-headline"]')) === "Hold lifted · a newer revision was accepted");
+      const reason = await textOf(page, '[data-testid="hold-reason"]');
+      check(
+        "the lifted hold shows before and after, and the branch's total now",
+        reason.includes(`Oct 20: ingestion run #${run} accepted a newer revision (fetched Oct 31, 1:30 PM UTC): $120.91 became $400.00.`) && reason.includes("B09's paid media spend in Oct 1–30, 2026 (UTC) is now $16,928.32, +$279.09 against the amount counted before it."),
+        reason,
+      );
+      check("the lifted hold's next action is decision readiness", (await visible(page, '[data-testid="hold-decisions"]').getAttribute("href")) === `/decisions?branch=B09&${CTX}#readiness`);
+      // The correcting delivery, one click away for a company-wide role: the details, opened by keyboard.
+      const summary = visible(page, '[data-testid="hold-details"] > summary');
+      await summary.focus();
+      await page.keyboard.press("Enter");
+      const opened = await visible(page, '[data-testid="hold-details"]').evaluate((d) => (d as HTMLDetailsElement).open);
+      const runHref = await visible(page, '[data-testid="hold-correction-run"]').getAttribute("href");
+      const focusVisible = await summary.evaluate((el) => document.activeElement === el && el.matches(":focus-visible"));
+      check("Revision details open by keyboard, with visible focus, and link the correcting run", opened && focusVisible && runHref === `/integrations?view=pipeline&run=${run}#run-${run}`, { opened, focusVisible, runHref });
+      await page.keyboard.press("Enter");
+      const closed = await visible(page, '[data-testid="hold-details"]').evaluate((d) => !(d as HTMLDetailsElement).open);
+      const stillFocused = await summary.evaluate((el) => document.activeElement === el);
+      check("closing them by keyboard keeps focus where it was", closed && stillFocused, { closed, stillFocused });
+
+      await page.goto(`/exceptions/${gap}?${CTX}#recovery`);
+      await visible(page, '[data-testid="gap-recovery"]').waitFor({ timeout: 60_000 });
+      const recovery = await textOf(page, "#recovery");
+      check(
+        "the coverage gap is still cleared, but no longer 'reclassified, not added': an amount changed",
+        recovery.includes("Coverage hold cleared · 18 of 18 days verified") && recovery.includes("Amounts changed: Oct 20: $120.91 became $400.00.") && !/reclassified, not added/i.test(recovery),
+        recovery,
+      );
+      check(`the coverage gap's page says the decision is still held by #${holds.oct22}`, recovery.includes(`The budget decision is still held by #${holds.oct22}.`), recovery);
+
+      // The Overview follows the remaining hold.
+      await page.goto("/?period=oct&branch=B09&channel=google_lsa&week=2026-10-19#movement");
+      await visible(page, '[data-testid="movement-trust"]').waitFor({ timeout: 60_000 });
+      const trust = await textOf(page, '[data-testid="movement-trust"]');
+      check(
+        `Overview now names #${holds.oct22}, Oct 22`,
+        trust.startsWith(`Hold the budget decision. Incident #${holds.oct22} holds it: A newer revision of pmax-lsa-B09's spend on Oct 22 was refused (CURRENCY_UNSUPPORTED); the earlier $132.03 still counts.`),
+        trust,
+      );
+    });
+
+    await test.step("Back keeps the scope: Decision Lab → hold → records → Back → Back", async () => {
+      stage = "back";
+      await page.goto(`/decisions?branch=B09&${CTX}`);
+      await visible(page, '[data-testid="readiness-incident-link"]').click();
+      await visible(page, '[data-testid="revision-hold"]').waitFor({ timeout: 60_000 });
+      const incidentUrl = page.url().replace(BASE, "");
+      await visible(page, '[data-testid="hold-records"]').click();
+      await visible(page, '[data-testid="overview-selection"]').waitFor({ timeout: 60_000 });
+      const recordsUrl = page.url().replace(BASE, "");
+      await page.goBack();
+      await visible(page, '[data-testid="revision-hold"]').waitFor({ timeout: 60_000 });
+      const back1 = page.url().replace(BASE, "");
+      await page.goBack();
+      await visible(page, '[data-testid="readiness-summary"]').waitFor({ timeout: 60_000 });
+      const back2 = page.url().replace(BASE, "");
+      check(
+        "the hold opens with branch, channel, period and week, and the records keep them",
+        incidentUrl === `/exceptions/${holds.oct22}?${CTX}#recovery` && recordsUrl === "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19#selection",
+        { incidentUrl, recordsUrl },
+      );
+      check("Back returns to the hold, then to Decision Lab with the same scope", back1 === incidentUrl && back2 === `/decisions?branch=B09&${CTX}`, { back1, back2 });
+    });
+
+    await test.step("ambiguous: refused records naming no mapped campaign, or no campaign, hold no branch", async () => {
+      stage = "ambiguous";
+      const b09 = (await revisionHolds(pool)).filter((x) => x.branchId === "B09" && x.status === "open").map((x) => x.id);
+      for (const s of ["unmapped", "unidentified"] as const) revisionDeliveries[s] = await deliver(pool, s);
+      const all = await revisionHolds(pool);
+      const company = all.filter((x) => x.branchId === null && x.status === "open");
+      check("B09's holds are unchanged; the new records hold no branch", same(all.filter((x) => x.branchId === "B09" && x.status === "open").map((x) => x.id), b09) && company.length === 2, all);
+      holds.company = company.map((x) => x.id);
+      await page.goto(`/exceptions/${holds.company[0]}?period=oct`);
+      await visible(page, '[data-testid="unattributed-spend"]').waitFor({ timeout: 60_000 });
+      const callout = await textOf(page, '[data-testid="unattributed-spend"]');
+      check(
+        "the company-level incident says what cannot be verified, and that no rule decides it",
+        callout.includes("Which branch's decision these affect cannot be verified") && callout.includes("No branch's budget decision is held by this incident. Whether records like these should hold one has not been decided."),
+        callout,
+      );
+      const impact = await textOf(page, '[data-testid="incident-impact"]');
+      check("its budget-decision tile says it holds none", impact.includes("Holds no branch's decision"), impact);
+    });
+
+    await test.step("scope: the holds are denied outside B09's scope, paired with the analyst's allowed read", async () => {
+      stage = "revision-scope";
+      const markers = ["pmax-lsa-B09", "$120.91", "$132.03", "$400.00", "B09 Coral"];
+      const routes = [`/exceptions/${holds.oct22}?period=oct`, `/exceptions/${holds.oct20}?period=oct`, `/exceptions/${holds.company[0]}?period=oct`, "/branches/B09/trace?period=oct&metric=paid_spend&channel=google_lsa&week=2026-10-19", "/decisions?branch=B09&period=oct"];
+      for (const role of ["marketing", "partner", "brand"] as Role[]) {
+        const context = await browser.newContext({ baseURL: BASE });
+        const p = await context.newPage();
+        await setRole(p, role);
+        for (const route of routes) {
+          const body = await (await p.request.get(route, { maxRedirects: 0 })).text();
+          const seen = markers.filter((m) => body.includes(m));
+          if (role === "marketing") check(`the analyst receives the evidence on ${route}`, seen.length > 0, seen);
+          else check(`${role} receives none of it on ${route}`, seen.length === 0, seen);
+        }
+        await context.close();
+      }
+    });
+
     stage = "errors";
     check("no console or page errors in the walk", errors.length === 0, errors);
   } finally {
@@ -377,6 +656,9 @@ test("B09 acceptance: missing → partial hold → verified reclassification, re
       failed,
       gap,
       runs: Object.fromEntries(Object.entries(deliveries).map(([s, d]) => [s, d.runId])),
+      revisionRuns: Object.fromEntries(Object.entries(revisionDeliveries).map(([s, d]) => [s, d!.runId])),
+      holds,
+      revisionFacts,
       checks,
       errors,
       facts,

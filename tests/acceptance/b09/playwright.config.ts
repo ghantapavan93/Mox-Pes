@@ -24,7 +24,9 @@ export default defineConfig({
   timeout: 30 * 60_000,
   outputDir: path.join(OUT, "artifacts"),
   reporter: [["list"], ["json", { outputFile: path.join(OUT, "report.json") }]],
-  use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure", viewport: { width: 1280, height: 800 } },
+  // Bounded waits: an element that never appears fails its check within a minute, instead of
+  // holding the run until the test's 30-minute limit.
+  use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure", viewport: { width: 1280, height: 800 }, actionTimeout: 60_000, navigationTimeout: 120_000 },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } }],
   webServer: {
     command: `npm run build && npm run start -- -p ${PORT}`,

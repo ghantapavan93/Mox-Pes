@@ -1,0 +1,523 @@
+
+> moxie-revenue-signal@0.1.0 acceptance:byof
+> tsx tests/acceptance/byof/prepare.ts && playwright test -c tests/acceptance/byof/playwright.config.ts
+
+[migrate] applied 0001_init.sql
+[migrate] applied 0002_attribution_views.sql
+[migrate] applied 0003_channel_classification.sql
+[migrate] applied 0004_identity.sql
+[migrate] applied 0005_connectors.sql
+[migrate] applied 0006_action_center.sql
+[migrate] applied 0007_decision_lab.sql
+[migrate] applied 0008_investigations.sql
+[migrate] applied 0009_organization_and_events.sql
+[migrate] applied 0010_reporting_contract.sql
+[migrate] applied 0011_sync_requests.sql
+[migrate] applied 0012_audit_corrections.sql
+[migrate] applied 0013_onboarding.sql
+[migrate] applied 0014_subjects_and_append_only_audit.sql
+[migrate] applied 0015_cross_brand_crm_identity.sql
+[migrate] applied 0016_opportunity_overrides.sql
+[migrate] applied 0017_config_changes.sql
+[migrate] applied 0018_source_semantics.sql
+[migrate] applied 0019_source_semantics_backfill.sql
+[migrate] applied 0020_currency_rules.sql
+[migrate] applied 0021_inquiries.sql
+[migrate] applied 0022_unambiguous_touch.sql
+[migrate] applied 0023_shadow_checks.sql
+[migrate] applied 0024_one_lead_one_customer.sql
+[migrate] applied 0025_rollout_evaluations.sql
+[migrate] applied 0026_latest_identity_decision.sql
+[migrate] applied 0027_post_release_monitoring.sql
+[migrate] applied 0028_drift_reviews.sql
+[migrate] applied 0029_campaign_platform_match.sql
+[migrate] applied 0030_run_effect.sql
+[migrate] applied 0031_campaign_source_clock.sql
+[migrate] applied 0032_answer_check_brand_scope.sql
+[migrate] applied 0033_shadow_check_named_scope.sql
+[acceptance] revenue_signal_acceptance_byof is empty: migrations only. The server will use port 3991.
+[WebServer] 
+[WebServer] > moxie-revenue-signal@0.1.0 build
+[WebServer] > next build
+[WebServer] 
+[WebServer] ▲ Next.js 16.4.3 (Turbopack)
+[WebServer] ✓ Running next.config.ts took 142ms
+[WebServer] - Cache Components enabled
+[WebServer] - Partial Prefetching enabled
+[WebServer] 
+[WebServer]   Creating an optimized production build ...
+[WebServer] ✓ Compiled successfully in 3.2s
+[WebServer]   Running TypeScript ...
+[WebServer]   Finished TypeScript in 5.2s ...
+[WebServer]   Collecting page data using 15 workers ...
+[WebServer]   Generating static pages using 15 workers (0/49) ...
+[WebServer]   Generating static pages using 15 workers (12/49) 
+[WebServer]   Generating static pages using 15 workers (24/49) 
+[WebServer]   Generating static pages using 15 workers (36/49) 
+[WebServer] ✓ Generating static pages using 15 workers (49/49) in 1981ms
+[WebServer] Turbopack build encountered 3 warnings:
+[WebServer] ./lib/twin/world.ts:48:25
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   46 | ...t: string[] = [];
+[WebServer]   47 | ...lk = (rel: string) => {
+[WebServer] > 48 | ...onst entry of readdirSync(path.join(root, rel), { withFileTypes: true }).sort((a, b) =>...
+[WebServer]      |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   49 | ...t child = `${rel}/${entry.name}`;
+[WebServer]   50 | ...skip(child)) continue;
+[WebServer]   51 | ...entry.isDirectory()) walk(child);
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: fs.readdir(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer] ./lib/twin/world.ts:48:37
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   46 | ...onst out: string[] = [];
+[WebServer]   47 | ...onst walk = (rel: string) => {
+[WebServer] > 48 | ... for (const entry of readdirSync(path.join(root, rel), { withFileTypes: true }).sort((a...
+[WebServer]      |                                     ^^^^^^^^^^^^^^^^^^^^
+[WebServer]   49 | ...   const child = `${rel}/${entry.name}`;
+[WebServer]   50 | ...   if (skip(child)) continue;
+[WebServer]   51 | ...   if (entry.isDirectory()) walk(child);
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer] ./lib/twin/world.ts:52:53
+[WebServer] Warning: Dynamic filesystem access causes tracing of the whole project
+[WebServer]   50 | ...)) continue;
+[WebServer]   51 | ...rectory()) walk(child);
+[WebServer] > 52 | ...`${child}:${sha256(readFileSync(path.join(root, child), "utf8").replace(/\r\n/g, "\n"))...
+[WebServer]      |                                    ^^^^^^^^^^^^^^^^^^^^^^
+[WebServer]   53 | ...
+[WebServer]   54 | ...
+[WebServer]   55 | ...
+[WebServer] 
+[WebServer] Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+[WebServer] This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+[WebServer] This can slow down deployments or lead to failures when size limits are exceeded.
+[WebServer] To resolve this, you can
+[WebServer] - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+[WebServer] - only use them in development, or
+[WebServer] - opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+[WebServer] - remove them.
+[WebServer] 
+[WebServer] Import traces:
+[WebServer]   App Route:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/api/changes/[id]/rollout/route.ts
+[WebServer] 
+[WebServer]   Server Component:
+[WebServer]     ./lib/twin/world.ts
+[WebServer]     ./app/changes/[id]/page.tsx
+[WebServer] 
+[WebServer] 
+[WebServer]   Finalizing page optimization ...
+[WebServer] 
+[WebServer] Route (app)
+[WebServer] ┌ ◐ /
+[WebServer] ├ ◐ /_not-found
+[WebServer] ├ ƒ /api/cases/[id]
+[WebServer] ├ ƒ /api/changes
+[WebServer] ├ ƒ /api/changes/[id]
+[WebServer] ├ ƒ /api/changes/[id]/rollout
+[WebServer] ├ ƒ /api/connectors/[id]/compare
+[WebServer] ├ ƒ /api/connectors/[id]/jobs
+[WebServer] ├ ƒ /api/connectors/[id]/sync
+[WebServer] ├ ƒ /api/connectors/faults
+[WebServer] ├ ƒ /api/connectors/jobs/[jobId]
+[WebServer] ├ ƒ /api/currency-rules
+[WebServer] ├ ƒ /api/currency-rules/[id]
+[WebServer] ├ ƒ /api/customers
+[WebServer] ├ ƒ /api/customers/[id]
+[WebServer] ├ ƒ /api/customers/[id]/raw-events/[rawEventId]
+[WebServer] ├ ƒ /api/decisions/experiments
+[WebServer] ├ ƒ /api/decisions/scenarios
+[WebServer] ├ ƒ /api/decisions/verdicts
+[WebServer] ├ ƒ /api/exceptions/[id]/actions
+[WebServer] ├ ƒ /api/exceptions/[id]/review
+[WebServer] ├ ƒ /api/health
+[WebServer] ├ ƒ /api/identity/conflicts
+[WebServer] ├ ƒ /api/identity/conflicts/[id]/decision
+[WebServer] ├ ƒ /api/ingest/[source]
+[WebServer] ├ ƒ /api/inquiries
+[WebServer] ├ ƒ /api/inquiries/[id]
+[WebServer] ├ ƒ /api/investigations
+[WebServer] ├ ƒ /api/investigations/[id]
+[WebServer] ├ ƒ /api/investigations/[id]/evidence
+[WebServer] ├ ƒ /api/metrics
+[WebServer] ├ ƒ /api/metrics/trace
+[WebServer] ├ ƒ /api/mock/fieldroutes/[...path]
+[WebServer] ├ ƒ /api/onboarding/mappings/[id]/decision
+[WebServer] ├ ƒ /api/onboarding/uploads
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/dry-run
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/mappings
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/publish
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/rows
+[WebServer] ├ ƒ /api/onboarding/uploads/[id]/values
+[WebServer] ├ ƒ /api/opportunities
+[WebServer] ├ ƒ /api/proposals
+[WebServer] ├ ƒ /api/proposals/[id]
+[WebServer] ├ ƒ /api/reconcile
+[WebServer] ├ ƒ /api/replays
+[WebServer] ├ ƒ /api/role
+[WebServer] ├ ƒ /api/search
+[WebServer] ├ ƒ /api/shadow
+[WebServer] ├ ƒ /api/shadow/[id]
+[WebServer] ├ ◐ /assurance
+[WebServer] ├   /assurance/[id]
+[WebServer] │ └ ◐ /assurance/[id]
+[WebServer] ├ ◐ /audit
+[WebServer] ├   /branches/[id]
+[WebServer] │ └ ◐ /branches/[id]
+[WebServer] ├   /branches/[id]/trace
+[WebServer] │ └ ◐ /branches/[id]/trace
+[WebServer] ├ ◐ /changes
+[WebServer] ├   /changes/[id]
+[WebServer] │ └ ◐ /changes/[id]
+[WebServer] ├   /changes/[id]/checks/[runId]
+[WebServer] │ └ ◐ /changes/[id]/checks/[runId]
+[WebServer] ├ ◐ /customers
+[WebServer] ├   /customers/[id]
+[WebServer] │ └ ◐ /customers/[id]
+[WebServer] ├ ◐ /decisions
+[WebServer] ├ ◐ /decisions/opportunities
+[WebServer] ├ ◐ /definitions
+[WebServer] ├ ◐ /demo
+[WebServer] ├ ◐ /exceptions
+[WebServer] ├   /exceptions/[id]
+[WebServer] │ └ ◐ /exceptions/[id]
+[WebServer] ├ ◐ /feedback
+[WebServer] ├ ◐ /integrations
+[WebServer] ├   /integrations/jobs/[id]
+[WebServer] │ └ ◐ /integrations/jobs/[id]
+[WebServer] ├ ◐ /investigator
+[WebServer] ├   /investigator/[id]
+[WebServer] │ └ ◐ /investigator/[id]
+[WebServer] ├   /investigator/inquiries/[id]
+[WebServer] │ └ ◐ /investigator/inquiries/[id]
+[WebServer] ├ ◐ /onboarding
+[WebServer] └   /onboarding/[id]
+[WebServer]   └ ◐ /onboarding/[id]
+[WebServer] 
+[WebServer] 
+[WebServer] ƒ Proxy (Middleware)
+[WebServer] 
+[WebServer] ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+[WebServer] ƒ  (Dynamic)            server-rendered on demand
+[WebServer] 
+[WebServer] 
+[WebServer] > moxie-revenue-signal@0.1.0 start
+[WebServer] > next start -p 3991
+[WebServer] 
+[WebServer] ▲ Next.js 16.4.3
+[WebServer] - Local:         http://localhost:3991
+[WebServer] - Network:       http://<lan address>:3991
+[WebServer] ✓ Ready in 467ms
+[WebServer] ✓ Running next.config.ts took 65ms
+
+Running 1 test using 1 worker
+
+[acceptance] 33 of 47 checks passed at c33953b (build uSB21OJroVDML6jRkrjlH); record: test-results\acceptance-byof\results.json
+  x  1 [chromium] › tests\acceptance\byof\byof-proof.spec.ts:171:5 › a cold start brings its own Microsoft Ads export: the valid file, a currency problem, then the same file again (21.6s)
+
+
+  1) [chromium] › tests\acceptance\byof\byof-proof.spec.ts:171:5 › a cold start brings its own Microsoft Ads export: the valid file, a currency problem, then the same file again 
+
+    Error: valid · no claim that the file agrees with a ledger that holds none of its rows ("0 differ from the ledger") :: 0 differ from the ledger
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:229:9
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: valid · the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25 :: Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header "Clicks" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header "Conversions" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:235:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: valid · the first screen does not ask the user to correct non-data lines (the Total row, the copyright line) :: Needs correction 2
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:237:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: valid · the rows behind the result open, and Back returns to the result :: {"rowsShown":42,"url":"/onboarding/1","back":"Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required"}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:262:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · no claim that the file agrees with a ledger that holds none of its rows ("0 differ from the ledger") :: 0 differ from the ledger
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:229:9
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · the stored dry run counts only the 28 US-dollar rows: $2,674.02 :: {"id":2,"total":44,"counts":{"invalid":2,"eligible":42,"quarantined":0,"matches_ledger":0,"conflict_in_file":0,"duplicate_in_file":0,"differs_from_ledger":0},"money":{"meaning":"Advertising cost charged by the platform, per campaign per day","ledgerOnly":{"rows":0,"cents":0,"scope":"3 campaign(s), 2026-10-12 to 2026-10-25","examples":[]},"fileTotalCents":354880,"notInLedgerRows":42,"matchedFileCents":0,"notInLedgerCents":354880,"matchedLedgerCents":0,"matchedDifferenceCents":0},"compared":{"differs":0,"matches":0,"eligible":42},"rows":[{"disposition":"eligible","code":null,"n":42},{"disposition":"invalid","code":"RAGGED_ROW","n":1},{"disposition":"invalid","code":"SUMMARY_ROW","n":1}]}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:240:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · the first screen states the US-dollar total $2,674.02, never $3,548.80 (Canadian dollars summed as US) :: Why header "Clicks" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header "Conversions" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:241:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · the first screen says the 14 Canadian-dollar rows were not counted :: Why header "Clicks" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header "Conversions" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:242:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · the rows behind the result open, and Back returns to the result :: {"rowsShown":42,"url":"/onboarding/2","back":"Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · "}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:262:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: twoAccounts · at 390 px: the result's total is on the first screen :: Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:270:9
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: duplicate · no claim that the file agrees with a ledger that holds none of its rows ("0 differ from the ledger") :: 0 differ from the ledger
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:229:9
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: duplicate · the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25 :: Why header "Clicks" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header "Conversions" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:235:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: duplicate · the first screen does not ask the user to correct non-data lines (the Total row, the copyright line) :: Needs correction 2
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:237:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error: duplicate · the rows behind the result open, and Back returns to the result :: {"rowsShown":42,"url":"/onboarding/3","back":"Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · "}
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      42 |   const d = (typeof detail === "string" ? detail : JSON.stringify(detail)).replace(/\s+/g, " ").slice(0, 700);
+      43 |   checks.push({ stage, name, ok, detail: d });
+    > 44 |   expect.soft(ok, `${stage} · ${name} :: ${d}`).toBe(true);
+         |                                                 ^
+      45 | }
+      46 |
+      47 | const usd = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        at check (C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:44:49)
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:262:11
+        at C:\Users\Pavan Kalyan\OneDrive\Documents\Desktop\Moxie pest Control\tests\acceptance\byof\byof-proof.spec.ts:213:7
+
+    Error Context: test-results\acceptance-byof\artifacts\byof-proof-a-cold-start-br-be58b-em-then-the-same-file-again-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\acceptance-byof\artifacts\byof-proof-a-cold-start-br-be58b-em-then-the-same-file-again-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\acceptance-byof\artifacts\byof-proof-a-cold-start-br-be58b-em-then-the-same-file-again-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [chromium] › tests\acceptance\byof\byof-proof.spec.ts:171:5 › a cold start brings its own Microsoft Ads export: the valid file, a currency problem, then the same file again 
+exit=1

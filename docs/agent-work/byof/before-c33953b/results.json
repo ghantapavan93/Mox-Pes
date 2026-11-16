@@ -1,0 +1,624 @@
+{
+  "proof": "Bring-your-own-file workflow (docs/agent-work/BYOF-WORKFLOW.md); scripted, not a person",
+  "sha": "c33953b8031a9802aeff14eab202c5d1e9a2f2c4",
+  "trackedChanges": [
+    "M package.json",
+    " M tests/acceptance/b09/env.ts"
+  ],
+  "command": "npm run acceptance:byof",
+  "build": "uSB21OJroVDML6jRkrjlH",
+  "server": "http://localhost:3991",
+  "database": "revenue_signal_acceptance_byof",
+  "node": "v22.14.0",
+  "started": "2026-11-16T03:26:08.099Z",
+  "finished": "2026-11-16T03:26:28.874Z",
+  "summary": {
+    "checks": 47,
+    "passed": 33,
+    "failed": 14,
+    "consoleOrPageErrors": 0
+  },
+  "failed": [
+    {
+      "stage": "valid",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": false,
+      "detail": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 "
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": false,
+      "detail": "Needs correction 2"
+    },
+    {
+      "stage": "valid",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/1\",\"back\":\"Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required\"}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the stored dry run counts only the 28 US-dollar rows: $2,674.02",
+      "ok": false,
+      "detail": "{\"id\":2,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen states the US-dollar total $2,674.02, never $3,548.80 (Canadian dollars summed as US)",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen says the 14 Canadian-dollar rows were not counted",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/2\",\"back\":\"Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · \"}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": false,
+      "detail": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": false,
+      "detail": "Needs correction 2"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/3\",\"back\":\"Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · \"}"
+    }
+  ],
+  "checks": [
+    {
+      "stage": "setup",
+      "name": "microsoft-ads-daily.csv is the frozen file (sha256)",
+      "ok": true,
+      "detail": "7027e2c5b426403e1f08ced4cc277d1a4bdf559bf8ceeea067432d346a7dcd18"
+    },
+    {
+      "stage": "setup",
+      "name": "microsoft-ads-daily-two-accounts.csv is the frozen file (sha256)",
+      "ok": true,
+      "detail": "ce89b6e6361288cb98fda48d62e26507c7c6866eb1fb4d1edc8d909cde0a0df7"
+    },
+    {
+      "stage": "setup",
+      "name": "the workspace is empty: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "setup",
+      "name": "no upload exists yet",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "cold start",
+      "name": "the Overview's navigation leads to Data onboarding",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "cold start",
+      "name": "as a guest, the page says which roles may upload",
+      "ok": true,
+      "detail": "Systems Data onboarding Data onboarding synthetic data only Bring an export the system has never seen. It is profiled, its columns are matched to business meanings with the evidence shown, ambiguous meanings are put to you as questions, and every row is checked with the same rules a live feed meets."
+    },
+    {
+      "stage": "cold start",
+      "name": "after choosing Marketing analyst in the header, the upload form is there",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "valid",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "valid",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like in"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"Save mapping version and dry-run\"]"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like in"
+    },
+    {
+      "stage": "valid",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "valid",
+      "name": "the stored dry run: 42 valid rows, $3,548.80",
+      "ok": true,
+      "detail": "{\"id\":1,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]}"
+    },
+    {
+      "stage": "valid",
+      "name": "no data row was refused (only the report's Total row and copyright line are not data)",
+      "ok": true,
+      "detail": "[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": false,
+      "detail": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 "
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen says the file added nothing to the ledger",
+      "ok": true,
+      "detail": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like in"
+    },
+    {
+      "stage": "valid",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": false,
+      "detail": "Needs correction 2"
+    },
+    {
+      "stage": "valid",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/1\",\"back\":\"Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required\"}"
+    },
+    {
+      "stage": "valid",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "valid",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": true,
+      "detail": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"Save mapping version and dry-run\"]"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the stored dry run counts only the 28 US-dollar rows: $2,674.02",
+      "ok": false,
+      "detail": "{\"id\":2,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen states the US-dollar total $2,674.02, never $3,548.80 (Canadian dollars summed as US)",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the first screen says the 14 Canadian-dollar rows were not counted",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/2\",\"back\":\"Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · \"}"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "twoAccounts",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": false,
+      "detail": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted"
+    },
+    {
+      "stage": "duplicate",
+      "name": "nothing reached the ledger: no raw events, spend, campaigns, leads or payments",
+      "ok": true,
+      "detail": "{\"rawEvents\":0,\"spendDays\":0,\"campaigns\":0,\"leads\":0,\"payments\":0}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no figure for leads, customers, CAC, ROI or a budget recommendation on the first screen",
+      "ok": true,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen offers exactly one next action",
+      "ok": true,
+      "detail": "[\"Save mapping version and dry-run\"]"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen states a limitation",
+      "ok": true,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no claim that the file agrees with a ledger that holds none of its rows (\"0 differ from the ledger\")",
+      "ok": false,
+      "detail": "0 differ from the ledger"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the stored dry run: 42 valid rows, $3,548.80",
+      "ok": true,
+      "detail": "{\"id\":3,\"total\":44,\"counts\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"money\":{\"meaning\":\"Advertising cost charged by the platform, per campaign per day\",\"ledgerOnly\":{\"rows\":0,\"cents\":0,\"scope\":\"3 campaign(s), 2026-10-12 to 2026-10-25\",\"examples\":[]},\"fileTotalCents\":354880,\"notInLedgerRows\":42,\"matchedFileCents\":0,\"notInLedgerCents\":354880,\"matchedLedgerCents\":0,\"matchedDifferenceCents\":0},\"compared\":{\"differs\":0,\"matches\":0,\"eligible\":42},\"rows\":[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "no data row was refused (only the report's Total row and copyright line are not data)",
+      "ok": true,
+      "detail": "[{\"disposition\":\"eligible\",\"code\":null,\"n\":42},{\"disposition\":\"invalid\",\"code\":\"RAGGED_ROW\",\"n\":1},{\"disposition\":\"invalid\",\"code\":\"SUMMARY_ROW\",\"n\":1}]"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen states the verified conclusion: 42 rows, $3,548.80, Oct 12–Oct 25",
+      "ok": false,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export l"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen says the file added nothing to the ledger",
+      "ok": true,
+      "detail": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the first screen does not ask the user to correct non-data lines (the Total row, the copyright line)",
+      "ok": false,
+      "detail": "Needs correction 2"
+    },
+    {
+      "stage": "duplicate",
+      "name": "the duplicate upload gives the same result as the first upload of the file",
+      "ok": true,
+      "detail": "{\"first\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0},\"again\":{\"invalid\":2,\"eligible\":42,\"quarantined\":0,\"matches_ledger\":0,\"conflict_in_file\":0,\"duplicate_in_file\":0,\"differs_from_ledger\":0}}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "nothing adds the two uploads together (no $7,097.60 anywhere)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "stage": "duplicate",
+      "name": "the rows behind the result open, and Back returns to the result",
+      "ok": false,
+      "detail": "{\"rowsShown\":42,\"url\":\"/onboarding/3\",\"back\":\"Why header \\\"Clicks\\\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · \"}"
+    },
+    {
+      "stage": "duplicate",
+      "name": "at 390 px: no sideways scroll of the page",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "stage": "duplicate",
+      "name": "at 390 px: the result's total is on the first screen",
+      "ok": true,
+      "detail": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted"
+    },
+    {
+      "stage": "errors",
+      "name": "no console or page errors",
+      "ok": true,
+      "detail": "[]"
+    }
+  ],
+  "errors": [],
+  "record": {
+    "ledgerBefore": {
+      "rawEvents": 0,
+      "spendDays": 0,
+      "campaigns": 0,
+      "leads": 0,
+      "payments": 0
+    },
+    "valid": {
+      "uploadId": 1,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": null,
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions"
+        }
+      },
+      "firstScreen": "Clicks required Clicks the platform counted that day Column for Clicks Suggested · high confidence Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export layout v 1 proposed Ad spend by day · proposed by Marketing analyst · all branches rules ae55e38d57c2d9a3 Dry run Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows",
+      "primaryActions": [
+        "Save mapping version and dry-run"
+      ],
+      "dryRun": {
+        "id": 1,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 42,
+          "quarantined": 0,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "3 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 354880,
+          "notInLedgerRows": 42,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 354880,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 42
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 42
+          },
+          {
+            "disposition": "invalid",
+            "code": "RAGGED_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "validPhone": {
+      "text": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows RAGGED_ROW row 1 Row 55 : The row has a different number of cells than the header A delimiter or quote inside a value probably shifted the columns; fix the export Money, reconciled to the cent Advertising cost charged by the platform, per campaign per day . Only facts with the same meaning and grain are compared. File total $3,548.80 = rows the ledger holds (file side) $0.00 + rows the ledger lacks ( 42 ) $3,548.80 Ledger, same rows $0.00 Difference on shared rows $0.00 Ledger records the file lacks ( 3 campaign(s), 2026-10-12 to 2026-10-25 ) 0 · $0.00",
+      "overflow": 0
+    },
+    "twoAccounts": {
+      "uploadId": 2,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": "Gregorian date",
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions"
+        }
+      },
+      "firstScreen": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export layout v 1 proposed Ad spend by day · proposed by Marketing analyst · all branches rules ae55e38d57c2d9a3 Dry run Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows RAGGED_ROW row 1 Row 55 : The row has a different number of cells than the header A delimiter or quote inside a value probably shifted the columns; fix the export",
+      "primaryActions": [
+        "Save mapping version and dry-run"
+      ],
+      "dryRun": {
+        "id": 2,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 42,
+          "quarantined": 0,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "3 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 354880,
+          "notInLedgerRows": 42,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 354880,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 42
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 42
+          },
+          {
+            "disposition": "invalid",
+            "code": "RAGGED_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "twoAccountsPhone": {
+      "text": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows RAGGED_ROW row 1 Row 55 : The row has a different number of cells than the header A delimiter or quote inside a value probably shifted the columns; fix the export Money, reconciled to the cent Advertising cost charged by the platform, per campaign per day . Only facts with the same meaning and grain are compared. File total $3,548.80 = rows the ledger holds (file side) $0.00 + rows the ledger lacks ( 42 ) $3,548.80 Ledger, same rows $0.00 Difference on shared rows $0.00 Ledger records the file lacks ( 3 campaign(s), 2026-10-12 to 2026-10-25 ) 0 · $0.00",
+      "overflow": 0
+    },
+    "duplicate": {
+      "uploadId": 3,
+      "answers": {
+        "suggestedDataset": "ad_spend",
+        "assistant": {
+          "platform": null,
+          "account_id": "Account number",
+          "campaign_id": "Campaign ID",
+          "campaign_name": "Campaign name",
+          "date": "Gregorian date",
+          "cost": "Spend",
+          "clicks": "Clicks",
+          "conversions": "Conversions"
+        }
+      },
+      "firstScreen": "Why header \"Clicks\" is a known name for Clicks values look like integer Platform conversions required Conversions the platform claims; not verified revenue Column for Platform conversions Suggested · high confidence Why header \"Conversions\" is a known name for Platform conversions values look like integer Questions the file cannot answer Dates like 03/04/2026 are month first (March 4) day first (3 April) Report exported at (UTC) Save mapping version and dry-run Mapping versions for this export layout v 1 proposed Ad spend by day · proposed by Marketing analyst · all branches rules ae55e38d57c2d9a3 Dry run Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows RAGGED_ROW row 1 Row 55 : The row has a different number of cells than the header A delimiter or quote inside a value probably shifted the columns; fix the export",
+      "primaryActions": [
+        "Save mapping version and dry-run"
+      ],
+      "dryRun": {
+        "id": 3,
+        "total": 44,
+        "counts": {
+          "invalid": 2,
+          "eligible": 42,
+          "quarantined": 0,
+          "matches_ledger": 0,
+          "conflict_in_file": 0,
+          "duplicate_in_file": 0,
+          "differs_from_ledger": 0
+        },
+        "money": {
+          "meaning": "Advertising cost charged by the platform, per campaign per day",
+          "ledgerOnly": {
+            "rows": 0,
+            "cents": 0,
+            "scope": "3 campaign(s), 2026-10-12 to 2026-10-25",
+            "examples": []
+          },
+          "fileTotalCents": 354880,
+          "notInLedgerRows": 42,
+          "matchedFileCents": 0,
+          "notInLedgerCents": 354880,
+          "matchedLedgerCents": 0,
+          "matchedDifferenceCents": 0
+        },
+        "compared": {
+          "differs": 0,
+          "matches": 0,
+          "eligible": 42
+        },
+        "rows": [
+          {
+            "disposition": "eligible",
+            "code": null,
+            "n": 42
+          },
+          {
+            "disposition": "invalid",
+            "code": "RAGGED_ROW",
+            "n": 1
+          },
+          {
+            "disposition": "invalid",
+            "code": "SUMMARY_ROW",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "duplicateNamed": false,
+    "duplicatePhone": {
+      "text": "Every row compiled to the source's native shape and checked by the deployed mapper, then compared with the ledger. Nothing was written to the ledger. New, eligible 42 Matches ledger 0 Differs from ledger 0 Needs correction 2 Quarantined 0 Duplicate in file 0 Conflict in file 0 Every row is accounted for: 44 rows, 44 dispositions. None was dropped. Issue Field Rows Example What to do SUMMARY_ROW safe to automate row 1 Row 53 : \"Total\" is a report total, not a record Excluded; totals are recomputed from the rows RAGGED_ROW row 1 Row 55 : The row has a different number of cells than the header A delimiter or quote inside a value probably shifted the columns; fix the export Money, reconciled to the cent Advertising cost charged by the platform, per campaign per day . Only facts with the same meaning and grain are compared. File total $3,548.80 = rows the ledger holds (file side) $0.00 + rows the ledger lacks ( 42 ) $3,548.80 Ledger, same rows $0.00 Difference on shared rows $0.00 Ledger records the file lacks ( 3 campaign(s), 2026-10-12 to 2026-10-25 ) 0 · $0.00",
+      "overflow": 0
+    }
+  }
+}

@@ -146,3 +146,40 @@ details > summary::-webkit-details-marker {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* CountUp (components/CountUp.tsx), the one counter: the element's text is the final figure from the
+   first byte. While it counts (until the script sets data-counted) that text is painted transparent
+   and the moving figure is drawn over it from data-display, with an empty alternative text so it never
+   reaches assistive tech. The two holds last three seconds at most: if the script never finishes, the
+   real figure shows by itself. Without scripting, or with reduced motion, none of this applies. */
+.count-up {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+@media screen and (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .count-up:not([data-counted]) > .count-up-value {
+    animation: count-up-hide-text 3s step-end;
+  }
+  .count-up:not([data-counted])::after {
+    content: attr(data-display);
+    content: attr(data-display) / "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    visibility: hidden;
+    animation: count-up-show-figure 3s step-end;
+  }
+}
+@keyframes count-up-hide-text {
+  from,
+  to {
+    color: transparent;
+  }
+}
+@keyframes count-up-show-figure {
+  from,
+  to {
+    visibility: visible;
+  }
+}

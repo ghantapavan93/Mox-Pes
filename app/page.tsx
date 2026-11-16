@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Info } from "lucide-react";
 import { AtRiskSplit } from "@/components/AtRiskSplit";
 import { Bridge } from "@/components/Bridge";
+import { CountUp } from "@/components/CountUp";
 import { StackedWeeks } from "@/components/StackedWeeks";
 import { MovementSectionAsync, MovementSkeleton } from "@/components/overview/MovementSection";
-import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
 import { attentionFlags } from "@/lib/attention";
 import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
@@ -99,29 +100,53 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         eyebrow={`Marketing revenue integrity · ${scopeLabel} · ${period.label}`}
         title="Where did the conversions go?"
         description={
-          <p className="max-w-3xl" data-testid="headline-answer">
-            Ad platforms claimed <strong className="text-text">{count(bridge.platformClaimed)}</strong> conversions. We received{" "}
-            <strong className="text-text">{count(bridge.paidProspects)}</strong> unique paid prospects; <strong className="text-text">{count(bridge.serviced)}</strong> are
-            serviced customers so far. Paid-media CAC is <strong className="text-text">{money(t.paidCacCents)}</strong>{" "}
-            {/* Name the CAC's own denominator: the serviced count above is a different number (UX
-                red team 2026-11-12: spend ÷ the serviced count did not give the CAC shown). */}
-            ({money(t.paidSpendCents, true)} of paid media spend ÷ {count(t.paidAcquired)} new customers whose first evidenced touch was paid).{" "}
+          // The answer leads with its one figure (the 3-second read), the page's one count-up
+          // (docs/design-system.md, behaviour rule 13); the sentence under it says what the figure is and
+          // where to start, and the paragraph after it is the funnel behind it.
+          <div className="max-w-3xl space-y-3" data-testid="headline-answer">
             {t.openExceptions > 0 ? (
-              <>
-                <strong className="text-text">{count(t.openExceptions)}</strong> open exceptions involve{" "}
-                <strong className="text-text">{money(t.atRiskCents)}</strong> of collected revenue
-                <AtRiskSplit untiedCents={t.untiedCents} creditDisputedCents={t.creditDisputedCents} />
-                {flagged.length > 0 && (
-                  <>
-                    {" "}— start with <Link className="font-medium text-accent underline" href={`/branches/${flagged[0].branchId}?period=${period.key}`}>{flagged[0].branchId} {flagged[0].name}</Link>
-                  </>
-                )}
-                .
-              </>
+              <div data-testid="headline-at-risk">
+                <p className="flex flex-wrap items-center gap-x-2">
+                  <CountUp
+                    value={t.atRiskCents / 100}
+                    text={money(t.atRiskCents)}
+                    decimals={Math.abs(t.atRiskCents) >= 100_000 ? 0 : 2}
+                    prefix="$"
+                    className="text-[32px] font-semibold leading-10 tracking-tight text-text"
+                    testId="at-risk-figure"
+                  />{" "}
+                  <Link
+                    href={`/definitions#${metricAnchor("atRisk")}`}
+                    className="inline-flex size-6 items-center justify-center rounded text-faint hover:bg-surface-2 hover:text-accent"
+                    title="Definition: revenue in open exceptions"
+                  >
+                    <Info aria-hidden className="size-3.5" />
+                    <span className="sr-only">Definition of revenue in open exceptions</span>
+                  </Link>
+                </p>
+                <p className="mt-0.5 text-[15px] leading-6 text-text">
+                  of collected revenue is in <strong className="font-semibold">{count(t.openExceptions)}</strong> open exceptions
+                  <AtRiskSplit untiedCents={t.untiedCents} creditDisputedCents={t.creditDisputedCents} />
+                  {flagged.length > 0 && (
+                    <>
+                      {" "}— start with <Link className="font-medium text-accent underline" href={`/branches/${flagged[0].branchId}?period=${period.key}`}>{flagged[0].branchId} {flagged[0].name}</Link>
+                    </>
+                  )}
+                  .
+                </p>
+              </div>
             ) : (
-              <>No open exceptions in scope.</>
+              <p className="text-[15px] leading-6 text-text">No open exceptions in scope.</p>
             )}
-          </p>
+            <p>
+              Ad platforms claimed <strong className="text-text">{count(bridge.platformClaimed)}</strong> conversions. We received{" "}
+              <strong className="text-text">{count(bridge.paidProspects)}</strong> unique paid prospects; <strong className="text-text">{count(bridge.serviced)}</strong> are
+              serviced customers so far. Paid-media CAC is <strong className="text-text">{money(t.paidCacCents)}</strong>{" "}
+              {/* Name the CAC's own denominator: the serviced count above is a different number (UX
+                  red team 2026-11-12: spend ÷ the serviced count did not give the CAC shown). */}
+              ({money(t.paidSpendCents, true)} of paid media spend ÷ {count(t.paidAcquired)} new customers whose first evidenced touch was paid).
+            </p>
+          </div>
         }
         toolbar={
           <>

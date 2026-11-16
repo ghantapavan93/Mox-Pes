@@ -80,30 +80,117 @@ export async function listQueue(db: Queryable, f: QueueFilters): Promise<QueueRo
      left join lateral (
        select * from action_proposals ap where ap.case_id = c.id order by ap.id desc limit 1) p on true
      where ${QUEUE_WHERE}
-     order by case c.state when 'awaiting_approval' then 0 when 'failed' then 1 when 'proposed' then 2 when 'verified' then 3
-                           when 'investigating' then 4 when 'detected' then 5 else 6 end,
-              case e.severity when 'high' then 0 when 'medium' then 1 else 2 end, e.amount_cents desc, c.id
+     order by ${QUEUE_ORDER}
      limit $6 offset $7`,
     [...queueParams(f), f.limit ?? 200, Math.max(f.offset ?? 0, 0)],
   );
-  return rows.map((r) => ({
+  return rows.map(toQueueRow);
+}
+
+/** One row of the queue's select list (listQueue, listQueueGroups). */
+function toQueueRow(r: Record<string, unknown>): QueueRow {
+  return {
     caseId: Number(r.case_id),
-    state: r.state,
-    owner: r.owner ?? null,
+    state: r.state as CaseState,
+    owner: (r.owner as string | null) ?? null,
     reopenCount: Number(r.reopen_count),
-    updatedAt: r.updated_at,
+    updatedAt: r.updated_at as Date,
     exceptionId: Number(r.exception_id),
-    kind: r.kind,
-    severity: r.severity,
-    branchId: r.branch_id ?? null,
-    summary: r.summary,
+    kind: r.kind as string,
+    severity: r.severity as QueueRow["severity"],
+    branchId: (r.branch_id as string | null) ?? null,
+    summary: r.summary as string,
     amountCents: Number(r.amount_cents),
-    exceptionStatus: r.exception_status,
-    firstDetectedAt: r.first_detected_at,
+    exceptionStatus: r.exception_status as string,
+    firstDetectedAt: r.first_detected_at as Date,
     proposal: r.proposal_id
-      ? { id: Number(r.proposal_id), kind: r.proposal_kind, status: r.proposal_status, source: r.proposal_source, proposedRole: r.proposed_role }
+      ? { id: Number(r.proposal_id), kind: r.proposal_kind as ProposalKind, status: r.proposal_status as ProposalStatus, source: r.proposal_source as string, proposedRole: r.proposed_role as string }
       : null,
-  }));
+  };
+}
+
+/** The queue's order, most urgent first: needs someone, then severity, then the amount at stake. */
+const QUEUE_ORDER = `case c.state when 'awaiting_approval' then 0 when 'failed' then 1 when 'proposed' then 2 when 'verified' then 3
+                           when 'investigating' then 4 when 'detected' then 5 else 6 end,
+              case e.severity when 'high' then 0 when 'medium' then 1 else 2 end, e.amount_cents desc, c.id`;
+
+/** One incident type in the grouped queue: every matching case counted, its most urgent cases listed. */
+export interface QueueGroup {
+  kind: string;
+  /** Cases of this type that match the filters. */
+  cases: number;
+  /** Σ of those cases' own amounts: one type's amounts are of one kind (spend or revenue). */
+  amountCents: number;
+  /** The highest severity among them. */
+  severity: "high" | "medium" | "low";
+  /** How many branches they are at (company-level cases count as none). */
+  branches: number;
+  /** The one branch they are all at, when there is exactly one and no company-level case. */
+  branchId: string | null;
+  /** Whether any of them is company-level (no branch). */
+  company: boolean;
+  /** Its most urgent cases, in queue order (at most `perGroup`). */
+  rows: QueueRow[];
+}
+
+/**
+ * The queue grouped by incident type (docs/design-system.md, "Incidents"): for the same filters
+ * as listQueue, each type's count, amount and highest severity, and its first `perGroup` cases in
+ * queue order. Groups come in the order of their most urgent case, so the type that needs someone
+ * first is first. Two reads; the case rows are the ones listQueue would return.
+ */
+export async function listQueueGroups(db: Queryable, f: QueueFilters, perGroup = 5): Promise<QueueGroup[]> {
+  const [totals, top] = await Promise.all([
+    db.query<{ kind: string; n: string; amount: string; severity: "high" | "medium" | "low"; branches: string; branch: string | null; company: boolean }>(
+      `select e.kind, count(*) as n, coalesce(sum(e.amount_cents), 0) as amount,
+              (array_agg(e.severity order by case e.severity when 'high' then 0 when 'medium' then 1 else 2 end))[1] as severity,
+              count(distinct e.branch_id) as branches, min(e.branch_id) as branch, bool_or(e.branch_id is null) as company
+       from cases c join exceptions e on e.id = c.exception_id
+       where ${QUEUE_WHERE}
+       group by e.kind`,
+      queueParams(f),
+    ),
+    db.query(
+      `select * from (
+         select c.id as case_id, c.state, c.owner, c.reopen_count, c.updated_at,
+                e.id as exception_id, e.kind, e.severity, e.branch_id, e.summary, e.amount_cents, e.status as exception_status,
+                e.first_detected_at,
+                p.id as proposal_id, p.kind as proposal_kind, p.status as proposal_status, p.source as proposal_source,
+                p.proposed_role,
+                row_number() over (partition by e.kind order by ${QUEUE_ORDER}) as rank_in_kind,
+                row_number() over (order by ${QUEUE_ORDER}) as rank_overall
+         from cases c
+         join exceptions e on e.id = c.exception_id
+         left join lateral (
+           select * from action_proposals ap where ap.case_id = c.id order by ap.id desc limit 1) p on true
+         where ${QUEUE_WHERE}) ranked
+       where rank_in_kind <= $6
+       order by rank_overall`,
+      [...queueParams(f), perGroup],
+    ),
+  ]);
+  const byKind = new Map(totals.rows.map((r) => [r.kind, r]));
+  const groups = new Map<string, QueueGroup>();
+  for (const r of top.rows) {
+    let g = groups.get(r.kind);
+    if (!g) {
+      const t = byKind.get(r.kind);
+      const branches = Number(t?.branches ?? 0);
+      g = {
+        kind: r.kind,
+        cases: Number(t?.n ?? 0),
+        amountCents: Number(t?.amount ?? 0),
+        severity: t?.severity ?? r.severity,
+        branches,
+        branchId: branches === 1 && !t?.company ? (t?.branch ?? null) : null,
+        company: Boolean(t?.company),
+        rows: [],
+      };
+      groups.set(r.kind, g);
+    }
+    g.rows.push(toQueueRow(r));
+  }
+  return [...groups.values()];
 }
 
 /** Cases per state in scope (every state, zero included, so the counts strip is complete). */

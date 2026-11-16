@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { CaseQueue } from "@/components/actions/CaseQueue";
+import { CaseQueue, CaseQueueGrouped } from "@/components/actions/CaseQueue";
 import { ProposalStatusBadge, SourceBadge } from "@/components/actions/badges";
 import { ButtonLink, Callout, Card, FilterChips, FilterSelect, Forbidden, KpiTile, PageHeader, Pager, Segmented, Skeleton } from "@/components/ui";
 import { KIND_LABEL, count, money } from "@/lib/format";
@@ -11,7 +11,7 @@ import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, VIEWERS, resolveScope, type Viewer } from "@/lib/viewer";
 import { KIND_TITLE } from "@/lib/workflow/kinds";
 import { OWNER_ROLES } from "@/lib/workflow/proposals";
-import { caseStateCounts, countQueue, exceptionsWithoutCase, listQueue, type StateFilter } from "@/lib/workflow/queries";
+import { caseStateCounts, countQueue, exceptionsWithoutCase, listQueue, listQueueGroups, type StateFilter } from "@/lib/workflow/queries";
 import { ACTIVE_STATES, CASE_STATES, CLOSED_STATES, STATE_LABEL, STATE_TONE, isCaseState, type CaseState } from "@/lib/workflow/states";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -68,6 +68,10 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
   const owner = ownerParam === "unassigned" || OWNER_ROLES.some((r) => r === ownerParam) ? ownerParam : undefined;
   const branch = one(sp.branch);
   const page = parsePage(one(sp.page));
+  // The queue reads by incident type unless a type is picked (its own, paged list), the reader asked
+  // for every case in one list (?view=list), or a later page of that list is open.
+  const listView = one(sp.view) === "list";
+  const grouped = !kind && !listView && page === 1;
   let branchIds: string[] | null;
   try {
     branchIds = resolveScope(viewer, branch ?? null);
@@ -78,16 +82,17 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
 
   const pool = getPool();
   const queueFilters = { branchIds, state, severity, kind, owner };
-  const [counts, rows, queueTotal, lane, summary, uncased, highOpen] = await Promise.all([
+  const [counts, rows, groups, queueTotal, lane, summary, uncased, highOpen] = await Promise.all([
     caseStateCounts(pool, branchIds),
-    listQueue(pool, { ...queueFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    grouped ? Promise.resolve([]) : listQueue(pool, { ...queueFilters, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
+    grouped ? listQueueGroups(pool, queueFilters) : Promise.resolve([]),
     countQueue(pool, queueFilters),
     listQueue(pool, { branchIds, state: "awaiting_approval", limit: 12 }),
     exceptionSummary(pool, branchIds),
     exceptionsWithoutCase(pool, branchIds),
     countQueue(pool, { branchIds, state: "active", severity: "high" }),
   ]);
-  const filters = { state: state === "active" ? undefined : state, severity, kind, owner, branch };
+  const filters = { state: state === "active" ? undefined : state, severity, kind, owner, branch, view: listView ? "list" : undefined };
   const href = (patch: Record<string, string | undefined>) => {
     const q = new URLSearchParams();
     for (const [k, v] of Object.entries({ ...filters, ...patch })) if (v) q.set(k, v);
@@ -267,7 +272,23 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
       <Card
         id="queue"
         title={`${stateTitle}${kind ? ` · ${KIND_LABEL[kind]}` : ""}${branch && branchIds ? ` · ${branchIds.join(", ")}` : ""} (${count(queueTotal)})`}
-        subtitle="What needs someone comes first: awaiting approval, failed, proposed; then by severity and revenue at stake."
+        subtitle={
+          grouped
+            ? "By incident type: the type that needs someone first is on top, and each type opens to its most urgent cases. A type's amount adds up its own cases only, all spend or all revenue."
+            : "What needs someone comes first: awaiting approval, failed, proposed; then by severity and revenue at stake."
+        }
+        action={
+          kind ? undefined : (
+            <Segmented
+              label="Queue view"
+              testId="queue-view"
+              items={[
+                { href: href({ view: undefined, page: undefined }), label: "By type", current: grouped },
+                { href: href({ view: "list", page: undefined }), label: "All cases", current: !grouped },
+              ]}
+            />
+          )
+        }
         flush
       >
         <form
@@ -281,6 +302,7 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
           <FilterSelect name="branch" label="Branch" value={branch ?? ""} options={[["", viewer.branchIds ? "My branches" : "All"], ...branchOptions.map((b) => [b.id, `${b.id} ${b.name}`] as [string, string])]} />
           <FilterSelect name="kind" label="Type" value={kind ?? ""} options={[["", "Any"], ...Object.entries(KIND_LABEL)]} />
           <FilterSelect name="owner" label="Owner" value={owner ?? ""} options={[["", "Anyone"], ["unassigned", "Unassigned"], ...OWNER_ROLES.map((r) => [r, ownerLabel(r)] as [string, string])]} />
+          {listView && <input type="hidden" name="view" value="list" />}
           <div className="flex items-center gap-3">
             <button type="submit" className="h-8 rounded-md bg-accent px-3 text-sm font-medium text-white hover:bg-accent-hover">
               Apply
@@ -295,7 +317,9 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
             <FilterChips items={chips} clearHref="/exceptions" testId="queue-filters" />
           </div>
         )}
-        {rows.length === 0 && queueTotal > 0 ? (
+        {grouped ? (
+          <CaseQueueGrouped groups={groups} empty="No cases match these filters in your scope." listHref={(k) => href({ kind: k, view: undefined, page: undefined })} />
+        ) : rows.length === 0 && queueTotal > 0 ? (
           <p className="px-4 py-4 text-sm text-muted" data-testid="queue-past-end">
             Page {count(page)} is past the last page of these cases.{" "}
             <Link href={pageHref(lastPage)} className="text-accent hover:underline">
@@ -306,7 +330,7 @@ async function Incidents({ searchParams }: { searchParams: SearchParams }) {
         ) : (
           <CaseQueue rows={rows} empty="No cases match these filters in your scope." flush />
         )}
-        {queueTotal > 0 && rows.length > 0 && (
+        {!grouped && queueTotal > 0 && rows.length > 0 && (
           <Pager page={page} lastPage={lastPage} first={firstShown} last={lastShown} total={queueTotal} hrefFor={pageHref} label="Case queue pages" testId="queue-pagination" />
         )}
       </Card>

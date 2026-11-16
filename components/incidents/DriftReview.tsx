@@ -80,7 +80,7 @@ export async function DriftReview({ exception, viewer, sinceRunId }: { exception
 
         <Proof view={view} />
 
-        <dl className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface shadow-raised" data-testid="brief-facts">
+        <dl className="divide-y divide-border overflow-hidden rounded-xl bg-surface ring-1 ring-text/10" data-testid="brief-facts">
           {(
             [
               ["System finding", brief.finding, "brief-finding"],
@@ -143,7 +143,7 @@ export async function DriftReview({ exception, viewer, sinceRunId }: { exception
         <h2 id="history-heading" className="text-[13px] font-semibold text-text">
           Case history
         </h2>
-        <ol className="space-y-0 rounded-lg border border-border bg-surface shadow-raised" data-testid="case-history">
+        <ol className="space-y-0 rounded-xl bg-surface ring-1 ring-text/10" data-testid="case-history">
           {view.history.map((h) => (
             <li key={h.id} className="grid gap-1 border-b border-border px-4 py-2.5 last:border-b-0 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4" data-title={h.title}>
               <time dateTime={h.at} className="text-xs tabular-nums text-muted">
@@ -158,7 +158,7 @@ export async function DriftReview({ exception, viewer, sinceRunId }: { exception
         </ol>
       </section>
 
-      <details className="rounded-lg border border-border bg-surface shadow-raised" data-testid="technical-history">
+      <details className="rounded-xl bg-surface ring-1 ring-text/10" data-testid="technical-history">
         <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold text-text">
           Technical history{" "}
           <span className="font-normal text-muted">
@@ -318,7 +318,7 @@ function Proof({ view }: { view: DriftCaseView }) {
   const target = view.change.releasedBranch;
   return (
     <section aria-label="Proof" className="space-y-3" data-testid="brief-proof">
-      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-surface shadow-raised">
+      <div className="grid grid-cols-2 overflow-hidden rounded-xl bg-surface ring-1 ring-text/10">
         <div className="p-4" data-testid="proof-release">
           <p className="text-xs text-muted">At release · {date(view.change.releasedAt)}</p>
           <p className="mt-1 text-[26px] font-semibold leading-8 tabular-nums text-text">
@@ -335,7 +335,7 @@ function Proof({ view }: { view: DriftCaseView }) {
         </div>
       </div>
       {view.leads.length > 0 && (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-surface shadow-raised" aria-label="Changed leads" data-testid="changed-leads">
+        <ul className="divide-y divide-border rounded-xl bg-surface ring-1 ring-text/10" aria-label="Changed leads" data-testid="changed-leads">
           {view.leads.map((l) => (
             <LeadRow key={l.fact} lead={l} sinceRunId={view.sinceCheck?.runId ?? null} />
           ))}
@@ -379,7 +379,7 @@ function Decisions({ title, reviews }: { title: string; reviews: ReviewView[] })
       <h2 id="decisions-heading" className="text-[13px] font-semibold text-text">
         {title}
       </h2>
-      <ul className="space-y-0 rounded-lg border border-border bg-surface shadow-raised">
+      <ul className="space-y-0 rounded-xl bg-surface ring-1 ring-text/10">
         {reviews.map((r) => (
           <li key={r.id} className="space-y-1 border-b border-border px-4 py-3 last:border-b-0" data-testid="review-entry" data-disposition={r.disposition}>
             <p className="text-sm">

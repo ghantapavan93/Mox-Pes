@@ -172,7 +172,7 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
       : { href: `/onboarding/${uploadId}?${compared === 0 ? "rows=eligible" : "page=1"}#rows`, label: `See the ${plural(counted, "row")} behind this result` };
 
   return (
-    <section id="result" aria-labelledby="result-title" data-testid="upload-result" data-dry-run={dry.id} className="scroll-mt-20 rounded-lg border border-border bg-surface p-4 shadow-raised">
+    <section id="result" aria-labelledby="result-title" data-testid="upload-result" data-dry-run={dry.id} className="scroll-mt-20 rounded-xl bg-surface p-4 ring-1 ring-text/10">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="result-title" className="text-xs font-semibold uppercase tracking-wider text-faint">Result</h2>
         {dry.authority === "reconcile" && <Badge tone="neutral">compare only</Badge>}
@@ -274,7 +274,7 @@ async function Workspace({ params, searchParams }: Props) {
 
       {dry && <ResultCard uploadId={uploadId} dry={dry} />}
 
-      <nav aria-label="Onboarding steps" className="rounded-lg border border-border bg-surface p-3 shadow-raised" data-testid="step-rail">
+      <nav aria-label="Onboarding steps" className="rounded-xl bg-surface p-3 ring-1 ring-text/10" data-testid="step-rail">
         <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
           {steps.map((s, i) => (
             <li key={s.key} className="min-w-0">

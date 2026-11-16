@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, ChevronRight, Info, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Info, Minus, TrendingDown, TrendingUp, XCircle } from "lucide-react";
 import { METRICS } from "@/lib/metrics/definitions";
 
 /**
@@ -10,7 +10,10 @@ import { METRICS } from "@/lib/metrics/definitions";
 
 // ── Surfaces ────────────────────────────────────────────────────────────────
 
-/** A titled panel. `flush` drops the body padding for edge-to-edge tables. */
+/**
+ * A titled panel. `flush` drops the body padding for edge-to-edge tables. `size="sm"` is the
+ * compact panel of a rail of single-job cards (12 px padding, 14 px title).
+ */
 export function Card({
   title,
   subtitle,
@@ -19,6 +22,8 @@ export function Card({
   className = "",
   id,
   flush = false,
+  size = "default",
+  testId,
 }: {
   title?: ReactNode;
   subtitle?: ReactNode;
@@ -27,23 +32,26 @@ export function Card({
   className?: string;
   id?: string;
   flush?: boolean;
+  size?: "default" | "sm";
+  testId?: string;
 }) {
+  const sm = size === "sm";
   return (
     // min-w-0: as a grid or flex item a panel may shrink below its widest table, which then
     // scrolls inside the panel instead of widening the page.
     // A hairline ring at 10% of the text colour, no shadow at rest: the frame recedes and the data
     // carries the colour (docs/design-system.md, "Surfaces"). Shadows are for overlays only.
-    <section id={id} className={`min-w-0 scroll-mt-20 rounded-xl bg-surface ring-1 ring-text/10 ${className}`}>
+    <section id={id} data-size={size} data-testid={testId} className={`min-w-0 scroll-mt-20 rounded-xl bg-surface ring-1 ring-text/10 ${className}`}>
       {(title || action) && (
-        <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border px-4 py-3">
+        <header className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border ${sm ? "px-3 py-2.5" : "px-4 py-3"}`}>
           <div className="min-w-0">
-            {title && <h2 className="text-[15px] font-semibold leading-6 tracking-tight text-text">{title}</h2>}
+            {title && <h2 className={`font-semibold tracking-tight text-text ${sm ? "text-sm leading-5" : "text-[15px] leading-6"}`}>{title}</h2>}
             {subtitle && <p className="mt-0.5 max-w-3xl text-xs leading-5 text-muted">{subtitle}</p>}
           </div>
           {action && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{action}</div>}
         </header>
       )}
-      <div className={flush ? "" : "p-4"}>{children}</div>
+      <div className={flush ? "" : sm ? "p-3" : "p-4"}>{children}</div>
     </section>
   );
 }
@@ -200,8 +208,9 @@ export function Stat({
 }) {
   const def = METRICS[metric];
   const toneClass = tone === "bad" ? "text-bad" : tone === "good" ? "text-good" : "text-text";
+  const TrendIcon = delta?.direction === "up" ? TrendingUp : delta?.direction === "down" ? TrendingDown : Minus;
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-surface p-4 shadow-raised">
+    <div className="flex flex-col rounded-xl bg-surface p-4 ring-1 ring-text/10">
       <details className="group">
         <summary className="flex items-start justify-between gap-2 text-xs font-medium leading-4 text-muted">
           <span>{def.label}</span>
@@ -221,8 +230,10 @@ export function Stat({
       </details>
       <p className={`mt-2 text-[26px] font-semibold leading-8 tracking-tight tabular-nums ${toneClass}`}>{value}</p>
       {delta && (
-        <p className={`mt-0.5 text-xs font-medium tabular-nums ${delta.good === null ? "text-muted" : delta.good ? "text-good" : "text-bad"}`}>
-          <span aria-hidden>{delta.direction === "up" ? "▲" : delta.direction === "down" ? "▼" : "■"}</span> {delta.label}
+        // The sign and the words carry the change; the trend icon repeats it for the eye.
+        <p className={`mt-1 inline-flex items-center gap-1 text-xs font-medium tabular-nums ${delta.good === null ? "text-muted" : delta.good ? "text-good" : "text-bad"}`}>
+          <TrendIcon aria-hidden className="size-3.5 shrink-0" />
+          {delta.label}
         </p>
       )}
       {sub && <p className={`mt-1 text-xs leading-4 ${subTone === "bad" ? "font-medium text-bad" : "text-muted"}`}>{sub}</p>}
@@ -264,9 +275,10 @@ export function KpiTile({
       {sub && <p className="mt-1 text-xs leading-4 text-muted">{sub}</p>}
     </>
   );
-  const box = `block rounded-lg border bg-surface p-4 shadow-raised ${current ? "border-accent ring-1 ring-accent" : "border-border"}`;
+  // The panel's hairline ring; the active filter's tile is ringed in accent, 2 px, beside aria-current.
+  const box = `block rounded-xl bg-surface p-4 ${current ? "ring-2 ring-accent" : "ring-1 ring-text/10"}`;
   return href ? (
-    <Link href={href} aria-current={current ? "true" : undefined} data-testid={testId} className={`${box} hover:border-accent`}>
+    <Link href={href} aria-current={current ? "true" : undefined} data-testid={testId} className={`${box} transition-shadow duration-100 hover:ring-accent`}>
       {body}
     </Link>
   ) : (
@@ -369,7 +381,7 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function Th({ children, align = "left" }: { children?: ReactNode; align?: "left" | "right" }) {
   return (
-    <th scope="col" className={`sticky top-0 whitespace-nowrap border-b border-border bg-surface-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-faint ${align === "right" ? "text-right" : "text-left"}`}>
+    <th scope="col" className={`sticky top-0 whitespace-nowrap border-b border-border bg-surface-2 px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-faint ${align === "right" ? "text-right" : "text-left"}`}>
       {children}
     </th>
   );
@@ -388,7 +400,7 @@ export function Td({ children, align = "left", className = "" }: { children?: Re
 export function TableWrap({ children, flush = false, minWidth = 640, label, testId }: { children: ReactNode; flush?: boolean; minWidth?: number; /** Unique on the page: names the scroll region. */ label: string; testId?: string }) {
   return (
     <div className={`${flush ? "" : "-mx-4"} overflow-x-auto`} role="region" aria-label={label} tabIndex={0}>
-      <table className="w-full border-collapse [&_tbody_tr:hover]:bg-surface-2/60" style={{ minWidth }} data-testid={testId}>
+      <table className="w-full border-collapse [&_tbody_tr]:transition-colors [&_tbody_tr]:duration-100 [&_tbody_tr:hover]:bg-surface-2/60" style={{ minWidth }} data-testid={testId}>
         {children}
       </table>
     </div>

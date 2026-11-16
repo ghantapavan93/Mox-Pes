@@ -62,7 +62,7 @@ async function Feedback({ searchParams }: { searchParams: SearchParams }) {
 
       <section aria-label="Decisions" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,3fr)]" data-testid="feedback-groups">
         {GROUPS.map((g) => (
-          <div key={g.title} className="rounded-lg border border-border bg-surface p-4 shadow-raised">
+          <div key={g.title} className="rounded-xl bg-surface p-4 ring-1 ring-text/10">
             <h2 className="text-[13px] font-semibold text-text">{g.title}</h2>
             <p className="mt-0.5 text-xs text-muted">{g.note}</p>
             <dl className={`mt-3 grid gap-3 ${g.decisions.length === 1 ? "" : g.decisions.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>

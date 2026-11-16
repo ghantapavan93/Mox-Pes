@@ -35,7 +35,7 @@ export default function DefinitionsPage() {
         }
       />
 
-      <nav aria-label="On this page" className="rounded-lg border border-border bg-surface p-4 shadow-raised" data-testid="definitions-index">
+      <nav aria-label="On this page" className="rounded-xl bg-surface p-4 ring-1 ring-text/10" data-testid="definitions-index">
         <p className="mb-2 text-xs font-medium text-muted">On this page</p>
         <ul className="flex flex-wrap gap-1.5 text-xs">
           {[
@@ -69,7 +69,7 @@ export default function DefinitionsPage() {
         </h2>
         <div className="grid gap-4 lg:grid-cols-2">
           {metrics.map((m) => (
-            <article key={m.key} id={metricAnchor(m.key)} className="scroll-mt-20 rounded-lg border border-border bg-surface p-4 shadow-raised">
+            <article key={m.key} id={metricAnchor(m.key)} className="scroll-mt-20 rounded-xl bg-surface p-4 ring-1 ring-text/10">
               <h3 className="text-sm font-semibold text-text">{m.label}</h3>
               <dl className="mt-2 space-y-2 text-sm">
                 <div>

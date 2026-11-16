@@ -1,0 +1,269 @@
+{
+ "builds": {
+  "before": "1YtM3m5k-65AfCnBQh3a_",
+  "after": "yGNKzTTPMrI3OX5Xz2jNA"
+ },
+ "scenes": {
+  "overview": {
+   "overflow390": 0,
+   "overflow1440": 0,
+   "counter": {
+    "firstFrame": {
+     "text": "$10,362",
+     "display": "$1,111",
+     "counted": false
+    },
+    "midCount": {
+     "text": "$10,362",
+     "display": "$4,565",
+     "counted": false,
+     "overlay": "\"$4,565\" / \"\"",
+     "textColor": "rgba(0, 0, 0, 0)"
+    },
+    "settled": {
+     "text": "$10,362",
+     "display": "$10,362",
+     "overlay": "none",
+     "textColor": "rgb(18, 24, 38)"
+    },
+    "reducedMotion": {
+     "text": "$10,362",
+     "counted": true,
+     "overlay": "none"
+    }
+   },
+   "contrast": {
+    "figure": {
+     "ratio": 16.25,
+     "color": "rgb(18, 24, 38)",
+     "size": "32px",
+     "weight": "600"
+    },
+    "sentence": {
+     "ratio": 16.25,
+     "color": "rgb(18, 24, 38)",
+     "size": "15px",
+     "weight": "400"
+    }
+   }
+  },
+  "queue": {
+   "overflow390": 0,
+   "overflow1440": 0,
+   "groups": [
+    {
+     "name": "Unmapped spend 1 case",
+     "expanded": "true"
+    },
+    {
+     "name": "Quarantined source records 1 case",
+     "expanded": "false"
+    },
+    {
+     "name": "Channel coverage gap 1 case",
+     "expanded": "false"
+    },
+    {
+     "name": "Branch mismatch 58 cases",
+     "expanded": "false"
+    },
+    {
+     "name": "Conflicting payload 3 cases",
+     "expanded": "false"
+    },
+    {
+     "name": "D2D / paid conflict 123 cases",
+     "expanded": "false"
+    }
+   ],
+   "keyboard": {
+    "focused": "Branch mismatch 58 cases",
+    "expandedAfterEnter": "true",
+    "rowsShown": 5
+   },
+   "contrast": {
+    "groupName": {
+     "ratio": 17.73,
+     "color": "rgb(18, 24, 38)",
+     "size": "14px",
+     "weight": "500"
+    },
+    "groupAmount": {
+     "ratio": 17.73,
+     "color": "rgb(18, 24, 38)",
+     "size": "14px",
+     "weight": "600"
+    },
+    "header": {
+     "ratio": 4.83,
+     "color": "rgb(98, 107, 123)",
+     "size": "11px",
+     "weight": "500"
+    }
+   }
+  },
+  "lab": {
+   "overflow390": 0,
+   "openFromKeyboard390": true,
+   "overflow1440": 0,
+   "openFromKeyboard1440": true,
+   "rows": [
+    {
+     "row": "verdict-row-google_lsa",
+     "chips": [
+      "Fail",
+      "Not ready",
+      "Unknown · no experiment"
+     ]
+    },
+    {
+     "row": "verdict-row-google_search",
+     "chips": [
+      "Fail",
+      "Not ready",
+      "Unknown · no experiment"
+     ]
+    },
+    {
+     "row": "verdict-row-meta",
+     "chips": [
+      "Pass",
+      "Not ready",
+      "Unknown · no experiment"
+     ]
+    },
+    {
+     "row": "verdict-row-microsoft",
+     "chips": [
+      "Pass",
+      "Not ready",
+      "Unknown · no experiment"
+     ]
+    }
+   ],
+   "contrast": {
+    "channel": {
+     "ratio": 17.73,
+     "color": "rgb(18, 24, 38)",
+     "size": "14px",
+     "weight": "500"
+    },
+    "meta": {
+     "ratio": 5.37,
+     "color": "rgb(98, 107, 123)",
+     "size": "11px",
+     "weight": "400"
+    },
+    "columnHeader": {
+     "ratio": 5.37,
+     "color": "rgb(98, 107, 123)",
+     "size": "11px",
+     "weight": "500"
+    }
+   }
+  },
+  "rail": {
+   "overflow390": 0,
+   "cards390": [
+    {
+     "title": "Decision",
+     "size": "sm",
+     "height": 219
+    },
+    {
+     "title": "How a fix is applied",
+     "size": "sm",
+     "height": 303
+    },
+    {
+     "title": "Freshness",
+     "size": "sm",
+     "height": 140
+    }
+   ],
+   "overflow1440": 0,
+   "cards1440": [
+    {
+     "title": "Decision",
+     "size": "sm",
+     "height": 219
+    },
+    {
+     "title": "How a fix is applied",
+     "size": "sm",
+     "height": 343
+    },
+    {
+     "title": "Freshness",
+     "size": "sm",
+     "height": 140
+    }
+   ],
+   "freshness": "Freshness\n\nThe feed these records come from\n\nAudit & Health\ncalls\nfresh\n\nlast success Oct 31, 8:00 AM UTC · 119 quarantined in source",
+   "contrast": {
+    "notYourRole": {
+     "ratio": 5.37,
+     "color": "rgb(98, 107, 123)",
+     "size": "12px",
+     "weight": "400"
+    },
+    "youCan": {
+     "ratio": 4.77,
+     "color": "rgb(19, 122, 75)",
+     "size": "10px",
+     "weight": "600"
+    },
+    "feed": {
+     "ratio": 6.74,
+     "color": "rgb(83, 92, 108)",
+     "size": "12px",
+     "weight": "400"
+    }
+   }
+  },
+  "b20": {
+   "proposalId": 1,
+   "executing": {
+    "ariaDisabled": "true",
+    "disabled": false,
+    "focusable": true,
+    "spinner": true
+   },
+   "executeStatus": 200,
+   "focusAfterExecute": "execution-result",
+   "status": "Executed and verified.",
+   "headline": "Paid-media CAC at B20, whole period\n$364.75→\nto\n$284.06",
+   "conserved": 5,
+   "overflow390": 0,
+   "overflow1440": 0,
+   "proofOpens": true,
+   "contrast": {
+    "headline": {
+     "ratio": 15.95,
+     "color": "rgb(18, 24, 38)",
+     "size": "22px",
+     "weight": "600"
+    },
+    "unchanged": {
+     "ratio": 6.74,
+     "color": "rgb(83, 92, 108)",
+     "size": "12px",
+     "weight": "400"
+    },
+    "section": {
+     "ratio": 5.37,
+     "color": "rgb(98, 107, 123)",
+     "size": "11px",
+     "weight": "500"
+    },
+    "outcome": {
+     "ratio": 15.75,
+     "color": "rgb(18, 24, 38)",
+     "size": "12px",
+     "weight": "600"
+    }
+   }
+  }
+ },
+ "b20Href": "/exceptions/1063"
+}

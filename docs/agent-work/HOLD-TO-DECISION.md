@@ -494,9 +494,10 @@ Code: `6ed9066`, build `ekfY8a8woILuSdmtlccf8`.
 ### 9.5 Not done
 
 - **The spec's other scenes:** the Overview's headline counter, B20's receipt, the incident queue,
-  Decision Lab's factor rows and the right rail.
+  Decision Lab's factor rows and the right rail. Since done, in `PREMIUM-POLISH.md`.
 - **Other raised elements:** tiles, drawers and KPI cards keep the soft shadow; only `Card` moved
-  to the ring.
+  to the ring. Since then the tiles and KPI cards have moved to the ring too (`PREMIUM-POLISH.md`).
+  Drawers, buttons and segmented controls keep the shadow.
 - **The phone shell:** at 390 px the top bar and menu take about 445 px before the breadcrumb.
   That is the app shell, outside this slice.
 - **Target size:** a date is 33 × 70 px on a phone. That passes AA's 24 px, not the 44 px

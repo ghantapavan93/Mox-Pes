@@ -304,11 +304,12 @@ export async function quarantineGroupIds(
   db: Pool | PoolClient,
   group: { source: string; errorCode: string; branchId: string | null },
 ): Promise<number[]> {
+  // The same records, by the same branch rule, as reconciliation's rule 1 (migration 0034): a
+  // refused spend revision is in its campaign's branch group while it is newer than the counted one.
   const { rows } = await db.query<{ id: string }>(
-    `select re.id from raw_events re
-     where re.status = 'quarantined' and re.source = $1 and re.error_code = $2
-       and payload_branch(re.payload) is not distinct from $3
-     order by re.id`,
+    `select h.id from v_quarantine_holds h
+     where h.source = $1 and h.error_code = $2 and h.branch_id is not distinct from $3
+     order by h.id`,
     [group.source, group.errorCode, group.branchId],
   );
   return rows.map((r) => Number(r.id));

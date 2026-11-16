@@ -2,6 +2,7 @@ import type { Queryable } from "@/lib/db";
 import { currentSnapshot, currentTxid, recordEvent } from "@/lib/events/outbox";
 import { syncCases } from "@/lib/workflow/cases";
 import { gapCoverage, verificationOf, verifiedResolution } from "./gap-coverage";
+import { correctedResolution, correctionsFor, correctionsOf, revisionsOf } from "./refused-revisions";
 
 /**
  * Cross-system reconciliation. Each detector is one SQL statement that states a rule the
@@ -43,12 +44,24 @@ export async function lockReconcile(tx: Queryable): Promise<void> {
 const DETECTORS: string[] = [
   // 1. Source records that failed validation, grouped by source + error + branch, with
   //    the business impact: customers whose only lead record is sitting in quarantine.
+  //    The records and their branch come from v_quarantine_holds (migration 0034): a refused
+  //    spend revision newer than the one the ledger counts holds its campaign's branch, and one
+  //    a counted revision superseded holds nothing. Such a group's evidence names the
+  //    campaign-days it holds, their dates and channels, and each refused revision beside the
+  //    accepted one (HOLD-TO-DECISION.md; R-54).
   `insert into detected
    with q as (
-     select re.id, re.source, re.error_code, re.error_detail, re.occurred_at, payload_branch(re.payload) as branch_id,
+     select h.id, h.source, h.error_code, h.error_detail, h.occurred_at, h.branch_id,
             (select array_agg(substr(v #>> '{}', 9))
-               from jsonb_path_query(re.payload, 'strict $.** ? (@.type() == "string" && @ starts with "h:phone:")') v) as phone_hashes
-     from raw_events re where re.status = 'quarantined'),
+               from jsonb_path_query(h.payload, 'strict $.** ? (@.type() == "string" && @ starts with "h:phone:")') v) as phone_hashes
+     from v_quarantine_holds h),
+   revisions as (
+     select q.source, q.error_code, q.branch_id, count(*) as records, count(distinct v.entity_id) as days,
+            jsonb_agg(distinct v.spend_date::text order by v.spend_date::text) as dates,
+            jsonb_agg(distinct v.channel_code order by v.channel_code) as channels,
+            min(v.external_campaign_id) as campaign, min(v.spend_date) as first_date, max(v.accepted_cents) as accepted_cents
+     from q join v_refused_spend_revisions v on v.raw_event_id = q.id and v.standing = 'newer'
+     group by 1, 2, 3),
    impact as (
      select distinct q.source, q.error_code, q.branch_id, a.crm_customer_id, coalesce(r.collected_cents, 0) as collected,
             a.annual_value_cents as acv
@@ -65,19 +78,43 @@ const DETECTORS: string[] = [
      'quarantined_source_records',
      case when coalesce(i.customers, 0) > 0 then 'high' else 'medium' end,
      q.branch_id, 'quarantine_group', q.source || ':' || q.error_code || ':' || coalesce(q.branch_id, '-'),
-     count(*) || ' records from ' || q.source || ' quarantined (' || q.error_code || ')'
-       || case when coalesce(i.customers, 0) > 0 then '; ' || i.customers || ' new customers lose their lead record' else '' end,
+     case
+       -- Every record is a refused newer spend revision: say what it holds, never "N records".
+       when rv.records = count(*) and rv.days = 1 then
+         'A newer revision of ' || rv.campaign || '''s spend on ' || to_char(rv.first_date, 'Mon FMDD') || ' was refused ('
+           || q.error_code || '); the earlier ' || to_char(rv.accepted_cents / 100.0, 'FM$999,999,990.00') || ' still counts'
+       when rv.records = count(*) then
+         'Newer revisions of ' || rv.days || ' campaign-days of spend were refused (' || q.error_code || '); the earlier accepted amounts still count'
+       else count(*) || ' records from ' || q.source || ' quarantined (' || q.error_code || ')'
+         || case when coalesce(i.customers, 0) > 0 then '; ' || i.customers || ' new customers lose their lead record' else '' end
+     end,
      jsonb_build_object(
        'source', q.source, 'errorCode', q.error_code, 'sampleError', min(q.error_detail),
        'records', count(*), 'firstOccurredAt', min(q.occurred_at), 'lastOccurredAt', max(q.occurred_at),
        'sampleRawEventIds', (array_agg(q.id order by q.id))[1:10],
-       'customersWithoutLead', coalesce(i.customers, 0), 'annualContractValueCents', coalesce(i.acv, 0)),
+       'customersWithoutLead', coalesce(i.customers, 0), 'annualContractValueCents', coalesce(i.acv, 0))
+     || case when rv.records is null then '{}'::jsonb else jsonb_build_object(
+       'campaignDays', rv.days, 'spendDates', rv.dates, 'channels', rv.channels,
+       -- At most 50, oldest date first: the page lists them; a mass refusal must not bloat the row.
+       'revisions', (select jsonb_agg(x.r order by x.d, x.id) from (
+          select v.spend_date as d, v.raw_event_id as id, jsonb_build_object(
+                   'rawEventId', v.raw_event_id, 'campaignId', v.campaign_id, 'externalCampaignId', v.external_campaign_id,
+                   'platform', v.platform, 'date', v.spend_date, 'channel', v.channel_code, 'errorDetail', v.error_detail,
+                   'refusedFetchedAt', v.refused_fetched_at, 'refusedRunId', v.refused_run_id, 'refusedCents', v.refused_cents,
+                   'acceptedRawEventId', v.accepted_raw_event_id, 'acceptedFetchedAt', v.accepted_fetched_at,
+                   'acceptedRunId', v.accepted_run_id, 'acceptedCents', v.accepted_cents) as r
+          from v_refused_spend_revisions v
+          where v.standing = 'newer' and v.raw_event_id = any(array_agg(q.id))
+          order by v.spend_date, v.raw_event_id limit 50) x)) end,
      coalesce(i.collected, 0),
      coalesce(i.customer_ids, '{}')
    from q
    left join impact_by_group i
      on i.source = q.source and i.error_code = q.error_code and i.branch_id is not distinct from q.branch_id
-   group by q.source, q.error_code, q.branch_id, i.customers, i.collected, i.acv, i.customer_ids`,
+   left join revisions rv
+     on rv.source = q.source and rv.error_code = q.error_code and rv.branch_id is not distinct from q.branch_id
+   group by q.source, q.error_code, q.branch_id, i.customers, i.collected, i.acv, i.customer_ids,
+            rv.records, rv.days, rv.dates, rv.channels, rv.campaign, rv.first_date, rv.accepted_cents`,
 
   // 2. A successful payment applied to a ticket the CRM feed has not delivered. Usually
   //    ordering (the ticket arrives on the next run); persistent ones are real gaps.
@@ -294,6 +331,39 @@ async function carryCoverageGaps(tx: Queryable, now: Date): Promise<void> {
   }
 }
 
+/**
+ * 1a. A hold on refused spend revisions names what lifted it (HOLD-TO-DECISION.md; R-54). Rule 1
+ *     lists the refused revisions that are still newer than the counted one. A revision that left
+ *     that list was corrected: a newer revision was accepted, the refused one itself was (a
+ *     replay), or the ledger stopped counting the day. Each is kept on the incident with how it
+ *     was corrected and by which delivery, beside the revisions still held, so lifting one
+ *     campaign-day never hides another. When none is left, the incident resolves with those
+ *     corrections as its resolution (the generic step below keeps it).
+ */
+async function carryRefusedRevisions(tx: Queryable, now: Date): Promise<void> {
+  const { rows } = await tx.query<{ id: string; fingerprint: string; evidence: Record<string, unknown> }>(
+    `select id, fingerprint, evidence from exceptions
+     where kind = 'quarantined_source_records' and status in ('open', 'acknowledged') and evidence ? 'revisions'
+     order by id`,
+  );
+  for (const e of rows) {
+    const detected = (await tx.query<{ evidence: Record<string, unknown> }>("select evidence from detected where fingerprint = $1", [e.fingerprint])).rows[0];
+    const still = new Set(revisionsOf(detected?.evidence).map((r) => r.rawEventId));
+    const gone = revisionsOf(e.evidence).filter((r) => !still.has(r.rawEventId));
+    const corrected = [...correctionsOf(e.evidence), ...(await correctionsFor(tx, gone, now))].slice(-50);
+    if (detected) {
+      if (corrected.length > 0) {
+        await tx.query("update detected set evidence = evidence || jsonb_build_object('corrected', $2::jsonb) where fingerprint = $1", [e.fingerprint, JSON.stringify(corrected)]);
+      }
+    } else if (corrected.length > 0) {
+      await tx.query(
+        "update exceptions set resolution = $2, evidence = evidence || jsonb_build_object('corrected', $3::jsonb) where id = $1",
+        [e.id, correctedResolution(corrected), JSON.stringify(corrected)],
+      );
+    }
+  }
+}
+
 export interface ReconcileResult {
   detected: number;
   opened: number;
@@ -314,6 +384,7 @@ export async function reconcile(tx: Queryable, now: Date): Promise<ReconcileResu
   await tx.query("create temp table acq on commit drop as select * from v_acquisitions");
   await tx.query("create index on acq (crm_customer_id)");
   for (const sql of DETECTORS) await tx.query(sql);
+  await carryRefusedRevisions(tx, now);
   await tx.query(COVERAGE_GAP);
   await carryCoverageGaps(tx, now);
 

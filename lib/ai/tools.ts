@@ -748,12 +748,12 @@ export const compareMappingVersions = defineTool({
       const e = await exceptionInScope(ctx, input.exceptionId);
       scopeIds.push(evidence.exception(e.id));
       if (e.kind === "quarantined_source_records") {
-        // The same group lib/ingest/replay.ts#quarantineGroupIds replays: source + error + branch.
+        // The same group lib/ingest/replay.ts#quarantineGroupIds replays: source + error + branch,
+        // by the one branch rule (v_quarantine_holds, migration 0034).
         const { rows } = await ctx.db.query<{ id: string }>(
-          `select re.id from raw_events re
-           where re.status = 'quarantined' and re.source = $1 and re.error_code = $2
-             and payload_branch(re.payload) is not distinct from $3
-           order by re.id`,
+          `select h.id from v_quarantine_holds h
+           where h.source = $1 and h.error_code = $2 and h.branch_id is not distinct from $3
+           order by h.id`,
           [String(e.evidence.source), String(e.evidence.errorCode), e.branchId],
         );
         rawIds = rows.map((r) => Number(r.id));

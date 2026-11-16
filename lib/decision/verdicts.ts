@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import { getNow, readAll, type Queryable } from "@/lib/db";
-import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type BudgetSignal } from "@/lib/metrics/decision";
+import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type Blocker, type BudgetSignal } from "@/lib/metrics/decision";
 import type { ChannelRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { gapCoverage, type GapCoverage } from "@/lib/reconcile/gap-coverage";
 import { windowProgress } from "@/lib/reconcile/gap-status";
+import { holdSentence, isRefusedRevisionHold } from "@/lib/reconcile/refused-revisions";
 import { BRANCH_BY_ID, SCENARIO } from "@/lib/reference";
 import { resolveScope, type Viewer } from "@/lib/viewer";
 
@@ -169,7 +170,7 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
 
   const stillMissingById = new Map(exceptions.map((e) => [e.id, stillMissing(e.coverage)]));
   const channels = signal.channels.map((c) => {
-    const integrity = integrityVerdict(c, exceptions, records, spendCoverage, branchId, period);
+    const integrity = integrityVerdict(c, exceptions, signal.blockers, records, spendCoverage, branchId, period);
     const readiness = readinessVerdict(c, integrity, signal, feeds, now, stillMissingById);
     const effectiveness = effectivenessVerdict(c, branchId, period, holdouts, latestAa);
     return {
@@ -211,6 +212,7 @@ interface SpendCoverage {
 function integrityVerdict(
   c: ChannelRow,
   exceptions: OpenException[],
+  blockers: Blocker[],
   records: RecordCounts,
   spend: SpendCoverage,
   branchId: string,
@@ -232,13 +234,25 @@ function integrityVerdict(
     });
   }
 
-  const held = exceptions.filter((e) => e.kind === "quarantined_source_records");
+  const held = exceptions.filter((e) => e.kind === "quarantined_source_records" && !isRefusedRevisionHold(e.evidence));
   for (const q of held) {
     reasons.push({
       code: "quarantine",
       status: "fail",
       text: `#${q.id}: ${q.summary}. Customers whose lead record is held show as Unknown, so any channel here may be under-credited.`,
       href: exceptionHref(q.id),
+    });
+  }
+  // A hold on refused spend revisions changes this channel's records only where a refused
+  // revision is this channel's, dated in the period: the gate's own blocker says which.
+  for (const b of blockers) {
+    const mine = b.revisions.filter((r) => r.channel === c.channelCode);
+    if (mine.length === 0) continue;
+    reasons.push({
+      code: "refused_revision",
+      status: "fail",
+      text: `#${b.exceptionId}: ${holdSentence(mine)} It holds until a newer revision is accepted.`,
+      href: exceptionHref(b.exceptionId),
     });
   }
 
@@ -353,7 +367,11 @@ function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: Bu
       ? {
           code: "integrity",
           status: "fail",
-          text: `Data integrity fails for ${c.label}: the records this decision would rest on are known to be wrong.`,
+          // A refused revision makes a date unconfirmed, not wrong: the counted amount may still be right.
+          text:
+            firstFailure.code === "refused_revision"
+              ? `Data integrity fails for ${c.label}: a newer revision of spend it reads was refused, so that spend is not confirmed.`
+              : `Data integrity fails for ${c.label}: the records this decision would rest on are known to be wrong.`,
           href: firstFailure.href,
         }
       : { code: "integrity", status: "pass", text: `Data integrity ${integrity.status === "warn" ? "passes with caveats" : "passes"} for ${c.label}.` },
@@ -369,7 +387,8 @@ function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: Bu
     reasons.push({
       code: "budget_gate",
       status: "fail",
-      text: `Blocking incident #${b.exceptionId}: ${b.summary}.${stillMissingById.get(b.exceptionId) ?? ""}`,
+      // A refused revision says which date, what was refused and what still counts, in this period.
+      text: b.revisions.length > 0 ? `Blocking incident #${b.exceptionId}: ${holdSentence(b.revisions)}` : `Blocking incident #${b.exceptionId}: ${b.summary}.${stillMissingById.get(b.exceptionId) ?? ""}`,
       href: exceptionHref(b.exceptionId),
     });
   }
@@ -504,8 +523,11 @@ async function recordReconciliation(db: Queryable, branchId: string, period: Per
        (select count(*) from raw_events re
          where re.status = 'quarantined' and re.source in ('calls', 'web', 'd2d')
            and re.occurred_at >= $2 and re.occurred_at < $3 and payload_branch(re.payload) = $1) as held,
+       -- Held LEAD records only, as counted above: a hold on refused spend revisions has its own
+       -- reason, for its own channel and period (HOLD-TO-DECISION.md).
        (select coalesce(array_agg(id order by id), '{}') from exceptions
-         where status = 'open' and kind = 'quarantined_source_records' and branch_id = $1) as exception_ids`,
+         where status = 'open' and kind = 'quarantined_source_records' and branch_id = $1
+           and evidence ->> 'source' in ('calls', 'web', 'd2d')) as exception_ids`,
     [branchId, period.from, period.to],
   );
   return {

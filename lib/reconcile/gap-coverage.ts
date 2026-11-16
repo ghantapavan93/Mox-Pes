@@ -59,6 +59,12 @@ export interface GapCoverage {
   coveredCents: number;
   misfiledCents: number;
   complete: boolean;
+  /**
+   * Covered dates whose accepted revision changed the amount of the revision it replaced: a
+   * correction that restated money, not only its channel. Empty when every covered date kept its
+   * amount, which is what "reclassified, not added" needs (HOLD-TO-DECISION.md, scenario 6).
+   */
+  amountChanges: Array<{ date: string; externalCampaignId: string; beforeCents: number; afterCents: number }>;
 }
 
 /** What reconciliation stores when it verifies a gap. */
@@ -82,6 +88,7 @@ interface Row {
   run_id: string | null;
   fetched_at: string | null;
   adapter_version: string | null;
+  replaced_cents: string | null;
 }
 
 const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -113,13 +120,25 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
   const required = to >= from ? datesBetween(from, to) : [];
 
   // The channel's records at the branch, and every successor record wherever it is mapped now.
+  // replaced_cents: the amount of the revision this one replaced when it was delivered, the newest
+  // the source had sent before it (by its own clock) that intake accepted. Null when there was none,
+  // and for a record re-mapped in place (projected again after it arrived), since a re-map reads
+  // the same payload and cannot change its amount.
   const { rows } = await db.query<Row>(
     `select s.spend_date::text as date, c.external_campaign_id, s.campaign_id, s.channel_code, s.cost_cents, m.branch_id,
-            re.ingestion_run_id as run_id, re.payload ->> 'fetchedAt' as fetched_at, re.adapter_version
+            re.ingestion_run_id as run_id, re.payload ->> 'fetchedAt' as fetched_at, re.adapter_version, prev.cents as replaced_cents
      from ad_spend_daily s
      join ad_campaigns c on c.id = s.campaign_id
      left join campaign_branch_map m on m.campaign_id = s.campaign_id
      left join raw_events re on re.id = s.raw_event_id
+     left join lateral (
+       select case when p.payload ->> 'costMicros' ~ '^[0-9]{1,18}$' then div((p.payload ->> 'costMicros')::numeric + 5000, 10000)::bigint end as cents
+       from raw_events p
+       where p.source = re.source and p.entity = re.entity and p.entity_id = re.entity_id and p.id <> re.id
+         and p.status = 'projected' and p.received_at < re.received_at and p.occurred_at < re.occurred_at
+         and re.projected_at <= re.received_at + interval '1 second'
+       order by p.occurred_at desc, p.id desc
+       limit 1) prev on true
      where s.spend_date between $2::date and $3::date
        and ((m.branch_id = $1 and s.channel_code = $4) or s.campaign_id = any($5::bigint[]))
      order by s.spend_date, s.campaign_id`,
@@ -153,6 +172,9 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
   const runs = [...byRun.values()].sort((a, b) => (a.dates[0] ?? "").localeCompare(b.dates[0] ?? "") || (a.runId ?? 0) - (b.runId ?? 0));
   const coveredCents = runs.reduce((t, r) => t + r.cents, 0);
   const misfiledCents = misfiled.reduce((t, m) => t + m.cents, 0);
+  const amountChanges = inChannel
+    .filter((r) => coveredSet.has(r.date) && r.replaced_cents !== null && Number(r.replaced_cents) !== Number(r.cost_cents))
+    .map((r) => ({ date: r.date, externalCampaignId: r.external_campaign_id, beforeCents: Number(r.replaced_cents), afterCents: Number(r.cost_cents) }));
   return {
     branchId,
     channel,
@@ -170,6 +192,7 @@ export async function gapCoverage(db: Queryable, evidence: Record<string, unknow
     coveredCents,
     misfiledCents,
     complete: required.length > 0 && covered.length === required.length && misfiled.length === 0,
+    amountChanges,
   };
 }
 

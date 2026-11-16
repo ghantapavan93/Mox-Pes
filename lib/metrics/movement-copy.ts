@@ -114,16 +114,23 @@ export function takeaway(m: Movement, scopeLabel: string): Takeaway {
   // A coverage gap the chart marks that was verified (or whose verification is now historical):
   // its status is the decision status, so the reader sees what cleared and that spend moved.
   const cleared = m.recoveries?.find((r) => r.state === "verified" || r.state === "historical") ?? null;
+  // At one branch, the decision first: what holds it, in the holding incident's own words; then
+  // any coverage hold that cleared, which is not the same thing as the decision being free.
+  const first = m.holds[0];
   const trust: Takeaway["trust"] =
     m.holds.length > 0
-      ? {
-          tone: "review" as const,
-          label: "Investigate before acting",
-          text:
-            m.scope.branchId !== null
-              ? `${plural(m.holds.length, "open incident")} here ${m.holds.length === 1 ? "changes" : "change"} what a paid channel cost (incident #${m.holds[0].exceptionId}).${cleared ? ` ${capital(cleared.conclusion)}` : ""}`
-              : `${plural(heldBranches.length, "branch", "branches")} in this scope ${heldBranches.length === 1 ? "has" : "have"} an open incident that changes what a paid channel cost: ${heldBranches.slice(0, 4).join(", ")}${heldBranches.length > 4 ? "…" : ""}. Channel totals here include ${heldBranches.length === 1 ? "it" : "them"}.`,
-        }
+      ? m.scope.branchId !== null
+        ? {
+            tone: "review" as const,
+            label: "Hold the budget decision",
+            text: `${m.holds.length === 1 ? `Incident #${first.exceptionId} holds it` : `${plural(m.holds.length, "open incident")} hold it, first #${first.exceptionId}`}: ${first.summary.replace(/\.$/, "")}.${cleared ? ` ${capital(cleared.conclusion)}` : ""}`,
+            exceptionId: first.exceptionId,
+          }
+        : {
+            tone: "review" as const,
+            label: "Investigate before acting",
+            text: `${plural(heldBranches.length, "branch", "branches")} in this scope ${heldBranches.length === 1 ? "has" : "have"} an open incident that holds its budget decision: ${heldBranches.slice(0, 4).join(", ")}${heldBranches.length > 4 ? "…" : ""}. Channel totals here include ${heldBranches.length === 1 ? "it" : "them"}.`,
+          }
       : (stale ?? (cleared ? gapTrust(cleared) : { tone: "clear" as const, label: "No open incident affects these figures", text: "Nothing open changes what these channels cost. The figures are the stored spend records, not a forecast." }));
   const suggestion = m.scope.branchId === null && heldBranches[0] ? { branchId: heldBranches[0], label: `See what changed at ${heldBranches[0]}` } : null;
   return { headline, detail, trust, suggestion };

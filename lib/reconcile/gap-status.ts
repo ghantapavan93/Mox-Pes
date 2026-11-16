@@ -48,28 +48,47 @@ export interface GapStatus {
   original: { cents: number; filedAs: string; campaigns: string } | null;
   coveredCents: number;
   misfiledCents: number;
-  /** Verified, nothing misfiled, and the window carries exactly the amount the original finding recorded elsewhere. */
+  /**
+   * Verified, nothing misfiled, the window carries exactly the amount the original finding recorded
+   * elsewhere, and every covered date kept the amount of the revision it replaced: only the channel
+   * moved, so nothing was added (HOLD-TO-DECISION.md, scenario 6).
+   */
   reclassified: boolean;
   /** "5 of 18 dates in the decision window (Oct 13–Oct 30) have …; Oct 13–Oct 25 still have none" (no capital, no stop). */
   progress: string;
-  /** The state in plain words, for a label that does not rely on colour: "Decision still held". */
+  /**
+   * The decision in plain words, for a headline that does not rely on colour: "Hold the budget
+   * decision", "Still on hold · 5 of 18 days verified", "Coverage hold cleared · 18 of 18 days verified".
+   */
   label: string;
-  /** The conclusion, one sentence: the label, then why. */
+  /** The conclusion, as one line: the label, then why. */
   conclusion: string;
-  /** The conclusion without its label, as a sentence: for a line that shows the label apart. */
+  /** Why, as a sentence: for a line that shows the label apart. */
   statusText: string;
   /** The most useful before/after fact, one or two sentences; null when there is none. */
   change: string | null;
 }
 
-/** Plain words for the state, for a label that does not rely on colour. */
-export const GAP_STATE_LABEL: Record<GapState, string> = {
-  missing: "Decision held",
-  partial: "Decision still held",
-  verified: "Coverage hold cleared",
-  historical: "Verification historical",
-  resolved: "Resolved",
-};
+/**
+ * The state's headline, from the incident's state and its window now. "Verified" days are the
+ * decision window's covered dates; a clearance is only ever the incident's own verified state.
+ */
+export function gapLabel(state: GapState, c: Pick<GapCoverage, "required" | "covered" | "complete">): string {
+  const n = c.required.length;
+  const k = c.covered.length;
+  switch (state) {
+    case "missing":
+      return "Hold the budget decision";
+    case "partial":
+      return c.complete ? `Still on hold · ${n} of ${n} days covered, not yet verified` : `Still on hold · ${k} of ${n} days verified`;
+    case "verified":
+      return `Coverage hold cleared · ${k} of ${n} days verified`;
+    case "historical":
+      return `Verification no longer current · ${k} of ${n} days covered`;
+    case "resolved":
+      return "Resolved";
+  }
+}
 
 const channelName = (code: string) => CHANNEL_BY_CODE.get(code as never)?.label ?? code;
 const list = (items: string[]) => (items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
@@ -144,31 +163,42 @@ function nowParts(c: GapCoverage): string[] {
   ].filter(Boolean);
 }
 
+/** "$120.91 became $400.00 on Oct 20": up to three days, then how many more. */
+function amountChangesPhrase(c: GapCoverage): string {
+  const shown = c.amountChanges.slice(0, 3).map((a) => `${dateRanges([a.date])}: ${dollars(a.beforeCents)} became ${dollars(a.afterCents)}`);
+  const more = c.amountChanges.length - shown.length;
+  return `${shown.join("; ")}${more > 0 ? `; and ${more} more date${more === 1 ? "" : "s"}` : ""}`;
+}
+
 /** One coverage-gap incident's status, from the incident and its coverage now. */
 export function gapStatus(e: { id: number; status: string; evidence: Record<string, unknown>; resolution?: string | null }, c: GapCoverage): GapStatus {
   const held = e.status !== "resolved";
   const verification = (e.evidence.verification as StoredVerification | undefined) ?? null;
   const state: GapState = held ? (c.covered.length > 0 ? "partial" : "missing") : verification ? (c.complete ? "verified" : "historical") : "resolved";
   const original = originalFinding(e.evidence, c.channel);
-  const reclassified = state === "verified" && original !== null && c.misfiled.length === 0 && c.coveredCents === original.cents;
+  const reclassified = state === "verified" && original !== null && c.misfiled.length === 0 && c.coveredCents === original.cents && c.amountChanges.length === 0;
   const progress = windowProgress(c);
   const verifiedAt = verification?.verifiedAt ?? null;
+  const W = windowLabel(c);
+  const noneYet = c.covered.length === 0 && c.recordedZero.length === 0 && c.required.length > 0;
 
-  // The conclusion is the label, then why; the body alone serves a line that shows the label apart.
+  // Why, in the order a reader needs it: what is missing or covered, then what the window still lacks.
   const body =
     state === "missing"
-      ? progress
+      ? noneYet
+        ? `a required ${c.channelLabel} spend record is missing at ${c.branchId}: none of the ${c.required.length} dates in the decision window (${W}) has one`
+        : progress
       : state === "partial"
         ? c.complete
           ? `${progress}; it clears once reconciliation verifies it`
-          : progress
+          : `${dateRanges(c.covered)} ${c.covered.length === 1 ? "is" : "are"} covered, but the decision window (${W}) is not: ${openPhrase(c).replace(/ still (has|have) none$/, (_m, v: string) => ` still ${v} no ${c.channelLabel} record`)}`
         : state === "verified"
           ? `${progress}, verified ${dateTime(verifiedAt)}`
           : state === "historical"
-            ? `verified ${dateTime(verifiedAt)}, but now ${progress}`
+            ? `it was verified ${dateTime(verifiedAt)}, but now ${progress}; this is history, not a current clearance`
             : (e.resolution ?? "condition no longer detected").replace(/\.$/, "");
-  const label = GAP_STATE_LABEL[state];
-  const conclusion = `${label}: ${body}.`;
+  const label = gapLabel(state, c);
+  const conclusion = `${label}. ${capital(body)}.`;
 
   const misfiledCampaigns = list(unique(c.misfiled.map((m) => m.externalCampaignId)));
   let change: string | null = null;
@@ -183,11 +213,13 @@ export function gapStatus(e: { id: number; status: string; evidence: Record<stri
     const now = nowParts(c);
     change = `${original ? `Originally ${dollars(original.cents)} was filed as ${original.filedAs}. ` : ""}${now.length ? `Now ${now.join("; ")}.` : ""}`.trim() || null;
   } else if (state === "verified") {
+    // "Moved" only with the proof: same total, nothing misfiled, every day's amount kept. Otherwise
+    // before and after, and which days changed amount.
     change = reclassified
-      ? `Reclassified, not added: the ${dollars(original!.cents)} first filed as ${original!.filedAs} is now filed as ${c.channelLabel}.`
+      ? `${dollars(original!.cents)} moved from ${original!.filedAs} to ${c.channelLabel}, and no amount changed: reclassified, not added.`
       : original
-        ? `The window now carries ${dollars(c.coveredCents)} filed as ${c.channelLabel}; the original finding recorded ${dollars(original.cents)} filed as ${original.filedAs}.`
-        : `The window carries ${dollars(c.coveredCents)} filed as ${c.channelLabel}.`;
+        ? `The window now carries ${dollars(c.coveredCents)} filed as ${c.channelLabel}; the original finding recorded ${dollars(original.cents)} filed as ${original.filedAs}.${c.amountChanges.length ? ` Amounts changed: ${amountChangesPhrase(c)}.` : ""}`
+        : `The window carries ${dollars(c.coveredCents)} filed as ${c.channelLabel}.${c.amountChanges.length ? ` Amounts changed: ${amountChangesPhrase(c)}.` : ""}`;
   }
 
   return {

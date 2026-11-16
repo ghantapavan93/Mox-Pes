@@ -32,6 +32,7 @@ function coverage(over: Partial<GapCoverage> = {}): GapCoverage {
     coveredCents: 0,
     misfiledCents: 180_000,
     complete: false,
+    amountChanges: [],
     ...over,
   };
 }
@@ -45,35 +46,44 @@ const complete = coverage({ covered: days(13, 30), missing: [], misfiled: [], co
 describe("one status, the same words everywhere", () => {
   it("missing: held, nothing covered, and where the successor's money is filed instead", () => {
     const s = gapStatus({ id: 7, status: "open", evidence: finding }, coverage());
-    expect(s).toMatchObject({ state: "missing", held: true, label: "Decision held", reclassified: false });
-    expect(s.conclusion).toBe("Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B12.");
+    expect(s).toMatchObject({ state: "missing", held: true, label: "Hold the budget decision", reclassified: false });
+    expect(s.conclusion).toBe("Hold the budget decision. A required Google Local Services spend record is missing at B12: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.");
     expect(s.change).toBe("Since Oct 13, $1,800.00 has been spent under pmax-x, which is filed as Google Search; none of it is filed as Google Local Services.");
   });
 
   it("partial: the repaired week does not clear the window; the before/after names both halves", () => {
     const s = gapStatus({ id: 7, status: "open", evidence: finding }, partial);
-    expect(s).toMatchObject({ state: "partial", held: true, label: "Decision still held", coveredLabel: "Oct 26–Oct 30", openLabel: "Oct 13–Oct 25" });
-    expect(s.conclusion).toBe("Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12; Oct 13–Oct 25 still have none.");
-    expect(s.statusText).toBe("5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12; Oct 13–Oct 25 still have none.");
+    expect(s).toMatchObject({ state: "partial", held: true, label: "Still on hold · 5 of 18 days verified", coveredLabel: "Oct 26–Oct 30", openLabel: "Oct 13–Oct 25" });
+    expect(s.conclusion).toBe("Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.");
+    expect(s.statusText).toBe("Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.");
     expect(s.change).toBe("Originally $1,800.00 was filed as Google Search. Now $500.00 (Oct 26–Oct 30) is filed as Google Local Services; $1,300.00 (Oct 13–Oct 25) is still filed as Google Search.");
   });
 
   it("verified: cleared, and reclassified, not added, only when the window carries exactly the original amount", () => {
     const s = gapStatus({ id: 7, status: "resolved", evidence: { ...finding, verification } }, complete);
-    expect(s).toMatchObject({ state: "verified", held: false, label: "Coverage hold cleared", reclassified: true });
-    expect(s.conclusion).toBe("Coverage hold cleared: all 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12, verified Oct 31, 1:15 PM UTC.");
-    expect(s.change).toBe("Reclassified, not added: the $1,800.00 first filed as Google Search is now filed as Google Local Services.");
+    expect(s).toMatchObject({ state: "verified", held: false, label: "Coverage hold cleared · 18 of 18 days verified", reclassified: true });
+    expect(s.conclusion).toBe("Coverage hold cleared · 18 of 18 days verified. All 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12, verified Oct 31, 1:15 PM UTC.");
+    expect(s.change).toBe("$1,800.00 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.");
     // The source re-sent the window with $50.00 more: covered, verified, but not "the same money".
     const more = gapStatus({ id: 7, status: "resolved", evidence: { ...finding, verification } }, { ...complete, coveredCents: 185_000 });
     expect(more.reclassified).toBe(false);
     expect(more.change).toBe("The window now carries $1,850.00 filed as Google Local Services; the original finding recorded $1,800.00 filed as Google Search.");
+    // The same total, but two days restated money in opposite directions: that is not "the same money".
+    const offset = gapStatus(
+      { id: 7, status: "resolved", evidence: { ...finding, verification } },
+      { ...complete, amountChanges: [{ date: "2026-10-14", externalCampaignId: "pmax-x", beforeCents: 10_000, afterCents: 10_500 }, { date: "2026-10-15", externalCampaignId: "pmax-x", beforeCents: 10_000, afterCents: 9_500 }] },
+    );
+    expect(offset.reclassified).toBe(false);
+    expect(offset.change).toBe("The window now carries $1,800.00 filed as Google Local Services; the original finding recorded $1,800.00 filed as Google Search. Amounts changed: Oct 14: $100.00 became $105.00; Oct 15: $100.00 became $95.00.");
+    expect(offset.change).not.toMatch(/reclassified, not added|moved from/i);
   });
 
   it("historical: a verification the records no longer support says so, and a recorded $0.00 is not a missing day", () => {
     const later = coverage({ covered: days(13, 30).filter((d) => d !== "2026-10-20"), missing: [], recordedZero: ["2026-10-20"], misfiled: [], coveredCents: 170_000, misfiledCents: 0, frozen: true });
     const s = gapStatus({ id: 7, status: "resolved", evidence: { ...finding, verification } }, later);
-    expect(s).toMatchObject({ state: "historical", held: false, label: "Verification historical" });
-    expect(s.conclusion).toBe("Verification historical: verified Oct 31, 1:15 PM UTC, but now 17 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12; Oct 20 recorded $0.00.");
+    expect(s).toMatchObject({ state: "historical", held: false, label: "Verification no longer current · 17 of 18 days covered" });
+    expect(s.conclusion).toBe("Verification no longer current · 17 of 18 days covered. It was verified Oct 31, 1:15 PM UTC, but now 17 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12; Oct 20 recorded $0.00; this is history, not a current clearance.");
+    expect(s.label).not.toMatch(/cleared/i);
     expect(s.change).toBe("Originally $1,800.00 was filed as Google Search. Now $1,700.00 (Oct 13–Oct 19, Oct 21–Oct 30) is filed as Google Local Services; Oct 20 recorded $0.00.");
   });
 
@@ -87,7 +97,7 @@ describe("one status, the same words everywhere", () => {
 
   it("an incident resolved before verifications existed says only that", () => {
     const s = gapStatus({ id: 7, status: "resolved", evidence: finding, resolution: "Condition no longer detected" }, complete);
-    expect(s).toMatchObject({ state: "resolved", label: "Resolved", conclusion: "Resolved: Condition no longer detected.", change: null });
+    expect(s).toMatchObject({ state: "resolved", label: "Resolved", conclusion: "Resolved. Condition no longer detected.", change: null });
     expect(weekAgainstWindow(s, { start: "2026-10-26", end: "2026-10-30" })).toBeNull();
   });
 });
@@ -129,12 +139,12 @@ describe("the Overview quotes the incident's status, it does not recompute it", 
   it("held: the status line is the incident's own, with its evidence", () => {
     const t = takeaway(base("open", gapStatus({ id: 7, status: "open", evidence: finding }, partial)), "B12");
     expect(t.headline).toBe("Google Local Services spend at B12 stopped after Oct 12; since then only Oct 26–Oct 30 have any.");
-    expect(t.trust).toEqual({ tone: "review", label: "Decision still held", text: "5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B12; Oct 13–Oct 25 still have none.", exceptionId: 7 });
+    expect(t.trust).toEqual({ tone: "review", label: "Still on hold · 5 of 18 days verified", text: "Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.", exceptionId: 7 });
     expect(t.detail).toContain("$1,300.00 (Oct 13–Oct 25) is still filed as Google Search.");
   });
   it("cleared: what cleared, and that the money moved between channels", () => {
     const t = takeaway(base("resolved", gapStatus({ id: 7, status: "resolved", evidence: { ...finding, verification } }, complete)), "B12");
-    expect(t.trust).toMatchObject({ tone: "clear", label: "Coverage hold cleared", exceptionId: 7 });
-    expect(t.trust.text).toContain("Reclassified, not added: the $1,800.00 first filed as Google Search is now filed as Google Local Services.");
+    expect(t.trust).toMatchObject({ tone: "clear", label: "Coverage hold cleared · 18 of 18 days verified", exceptionId: 7 });
+    expect(t.trust.text).toContain("$1,800.00 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.");
   });
 });

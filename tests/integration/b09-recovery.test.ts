@@ -174,7 +174,8 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     // The status every view shows (lib/reconcile/gap-status.ts): held, nothing covered, the money filed as Search.
     const [s] = await gapStatusesAt(pool, BRANCH);
     expect(s).toMatchObject({ exceptionId: Number(original.id), state: "missing", held: true });
-    expect(s.conclusion).toBe("Decision held: none of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.");
+    // Changed 2026-11-16 (HOLD-TO-DECISION.md §1.5): the decision first, then why. It read "Decision held: none of …".
+    expect(s.conclusion).toBe("Hold the budget decision. A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.");
     expect(s.change).toBe("Since Oct 13, $3,743.19 has been spent under pmax-lsa-B09, which is filed as Google Search; none of it is filed as Google Local Services.");
     expect(await controls()).toEqual(CONTROLS);
   });
@@ -203,7 +204,7 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect(gate.text).toContain(" 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none, so it still holds.");
     // The incident, the daily evidence and the Overview read the same status: the week is not the window.
     const [s] = await gapStatusesAt(pool, BRANCH);
-    expect(s.conclusion).toBe("Decision still held: 5 of 18 dates in the decision window (Oct 13–Oct 30) have Google Local Services spend at B09; Oct 13–Oct 25 still have none.");
+    expect(s.conclusion).toBe("Still on hold · 5 of 18 days verified. Oct 26–Oct 30 are covered, but the decision window (Oct 13–Oct 30) is not: Oct 13–Oct 25 still have no Google Local Services record.");
     expect(s.change).toBe("Originally $3,743.19 was filed as Google Search. Now $1,051.80 (Oct 26–Oct 30) is filed as Google Local Services; $2,691.39 (Oct 13–Oct 25) is still filed as Google Search.");
     expect(await controls()).toEqual(CONTROLS);
     // The run, as recorded when it ran: 5 versions stored, 5 accepted records changed; the hold
@@ -238,7 +239,8 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     // Cleared, and the same money moved: Decision Lab says it for October, not for September.
     const [s] = await gapStatusesAt(pool, BRANCH, { range: { from: "2026-10-01", to: "2026-10-31" } });
     expect(s).toMatchObject({ exceptionId: Number(original.id), state: "verified", held: false, reclassified: true });
-    expect(s.change).toBe("Reclassified, not added: the $3,743.19 first filed as Google Search is now filed as Google Local Services.");
+    expect(s.change).toBe("$3,743.19 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.");
+    expect(s.label).toBe("Coverage hold cleared · 18 of 18 days verified");
     expect(await gapStatusesAt(pool, BRANCH, { range: { from: "2026-09-01", to: "2026-10-01" } })).toEqual([]);
     // The handoff (B09-HANDOFF.md): a run the verification names opens on the ingestion pipeline,
     // listed however many runs came after it.
@@ -296,6 +298,13 @@ describe("B09: a re-fetch clears the hold only when the whole window is covered"
     expect((await caseOf(original.id)).id).toBe(caseId);
     expect((await budgetSignal(pool, BRANCH, OCT)).blockers.map((b) => String(b.exceptionId))).toContain(original.id);
     expect((await coverageOf(original.id)).recordedZero).toEqual([day(20)]);
+    // The current hold, on the same incident, with the earlier verification kept as history, never
+    // shown as a clearance (HOLD-TO-DECISION.md §1.4, scenario 7).
+    const [reopened] = await gapStatusesAt(pool, BRANCH);
+    expect(reopened).toMatchObject({ exceptionId: Number(original.id), state: "partial", held: true, label: "Still on hold · 17 of 18 days verified" });
+    expect(reopened.label).not.toMatch(/cleared/i);
+    const held = await one<{ evidence: { verification?: { verifiedAt: string } } }>(pool, "select evidence from exceptions where id = $1", [original.id]);
+    expect(held.evidence.verification?.verifiedAt).toBe(at("11:05").toISOString());
     const repair = await deliverAds([spend("pmax", 20, "2026-10-31T12:50:00Z")], at("12:55"));
     const row = await one<{ status: string; evidence: { previousVerifications?: unknown[]; verification?: { verifiedAt: string } } }>(pool, "select status, evidence from exceptions where id = $1", [original.id]);
     expect(row.status).toBe("resolved");

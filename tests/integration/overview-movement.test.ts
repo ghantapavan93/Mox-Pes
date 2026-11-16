@@ -124,8 +124,9 @@ describe("what the chart draws is what the records say", () => {
     expect(m.recoveries?.map((r) => [r.exceptionId, r.state])).toEqual([[m.markers[0].exceptionId, "missing"]]);
     expect(t.trust).toEqual({
       tone: "review",
-      label: "Decision held",
-      text: "None of the 18 dates in the decision window (Oct 13–Oct 30) has Google Local Services spend at B09.",
+      // Changed 2026-11-16 (HOLD-TO-DECISION.md §1.5): it read "Decision held" with the window clause alone.
+      label: "Hold the budget decision",
+      text: "A required Google Local Services spend record is missing at B09: none of the 18 dates in the decision window (Oct 13–Oct 30) has one.",
       exceptionId: m.markers[0].exceptionId,
     });
     const week = m.weeks.find((w) => w.start === "2026-10-19")!;

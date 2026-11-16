@@ -29,6 +29,7 @@ then effort and polish. Each item names the module it extends; none adds a paral
 | An answer check is listed by everything it names, not only what it read: the three gaps the acceptance recheck left (R-57), fixed after the decision and verified by the full regression; the accepted local demo checkpoint is `28e498b` (2026-11-15) | `SHADOW-MODE.md` §4; `shadow-mode.test.ts`; `bive/r57/`; `RELEASE-CANDIDATE.md` §7 |
 | The B09 proof reruns from the repo with one command on its own database and server: missing → partial hold → verified, replays, an independent ledger, paired scope checks (R-55, 2026-11-15) | `B09-ACCEPTANCE-RUNNER.md`; `tests/acceptance/b09/`; `b09-acceptance/` |
 | Bring your own file from a cold start: an unseen synthetic Microsoft Ads export goes Upload → Review → Result unaided in a scripted walk; the currency column is read, and the result is stated first (R-58, 2026-11-15) | `BYOF-WORKFLOW.md`; `tests/acceptance/byof/`; `byof/` |
+| Browser-suite stabilization: the drift review's lost focus (an app bug) and the replay clicks' fixed window (a test bug), each reproduced, then fixed. `d431e9b` passed the full regression in one run and is the accepted local demo checkpoint (R-41, 2026-11-16) | `SUITE-STABILIZATION.md`; `stabilization/`; `RELEASE-CANDIDATE.md` §8 |
 
 ## Next, in order
 

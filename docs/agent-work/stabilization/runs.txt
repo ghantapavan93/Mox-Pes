@@ -1,0 +1,25 @@
+=== STEP v1-alone at 60cb483 Lint skips the evidence harnesses kept with the acceptance runs; build G9Bf3P9KDbzRlLWzydKQc; specs: tests/e2e/golden-path.spec.ts tests/e2e/zzzzzz-drift-review.spec.ts; tracked changes:  2 files changed, 22 insertions(+)
+  14 passed (2.6m)
+=== END v1-alone rc=0 seconds=161
+
+=== STEP a1 at f372aca The stale-save notice takes focus once it is on the page; build bFs8dK6ZMXtNesdKlZO1N; specs: all; tracked changes:  2 files changed, 22 insertions(+)
+  1 skipped
+  125 passed (31.2m)
+=== END a1 rc=0 seconds=1874
+
+=== STEP d1-delay-unfixed at f372aca The stale-save notice takes focus once it is on the page; build bFs8dK6ZMXtNesdKlZO1N; specs: tests/e2e/golden-path.spec.ts; tracked changes:  2 files changed, 30 insertions(+)
+  1) [chromium] › tests\e2e\golden-path.spec.ts:50:7 › investigate → replay → verify › an engineer dry-runs; the panel cannot commit; the fix applies through approval, once 
+  2) [chromium] › tests\e2e\golden-path.spec.ts:130:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged 
+  2 failed
+  4 did not run
+  3 passed (1.4m)
+=== END d1-delay-unfixed rc=1 seconds=89
+
+=== STEP d2-delay-fixed at f372aca The stale-save notice takes focus once it is on the page; build bFs8dK6ZMXtNesdKlZO1N; specs: tests/e2e/golden-path.spec.ts; tracked changes:  2 files changed, 36 insertions(+)
+  9 passed (1.9m)
+=== END d2-delay-fixed rc=0 seconds=120
+
+=== STEP c1-affected at d431e9b The replay panel's dry-run clicks wait on their own request; build LiVl4dgd_L8o9yItqTqL5; specs: tests/e2e/golden-path.spec.ts tests/e2e/zzzzzz-drift-review.spec.ts; tracked changes: 0
+  14 passed (2.8m)
+=== END c1-affected rc=0 seconds=174
+

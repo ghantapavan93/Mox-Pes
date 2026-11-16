@@ -166,7 +166,16 @@ The candidate is decided once, together with the BIVE audit (`BIVE-ACCEPTANCE.md
 
 **Updated local synthetic demo checkpoint: `28e498b`, build `Lc4HRzPXzTTju7yRCUitk`.** The R11
 fix (R-57) passed the same verification after the decision (§7). The original acceptance of
-`91ef06f`, above, stands as recorded. Commits after `28e498b` change only docs and test tooling.
+`91ef06f`, above, stands as recorded. The commits after `28e498b`, up to `153e7b9`, change only
+docs and test tooling.
+
+**Promoted local synthetic demo checkpoint (2026-11-16): `d431e9b`, build
+`cVimzqQcl7kG4UNywLQfF`.** It adds two things to `28e498b`:
+- the bring-your-own-file upload change (`BYOF-WORKFLOW.md`);
+- the two browser-suite fixes (`SUITE-STABILIZATION.md`).
+
+It passed the same verification in one run (§8). The acceptances of `28e498b` and `91ef06f` stand as
+recorded.
 
 ## 5. Shortest verified local startup
 
@@ -233,3 +242,31 @@ What the walk covered:
 - **The control,** an analyst's answer about B40 alone: the brand lead reads it
   (`brand-lead-allowed-control-*.jpg`).
 - **The brand lead's answer naming nothing:** the brand lead reads it, the partner is refused.
+
+## 8. The upload candidate, stabilized and promoted (`d431e9b`)
+
+`60cb483`, the bring-your-own-file candidate, passed every regression step except the browser
+suite. Its two full runs each failed a different timing check (`BYOF-WORKFLOW.md` §7). Both were
+reproduced before they were fixed (`SUITE-STABILIZATION.md`):
+- **`f372aca`, the app:** the drift review lost the stale-save focus when a frame came before React
+  put the notice on the page.
+- **`d431e9b`, the test:** the replay panel's two dry-run clicks allowed a fixed 5 s for a request
+  that takes 3.1 to 3.5 s.
+
+| Step | `d431e9b`, build `cVimzqQcl7kG4UNywLQfF` |
+|---|---|
+| The two affected specs, clean | 14 of 14 |
+| `npm run acceptance:byof`, from a fresh worktree | 54 of 54; the demo database unchanged |
+| Install, migrations on an empty database, build | Pass. 33 migrations applied |
+| Typecheck, lint | Pass (exit 0, 0) |
+| Unit and integration (vitest) | Exit 0. 79 files: 940 passed, plus the 1 known expected failure (R-39) |
+| Seed | Exit 0. 675 runs (1 failed), 134,088 raw events: unchanged |
+| The five frozen eval packs | Exit 0 each. Identical to `28e498b`'s run, except the recorded commit and one process id |
+| Full browser suite, with pixel comparisons | Exit 0. 125 passed, 1 skipped (the opt-in demo-video recording), 0 failed, in one run (27.4 min). No pixel baseline changed. The server errors: the twin's injected CRM outage, and the reseed race once |
+
+Every step's exit code, the summaries and the pack comparison are in
+`stabilization/verify-d431e9b.txt`.
+
+**Result: it passed.** The local synthetic demo checkpoint moves from `28e498b` to `d431e9b`,
+build `cVimzqQcl7kG4UNywLQfF` (§4). What stays open is in `BYOF-WORKFLOW.md` §8–§9 (R-58) and
+`SUITE-STABILIZATION.md` §5 (what is left of R-41).

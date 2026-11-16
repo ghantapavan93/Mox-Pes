@@ -1,0 +1,181 @@
+investigate → replay → verify > the branch page shows why, and links to the exception | [diag] 1794809935195.3 focusin a
+investigate → replay → verify > the branch page shows why, and links to the exception | [diag] 1794809935224.6 focusout a related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937074.1 focusin a
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937108.0 focusout a related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937398.3 inserted div[replay-panel]{replay-panel#1} active: body 
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937460.6 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937460.9 click button "Dry run (rolled back)" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809937461.1 fetch start POST /api/replays
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809940736.3 fetch done /api/replays 200 started 1794809937461.1
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809940748.0 inserted div[replay-result]{replay-result#2} active: button "Dry run — nothing was saved. Claimed 119 of 119 · projected 119 · still quaranti"
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941221.8 inserted div[replay-panel]{replay-panel#1} active: body 
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941558.2 focusin textarea#_R_2jkqlubsnulb_-why
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941626.9 focusout textarea#_R_2jkqlubsnulb_-why related: button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941627.3 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941628.2 click button "Propose fix" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941645.1 focusout button related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941988.1 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809941988.5 click button "Run dry run (rolled back)" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949325.8 focusin input#_R_fqkqlubsnulb_-reason
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949400.0 focusout input#_R_fqkqlubsnulb_-reason related: button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949400.3 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949401.0 click button "Approve" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949671.4 focusout button related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949725.6 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809949726.1 click button "Execute (application, once)" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809956504.5 focusout button related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809956518.5 focusin div[execution-result]#proposal-1-execution
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794809956519.9 focus() div[execution-result]#proposal-1-execution connected: true active: body -> div[execution-result]#proposal-1-execution hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:9724 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > the B09 budget signal is marked untrustworthy and links to the coverage gap | [diag] 1794809963092.0 focusin a
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > the B09 budget signal is marked untrustworthy and links to the coverage gap | [diag] 1794809963115.4 focusout a related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965276.1 focusin a
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965300.8 focusout a related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965594.9 inserted div[replay-panel]{replay-panel#1} active: body 
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965650.0 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965650.2 click button "Dry run (rolled back)" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809965650.5 fetch start POST /api/replays
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809968886.4 fetch done /api/replays 200 started 1794809965650.5
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809968896.3 inserted div[replay-result]{replay-result#2} active: button "Dry run — nothing was saved. Claimed 22 of 22 · projected 22 · left as they were"
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969660.2 inserted div[replay-panel]{replay-panel#1} active: body 
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969801.5 focusin textarea#_R_2jkqlubsnulb_-why
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969862.3 focusout textarea#_R_2jkqlubsnulb_-why related: button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969862.5 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969863.0 click button "Propose fix" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809969877.1 focusout button related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809970274.5 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809970275.0 click button "Run dry run (rolled back)" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977427.5 focusin input#_R_fqkqlubsnulb_-reason
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977496.2 focusout input#_R_fqkqlubsnulb_-reason related: button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977496.5 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977497.1 click button "Approve" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977860.8 focusout button related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977938.8 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809977939.1 click button "Execute (application, once)" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809984849.3 focusout button related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809984868.4 focusin div[execution-result]#proposal-2-execution
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794809984870.1 focus() div[execution-result]#proposal-2-execution connected: true active: body -> div[execution-result]#proposal-2-execution hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:9724 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809998613.2 focusin a
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809998726.3 focusout a related: a
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809998726.5 focusin a
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809998800.6 focusout a related: null
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809999792.2 focusin button[compare-versions]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809999792.4 click button[compare-versions] "Compare stored versions of Call CAL00017" react attached: true
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809999798.4 focusout button[compare-versions] related: button
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809999803.8 focusin button
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794809999804.3 focus() button connected: true active: button[compare-versions] -> button hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:22316 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000135.2 focusout button related: button[compare-versions]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000135.6 focusin button[compare-versions]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000135.8 focus() button[compare-versions] connected: true active: button -> button[compare-versions] hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:28064 | at HTMLDocument.t (/_next/static/chunks/3ajz0ecj-3ino.js:1:22447)
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000208.3 focusout button[compare-versions] related: button[record-decision]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000208.4 focusin button[record-decision]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000208.8 click button[record-decision] "Record a decision" react attached: true
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000208.9 rAF#1 requested conflict in DOM: false code: ()=>S.current?.focus()
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000213.2 focusout button[record-decision] related: null
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000214.4 inserted form[decision-form]#_r_0_{decision-form#1} active: body 
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000220.5 rAF#1 runs conflict in DOM: false active: body
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000220.8 focusin input
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000221.0 focus() input connected: true active: body -> input hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17650 | at <anonymous>:42:14
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000272.7 focusout input related: textarea[decision-rationale]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000273.3 focusin textarea[decision-rationale]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000323.3 focusout textarea[decision-rationale] related: button[save-decision]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000323.4 focusin button[save-decision]
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000323.7 click button[save-decision] "Save decision" react attached: true
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000324.7 fetch start POST /api/exceptions/7580/review
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000334.7 focusout button[save-decision] related: null
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000362.2 fetch done /api/exceptions/7580/review 200 started 1794810000324.7
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000366.3 removed decision-form #decision-form#1
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000553.5 focusin div[case-decision]#case-decision
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810000554.3 focus() div[case-decision]#case-decision connected: true active: body -> div[case-decision]#case-decision hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17159 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+desktop: find the case, read the proof, compare versions, decide, and the decision persists | [diag] 1794810005591.5 focusin summary
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810010908.9 focusin a
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810010962.5 focusout a related: null
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011807.5 focusin button[compare-versions]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011807.8 click button[compare-versions] "Compare stored versions of Call CAL00019" react attached: true
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011818.7 focusout button[compare-versions] related: button
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011823.3 focusin button
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011824.0 focus() button connected: true active: button[compare-versions] -> button hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:22316 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011905.7 click button "Close Esc" react attached: true
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011905.8 focusout button related: button[compare-versions]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011906.5 focusin button[compare-versions]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011906.6 focus() button[compare-versions] connected: true active: button -> button[compare-versions] hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:28064 | at s5 (/_next/static/chunks/3ukgd6k0t4wc2.js:31:164069) | at /_next/static/chunks/3ukgd6k0t4wc2.js:31:169917 | at tU (/_next/static/chunks/3ukgd6k0t4wc2.js:31:30422)
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011957.0 focusout button[compare-versions] related: button[record-decision]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011957.0 focusin button[record-decision]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011957.2 click button[record-decision] "Record a decision" react attached: true
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011957.4 rAF#1 requested conflict in DOM: false code: ()=>S.current?.focus()
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011958.9 focusout button[record-decision] related: null
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011960.0 inserted form[decision-form]#_r_0_{decision-form#1} active: body 
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011967.9 rAF#1 runs conflict in DOM: false active: body
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011968.2 focusin input
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810011968.3 focus() input connected: true active: body -> input hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17650 | at <anonymous>:42:14
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012008.7 focusout input related: input
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012009.0 focusin input
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012035.3 focusout input related: textarea[decision-rationale]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012036.1 focusin textarea[decision-rationale]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012124.2 focusout textarea[decision-rationale] related: button[save-decision]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012124.2 focusin button[save-decision]
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012124.5 click button[save-decision] "Save decision" react attached: true
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012124.9 fetch start POST /api/exceptions/7580/review
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012133.9 focusout button[save-decision] related: null
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012141.5 fetch done /api/exceptions/7580/review 200 started 1794810012124.9
+phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner | [diag] 1794810012143.8 removed decision-form #decision-form#1
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013648.4 focusin button[record-decision]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013649.0 click button[record-decision] "Record a decision" react attached: true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013649.3 rAF#1 requested conflict in DOM: false code: ()=>S.current?.focus()
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013652.1 focusout button[record-decision] related: null
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013654.4 inserted form[decision-form]#_R_s4lubsnulb_{decision-form#1} active: body 
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013664.1 rAF#1 runs conflict in DOM: false active: body
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013664.4 focusin input
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013664.6 focus() input connected: true active: body -> input hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17650 | at <anonymous>:42:14
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013687.0 focusout input related: textarea[decision-rationale]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810013687.8 focusin textarea[decision-rationale]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016725.7 focusout textarea[decision-rationale] related: button[save-decision]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016725.8 focusin button[save-decision]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016726.3 click button[save-decision] "Save decision" react attached: true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016726.7 fetch start POST /api/exceptions/7580/review
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016734.1 focusout button[save-decision] related: null
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016739.0 fetch done /api/exceptions/7580/review 409 started 1794810016726.7
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016741.7 rAF#2 requested conflict in DOM: false code: ()=>$.current?.focus()
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016742.9 inserted div[stale-conflict]{stale-conflict#2} active: body 
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016743.1 active is body hasFocus=true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016751.6 rAF#2 runs conflict in DOM: true active: body
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016752.2 focusin div[stale-conflict]{stale-conflict#2}
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016752.5 focus() div[stale-conflict]{stale-conflict#2} connected: true active: body -> div[stale-conflict]{stale-conflict#2} hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:16768 | at <anonymous>:42:14
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810016758.9 active is div[stale-conflict]{stale-conflict#2} hasFocus=true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017257.3 focusout div[stale-conflict]{stale-conflict#2} related: button[save-decision]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017257.5 focusin button[save-decision]
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017257.9 click button[save-decision] "Save decision" react attached: true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017258.1 fetch start POST /api/exceptions/7580/review
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017266.5 focusout button[save-decision] related: null
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017266.8 active is body hasFocus=true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017272.0 fetch done /api/exceptions/7580/review 200 started 1794810017258.1
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017277.3 removed stale-conflict #stale-conflict#2
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017277.4 removed decision-form #decision-form#1
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017279.2 focusin div[case-decision]#case-decision
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017280.4 focus() div[case-decision]#case-decision connected: true active: body -> div[case-decision]#case-decision hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17159 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017281.0 active is div[case-decision]#case-decision hasFocus=true
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017458.5 focusout div[case-decision]#case-decision related: null
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017471.6 focusin div[case-decision]#case-decision
+stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves | [diag] 1794810017472.4 focus() div[case-decision]#case-decision connected: true active: body -> div[case-decision]#case-decision hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:17159 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023825.5 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023826.0 click button[compare-versions] "Compare stored versions of Call CAL00021" react attached: true
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023839.4 focusout button[compare-versions] related: button
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023845.3 focusin button
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023846.1 focus() button connected: true active: button[compare-versions] -> button hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:22316 | at ix (/_next/static/chunks/3ukgd6k0t4wc2.js:31:103210) | at uS (/_next/static/chunks/3ukgd6k0t4wc2.js:31:128318) | at uw (/_next/static/chunks/3ukgd6k0t4wc2.js:31:127980)
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023873.9 focusout button related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023874.4 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810023874.6 focus() button[compare-versions] connected: true active: button -> button[compare-versions] hasFocus: true at: at /_next/static/chunks/3ajz0ecj-3ino.js:1:28064 | at HTMLDocument.t (/_next/static/chunks/3ajz0ecj-3ino.js:1:22447)
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024370.3 focusin div[whats-new]#whats-new
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024390.5 focusout div[whats-new]#whats-new related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024391.1 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024435.7 focusout button[compare-versions] related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024436.1 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024460.4 focusout button[compare-versions] related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024460.8 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024489.1 focusout button[compare-versions] related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024489.3 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024510.8 focusout button[compare-versions] related: button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024511.0 focusin button[compare-versions]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024529.1 focusout button[compare-versions] related: a[drift-evidence-link]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024529.9 focusin a[drift-evidence-link]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024551.4 focusout a[drift-evidence-link] related: button[record-decision]
+320 px reflow, keyboard order, visible and unobscured focus | [diag] 1794810024551.7 focusin button[record-decision]

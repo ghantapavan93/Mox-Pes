@@ -11,6 +11,11 @@ In the full regression every step exited 0 except the browser suite. Each of its
 different timing-sensitive check, in code this workflow does not touch, and each test passed in one
 of the two runs (§7).
 
+**Since 2026-11-16:** both checks were reproduced and fixed (`SUITE-STABILIZATION.md`). The drift
+review's focus was an app bug; the replay clicks' fixed window was a test bug. The candidate with
+the fixes, `d431e9b`, passed the full regression in one run. It is now the accepted local synthetic
+demo checkpoint (`RELEASE-CANDIDATE.md` §8).
+
 The accepted local synthetic demo stays `28e498b`. This workflow adds, on top:
 
 | Commit | What |
@@ -396,6 +401,8 @@ mapped it unasked, and the runner checks that.
   in one run: 125 passed, 1 skipped.
 - So `60cb483` lacks the single all-green run the accepted checkpoint has. The record is
   `byof/verify-60cb483.txt`.
+- Both failures were then reproduced and fixed, and `d431e9b` passed in one run
+  (`SUITE-STABILIZATION.md`).
 
 **The frozen packs against the `28e498b` run** (timings, run times and latencies aside):
 - the investigator and ChangeGuard packs, and the logs of all four held-out steps: identical;
@@ -447,11 +454,11 @@ those folders out of lint. The runs above are on the final commit.
 - On an empty workspace, the Overview's tiles show $0.00 beside "That is no record, not $0".
 - The header shows a green dot with the tooltip "All feeds succeeded within 36 hours", though no
   feed has run (`components/ShellStatus.tsx`).
-- Two timing-sensitive browser checks (§7, R-41):
-  - the drift review focuses its stale-save notice one frame after starting `router.replace`
-    (`components/incidents/DriftDecision.tsx:109`), and a later render may take the focus (likely,
-    not proven);
-  - the replay panel's dry-run result is expected within 5 s.
+- Two timing-sensitive browser checks (§7, R-41). Both were fixed on 2026-11-16, and the guess
+  recorded here was wrong (`SUITE-STABILIZATION.md`):
+  - the drift review's notice was never focused, because its frame callback could run before React
+    put the notice on the page; no later render took the focus;
+  - the replay panel's dry-run result was expected within 5 s.
 
 ## 9. Limits, and what this does not establish
 

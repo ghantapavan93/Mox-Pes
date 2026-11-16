@@ -1,0 +1,118 @@
+Run 1 (60cb483, full suite): the failing stale-save test's trace, on one wall clock (seconds from the test's first action).
+Made by harness/read-trace.py from run1/trace.zip; static assets and request headers left out.
+
+    0.000  action    #yqnr@21282 newPage {}
+    0.067  end       #yqnr@21282 ok
+    0.069  action    #yqnr@21284 fetch {"url": "/api/role", "method": "POST", "jsonData": "{\"role\":\"marketing\"}"}
+    0.071  network   POST /api/role -> 200 in 8 ms
+    0.078  end       #yqnr@21284 ok
+    0.079  action    #yqnr@21287 goto {"url": "/exceptions/6633", "waitUntil": "load"}
+    0.082  log       #yqnr@21287 navigating to "http://localhost:3000/exceptions/6633", waiting until "load"
+    0.086  network   GET /exceptions/6633 -> 200 in 108 ms
+    0.259  end       #yqnr@21287 ok
+    0.278  action    #yqnr@21289 click {"selector": "internal:testid=[data-testid=\"record-decision\"s] >> visible=true", "strict": true}
+    0.280  network   GET /?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 3 ms
+    0.283  log       #yqnr@21289 waiting for getByTestId('record-decision').visible()
+    0.291  network   GET /?_rsc=qudzyb5DfoncJAbm [RSC] -> 200 in 14 ms
+    0.302  network   GET /exceptions?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 14 ms
+    0.302  network   GET /investigator?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 14 ms
+    0.303  network   GET /assurance?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 14 ms
+    0.318  network   GET /customers?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 10 ms
+    0.319  network   GET /decisions?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 10 ms
+    0.319  network   GET /feedback?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 9 ms
+    0.321  network   GET /definitions?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 8 ms
+    0.330  network   GET /integrations?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 16 ms
+    0.330  network   GET /onboarding?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 16 ms
+    0.331  network   GET /changes?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 15 ms
+    0.332  network   GET /audit?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 15 ms
+    0.348  network   GET /demo?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 14 ms
+    0.349  network   GET /exceptions?_rsc=aUD_He1-hQ6DaJkn [RSC] -> 200 in 21 ms
+    0.350  network   GET /investigator?_rsc=dEIGgYSw1e9a3Fvx [RSC] -> 200 in 23 ms
+    0.351  network   GET /assurance?_rsc=FIOrNaA_Bq1PsGw3 [RSC] -> 200 in 26 ms
+    0.363  network   GET /customers?_rsc=tURy2xIvffo975yV [RSC] -> 200 in 20 ms
+    0.383  network   GET /decisions?_rsc=_cyk5NKZKs510dTM [RSC] -> 200 in 9 ms
+    0.391  network   GET /feedback?_rsc=7yaL0iu6dKHvp05k [RSC] -> 200 in 17 ms
+    0.392  network   GET /definitions?_rsc=QaXEdQMu0uY_63N5 [RSC] -> 200 in 13 ms
+    0.403  network   GET /onboarding?_rsc=792iK56ikk5j-NMx [RSC] -> 200 in 20 ms
+    0.429  network   GET /integrations?_rsc=NnzwY3QI_5Y30bgO [RSC] -> 200 in 17 ms
+    0.430  network   GET /changes?_rsc=JmQ6a6tztC0y3Uuw [RSC] -> 200 in 23 ms
+    0.437  network   GET /audit?_rsc=nV8fxUQhKMpJ-F3_ [RSC] -> 200 in 15 ms
+    0.449  network   GET /demo?_rsc=61f1FUqCMz5Rxedi [RSC] -> 200 in 13 ms
+    0.532  network   GET /branches/B44?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 6 ms
+    0.533  network   GET /changes/2?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 6 ms
+    0.533  network   GET /changes/2/checks/4?_rsc=1P0h94RoLthRSYEl [RSC] -> 200 in 6 ms
+    0.542  network   GET /branches/B44?_rsc=tvbW6byeLEblZi-a [RSC] -> 200 in 49 ms
+    0.544  network   GET /changes/2?_rsc=0y05OJJNJODnKaMs [RSC] -> 200 in 54 ms
+    0.547  network   GET /changes/2/checks/4?_rsc=7cKpPm72QZBONuiM [RSC] -> 200 in 50 ms
+    0.595  log       #yqnr@21289   locator resolved to <button type="button" aria-expanded="false" data-testid="record-decision" aria-controls="_R_s4lubsnulb_" class="inline-flex min-h-10 items-center ju
+    0.596  log       #yqnr@21289 attempting click action
+    0.596  log       #yqnr@21289   waiting for element to be visible, enabled and stable
+    0.608  log       #yqnr@21289   element is visible, enabled and stable
+    0.608  log       #yqnr@21289   scrolling into view if needed
+    0.608  log       #yqnr@21289   done scrolling
+    0.616  log       #yqnr@21289   performing click action
+    0.627  log       #yqnr@21289   click action done
+    0.627  log       #yqnr@21289   waiting for scheduled navigations to finish
+    0.628  log       #yqnr@21289   navigations have finished
+    0.628  end       #yqnr@21289 ok
+    0.635  action    #yqnr@21291 fill {"selector": "internal:role=form[name=\"Record a decision\"i] >> internal:testid=[data-testid=\"decision-rationale\"s]", "strict": true, "value": "Both tracking numbers m
+    0.639  log       #yqnr@21291 waiting for getByRole('form', { name: 'Record a decision' }).getByTestId('decision-rationale')
+    0.645  log       #yqnr@21291   locator resolved to <textarea rows="3" required="" minlength="10" maxlength="1000" data-testid="decision-rationale" aria-describedby="_R_s4lubsnulb_-scope" class="mt-1 
+    0.646  log       #yqnr@21291   fill("Both tracking numbers moved at the vendor; reviewed with the vendor's change log.")
+    0.646  log       #yqnr@21291 attempting fill action
+    0.652  log       #yqnr@21291   waiting for element to be visible, enabled and editable
+    0.658  end       #yqnr@21291 ok
+    4.591  action    #yqnr@21298 __waitInfo__ {"waitId": "581138a0700f22479ecf553e10361a56", "phase": "before", "event": "response"}
+    4.592  action    #yqnr@21301 click {"selector": "internal:role=form[name=\"Record a decision\"i] >> internal:testid=[data-testid=\"save-decision\"s]", "strict": true}
+    4.603  log       #yqnr@21301 waiting for getByRole('form', { name: 'Record a decision' }).getByTestId('save-decision')
+    4.607  log       #yqnr@21301   locator resolved to <button type="submit" data-testid="save-decision" class="inline-flex min-h-10 items-center rounded-md bg-accent px-4 text-sm font-semibold text-whit
+    4.608  log       #yqnr@21301 attempting click action
+    4.608  log       #yqnr@21301   waiting for element to be visible, enabled and stable
+    4.625  log       #yqnr@21301   element is visible, enabled and stable
+    4.625  log       #yqnr@21301   scrolling into view if needed
+    4.625  log       #yqnr@21301   done scrolling
+    4.633  log       #yqnr@21301   performing click action
+    4.637  network   POST /api/exceptions/6633/review -> 409 in 19 ms
+    4.642  log       #yqnr@21301   click action done
+    4.642  log       #yqnr@21301   waiting for scheduled navigations to finish
+    4.642  log       #yqnr@21301   navigations have finished
+    4.643  end       #yqnr@21301 ok
+    4.658  console   error: Failed to load resource: the server responded with a status of 409 (Conflict)
+    4.660  network   GET /exceptions/6633?since=4&_rsc=sv_eFK_p40oWymzv [RSC] -> 200 in 89 ms
+    4.662  end       #yqnr@21298 ok
+    4.662  action    #yqnr@21307 expect {"selector": "internal:testid=[data-testid=\"stale-conflict\"s] >> visible=true", "expression": "to.have.text", "expectedText": [{"string": "Not saved: newer evidence arr
+    4.669  log       #yqnr@21307 Expect "toContainText" getByTestId('stale-conflict').visible() with timeout 5000ms
+    4.669  log       #yqnr@21307 waiting for getByTestId('stale-conflict').visible()
+    4.675  end       #yqnr@21307 ok
+    4.692  action    #yqnr@21309 expect {"selector": "internal:testid=[data-testid=\"stale-conflict\"s] >> visible=true", "expression": "to.be.focused", "expectedValue": {"value": {"v": "undefined"}, "handles":
+    4.699  log       #yqnr@21309 Expect "toBeFocused" getByTestId('stale-conflict').visible() with timeout 5000ms
+    4.699  log       #yqnr@21309 waiting for getByTestId('stale-conflict').visible()
+    4.709  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    4.709  log       #yqnr@21309   unexpected value "inactive"
+    4.735  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    4.735  log       #yqnr@21309   unexpected value "inactive"
+    4.798  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    4.798  log       #yqnr@21309   unexpected value "inactive"
+    4.907  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    4.907  log       #yqnr@21309   unexpected value "inactive"
+    5.016  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    5.016  log       #yqnr@21309   unexpected value "inactive"
+    5.531  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    5.531  log       #yqnr@21309   unexpected value "inactive"
+    6.037  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    6.037  log       #yqnr@21309   unexpected value "inactive"
+    6.552  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    6.552  log       #yqnr@21309   unexpected value "inactive"
+    7.066  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    7.066  log       #yqnr@21309   unexpected value "inactive"
+    7.580  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    7.580  log       #yqnr@21309   unexpected value "inactive"
+    8.096  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    8.096  log       #yqnr@21309   unexpected value "inactive"
+    8.611  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    8.611  log       #yqnr@21309   unexpected value "inactive"
+    9.125  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    9.125  log       #yqnr@21309   unexpected value "inactive"
+    9.638  log       #yqnr@21309   locator resolved to <div role="alert" tabindex="-1" data-testid="stale-conflict" class="rounded-md border border-bad/30 bg-bad-soft p-3 text-sm text-text focus:outline-
+    9.638  log       #yqnr@21309   unexpected value "inactive"
+    9.698  end       #yqnr@21309 ERROR Expect failed

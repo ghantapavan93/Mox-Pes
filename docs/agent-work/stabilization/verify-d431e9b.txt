@@ -1,0 +1,86 @@
+Full regression of d431e9b in the worktree C:/Temp/rso-rc (C:/Temp/rc-verify.sh phase1, phase2), 2026-11-16.
+The databases revenue_signal_rc, _test and _eval were dropped and recreated empty first.
+Each step's exit code and duration as logged; the summary lines of vitest, the seed and the browser suite;
+the eval packs compared with the accepted checkpoint's run (28e498b) by C:/Temp/rc-compare-28e498b.py.
+
+## phase1
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP install
+=== END install rc=0 seconds=36
+=== STEP migrate-empty
+Applied 33 migration(s).
+=== END migrate-empty rc=0 seconds=2
+=== STEP build
+=== END build rc=0 seconds=16
+=== STEP build-id
+cVimzqQcl7kG4UNywLQfF=== END build-id rc=0 seconds=0
+=== ALL DONE
+
+## phase2
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP build-id
+cVimzqQcl7kG4UNywLQfF=== END build-id rc=0 seconds=0
+=== STEP typecheck
+=== END typecheck rc=0 seconds=9
+=== STEP lint
+=== END lint rc=0 seconds=30
+=== STEP vitest
+=== END vitest rc=0 seconds=799
+=== STEP seed
+=== END seed rc=0 seconds=64
+=== STEP eval-ai
+=== END eval-ai rc=0 seconds=15
+=== STEP investigator-heldout
+=== END investigator-heldout rc=0 seconds=76
+=== STEP changeguard-heldout
+=== END changeguard-heldout rc=0 seconds=60
+=== STEP vp-acceptance
+=== END vp-acceptance rc=0 seconds=50
+=== STEP shadow-acceptance
+=== END shadow-acceptance rc=0 seconds=36
+=== STEP e2e
+=== END e2e rc=0 seconds=1647
+=== ALL DONE
+
+## summaries
+ Test Files  79 passed (79)
+      Tests  940 passed | 1 expected fail (941)
+      5 [seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined
+      1 seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined
+  1 skipped
+  125 passed (27.4m)
+
+## eval packs against 28e498b
+[log] eval-ai: 23 vs 23 lines, 7 diff lines
+--- 28e498b
++++ d431e9b
+@@ -4,3 +4,3 @@
+ PASS  duplicate-events                     tools 100.0% recall / 100.0% precision · evidence 100.0% · _
+-(node:17012) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
++(node:8092) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+ (Use `node --trace-deprecation ...` to show where the warning was created)
+[log] investigator-heldout: 63 vs 63 lines, IDENTICAL
+[log] changeguard-heldout: 51 vs 51 lines, IDENTICAL
+[log] vp-acceptance: 32 vs 32 lines, IDENTICAL
+[log] shadow-acceptance: 14 vs 14 lines, IDENTICAL
+[json] investigator: 11854 vs 11854 lines, IDENTICAL
+[json] changeguard: 4637 vs 4637 lines, IDENTICAL
+[json] vp: 2765 vs 2765 lines, 7 diff lines
+--- 28e498b
++++ d431e9b
+@@ -4,3 +4,3 @@
+   "code": {
+-   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "commit": "d431e9b73c527b0fbc19dbb4f1ff93a54387382c",
+    "dirty": false
+[json] shadow: 2382 vs 2382 lines, 7 diff lines
+--- 28e498b
++++ d431e9b
+@@ -4,3 +4,3 @@
+   "code": {
+-   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "commit": "d431e9b73c527b0fbc19dbb4f1ff93a54387382c",
+    "dirty": false
+compare exit=1 (any difference exits 1)

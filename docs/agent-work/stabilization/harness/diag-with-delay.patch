@@ -1,0 +1,52 @@
+diff --git a/tests/e2e/golden-path.spec.ts b/tests/e2e/golden-path.spec.ts
+index e9d837e..2169eba 100644
+--- a/tests/e2e/golden-path.spec.ts
++++ b/tests/e2e/golden-path.spec.ts
+@@ -1,6 +1,25 @@
+ import { expect, test } from "@playwright/test";
+ import { fixThroughActionCenter, setRole } from "./action-center";
+ 
++// STABILIZATION DIAGNOSTICS (C:/Temp/stab, never committed): focus, rAF, fetch and click timing.
++if (process.env.STAB_DIAG) {
++  test.beforeEach(async ({ page }, testInfo) => {
++    const fs = await import("node:fs");
++    await page.addInitScript({ content: fs.readFileSync(process.env.STAB_DIAG!, "utf8") });
++    // Diagnostics only: answer the panel's dry run STAB_REPLAY_DELAY_MS later, as a slower server would.
++    if (process.env.STAB_REPLAY_DELAY_MS) {
++      await page.route("**/api/replays", async (route) => {
++        const response = await route.fetch();
++        await new Promise((resolve) => setTimeout(resolve, Number(process.env.STAB_REPLAY_DELAY_MS)));
++        await route.fulfill({ response });
++      });
++    }
++    page.on("console", (m) => {
++      if (m.text().startsWith("[diag]")) fs.appendFileSync(process.env.STAB_DIAG_LOG!, `${testInfo.titlePath.slice(1).join(" > ")} | ${m.text()}\n`);
++    });
++  });
++}
++
+ /**
+  * Audit 2026-11-09 (J1): the replay panel used to COMMIT too, so an engineer could change stored
+  * records with no approval. It is now a dry-run preview; commits are refused by the API (409)
+diff --git a/tests/e2e/zzzzzz-drift-review.spec.ts b/tests/e2e/zzzzzz-drift-review.spec.ts
+index e652471..f0bbb5d 100644
+--- a/tests/e2e/zzzzzz-drift-review.spec.ts
++++ b/tests/e2e/zzzzzz-drift-review.spec.ts
+@@ -9,6 +9,17 @@ import { runStream } from "../../lib/ingest/ingest";
+ import { InMemorySourceClient } from "../../lib/sim/clients";
+ import { VIEWERS } from "../../lib/viewer";
+ 
++// STABILIZATION DIAGNOSTICS (C:/Temp/stab, never committed): focus, rAF, fetch and click timing.
++if (process.env.STAB_DIAG) {
++  test.beforeEach(async ({ page }, testInfo) => {
++    const fs = await import("node:fs");
++    await page.addInitScript({ content: fs.readFileSync(process.env.STAB_DIAG!, "utf8") });
++    page.on("console", (m) => {
++      if (m.text().startsWith("[diag]")) fs.appendFileSync(process.env.STAB_DIAG_LOG!, `${testInfo.titlePath.slice(1).join(" > ")} | ${m.text()}\n`);
++    });
++  });
++}
++
+ /**
+  * The flagship drift review in the browser (docs/agent-work/DRIFT-REVIEW.md), on the demo world's
+  * lsa-B44-x drift (released to B44 on 10 of 10 calls; one call revised to B39). Every check is run

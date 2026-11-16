@@ -1,0 +1,16 @@
+investigate → replay → verify > the branch page shows why, and links to the exception | [diag] 1794812839216.4 focusin a
+investigate → replay → verify > the branch page shows why, and links to the exception | [diag] 1794812839242.1 focusout a related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812841744.2 focusin a
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812841839.1 focusout a related: null
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812842138.9 inserted div[replay-panel]{replay-panel#1} active: body 
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812842269.8 focusin button
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812842270.2 click button "Dry run (rolled back)" react attached: true
+investigate → replay → verify > an engineer dry-runs; the panel cannot commit; the fix applies through approval, once | [diag] 1794812842270.4 fetch start POST /api/replays
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > the B09 budget signal is marked untrustworthy and links to the coverage gap | [diag] 1794812850298.3 focusin a
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > the B09 budget signal is marked untrustworthy and links to the coverage gap | [diag] 1794812850316.5 focusout a related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852566.1 focusin a
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852587.9 focusout a related: null
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852882.7 inserted div[replay-panel]{replay-panel#1} active: body 
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852960.8 focusin button
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852961.5 click button "Dry run (rolled back)" react attached: true
+ChangeGuard: a reclassified channel blocks a budget decision until re-mapped > an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged | [diag] 1794812852961.9 fetch start POST /api/replays

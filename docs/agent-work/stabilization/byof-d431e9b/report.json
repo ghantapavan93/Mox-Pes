@@ -1,0 +1,197 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Temp\\rso-stab\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "-c",
+      "tests/acceptance/byof/playwright.config.ts"
+    ],
+    "configFile": "C:\\Temp\\rso-stab\\tests\\acceptance\\byof\\playwright.config.ts",
+    "rootDir": "C:/Temp/rso-stab/tests/acceptance/byof",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Temp/rso-stab/test-results/acceptance-byof/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Temp/rso-stab/tests/acceptance/byof",
+        "testIgnore": [],
+        "testMatch": [
+          "byof-proof.spec.ts"
+        ],
+        "timeout": 1200000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Temp\\rso-stab\\test-results\\acceptance-byof\\artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "chromium",
+        "testDir": "C:\\Temp\\rso-stab\\tests\\acceptance\\byof",
+        "snapshotDir": "C:\\Temp\\rso-stab\\tests\\acceptance\\byof",
+        "testIgnore": [],
+        "testMatch": "byof-proof.spec.ts",
+        "timeout": 1200000,
+        "use": {
+          "baseURL": "http://localhost:3991",
+          "trace": "retain-on-failure",
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "chromium"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "C:\\Temp\\rso-stab\\test-results\\acceptance-byof\\report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run build && npm run start -- -p 3991",
+      "cwd": "C:\\Temp\\rso-stab",
+      "port": 3991,
+      "reuseExistingServer": false,
+      "timeout": 900000,
+      "stdout": "pipe",
+      "stderr": "pipe",
+      "env": {
+        "DEMO_MODE": "1",
+        "DATABASE_URL": "postgres://postgres@127.0.0.1:54333/revenue_signal_acceptance_byof"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "byof-proof.spec.ts",
+      "file": "byof-proof.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "a cold start brings its own Microsoft Ads export: the valid file, a currency problem, then the same file again",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 1200000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 22192,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "[acceptance] 54 of 54 checks passed at d431e9b (build _1GcoaJmNNJGA44KZDPku); record: test-results\\acceptance-byof\\results.json\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "setup: the frozen fixture, an empty workspace",
+                      "duration": 61
+                    },
+                    {
+                      "title": "cold start: a new visitor finds the upload from the Overview, with no ids",
+                      "duration": 1784
+                    },
+                    {
+                      "title": "the valid file: upload, review, result",
+                      "duration": 6607
+                    },
+                    {
+                      "title": "the file with a Canadian-dollar account: upload, review, result",
+                      "duration": 6056
+                    },
+                    {
+                      "title": "the valid file again: upload, review, result",
+                      "duration": 6406
+                    }
+                  ],
+                  "startTime": "2026-11-16T07:16:19.215Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee8c88b5d6717c037162-99a22ba0efe49f562caa",
+          "file": "byof-proof.spec.ts",
+          "line": 174,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-16T07:15:46.107Z",
+    "duration": 58002.919,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

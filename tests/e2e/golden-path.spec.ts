@@ -36,7 +36,11 @@ test.describe.serial("investigate → replay → verify", () => {
     const exceptionId = Number(page.url().match(/\/exceptions\/(\d+)$/)![1]);
     const panel = page.getByTestId("replay-panel");
 
+    // Wait on the dry run's own request, not a fixed window: it takes 3 to 3.5 s here, and longer
+    // on a busy machine (R-20; SUITE-STABILIZATION.md).
+    const dryRun = page.waitForResponse((r) => r.url().endsWith("/api/replays") && r.request().method() === "POST");
     await panel.getByRole("button", { name: "Dry run (rolled back)" }).click();
+    expect((await dryRun).status()).toBe(200);
     await expect(panel.getByTestId("replay-result")).toContainText("Dry run — nothing was saved");
     await expect(panel.getByTestId("replay-result")).toContainText("still quarantined 0");
     await expect(panel.getByTestId("replay-preview-note")).toBeVisible();
@@ -114,7 +118,9 @@ test.describe.serial("ChangeGuard: a reclassified channel blocks a budget decisi
     const before = await page.getByTestId("budget-signal").locator("tbody").innerText();
     await page.getByTestId("budget-signal").getByRole("link").first().click();
     const panel = page.getByTestId("replay-panel");
+    const dryRun = page.waitForResponse((r) => r.url().endsWith("/api/replays") && r.request().method() === "POST");
     await panel.getByRole("button", { name: "Dry run (rolled back)" }).click();
+    expect((await dryRun).status()).toBe(200);
     await expect(panel.getByTestId("replay-result")).toContainText("Dry run — nothing was saved");
     await expect(panel.getByRole("button", { name: /^Re-map \d+ records$/ })).toHaveCount(0);
 

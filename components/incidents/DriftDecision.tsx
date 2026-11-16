@@ -104,10 +104,10 @@ export function DriftDecision({
       });
       const json = (await res.json().catch(() => ({}))) as { message?: string; error?: string; issues?: string[]; conflict?: Conflict };
       if (res.status === 409 && json.conflict) {
+        // The notice takes focus once it is on the page (the effect below).
         setConflict({ ...json.conflict, message: json.error ?? "Newer evidence arrived." });
         // Show what is new relative to the check this reviewer read; the draft stays in this form.
         router.replace(`${pathname}?since=${json.conflict.reviewedRunId}`, { scroll: false });
-        requestAnimationFrame(() => alertRef.current?.focus());
         return;
       }
       if (!res.ok) throw new Error([json.error ?? `HTTP ${res.status}`, ...(json.issues ?? [])].join(" — "));
@@ -128,6 +128,13 @@ export function DriftDecision({
       setBusy(false);
     }
   }
+
+  // A refused save: move focus to the conflict notice once React has put it on the page. A frame
+  // callback requested next to setConflict can run before that commit, find no notice and drop the
+  // focus; on a slowed CPU it mostly did (SUITE-STABILIZATION.md).
+  useEffect(() => {
+    if (conflict) alertRef.current?.focus();
+  }, [conflict]);
 
   // Once the saved state arrives from the server, move focus to the decision it now shows.
   useEffect(() => {

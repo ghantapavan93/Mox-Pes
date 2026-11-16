@@ -288,7 +288,7 @@ says what it does not establish.
 - the full regression in the release worktree, every step exiting 0. Vitest: 937 passed plus the
   expected failure. The packs did not move. Browser suite: 125 passed, 1 skipped, 0 failed.
 
-The accepted local demo checkpoint is now **`28e498b`**, build `Lc4HRzPXzTTju7yRCUitk`. The
+The local synthetic demo checkpoint is now **`28e498b`**, build `Lc4HRzPXzTTju7yRCUitk`. The
 decision above was taken on `91ef06f` and stands as recorded. R-57 keeps one open limit: a scope
 written in a form the product does not recognize, such as "b09" or "Moxie's" alone, is not read
 as naming it.

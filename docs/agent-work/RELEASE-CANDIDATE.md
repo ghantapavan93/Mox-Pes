@@ -164,9 +164,9 @@ CI=1 VISUAL=1 npx playwright test --reporter=line      # phase 2 ends here
 The candidate is decided once, together with the BIVE audit (`BIVE-ACCEPTANCE.md` §9):
 **READY FOR LOCAL SYNTHETIC DEMO** at code `91ef06f`, build `-t8FhwvfYGehXmbdri6T7`.
 
-**Accepted local demo checkpoint: `28e498b`, build `Lc4HRzPXzTTju7yRCUitk`.** The R11 fix
-(R-57) passed the same verification after the decision (§7). Commits after it change only docs
-and tooling.
+**Updated local synthetic demo checkpoint: `28e498b`, build `Lc4HRzPXzTTju7yRCUitk`.** The R11
+fix (R-57) passed the same verification after the decision (§7). The original acceptance of
+`91ef06f`, above, stands as recorded. Commits after `28e498b` change only docs and test tooling.
 
 ## 5. Shortest verified local startup
 
@@ -217,7 +217,7 @@ Every step's exit code, the summaries and the pack comparison are in
 `release-candidate/verify-28e498b.txt`, copied from `C:/Temp/rc-verify-phase1.log` and
 `rc-verify-phase2.log`.
 
-**Result: it passed.** The accepted local demo checkpoint moves from `91ef06f` to `28e498b`,
+**Result: it passed.** The local synthetic demo checkpoint moves from `91ef06f` to `28e498b`,
 build `Lc4HRzPXzTTju7yRCUitk` (§4). One limit of R-57 stays open: scope names are recognized the
 way an answer is read. A scope written another way, such as "b09", "coral" or "Moxie's" alone,
 is not recognized, so that text can still reach a viewer of what the check does name

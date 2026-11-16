@@ -43,6 +43,19 @@ export async function worldFacts(pool: Pool, gapId: number) {
   );
   const [kase] = await q("select id, exception_id, state, reopen_count from cases where exception_id = $1", [gapId]);
   const [campaign] = await q("select name, channel_code, campaign_type, local_services_enabled from ad_campaigns where external_campaign_id = 'pmax-lsa-B09'");
+  // The accepted spend evidence itself: every accepted day company-wide (one row per campaign and
+  // day, each resting on one source version), digested; and the successor's 18 days, row by row.
+  const [digest] = await q(
+    `select count(*)::int as days, sum(cost_cents)::bigint as cents,
+            md5(string_agg(concat_ws(':', campaign_id, spend_date, channel_code, cost_cents, coalesce(raw_event_id::text, '-')), ',' order by campaign_id, spend_date)) as md5
+     from ad_spend_daily`,
+  );
+  const successor = (
+    await q(
+      `select s.spend_date::text as date, s.channel_code, s.cost_cents, s.raw_event_id from ad_spend_daily s join ad_campaigns c on c.id = s.campaign_id
+       where c.external_campaign_id = 'pmax-lsa-B09' and s.spend_date between '2026-10-13' and '2026-10-30' order by 1`,
+    )
+  ).map((r) => ({ date: String(r.date), channel: String(r.channel_code), cents: Number(r.cost_cents), rawEventId: Number(r.raw_event_id) }));
   return {
     b09: { paidSpendCents: b09.paidSpendCents, acquired: b09.acquired, collectedCents: b09.collectedCents, byChannel },
     company: {
@@ -56,6 +69,7 @@ export async function worldFacts(pool: Pool, gapId: number) {
     casesForGaps: Number((await q("select count(*)::int as n from cases c join exceptions x on x.id = c.exception_id where x.kind = 'channel_coverage_gap'"))[0].n),
     exceptionsByKind: Object.fromEntries((await q("select kind, count(*)::int as n from exceptions group by 1 order by 1")).map((r) => [String(r.kind), Number(r.n)])) as Record<string, number>,
     campaign: { name: String(campaign.name), channel: String(campaign.channel_code), type: campaign.campaign_type as string | null, localServices: Boolean(campaign.local_services_enabled) },
+    acceptedSpend: { days: Number(digest.days), cents: Number(digest.cents), md5: String(digest.md5), successor },
   };
 }
 

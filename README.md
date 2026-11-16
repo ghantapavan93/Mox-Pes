@@ -125,7 +125,8 @@ npm run acceptance:b09
 The B09 acceptance proof, on its own database (`revenue_signal_acceptance`) and its own freshly
 built server (port 3990), never the demo's. It covers missing → partial hold → verified
 reclassification, a duplicate and stale replays, an independent ledger, and scope checks that pair
-every denied request with an allowed one. See docs/agent-work/B09-ACCEPTANCE-RUNNER.md.
+every denied request with an allowed one. It needs Postgres as above and Playwright's Chromium
+(`npx playwright install chromium`, once). See docs/agent-work/B09-ACCEPTANCE-RUNNER.md.
 
 ## Repository map
 

@@ -12,20 +12,27 @@ npm run acceptance:b09
 It walks one freshly seeded synthetic world through the source's own corrections, as the release
 walkthrough did (`RELEASE-CANDIDATE.md` §3):
 
-1. **Missing.** B09's Local Services coverage gap is open and the decision is held. The Overview
-   lists the hold with no ids typed. The missing days read "no spend record", never a recorded $0.
+1. **Missing records are not zero.** B09's Local Services coverage gap is open and the decision is
+   held. The Overview lists the hold with no ids typed. The missing days read "no spend record",
+   never a recorded $0.00. The incident's CRM card says the channel "has no spend record", and the
+   incident never calls missing spend zero (`BIVE-ACCEPTANCE.md` R2).
 2. **Partial hold.** The source re-sends Oct 26–30. Five of the 18 dates are covered, the same
    incident stays open, and every view still says the decision is held.
-3. **Verified reclassification.** The source re-sends Oct 13–25. All 18 dates are covered, and
-   $2,123.52 moves from Google Search to Google Local Services with nothing added. The same
-   incident is resolved by one verification. Decision Lab says "Ready for review" and that nothing
-   is approved. The verification's run says what it stored, what it changed and what used it.
-4. **Duplicate and stale replays.** Three more deliveries change nothing:
+3. **Verified reclassification.** The source re-sends Oct 13–25. All 18 dates are covered.
+   - **Reclassified, not added:** each of the campaign's 18 accepted days moves from Google Search
+     to Google Local Services with the same cents, $2,123.52 in all. Company-wide accepted spend
+     keeps the same total.
+   - The same incident is resolved by one verification.
+   - Decision Lab says "Ready for review" and that nothing is approved.
+   - The verification's run says what it stored, what it changed and what used it.
+4. **Duplicate and stale replays leave the accepted evidence unchanged.** Three more deliveries:
    - the same 13 versions again;
    - an older fetch of Oct 20, $50 higher;
    - an older fetch of Oct 20, $50 higher, that carries a Search campaign's name and inputs.
-   Money, customers, cash, the incident, its case and the campaign record are unchanged. Each
-   run's row says why. A run whose effect was never recorded says "Effect not recorded".
+   After each one, every accepted spend day company-wide is identical, row for row: campaign,
+   date, channel, cents and the source version it rests on. Money, customers, cash, the incident,
+   its case and the campaign record are unchanged too. Each run's row says why. A run whose effect
+   was never recorded says "Effect not recorded".
 5. **The independent ledger.** What the source sent is captured before the product maps it. It is
    compared with what the product recorded:
    - the runs and the versions they stored;
@@ -44,12 +51,35 @@ walkthrough did (`RELEASE-CANDIDATE.md` §3):
 
 ## What it needs
 
-- Node 22 and `npm ci` in the checkout.
-- Postgres 17 reachable at the demo's address (`postgres://postgres@127.0.0.1:54333`), with
-  permission to create a database.
-- A free port, 3990 by default.
-- No other server running from the same checkout, because the runner rebuilds `.next`. A
-  separate worktree avoids this (see "The recorded run").
+- **Node 22,** and `npm ci` in the checkout.
+- **Playwright's Chromium,** installed once per machine: `npx playwright install chromium`.
+- **Postgres 17** at the demo's address (`postgres://postgres@127.0.0.1:54333`), allowed to create
+  a database. The repo's `docker compose up -d` provides exactly that (README, "Run it").
+- **A free port,** 3990 by default.
+- **No other server running from the same checkout,** because the runner rebuilds `.next`. A
+  separate worktree avoids this.
+
+From a fresh clone or worktree, with Docker:
+
+```bash
+docker compose up -d
+```
+
+```bash
+npm ci
+```
+
+```bash
+npx playwright install chromium
+```
+
+```bash
+npm run acceptance:b09
+```
+
+The runner never reads `DATABASE_URL` and never attaches to a running server. Next.js still loads
+any `.env` file in the checkout, but the runner's own database setting overrides it. A fresh
+worktree has no `.env` file, since git ignores them.
 
 ## What the command does
 

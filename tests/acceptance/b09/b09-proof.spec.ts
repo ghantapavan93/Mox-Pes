@@ -124,6 +124,14 @@ async function views(page: Page, gap: number, state: "missing" | "partial" | "ve
   check(`the incident's state is ${state}`, (await visible(page, '[data-testid="gap-recovery"]').getAttribute("data-state")) === state);
   const recovery = await textOf(page, "#recovery");
   for (const s of e.incident) check(`incident says: ${s}`, recovery.includes(s), recovery);
+  // The incident's CRM card once said "recorded spend is zero" for missing spend (BIVE-ACCEPTANCE.md R2).
+  // It streams in after the recovery panel: wait for it, or both checks below would read nothing.
+  await visible(page, '[data-testid="crm-outcomes"]').waitFor({ timeout: 60_000 });
+  const incidentText = await textOf(page, "main");
+  const crm = incidentText.match(/Customers the CRM shows[^.]*\.\s*[^.]*\.(?:[^.]*\.)?/)?.[0] ?? "(no CRM card)";
+  check("the incident never calls missing spend zero", !/spend is zero|zero spend|\$0 spend/i.test(incidentText), crm);
+  if (state === "verified") check("the incident's CRM card says the spend is now re-filed and verified", crm.includes("That spend is now re-filed and verified"), crm);
+  else check("the incident's CRM card says the channel has no spend record, not $0", crm.includes("has no spend record for some or all of those dates"), crm);
 
   await page.goto(`/decisions?branch=B09&${CTX}`);
   await visible(page, '[data-testid="readiness-summary"]').waitFor({ timeout: 60_000 });
@@ -286,6 +294,14 @@ test("B09 acceptance: missing → partial hold → verified reclassification, re
       deliveries.rest = await deliver(pool, "rest");
       facts.rest = await worldFacts(pool, gap);
       check("the same incident, now resolved by its verification", facts.rest.incident.id === gap && facts.rest.incident.status === "resolved" && !!facts.rest.incident.verifiedAt, facts.rest.incident);
+      const was = facts.missing.acceptedSpend.successor;
+      const now = facts.rest.acceptedSpend.successor;
+      check(
+        "reclassified, not added: each of pmax-lsa-B09's 18 accepted days moved from Google Search to Google Local Services with the same cents, $2,123.52 in all",
+        was.length === 18 && now.length === 18 && was.every((w, i) => w.date === now[i].date && w.cents === now[i].cents && w.channel === "google_search" && now[i].channel === "google_lsa") && was.reduce((t, w) => t + w.cents, 0) === 212_352,
+        { was: was.map((w) => `${w.date}:${w.channel}:${w.cents}`), now: now.map((n) => `${n.date}:${n.channel}:${n.cents}`) },
+      );
+      check("company-wide accepted spend is the same total before and after: nothing added", facts.rest.acceptedSpend.cents === facts.missing.acceptedSpend.cents && facts.rest.acceptedSpend.days === facts.missing.acceptedSpend.days, { missing: facts.missing.acceptedSpend.cents, verified: facts.rest.acceptedSpend.cents });
       await views(page, gap, "verified");
       const r = await runRow(page, deliveries.rest.runId);
       check(`the verification's run (#${deliveries.rest.runId}) says what it stored, changed and was used for`, r.Stored === "13" && r.Outcome === expectedOutcomes(gap).rest.join(" "), r);
@@ -299,6 +315,14 @@ test("B09 acceptance: missing → partial hold → verified reclassification, re
       }
       const before = facts.rest;
       const after = facts.stale;
+      const digest = (s: States) => ({ days: facts[s].acceptedSpend.days, cents: facts[s].acceptedSpend.cents, md5: facts[s].acceptedSpend.md5 });
+      for (const s of ["duplicate", "older", "stale"] as const) {
+        check(
+          `after the ${s} replay the accepted spend evidence is identical, row for row: ${facts[s].acceptedSpend.days} accepted days company-wide, and pmax-lsa-B09's 18 days keep their channel, cents and source version`,
+          same(facts[s].acceptedSpend, before.acceptedSpend),
+          { verified: digest("rest"), [s]: digest(s) },
+        );
+      }
       check("no change to money, customers or cash at B09 or company-wide", same([before.b09, before.company], [after.b09, after.company]), { before: [before.b09, before.company], after: [after.b09, after.company] });
       check("the same incident, still resolved, with its single verification", same(before.incident, after.incident) && after.incident.previousVerifications === 0, after.incident);
       check("no second case and no case transition", same(before.case, after.case) && after.casesForGaps === 1 && after.coverageGaps.length === 1, { before: before.case, after: after.case });

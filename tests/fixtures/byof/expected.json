@@ -1,0 +1,130 @@
+{
+  "frozen": "Computed by tests/fixtures/byof/generate.py before any upload of these files. Not derived from the importer.",
+  "source": "Microsoft Advertising-style daily campaign report (synthetic); platform microsoft_ads",
+  "workspace": "empty: migrations only, no seed, no ledger records, no campaign mappings, no currency rules",
+  "files": {
+    "valid": {
+      "file": "microsoft-ads-daily.csv",
+      "sha256": "7027e2c5b426403e1f08ced4cc277d1a4bdf559bf8ceeea067432d346a7dcd18",
+      "dataRows": 42,
+      "nonDataLines": {
+        "titleLinesAboveHeader": 8,
+        "totalRow": 1,
+        "copyrightLine": 1
+      },
+      "expect": {
+        "validRows": 42,
+        "refusedRows": 0,
+        "rows": 42,
+        "spendCents": 354880,
+        "spend": "3548.80",
+        "clicks": 1089,
+        "conversions": 106,
+        "campaigns": [
+          "812340001",
+          "812340002",
+          "812340003"
+        ],
+        "accounts": [
+          "B0123456"
+        ],
+        "currencies": [
+          "USD"
+        ],
+        "firstDay": "2026-10-12",
+        "lastDay": "2026-10-25",
+        "byCampaign": {
+          "812340001": {
+            "rows": 14,
+            "spendCents": 146226
+          },
+          "812340002": {
+            "rows": 14,
+            "spendCents": 121176
+          },
+          "812340003": {
+            "rows": 14,
+            "spendCents": 87478
+          }
+        },
+        "dateScope": "2026-10-12 to 2026-10-25, 14 days",
+        "branchScope": "none: the report has no branch column and an empty workspace maps no campaign to a branch, so no spend may be attributed to a branch",
+        "ledger": "nothing added: ad spend from a file is compare-only, and the empty ledger holds none of these campaign-days"
+      }
+    },
+    "twoAccounts": {
+      "file": "microsoft-ads-daily-two-accounts.csv",
+      "sha256": "ce89b6e6361288cb98fda48d62e26507c7c6866eb1fb4d1edc8d909cde0a0df7",
+      "dataRows": 42,
+      "problem": "campaign 812340003 belongs to a second account that reports in Canadian dollars",
+      "expect": {
+        "usDollarRows": {
+          "rows": 28,
+          "spendCents": 267402,
+          "spend": "2674.02",
+          "clicks": 763,
+          "conversions": 75,
+          "campaigns": [
+            "812340001",
+            "812340002"
+          ],
+          "accounts": [
+            "B0123456"
+          ],
+          "currencies": [
+            "USD"
+          ],
+          "firstDay": "2026-10-12",
+          "lastDay": "2026-10-25",
+          "byCampaign": {
+            "812340001": {
+              "rows": 14,
+              "spendCents": 146226
+            },
+            "812340002": {
+              "rows": 14,
+              "spendCents": 121176
+            }
+          }
+        },
+        "canadianDollarRows": {
+          "rows": 14,
+          "spendCents": 87478,
+          "spend": "874.78",
+          "clicks": 326,
+          "conversions": 31,
+          "campaigns": [
+            "812340003"
+          ],
+          "accounts": [
+            "B0123457"
+          ],
+          "currencies": [
+            "CAD"
+          ],
+          "firstDay": "2026-10-12",
+          "lastDay": "2026-10-25",
+          "byCampaign": {
+            "812340003": {
+              "rows": 14,
+              "spendCents": 87478
+            }
+          },
+          "note": "spendCents here are Canadian cents, not US cents"
+        },
+        "rule": "the Canadian-dollar rows are refused or left unverified, never summed as US dollars; the US-dollar total covers the US-dollar rows only"
+      }
+    }
+  },
+  "duplicateUpload": {
+    "file": "microsoft-ads-daily.csv",
+    "expect": "the same result as the first upload of the valid file; the ledger is unchanged; nothing is counted twice"
+  },
+  "mustNotClaim": [
+    "leads",
+    "customers",
+    "cost per customer (CAC)",
+    "ROI",
+    "a budget recommendation"
+  ]
+}

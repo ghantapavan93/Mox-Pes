@@ -1,0 +1,28 @@
+Full regression started on 284c46e (C:/Temp/rc-verify.sh in C:/Temp/rso-rc), stopped by hand after its lint step failed.
+The lint failure is real: since 76c5820 the evidence harness files under docs/agent-work/b09-acceptance/ are CommonJS .js that the repo's lint rejects.
+
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP install
+=== END install rc=0 seconds=37
+=== STEP migrate-empty
+=== END migrate-empty rc=0 seconds=2
+=== STEP build
+=== END build rc=0 seconds=19
+=== STEP build-id
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP build-id
+=== STEP typecheck
+=== END typecheck rc=0 seconds=8
+=== STEP lint
+=== END lint rc=1 seconds=28
+=== STEP vitest
+
+C:\Temp\rso-rc\docs\agent-work\b09-acceptance\5b7da9e\harness\r55-port3000-sentinel.js
+  4:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+C:\Temp\rso-rc\docs\agent-work\b09-acceptance\harness\r55-port3000-sentinel.js
+  4:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  5:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+✖ 4 problems (4 errors, 0 warnings)

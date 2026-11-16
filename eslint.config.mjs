@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Evidence harnesses: the exact scripts an acceptance run used, kept as records, not as code.
+    "docs/agent-work/**/harness/**",
   ]),
 ]);
 

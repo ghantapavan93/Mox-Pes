@@ -1,0 +1,83 @@
+Release verification of 28e498b in the worktree C:/Temp/rso-rc (C:/Temp/rc-verify.sh phase1, phase2), 2026-11-15.
+Each step's exit code and duration as logged; then the summary lines of vitest, the seed and the browser suite, and the pack comparison (C:/Temp/rc-compare.py, baseline a6f8e4b).
+
+## phase1
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP install
+=== END install rc=0 seconds=35
+=== STEP migrate-empty
+applied 0033_shadow_check_named_scope.sql
+Applied 33 migration(s).
+=== END migrate-empty rc=0 seconds=2
+=== STEP build
+=== END build rc=0 seconds=18
+=== STEP build-id
+build id: Lc4HRzPXzTTju7yRCUitk
+
+## phase2
+=== STEP env
+=== END env rc=0 seconds=1
+=== STEP build-id
+=== STEP typecheck
+=== END typecheck rc=0 seconds=7
+=== STEP lint
+=== END lint rc=0 seconds=25
+=== STEP vitest
+=== END vitest rc=0 seconds=823
+=== STEP seed
+=== END seed rc=0 seconds=52
+=== STEP eval-ai
+=== END eval-ai rc=0 seconds=14
+=== STEP investigator-heldout
+=== END investigator-heldout rc=0 seconds=67
+=== STEP changeguard-heldout
+=== END changeguard-heldout rc=0 seconds=51
+=== STEP vp-acceptance
+=== END vp-acceptance rc=0 seconds=46
+=== STEP shadow-acceptance
+=== END shadow-acceptance rc=0 seconds=34
+=== STEP e2e: env CI=1 VISUAL=1 npx playwright test --reporter=line
+=== END e2e rc=0 seconds=1778
+=== ALL DONE
+28e498b An answer check is listed by everything it names, not only what it read
+v22.14.0
+11.6.2
+
+## summaries
+      Tests  937 passed | 1 expected fail (938)
+  1 skipped
+  125 passed (29.6m)
+ Test Files  79 passed (79)
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 53299 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 53328 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 53668 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 63899 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 65895 ms
+seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 49627 ms
+
+## pack comparison
+[log] eval-ai: 23 vs 23 lines, 7 diff lines
+[log] investigator-heldout: 63 vs 63 lines, IDENTICAL
+[log] changeguard-heldout: 51 vs 51 lines, IDENTICAL
+[log] vp-acceptance: 32 vs 32 lines, IDENTICAL
+[log] shadow-acceptance: 14 vs 14 lines, IDENTICAL
+[json] investigator: 11854 vs 11854 lines, IDENTICAL
+[json] changeguard: 4637 vs 4637 lines, IDENTICAL
+[json] vp: 2765 vs 2765 lines, 14 diff lines
+-   "commit": "6eabaa682c2d550741a0da5e7516dca80771b400",
+-   "dirty": true
++   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "dirty": false
+-   "sha256": "0dd8a0bf3610e4d3b7e8bc50f90de8b0f336178a1fe52ff9f9ea30b0d359a3ac",
++   "sha256": "d18edb52d88381c1c9110f464a1f2bdfc17cf60acdb6e902580cd239b6f37386",
+[json] shadow: 2382 vs 2382 lines, 14 diff lines
+-   "commit": "6eabaa682c2d550741a0da5e7516dca80771b400",
+-   "dirty": true
++   "commit": "28e498bcf86cc8bd17023ef059c930eb7c4d8e8c",
++   "dirty": false
+-   "sha256": "fa8f6d409fb0fad0afdf5a2920a716bed4dfb450544c2e00af173a2e1200cb7d",
++   "sha256": "511a5890902822ad2260a96e08de1aca40049cfb6917453dbf98ca3fdba79513",
+
+eval-ai's 7 log diff lines are one pg DeprecationWarning line whose Node process id differs (32172 vs 17012).
+The vp and shadow input sha256 values equal the 91ef06f run's: the worktree checks the scenario files out with CRLF.

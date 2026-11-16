@@ -1,0 +1,17 @@
+R-57's residual: which spellings the name reader (lib/shadow/answer.ts, branchesNamedIn) recognizes.
+Run on 28e498b from the repo root with tsx; reads lib/ only, no database.
+
+"B09 spent $100."                    1 branch(es): B09
+"b09 spent $100."                    not recognized
+"Coral spent $100."                  1 branch(es): B09
+"coral spent $100."                  not recognized
+"Moxie Pest Control spent $100."     34 branch(es): B01,B02,B03,…
+"moxie pest control spent $100."     34 branch(es): B01,B02,B03,…
+"Moxie's branches fell."             34 branch(es): B01,B02,B03,…
+"Moxie's spend fell."                not recognized
+"Joshua's brand rose."               5 branch(es): B40,B41,B42,…
+"Joshua's spend rose."               not recognized
+
+Branch ids and names are matched as written (case-sensitive); brand names ignore case but need the
+full name or "<first word> Pest|brand|branches". A check whose text names a scope only in an
+unrecognized form is listed by what it does name (REMAINING-RISKS.md R-57, "Left").

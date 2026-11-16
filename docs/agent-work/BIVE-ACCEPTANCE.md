@@ -120,7 +120,7 @@ state, unauthorized evidence on a supported path, broken core journey, non-repro
 | R8 | Coordinator | After assigning and reloading the incident, Decision Lab's incident link lands on `…#recovery#recovery`. Seen in 4 of 4 walks (desktop, missing state); the page works | [B] | Nonblocking | Backlog; cause not proven |
 | R9 | Data lane F1, F4–F7; lens B F6 | A future-dated row hides every gap; a future fetch locks a day; a full regression wipes stored verifications; two incidents on one channel; a re-map credits the original runs; a day's and its campaign's channels can diverge | [C] | Not on the demo path | Before real data |
 | R10 | Authorization lane F-2, F-3, F-5; lens B F2, F4 | Audit names roles, not people; a manual reconcile is unattributed; assignment takes no reason; a shared-id contradiction reaches no owner (the guard is kept, as the mission says); tests share the demo database and port | [S][C] | Nonblocking (demo roles: R-2, R-22) | Backlog |
-| R11 | Authorization lane, recheck of R1 | An answer check's stored scope is what it read, not what it names. A check that read nothing, because everything it named is outside the runner's scope, stores an empty scope, which every scoped viewer can list: a branch partner's answer naming Moxie and B09 would reach the Joshua's lead. A fifth named branch is not read (`MAX_BRANCHES` is 4), so it is not stored. A company-wide snapshot naming an unknown brand stores an empty scope. Each exposes text someone entered, never a figure the product read | [C]. No stored check in the demo or walk databases has an empty scope [S] | Nonblocking: no product evidence, and off the demo path | Before real data (R-57) |
+| R11 | Authorization lane, recheck of R1 | An answer check's stored scope is what it read, not what it names. A check that read nothing, because everything it named is outside the runner's scope, stores an empty scope, which every scoped viewer can list: a branch partner's answer naming Moxie and B09 would reach the Joshua's lead. A fifth named branch is not read (`MAX_BRANCHES` is 4), so it is not stored. A company-wide snapshot naming an unknown brand stores an empty scope. Each exposes text someone entered, never a figure the product read | [C]. No stored check in the demo or walk databases has an empty scope [S] | Nonblocking: no product evidence, and off the demo path | **Fixed after the decision** in `28e498b` (§9; R-57) |
 
 ## 5. Wrong results off the demo path (reproduced, not fixed)
 
@@ -281,6 +281,18 @@ the lockfile shows no advisory for `next`.
 This record and its evidence are committed on top, docs only. It is not a production release; §10
 says what it does not establish.
 
+**After the decision.** R11 was fixed in `28e498b` and verified the same way
+(`RELEASE-CANDIDATE.md` §7):
+- four tests that failed before the fix and pass after it;
+- a fresh-context walk on the fix's build, 24 of 24;
+- the full regression in the release worktree, every step exiting 0. Vitest: 937 passed plus the
+  expected failure. The packs did not move. Browser suite: 125 passed, 1 skipped, 0 failed.
+
+The accepted local demo checkpoint is now **`28e498b`**, build `Lc4HRzPXzTTju7yRCUitk`. The
+decision above was taken on `91ef06f` and stands as recorded. R-57 keeps one open limit: a scope
+written in a form the product does not recognize, such as "b09" or "Moxie's" alone, is not read
+as naming it.
+
 ## 10. What remains, and what this audit does not establish
 
 **Limitations kept as they are:**
@@ -291,8 +303,9 @@ says what it does not establish.
 - The off-path wrong results (§5, R9).
 - Demo roles are a cookie. The same tab keeps what it already received; it is not erased.
 - 30 of 61 swept routes prove nothing about refusal (R4).
-- An answer check is visible by what it read, not what it names, so entered text can be listed
-  outside its scope (R11, R-57).
+- On `91ef06f`, an answer check is visible by what it read, not what it names, so entered text
+  can be listed outside its scope (R11). Fixed after the decision in `28e498b`. Left there: a
+  scope written in a form the product does not recognize, such as "b09" or "Moxie's" alone (R-57).
 - The acceptance tooling lives outside the repo (R5):
   - `C:/Temp/b09-correct.ts` (deliveries);
   - `rc-walk.ts` (walks);
@@ -331,8 +344,9 @@ says what it does not establish.
    - **Scope:** this is checked in fresh contexts, in page and payload. A leak found in this
      audit was fixed and proven on both builds.
    - **Check it:** the route sweep in `bive/`, and `shadow-mode.test.ts`.
-   - **The limits:** demo roles are not production authentication. An answer check's entered
-     text can be listed outside its scope (R11); no such check exists in the demo world.
+   - **The limits:** demo roles are not production authentication. On `91ef06f` an answer
+     check's entered text can be listed outside its scope (R11); no such check exists in the demo
+     world, and `28e498b` fixes it.
 
 The strongest claim each review verified on its own:
 - **Review A:** at every B09 state, the screens let an analyst state the decision correctly, and

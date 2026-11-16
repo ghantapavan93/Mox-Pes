@@ -164,6 +164,10 @@ CI=1 VISUAL=1 npx playwright test --reporter=line      # phase 2 ends here
 The candidate is decided once, together with the BIVE audit (`BIVE-ACCEPTANCE.md` §9):
 **READY FOR LOCAL SYNTHETIC DEMO** at code `91ef06f`, build `-t8FhwvfYGehXmbdri6T7`.
 
+**Accepted local demo checkpoint: `28e498b`, build `Lc4HRzPXzTTju7yRCUitk`.** The R11 fix
+(R-57) passed the same verification after the decision (§7). Commits after it change only docs
+and tooling.
+
 ## 5. Shortest verified local startup
 
 Needs Node 22, Postgres 17 and an empty database (README's Docker file provides Postgres; that path
@@ -187,3 +191,42 @@ Two warnings:
 ## 6. Known limitations
 
 See `BIVE-ACCEPTANCE.md` §10.
+
+## 7. After the decision: the answer-check scope fix (`28e498b`)
+
+The acceptance recheck left R11 (`BIVE-ACCEPTANCE.md` §4): an answer check was listed by what it
+read, not by what it names. It was fixed after the decision in `28e498b` (R-57,
+`SHADOW-MODE.md` §4) and verified the way `91ef06f` was: the same worktree moved to the fix, the
+same isolated databases (`revenue_signal_rc` dropped and recreated empty), the same script.
+
+| Step | `28e498b`, build `Lc4HRzPXzTTju7yRCUitk` |
+|---|---|
+| Install, migrations on an empty database, build | Pass. 33 migrations applied. The build logs the same three Turbopack tracing warnings as `91ef06f`'s |
+| Migration 0033 on history recorded before it | Applied to `revenue_signal_r57`, a copy of the release walk's final world (`revenue_signal_rc_b09`, at 0032, two analyst checks): one migration applied; both checks keep what they read and record no names; a second run is "Up to date" |
+| Typecheck, lint | Pass (exit 0, 0) |
+| Unit and integration (vitest) | Exit 0. 79 files: 937 passed, plus the 1 known expected failure (R-39). The four added tests are R11's |
+| Seed | Exit 0. 675 runs (1 failed), 134,088 raw events: unchanged |
+| The five frozen eval packs | Exit 0 each. Identical to the same baseline (`a6f8e4b`), with the same exceptions as `91ef06f`: the commit, the Node process id in one warning line, and the input files' sha256. Those hashes equal `91ef06f`'s run, because the worktree checks the scenario files out with CRLF. No pack moved |
+| Full browser suite, with pixel comparisons | Exit 0. 125 passed, 1 skipped (the opt-in demo-video recording), 0 failed, in one run (29.6 min). No pixel baseline changed. The only server error is the twin's injected CRM outage. The reseed race did not appear |
+| Fresh-context walk on `revenue_signal_r57` (`bive/r57/walk.json`) | 24 of 24, no console or page errors. Every refusal is paired with an allowed read of the same check by another role: API list, API detail (404 when refused), the list page and the check page, with no entered text in any of them |
+
+Every step's exit code, the summaries and the pack comparison are in
+`release-candidate/verify-28e498b.txt`, copied from `C:/Temp/rc-verify-phase1.log` and
+`rc-verify-phase2.log`.
+
+**Result: it passed.** The accepted local demo checkpoint moves from `91ef06f` to `28e498b`,
+build `Lc4HRzPXzTTju7yRCUitk` (§4). One limit of R-57 stays open: scope names are recognized the
+way an answer is read. A scope written another way, such as "b09", "coral" or "Moxie's" alone,
+is not recognized, so that text can still reach a viewer of what the check does name
+(`bive/r57/name-forms.txt`).
+
+What the walk covered:
+- **History:** the two checks stored before 0033 are read by the analyst and refused to the
+  partner and the brand lead.
+- **The partner's answer naming only B09 and Moxie:** it opens at once for the partner, with both
+  claims "Outside your scope" (`partner-own-check-*.jpg`). The brand lead gets 404 and a "could
+  not be found" page (`brand-lead-refused-partner-check-*.jpg`). The analyst reads it.
+- **An analyst's answer naming B40–B43, then B09:** refused to the brand lead.
+- **The control,** an analyst's answer about B40 alone: the brand lead reads it
+  (`brand-lead-allowed-control-*.jpg`).
+- **The brand lead's answer naming nothing:** the brand lead reads it, the partner is refused.

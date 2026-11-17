@@ -172,7 +172,10 @@ export function SnapshotDiff({
   const b0 = before.branch;
   const b1 = a.branch;
   const channels = b0 && b1 ? Object.keys(b1.channels).filter((c) => b0.channels[c]?.spendCents !== b1.channels[c]?.spendCents || b0.channels[c]?.acquired !== b1.channels[c]?.acquired) : [];
-  const trust = (t: boolean | undefined) => (t === undefined ? "—" : t ? "trustworthy" : "blocked");
+  // Trustworthy (no incident gates it) is not "free to act": a left-out channel's missing cost can
+  // still hold the recommendation (snapshots stored before 2026-11-17 do not say, and read as before).
+  const trust = (b: { trustworthy?: boolean; recommendation?: string } | undefined) =>
+    b?.trustworthy === undefined ? "—" : b.trustworthy ? (b.recommendation === "held" ? "trustworthy, recommendation held" : "trustworthy") : "blocked";
   const cacMoved = after !== null && b0 !== null && b1 !== null && b0.paidCacCents !== b1.paidCacCents;
   // The branch numbers cover the whole demo period; name its dates, since the branch page and the
   // Overview default to October and show a different CAC for the same branch.
@@ -218,7 +221,7 @@ export function SnapshotDiff({
                 <Row label="New customers (all channels)" before={b0.acquired} after={b1.acquired} fmt={n} />
                 <Row label="Paid-media spend" before={b0.paidSpendCents} after={b1.paidSpendCents} fmt={cents} />
                 <Row label={`Open exceptions at ${b0.branchId}`} before={b0.openExceptions} after={b1.openExceptions} fmt={n} />
-                <TextRow label="October budget signal" before={trust(b0.budgetSignal?.trustworthy)} after={trust(b1.budgetSignal?.trustworthy)} />
+                <TextRow label="October budget signal" before={trust(b0.budgetSignal)} after={trust(b1.budgetSignal)} />
                 {channels.flatMap((c) => [
                   <Row key={`${c}-s`} label={`${c} spend`} before={b0.channels[c]?.spendCents ?? null} after={b1.channels[c].spendCents} fmt={cents} />,
                   <Row key={`${c}-c`} label={`${c} cost per customer`} before={b0.channels[c]?.cacCents ?? null} after={b1.channels[c].cacCents} fmt={cents} />,
@@ -247,7 +250,9 @@ export function SnapshotDiff({
       {nowTrustworthy && after && (
         <p className="text-xs leading-5 text-muted" data-testid="receipt-signal-note">
           <span className="font-medium text-text">Trustworthy is not approval.</span>{" "}
-          {`No open incident now distorts ${b0!.branchId}'s October channel costs; whether to move budget is still a decision, and attributed cost says nothing about effectiveness.`}
+          {b1!.budgetSignal.recommendation === "held"
+            ? `No open incident gates ${b0!.branchId}'s October channel costs now, but the recommendation is still held: ${b1!.budgetSignal.heldBy?.[0] ?? "a channel's cost is not counted yet."}`
+            : `No open incident now distorts ${b0!.branchId}'s October channel costs; whether to move budget is still a decision, and attributed cost says nothing about effectiveness.`}
         </p>
       )}
       {verification && verification.problems.length > 0 && (

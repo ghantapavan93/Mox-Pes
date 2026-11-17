@@ -4,7 +4,7 @@ import { PERIODS, type Period } from "@/lib/period";
 import { gapStatusesAt, type GapStatus } from "@/lib/reconcile/gap-status";
 import { BRANCH_BY_ID } from "@/lib/reference";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
-import { decisionHolds, type DecisionHold } from "./decision";
+import { decisionHolds, evidenceHolds, type DecisionHold, type EvidenceHold } from "./decision";
 
 /**
  * "What changed": paid media spend per week, by channel, for one scope (a branch, a brand's
@@ -93,6 +93,11 @@ export interface Movement {
   recoveries?: GapStatus[];
   /** Open incidents in scope that change what a paid channel cost (the Overview's hold rule). */
   holds: DecisionHold[];
+  /**
+   * Recommendations the records hold with no incident to say so (held spend, none recorded, cost
+   * counted at another branch): the Overview's other hold rule (lib/metrics/decision.ts).
+   */
+  evidenceHolds?: EvidenceHold[];
   /** The last spend date the ads feed has delivered, for any campaign. */
   deliveredThrough: string | null;
   /** Why the ads feed is stale now, or null. */
@@ -185,13 +190,16 @@ export async function coverageMarkers(db: Queryable, branchId: string): Promise<
  * that shows it name the same holds, and the slowest of these reads (about 0.45 s across all
  * branches) is not run twice.
  */
-export async function movement(db: Queryable, args: { branchId: string | null; branchIds: string[] | null; period: Period; holds?: DecisionHold[] }): Promise<Movement> {
+export async function movement(
+  db: Queryable,
+  args: { branchId: string | null; branchIds: string[] | null; period: Period; holds?: DecisionHold[]; evidenceHolds?: EvidenceHold[] },
+): Promise<Movement> {
   const scope = args.branchId ? [args.branchId] : args.branchIds;
   const from = iso(WINDOW.from);
   const to = iso(WINDOW.to);
   const compare = args.period.key === "oct" ? PERIODS.sep : null;
 
-  const [spend, leads, delivered, labels, totals, holds, gaps, feeds, now] = await Promise.all([
+  const [spend, leads, delivered, labels, totals, holds, held, gaps, feeds, now] = await Promise.all([
     db.query<{ w: string; channel_code: string; cents: string; days: string }>(
       `select to_char(date_trunc('week', s.spend_date), 'YYYY-MM-DD') as w, s.channel_code, sum(s.cost_cents) as cents, count(distinct s.spend_date) as days
        from ad_spend_daily s
@@ -222,6 +230,7 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
       [iso(args.period.from), iso(args.period.to), compare ? iso(compare.from) : null, compare ? iso(compare.to) : null, scope],
     ),
     args.holds ? Promise.resolve(args.holds) : decisionHolds(db, scope, 8, args.period),
+    args.evidenceHolds ? Promise.resolve(args.evidenceHolds) : evidenceHolds(db, scope, args.period),
     args.branchId ? coverageMarkers(db, args.branchId) : Promise.resolve([] as Marker[]),
     feedFreshness(db),
     getNow(db),
@@ -271,6 +280,7 @@ export async function movement(db: Queryable, args: { branchId: string | null; b
     markers,
     recoveries,
     holds,
+    evidenceHolds: held,
     deliveredThrough,
     feedStale,
     totals: {
@@ -374,7 +384,7 @@ export type MovementState =
 export async function overviewMovement(
   db: Queryable,
   viewer: Viewer,
-  args: { branchParam: string | null; brandBranchIds: string[] | null; period: Period; pageHolds?: DecisionHold[] },
+  args: { branchParam: string | null; brandBranchIds: string[] | null; period: Period; pageHolds?: DecisionHold[]; pageEvidenceHolds?: EvidenceHold[] },
 ): Promise<MovementState> {
   if (args.branchParam) {
     if (!BRANCH_BY_ID.has(args.branchParam)) return { kind: "unknown_branch", branchId: args.branchParam };
@@ -382,8 +392,8 @@ export async function overviewMovement(
     return { kind: "ready", movement: await movement(db, { branchId: args.branchParam, branchIds: null, period: args.period }) };
   }
   const inView = args.brandBranchIds ?? viewer.branchIds;
-  if (inView && inView.length === 1) return { kind: "ready", movement: await movement(db, { branchId: inView[0], branchIds: null, period: args.period, holds: args.pageHolds }) };
-  return { kind: "ready", movement: await movement(db, { branchId: null, branchIds: inView, period: args.period, holds: args.pageHolds }) };
+  if (inView && inView.length === 1) return { kind: "ready", movement: await movement(db, { branchId: inView[0], branchIds: null, period: args.period, holds: args.pageHolds, evidenceHolds: args.pageEvidenceHolds }) };
+  return { kind: "ready", movement: await movement(db, { branchId: null, branchIds: inView, period: args.period, holds: args.pageHolds, evidenceHolds: args.pageEvidenceHolds }) };
 }
 
 /**

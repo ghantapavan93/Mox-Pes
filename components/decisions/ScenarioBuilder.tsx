@@ -53,7 +53,7 @@ export function ScenarioBuilder({
   const dollars = Number(amount);
   const localProblem =
     !from || !to
-      ? "Choose the two channels to compare. Nothing is preselected while this branch's budget signal is gated."
+      ? "Choose the two channels to compare. Nothing is preselected while this branch's budget recommendation is held."
       : from === to
       ? "Choose two different channels."
       : !Number.isFinite(dollars) || dollars <= 0

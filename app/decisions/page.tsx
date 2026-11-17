@@ -8,7 +8,8 @@ import { ChevronRight, Info, ShieldAlert, ShieldCheck, XCircle } from "lucide-re
 import { Badge, ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
-import { decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
+import { budgetSignalNote, builderDefaults } from "@/lib/decision/signal-copy";
+import { COST_REASON_CODES, decisionVerdicts, defaultDecisionBranch, type DecisionVerdicts } from "@/lib/decision/verdicts";
 import { verifiedReadinessSnapshot, type VerifiedReadiness } from "@/lib/decision/verified";
 import { money } from "@/lib/format";
 import { parseChannel, parseWeek } from "@/lib/metrics/movement";
@@ -122,6 +123,8 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
 }
 
 const channelLabel = (code: string) => CHANNEL_BY_CODE.get(code as ChannelCode)?.label ?? code;
+/** "A", "A and B", "A, B and C". */
+const listOf = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
 async function VerdictsAndScenarios({ viewer, branchId, period, verified, incidentQuery }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness>; incidentQuery: string }) {
   const pool = getPool();
@@ -136,7 +139,14 @@ async function VerdictsAndScenarios({ viewer, branchId, period, verified, incide
 
   return (
     <>
-      <ReadinessSummary verdicts={verdicts} cleared={gaps.filter((g) => !g.held)} verified={verified} canInvestigate={viewer.can.investigate} incidentQuery={incidentQuery} />
+      <ReadinessSummary
+        verdicts={verdicts}
+        cleared={gaps.filter((g) => !g.held)}
+        verified={verified}
+        canInvestigate={viewer.can.investigate}
+        canOpenHeld={viewer.can.sync || viewer.can.approve}
+        incidentQuery={incidentQuery}
+      />
 
       <Card
         id="verdicts"
@@ -256,12 +266,15 @@ function ReadinessSummary({
   cleared,
   verified,
   canInvestigate,
+  canOpenHeld,
   incidentQuery,
 }: {
   verdicts: DecisionVerdicts;
   cleared: GapStatus[];
   verified: Promise<VerifiedReadiness>;
   canInvestigate: boolean;
+  /** The held records live on the currency and quarantine views, which only sync and approve roles open. */
+  canOpenHeld: boolean;
   incidentQuery: string;
 }) {
   const notReady = verdicts.channels.filter((c) => c.readiness.status === "not_ready");
@@ -271,6 +284,12 @@ function ReadinessSummary({
       if (r.code === "budget_gate" && r.href) blockers.set(r.href, r.text);
     }
   }
+  // A channel whose own cost cannot carry a decision (held spend, no spend, $0.00 recorded…), in its
+  // own words: these hold moves involving that channel, with no incident to open.
+  const cost = verdicts.channels.flatMap((c) => c.readiness.blockers.filter((r) => (COST_REASON_CODES as readonly string[]).includes(r.code)).map((r) => ({ key: `${c.channelCode}:${r.code}`, label: c.label, text: r.text, href: r.href })));
+  const s = verdicts.budgetSignal;
+  // The pair that can still be compared while the branch-wide ranking is held (no incident gates it).
+  const pairOpen = s.trustworthy && s.recommendation.status === "held" && s.comparison.compared.length >= 2;
   const ready = notReady.length === 0;
   const Icon = ready ? Info : XCircle;
   // The same incident evidence the Overview and the daily records open, with the selection carried.
@@ -318,6 +337,30 @@ function ReadinessSummary({
               );
             })}
           </ul>
+        )}
+        {cost.length > 0 && (
+          <ul className="space-y-1.5 text-text" data-testid="readiness-cost">
+            {cost.map((r) => (
+              <li key={r.key} className="break-words">
+                <span className="font-medium">{r.label}.</span> {r.text}
+                {r.href && (r.href.startsWith("/exceptions/") || canOpenHeld) && (
+                  <>
+                    {" "}
+                    <Link href={r.href.startsWith("/exceptions/") ? incidentHref(r.href.slice("/exceptions/".length)) : r.href} className="font-medium text-accent hover:underline">
+                      {r.href.startsWith("/exceptions/") ? `Open incident #${r.href.slice("/exceptions/".length)}` : "Open the held records"}
+                    </Link>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {pairOpen && (
+          <p className="text-text" data-testid="readiness-pair">
+            {listOf(s.comparison.compared.map((code) => verdicts.channels.find((c) => c.channelCode === code)?.label ?? code))} can still be compared, and a move between{" "}
+            {s.comparison.compared.length === 2 ? "them" : "two of them"} reviewed; the branch-wide recommendation stays held while {listOf(s.excluded.map((x) => x.label))}{" "}
+            {s.excluded.length === 1 ? "is" : "are"} left out.
+          </p>
         )}
         {cleared.map((g) => (
           <p key={g.exceptionId} className="text-text" data-testid="readiness-cleared" data-state={g.state}>
@@ -378,15 +421,12 @@ async function OtherChecks({ verified }: { verified: Promise<VerifiedReadiness> 
 }
 
 function BudgetSignalNote({ verdicts }: { verdicts: DecisionVerdicts }) {
-  const s = verdicts.budgetSignal;
-  const text =
-    s.signal === "shift" && s.from && s.to
-      ? `Budget signal: ${s.from.label} costs ${s.ratio!.toFixed(1)}× ${s.to.label} per customer`
-      : "Budget signal: no shift signalled";
+  // The card's own outcomes (lib/decision/signal-copy.ts), never a label of this page's.
+  const note = budgetSignalNote(verdicts.budgetSignal);
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="text-muted">{text}</span>
-      {s.trustworthy ? <Badge tone="good">gate open</Badge> : <Badge tone="bad">gated</Badge>}
+    <div className="flex items-center gap-2 text-xs" data-testid="budget-signal-note">
+      <span className="text-muted">{note.text}</span>
+      <Badge tone={note.tone}>{note.badge}</Badge>
       <Link href={`/branches/${verdicts.branchId}?period=${verdicts.period.key}`} className="text-accent hover:underline">
         branch →
       </Link>
@@ -405,13 +445,11 @@ function Builder({ verdicts, period }: { verdicts: DecisionVerdicts; period: Per
   if (withSpend.length < 2) {
     return <p className="text-sm text-muted">Fewer than two paid channels have spend at {verdicts.branchId} in this period: there is nothing to shift between.</p>;
   }
-  // Default to the move the budget signal would suggest; otherwise the two biggest channels. While
-  // the signal is not trustworthy (an open incident gates it) nothing is preselected: a default
-  // would read as a recommendation of the very move the incident distorts (UX red team 2026-11-12).
+  // The gate decides the starting move (lib/decision/signal-copy.ts `builderDefaults`): its pair only
+  // when nothing holds the recommendation, the two biggest channels when no shift is signalled, and
+  // nothing while an incident or a left-out channel's missing cost holds it (UX red team 2026-11-12).
   const bySpend = [...withSpend].sort((a, b) => b.monthlySpendCents - a.monthlySpendCents);
-  const s = verdicts.budgetSignal;
-  const defaultFrom = !s.trustworthy ? "" : s.signal === "shift" && s.from ? s.from.channelCode : bySpend[0].channelCode;
-  const defaultTo = !s.trustworthy ? "" : s.signal === "shift" && s.to ? s.to.channelCode : bySpend[1].channelCode;
+  const { from: defaultFrom, to: defaultTo } = builderDefaults(verdicts.budgetSignal, bySpend.map((o) => o.channelCode));
   return (
     <div className="space-y-3">
       <p className="text-xs text-faint">

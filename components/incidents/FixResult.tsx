@@ -111,7 +111,15 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
                 {count(b1.openExceptions)} open {b1.openExceptions === 1 ? "exception" : "exceptions"} at {branchId}.
               </>
             )}
-            {b1.budgetSignal?.trustworthy && <> The October budget signal is now trustworthy: its inputs agree, and moving budget is still a decision.</>}
+            {/* This fix's verification is history; the decision's status is what holds it now. A
+                snapshot stored before 2026-11-17 has no recommendation: read as before. */}
+            {b1.budgetSignal?.trustworthy && b1.budgetSignal.recommendation !== "held" && <> The October budget signal is now trustworthy: its inputs agree, and moving budget is still a decision.</>}
+            {b1.budgetSignal?.trustworthy && b1.budgetSignal.recommendation === "held" && (
+              <span data-testid="fix-result-still-held">
+                {" "}
+                No open incident gates the October budget signal now, but its recommendation is still held: {b1.budgetSignal.heldBy?.[0] ?? "a channel's cost is not counted yet."}
+              </span>
+            )}
           </dd>
         </dl>
         <p className="text-xs">

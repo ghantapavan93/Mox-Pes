@@ -43,8 +43,12 @@ export interface BranchSnapshot {
    */
   openExceptionList?: OpenExceptionRef[];
   channels: Record<string, { spendCents: number; acquired: number; cacCents: number | null }>;
-  /** October budget signal, as the branch page shows it. */
-  budgetSignal: { signal: "shift" | "none"; trustworthy: boolean; blockers: number; ratio: number | null };
+  /**
+   * October budget signal, as the branch page shows it. `recommendation` and `heldBy` (absent from
+   * snapshots stored before 2026-11-17) say whether anything still holds the recommendation once no
+   * incident gates it: a fix that clears its own incident is not a clearance of the decision.
+   */
+  budgetSignal: { signal: "shift" | "none"; trustworthy: boolean; blockers: number; ratio: number | null; recommendation?: "shift" | "none" | "held"; heldBy?: string[] };
 }
 
 export interface OpenExceptionRef {
@@ -118,7 +122,14 @@ async function branchSnapshot(db: Queryable, branchId: string): Promise<BranchSn
         .filter((c) => c.costBasis === "media")
         .map((c) => [c.channelCode, { spendCents: c.spendCents, acquired: c.acquired, cacCents: c.cacCents }]),
     ),
-    budgetSignal: { signal: signal.signal, trustworthy: signal.trustworthy, blockers: signal.blockers.length, ratio: signal.ratio },
+    budgetSignal: {
+      signal: signal.signal,
+      trustworthy: signal.trustworthy,
+      blockers: signal.blockers.length,
+      ratio: signal.ratio,
+      recommendation: signal.recommendation.status,
+      heldBy: signal.recommendation.heldBy.map((h) => h.text),
+    },
   };
 }
 

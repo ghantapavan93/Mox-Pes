@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import { getNow, readAll, type Queryable } from "@/lib/db";
 import { budgetSignal, SIGNAL_MIN_CUSTOMERS, type Blocker, type BudgetSignal } from "@/lib/metrics/decision";
+import type { ChannelEligibility } from "@/lib/metrics/eligibility";
 import type { ChannelRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { gapCoverage, type GapCoverage } from "@/lib/reconcile/gap-coverage";
@@ -76,6 +77,8 @@ export interface ChannelVerdicts {
   spendCents: number;
   acquired: number;
   cacCents: number | null;
+  /** Whether its cost can carry a decision, and why not (the gate's outcome 1, lib/metrics/decision.ts). */
+  eligibility: Pick<ChannelEligibility, "reasons" | "limitations">;
   integrity: IntegrityVerdict;
   readiness: ReadinessVerdict;
   effectiveness: EffectivenessVerdict;
@@ -86,9 +89,12 @@ export interface DecisionVerdicts {
   branchName: string;
   period: { key: string; label: string; from: string; to: string };
   asOf: string;
-  budgetSignal: Pick<BudgetSignal, "signal" | "ratio" | "trustworthy" | "from" | "to">;
+  budgetSignal: Pick<BudgetSignal, "signal" | "ratio" | "trustworthy" | "from" | "to" | "comparison" | "excluded" | "recommendation">;
   channels: ChannelVerdicts[];
 }
+
+/** Readiness codes for a channel whose cost cannot carry a decision, one per eligibility reason. */
+export const COST_REASON_CODES = ["cost_held", "cost_unmapped", "cost_elsewhere", "cost_no_spend", "cost_recorded_zero"] as const;
 
 /** The branch the Decision Lab opens on: the ChangeGuard scenario branch, or the viewer's own. */
 export function defaultDecisionBranch(viewer: Viewer): string {
@@ -169,9 +175,10 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
   ]);
 
   const stillMissingById = new Map(exceptions.map((e) => [e.id, stillMissing(e.coverage)]));
-  const channels = signal.channels.map((c) => {
+  const channels = signal.channels.map((c, i) => {
+    const eligibility = signal.eligibility[i];
     const integrity = integrityVerdict(c, exceptions, signal.blockers, records, spendCoverage, branchId, period);
-    const readiness = readinessVerdict(c, integrity, signal, feeds, now, stillMissingById);
+    const readiness = readinessVerdict(c, integrity, signal, feeds, now, stillMissingById, eligibility);
     const effectiveness = effectivenessVerdict(c, branchId, period, holdouts, latestAa);
     return {
       channelCode: c.channelCode,
@@ -179,6 +186,7 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
       spendCents: c.spendCents,
       acquired: c.acquired,
       cacCents: c.cacCents,
+      eligibility: { reasons: eligibility.reasons, limitations: eligibility.limitations },
       integrity,
       readiness,
       effectiveness,
@@ -190,7 +198,16 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
     branchName: branch.name,
     period: { key: period.key, label: period.label, from: period.from.toISOString(), to: period.to.toISOString() },
     asOf: now.toISOString(),
-    budgetSignal: { signal: signal.signal, ratio: signal.ratio, trustworthy: signal.trustworthy, from: signal.from, to: signal.to },
+    budgetSignal: {
+      signal: signal.signal,
+      ratio: signal.ratio,
+      trustworthy: signal.trustworthy,
+      from: signal.from,
+      to: signal.to,
+      comparison: signal.comparison,
+      excluded: signal.excluded,
+      recommendation: signal.recommendation,
+    },
     channels: viewer.branchIds === null ? channels : await withoutUnopenableLinks(db, channels),
   };
 }
@@ -385,7 +402,15 @@ export function staleReason(f: FeedState, now: Date): string | null {
   return null;
 }
 
-function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: BudgetSignal, feeds: FeedState[], now: Date, stillMissingById: Map<number, string>): ReadinessVerdict {
+function readinessVerdict(
+  c: ChannelRow,
+  integrity: IntegrityVerdict,
+  signal: BudgetSignal,
+  feeds: FeedState[],
+  now: Date,
+  stillMissingById: Map<number, string>,
+  eligibility: ChannelEligibility,
+): ReadinessVerdict {
   const reasons: Reason[] = [];
 
   // Linked to the first failing integrity check's evidence, so "not ready" always leads somewhere.
@@ -420,6 +445,19 @@ function readinessVerdict(c: ChannelRow, integrity: IntegrityVerdict, signal: Bu
       href: exceptionHref(b.exceptionId),
     });
   }
+
+  // Whether this channel's own cost can carry a move (the gate's outcome 1). A refused revision and an
+  // incident that touches it are said above, as integrity and the gate; the rest only here, each in its
+  // own words: held spend, an unmapped campaign, cost counted at another branch, no spend, $0.00 recorded.
+  const own = eligibility.reasons.filter((r) => r.code !== "refused" && r.code !== "incident");
+  if (own.length === 0) {
+    reasons.push({ code: "cost_evidence", status: "pass", text: `No ${c.label} spend for these customers is held, unmapped or missing.` });
+  }
+  for (const r of own) {
+    reasons.push({ code: `cost_${r.code}`, status: "fail", text: `Its cost per customer cannot carry a decision: ${r.text.charAt(0).toLowerCase()}${r.text.slice(1)}`, href: r.href });
+  }
+  // What the figure mixes (branch keys, D-2): said, never decided here.
+  for (const text of eligibility.limitations) reasons.push({ code: "branch_keys", status: "info", text });
 
   reasons.push(
     c.acquired >= SIGNAL_MIN_CUSTOMERS

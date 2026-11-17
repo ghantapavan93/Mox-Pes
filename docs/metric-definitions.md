@@ -39,11 +39,48 @@ server's zone (regression test F3). Branch-local month boundaries are a known li
 | Booked annual value | Σ annual contract value of active first subscriptions | Bidding value, pipeline | **Booked, not revenue**; always labelled so. |
 | Revenue in open exceptions | Σ collected revenue of **distinct** customers referenced by open exceptions | How much revenue has unsettled credit: **untied** (held records, payments without a ticket, conflicting payloads) vs **credit disputed** (branch mismatch, D2D / paid conflict — tied, but contested) | It is not lost revenue. Disputed credit is a policy question, not missing data. Unmapped spend is reported separately. |
 | Channel spend | Σ cost of spend records by the channel **each record was classified into** by its mapper version | Channel budget | A platform re-typing a campaign moves spend between channels silently; see the coverage-gap rule |
-| Budget signal (illustrative) | the most expensive paid channel at a branch costs ≥ 1.5× the cheapest per new customer serviced (each ≥ 5 customers) | Whether to shift budget between channels | Shown with its blockers; "not trustworthy yet" while a coverage gap or held records are open at the branch, or an unmapped campaign produced customers the branch serviced in a compared channel (unmapped spend has no branch of its own, so it blocks where its customers are) |
-| Decision readiness | per paid channel at a branch: integrity passes, no open decision-blocking incident at the branch (coverage gap, held records, unmapped spend), ≥ 5 serviced customers, spend and CRM feeds fresh (≤ 36 h) | Whether this channel's numbers can carry a budget move | Readiness is not effectiveness: a ready channel can still be ineffective; only a randomized experiment measures that |
-| Budget decisions on hold (Overview) | open decision-blocking exceptions in scope, most severe first | Which branches must not move budget yet | Lists incidents, not their size in the budget decision |
+| Budget signal (illustrative) | the most expensive paid channel at a branch costs ≥ 1.5× the cheapest per new customer serviced (each ≥ 5 customers), over the channels the **decision boundary** (below) lets it compare: branch-wide when every covered channel is compared, "among verified channels" when some are left out (each named, with its reason), behind the gate when an open incident's reach cannot be narrowed to channels. A channel with no CAC never takes part (paid-media CAC v4) | Whether to shift budget between channels | Shown with its blockers; "not trustworthy yet" while a coverage gap or held records are open at the branch, or an unmapped campaign produced customers the branch serviced in a compared channel (unmapped spend has no branch of its own, so it blocks where its customers are). The raw ratio over every channel with a CAC is kept as data and never shown as a comparison or a recommendation |
+| Decision readiness | per paid channel at a branch: integrity passes, no open decision-blocking incident at the branch (coverage gap, held records, unmapped spend), its own cost evidence holds (none of its spend held at intake, no customer from an unmapped campaign, its customers not all from another branch's campaigns, spend recorded; 2026-11-17), ≥ 5 serviced customers, spend and CRM feeds fresh (≤ 36 h) | Whether this channel's numbers can carry a budget move | Readiness is not effectiveness: a ready channel can still be ineffective; only a randomized experiment measures that |
+| Budget decisions on hold (Overview) | open decision-blocking exceptions in scope, most severe first; then each channel the rule covers whose spend is held at intake, has none recorded, or is counted at another branch (no incident says so; 2026-11-17) | Which branches must not move budget yet | Lists incidents and held records, not their size in the budget decision |
 | Journey collected (Customer 360) | Σ successful payments − refunds for the customer, to date (equals `v_customer_revenue`) | Customer value | Includes add-on services, not only the first subscription |
 | Conversion bridge | platform-claimed → paid lead records → unique paid prospects → {existing, not sold, credited elsewhere, sold not serviced, serviced} | "Where did the conversions go?" | Platform claims cover mapped campaigns; buckets are exclusive and add up (tested). |
+
+## Decision boundary (2026-11-17)
+
+Three separate outcomes, decided once (`budgetSignal`, `lib/metrics/decision.ts`; the reasons in
+`lib/metrics/eligibility.ts`) and read by every surface: the branch card, the Decision Lab, the
+Overview, the fix receipt and the investigator.
+
+1. **A fact is displayable.** Every channel's spend, customers and CAC are shown, or the reason it
+   has none.
+2. **A comparison is valid** between channels the rule covers (≥ 5 customers) whose cost is
+   defensible and that no open incident touches. If some are left out, it reads "among verified
+   channels" and names each one with its reason. It is never a branch-wide ranking then. If an
+   incident's reach cannot be narrowed to channels (held lead records can move customers between
+   any of them), nothing is verified. The comparison then shows only behind the gate.
+3. **A recommendation can still be held.** It is held by any open incident. It is also held by a
+   left-out channel whose missing evidence could change which channel is cheapest or most
+   expensive. The scenario builder preselects a move only when nothing holds it.
+
+Why a paid channel with customers cannot carry an action on its CAC, in the records' own terms.
+Every reason makes that channel not ready, so no move into or out of it is decision-ready. They
+differ in what else they hold and what releases them:
+
+| Reason | Records | Holds the branch-wide recommendation | Released by |
+|---|---|---|---|
+| Held at intake | spend days held (excluded or quarantined, none counted). All of a period's days: no CAC. Some: the CAC is understated | yes | accepting the held records (a currency rule authorized, the record accepted) |
+| Revision refused | a newer revision of counted spend was refused; the counted amount is unconfirmed (its own incident) | yes | a newer revision accepted |
+| Unmapped campaign | customers credited to a campaign no branch is mapped to; their cost is unallocated (its own incident) | yes | mapping the campaign |
+| Cost at another branch | every customer came from campaigns mapped to other branches (branch keys, D-2) | yes | a branch-credit decision; none exists |
+| No spend recorded | customers, no spend and nothing held | yes | nothing in the records says why |
+| $0.00 recorded | the source recorded $0.00 on every counted day | **no**: it is evidence, not a gap | nothing to release |
+
+An open incident at a branch still holds every move there, as before. A correction clears only
+its own blocker. Another open one keeps the recommendation held. The fix receipt says so beside
+the fix's own verification. Partly cross-branch customers are a **limitation**, shown beside the
+figure and never a reason to leave it out (rule 4: no spend or customers move between branches,
+and no replacement metric is computed). In the October seed, 8 paid-media customers serviced at B07
+came from B06's campaigns (3 Local Services, 4 Search, 1 Meta).
 
 ## Google conversion feedback (dry run)
 
@@ -81,8 +118,10 @@ have happened without the ad. Incremental lift needs holdouts (geo split, platfo
 - A branch CAC can still mix its own spend with customers another branch's campaign produced (the
   D-2 split). In the business-fit fixture, B11's own $50 over one customer B10's campaign produced
   read $50.00, and $100.00 after an equal-total restatement between the two campaigns; company
-  totals did not move. Which branch carries the cost is still undecided: nothing is reassigned and
-  no other figure is offered.
+  totals did not move. Since the decision boundary (2026-11-17) the figure says so. A channel whose
+  every customer came from another branch's campaigns cannot carry a decision ("cost at B10"), and a
+  partial mix is named beside the figure. Which branch carries the cost is still undecided: nothing
+  is reassigned and no other figure is offered.
 - The scorecard restates history silently: a revision accepted after a decision moves the figure,
   with no "as known at" view. A stored Shadow check keeps the figure it compared, and a re-run
   names the records that arrived after it.

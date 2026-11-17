@@ -7,7 +7,7 @@ import { paidCac } from "@/lib/metrics/scorecard";
 import { PERIODS, type Period, type PeriodKey } from "@/lib/period";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 import { gamma, quantile, rng, seedFrom } from "./stats";
-import { decisionVerdicts, type Reason } from "./verdicts";
+import { COST_REASON_CODES, decisionVerdicts, type Reason } from "./verdicts";
 
 /**
  * Budget scenarios: "move $X a month from channel A to channel B at this branch — what happens
@@ -39,7 +39,7 @@ const INTERVAL = [0.05, 0.95] as const;
 /** Beyond this multiple of observed spend, the power law is extrapolating. */
 const EXTRAPOLATION_RATIO = 1.5;
 /** Readiness checks that belong to one channel (the rest describe the whole branch). */
-const CHANNEL_SPECIFIC = new Set(["integrity", "min_customers"]);
+const CHANNEL_SPECIFIC = new Set<string>(["integrity", "min_customers", ...COST_REASON_CODES]);
 
 export const DEFAULT_ASSUMPTIONS = {
   elasticity: 0.5,
@@ -239,6 +239,17 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
   const assumptions = ScenarioAssumptionsSchema.parse(request.assumptions);
   const verdicts = await decisionVerdicts(db, viewer, { branchId: request.branchId, period });
 
+  // A move into or out of a channel with no counted spend cannot be projected. Say why the records
+  // give it none (held, unmapped, counted at another branch, none recorded, $0.00 recorded), not
+  // just that it has none: "no spend" and "held at intake" permit different next steps.
+  for (const change of request.changes) {
+    for (const code of [change.fromChannel, change.toChannel]) {
+      const c = verdicts.channels.find((x) => x.channelCode === code);
+      const why = c && c.spendCents === 0 ? c.eligibility.reasons.find((r) => r.code !== "incident") : undefined;
+      if (why) throw new ActionError(`${c!.label} has no counted spend at ${request.branchId} in ${period.label}, so there is no cost per customer to extrapolate from: ${why.text.charAt(0).toLowerCase()}${why.text.slice(1)}`, 409);
+    }
+  }
+
   const days = Math.round((period.to.getTime() - period.from.getTime()) / 86_400_000);
   const periodScale = MONTH_DAYS / days;
   const baseline: BaselineChannel[] = verdicts.channels.map((c) => ({
@@ -283,6 +294,15 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
     if (c.acquired < SIGNAL_MIN_CUSTOMERS) {
       warnings.push(`${c.label} has ${c.acquired} observed customer${c.acquired === 1 ? "" : "s"} in the period: its cost per customer is mostly noise and the interval is wide.`);
     }
+  }
+  // A move between two verified channels can be reviewed while the branch's ranking is held: say
+  // that this is a pair, not the branch's recommendation, and what left the ranking incomplete.
+  const signal = verdicts.budgetSignal;
+  const leftOut = signal.excluded.filter((x) => !involved.has(x.channelCode) && x.reasons.some((r) => r.couldChange));
+  if (leftOut.length > 0) {
+    warnings.push(
+      `This compares two channels, not the branch: ${leftOut.map((x) => x.label).join(" and ")} ${leftOut.length === 1 ? "is" : "are"} left out of ${request.branchId}'s comparison (${leftOut.map((x) => x.reasons.filter((r) => r.couldChange).map((r) => r.short).join(", ")).join("; ")}), and ${leftOut.length === 1 ? "its" : "their"} missing cost could change which channel is cheapest. The branch-wide recommendation stays held.`,
+    );
   }
 
   const coverageRows = involvedVerdicts.map((c) => c.integrity.coverage);

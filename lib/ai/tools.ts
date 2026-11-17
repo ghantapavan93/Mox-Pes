@@ -1137,7 +1137,21 @@ export const getAuditHistory = defineTool({
 export interface DecisionReadiness {
   branchId: string;
   period: string;
-  budgetSignal: { signal: string; ratio: number | null; trustworthy: boolean; from: string | null; to: string | null };
+  /**
+   * `signal`/`ratio`/`from`/`to` are the raw observation, never a recommendation. `recommendation` is
+   * whether the comparison may carry one ("held" while an incident or a left-out channel's missing
+   * cost holds it), `basis` which channels the comparison rests on, `excluded` those left out and why.
+   */
+  budgetSignal: {
+    signal: string;
+    ratio: number | null;
+    trustworthy: boolean;
+    from: string | null;
+    to: string | null;
+    basis: string;
+    recommendation: string;
+    excluded: Array<{ channelCode: string; reasons: string[] }>;
+  };
   channels: Array<{
     channelCode: string;
     label: string;
@@ -1172,6 +1186,9 @@ export const getDecisionReadiness = defineTool({
         trustworthy: v.budgetSignal.trustworthy,
         from: v.budgetSignal.from?.channelCode ?? null,
         to: v.budgetSignal.to?.channelCode ?? null,
+        basis: v.budgetSignal.comparison.basis,
+        recommendation: v.budgetSignal.recommendation.status,
+        excluded: v.budgetSignal.excluded.map((x) => ({ channelCode: x.channelCode, reasons: x.reasons.map((r) => r.text) })),
       },
       channels: v.channels.map((c) => {
         [...c.integrity.reasons, ...c.readiness.reasons].forEach((r) => collect(r.href));
@@ -1190,7 +1207,7 @@ export const getDecisionReadiness = defineTool({
     return {
       data,
       evidenceIds: uniqueIds([...data.channels.map((c) => evidence.readiness(input.branchId, input.period, c.channelCode)), ...[...exceptionIds].map(evidence.exception)]),
-      summary: `${input.branchId} ${input.period}: ${data.channels.filter((c) => c.readiness.status === "ready").length}/${data.channels.length} channel(s) decision-ready; budget signal ${data.budgetSignal.signal}${data.budgetSignal.trustworthy ? "" : " (not trustworthy)"}`,
+      summary: `${input.branchId} ${input.period}: ${data.channels.filter((c) => c.readiness.status === "ready").length}/${data.channels.length} channel(s) decision-ready; budget signal ${data.budgetSignal.signal}${data.budgetSignal.trustworthy ? "" : " (not trustworthy)"}; recommendation ${data.budgetSignal.recommendation}`,
     };
   },
 });

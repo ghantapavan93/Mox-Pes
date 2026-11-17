@@ -111,6 +111,18 @@ export function takeaway(m: Movement, scopeLabel: string): Takeaway {
     if (delta !== 0) detail = `The largest change by channel: ${moved.label}, ${delta > 0 ? "+" : "−"}${dollars(Math.abs(delta))}.`;
   }
   const heldBranches = [...new Set(m.holds.map((h) => h.branchId))];
+  // Recommendations the records hold with no incident (held spend, none recorded, cost at another
+  // branch): said beside the incidents, so "no open incident" is never read as "nothing holds it".
+  const evidence = m.evidenceHolds ?? [];
+  const evidenceOnly = [...new Set(evidence.map((h) => h.branchId))].filter((b) => !heldBranches.includes(b));
+  const alsoHeld =
+    m.scope.branchId !== null
+      ? evidence[0]
+        ? ` ${evidence[0].label}'s cost here cannot be counted yet either (${evidence[0].short}).`
+        : ""
+      : evidenceOnly.length > 0
+        ? ` ${evidenceOnly.slice(0, 4).join(", ")}${evidenceOnly.length > 4 ? "…" : ""} also ${evidenceOnly.length === 1 ? "has" : "have"} a channel whose cost the records cannot count yet.`
+        : "";
   // A coverage gap the chart marks that was verified (or whose verification is now historical):
   // its status is the decision status, so the reader sees what cleared and that spend moved.
   const cleared = m.recoveries?.find((r) => r.state === "verified" || r.state === "historical") ?? null;
@@ -123,16 +135,29 @@ export function takeaway(m: Movement, scopeLabel: string): Takeaway {
         ? {
             tone: "review" as const,
             label: "Hold the budget decision",
-            text: `${m.holds.length === 1 ? `Incident #${first.exceptionId} holds it` : `${plural(m.holds.length, "open incident")} hold it, first #${first.exceptionId}`}: ${first.summary.replace(/\.$/, "")}.${cleared ? ` ${capital(cleared.conclusion)}` : ""}`,
+            text: `${m.holds.length === 1 ? `Incident #${first.exceptionId} holds it` : `${plural(m.holds.length, "open incident")} hold it, first #${first.exceptionId}`}: ${first.summary.replace(/\.$/, "")}.${cleared ? ` ${capital(cleared.conclusion)}` : ""}${alsoHeld}`,
             exceptionId: first.exceptionId,
           }
         : {
             tone: "review" as const,
             label: "Investigate before acting",
-            text: `${plural(heldBranches.length, "branch", "branches")} in this scope ${heldBranches.length === 1 ? "has" : "have"} an open incident that holds its budget decision: ${heldBranches.slice(0, 4).join(", ")}${heldBranches.length > 4 ? "…" : ""}. Channel totals here include ${heldBranches.length === 1 ? "it" : "them"}.`,
+            text: `${plural(heldBranches.length, "branch", "branches")} in this scope ${heldBranches.length === 1 ? "has" : "have"} an open incident that holds its budget decision: ${heldBranches.slice(0, 4).join(", ")}${heldBranches.length > 4 ? "…" : ""}. Channel totals here include ${heldBranches.length === 1 ? "it" : "them"}.${alsoHeld}`,
           }
-      : (stale ?? (cleared ? gapTrust(cleared) : { tone: "clear" as const, label: "No open incident affects these figures", text: "Nothing open changes what these channels cost. The figures are the stored spend records, not a forecast." }));
-  const suggestion = m.scope.branchId === null && heldBranches[0] ? { branchId: heldBranches[0], label: `See what changed at ${heldBranches[0]}` } : null;
+      : evidence.length > 0
+        ? m.scope.branchId !== null
+          ? {
+              tone: "review" as const,
+              label: "Hold the budget decision",
+              text: `No incident is open, but the records hold it: ${evidence[0].summary}${evidence.length > 1 ? ` ${plural(evidence.length - 1, "other channel")} too.` : ""}`,
+            }
+          : {
+              tone: "review" as const,
+              label: "Investigate before acting",
+              text: `${plural(evidenceOnly.length, "branch", "branches")} in this scope ${evidenceOnly.length === 1 ? "has" : "have"} a channel whose cost the records cannot count yet, which holds its budget decision: ${evidenceOnly.slice(0, 4).join(", ")}${evidenceOnly.length > 4 ? "…" : ""}. Channel totals here leave that cost out.`,
+            }
+        : (stale ?? (cleared ? gapTrust(cleared) : { tone: "clear" as const, label: "No open incident affects these figures", text: "Nothing open changes what these channels cost. The figures are the stored spend records, not a forecast." }));
+  const firstHeld = heldBranches[0] ?? evidenceOnly[0];
+  const suggestion = m.scope.branchId === null && firstHeld ? { branchId: firstHeld, label: `See what changed at ${firstHeld}` } : null;
   return { headline, detail, trust, suggestion };
 }
 

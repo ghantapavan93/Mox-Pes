@@ -11,7 +11,7 @@ import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Ske
 import { attentionFlags } from "@/lib/attention";
 import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
-import { decisionHolds } from "@/lib/metrics/decision";
+import { decisionHolds, evidenceHolds } from "@/lib/metrics/decision";
 import { overviewMovement, parseChannel, parseWeek } from "@/lib/metrics/movement";
 import { branchRows, cacDefined, conversionBridge, freshness, paidCac, totals, type Totals } from "@/lib/metrics/scorecard";
 import { PERIODS, parsePeriod } from "@/lib/period";
@@ -63,13 +63,16 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
   // October is compared with September (same length, same definitions); other periods are not.
   const compare = period.key === "oct" ? { from: PERIODS.sep.from, to: PERIODS.sep.to, branchIds } : null;
   const branchRowsReady = branchRows(pool, scope);
-  const [rows, bridge, streams, holds, brands, weeks, before] = await Promise.all([
+  const [rows, bridge, streams, holds, held, brands, weeks, before] = await Promise.all([
     branchRowsReady,
     conversionBridge(pool, scope),
     freshness(pool),
     // The holds on this period's decisions: a hold on refused spend revisions dated in another
     // period is that period's (HOLD-TO-DECISION.md, scenario 2b).
     decisionHolds(pool, branchIds, 8, period),
+    // And the recommendations the records hold with no incident to say so: a channel the rule
+    // covers whose spend is held at intake, has none recorded, or is counted at another branch.
+    evidenceHolds(pool, branchIds, period),
     // Brand lines from the same branch rows, as soon as they are ready, instead of the whole
     // scorecard recomputed once per brand in turn (R-34: about 2 s of every load).
     brand ? Promise.resolve([]) : branchRowsReady.then((r) => brandRows(pool, scope, r)),
@@ -85,13 +88,14 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
   const branchParam = typeof sp.branch === "string" && sp.branch !== "" ? sp.branch : null;
   const channelParam = parseChannel(sp.channel);
   const weekParam = parseWeek(sp.week);
-  const movementReady = overviewMovement(pool, viewer, { branchParam, brandBranchIds: brand ? branchIds : null, period, pageHolds: holds });
+  const movementReady = overviewMovement(pool, viewer, { branchParam, brandBranchIds: brand ? branchIds : null, period, pageHolds: holds, pageEvidenceHolds: held });
   movementReady.catch(() => {}); // awaited by the section; this only keeps an early failure from being unhandled
   const branchOptions = BRANCHES.filter((b) => branchIds === null || branchIds.includes(b.id));
   const flags = attentionFlags(rows);
   const ranked = [...rows].sort((a, b) => (flags.get(b.branchId)?.length ?? 0) - (flags.get(a.branchId)?.length ?? 0) || b.atRiskCents - a.atRiskCents);
   const flagged = ranked.filter((r) => (flags.get(r.branchId)?.length ?? 0) > 0);
-  const heldBranches = [...new Set(holds.map((h) => h.branchId))];
+  const heldBranches = [...new Set([...holds.map((h) => h.branchId), ...held.map((h) => h.branchId)])];
+  const holdCount = holds.length + held.length;
   const scopeLabel = brand ? `${brand.name} · ${branchIds!.length} branches` : viewer.brandIds ? viewer.brandIds.map((b) => BRAND_BY_ID.get(b)!.name).join(", ") : viewer.branchIds ? `Branch ${viewer.branchIds.join(", ")}` : "All 44 branches";
   const shown = ranked.slice(0, ranked.length <= 12 ? ranked.length : 12);
 
@@ -163,13 +167,17 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         }
       />
 
-      {holds.length > 0 ? (
+      {holdCount > 0 ? (
         <Callout
           tone="warn"
-          title={`${holds.length} budget decision${holds.length === 1 ? "" : "s"} on hold at ${heldBranches.join(", ")}`}
+          title={`${holdCount} budget decision${holdCount === 1 ? "" : "s"} on hold at ${heldBranches.join(", ")}`}
           action={<a href="#holds" className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">Review <ArrowRight aria-hidden className="size-3" /></a>}
         >
-          Open incidents change what a paid channel cost or which customers it produced there. Channel comparisons at those branches are not a safe basis for moving budget yet.
+          {holds.length > 0 && held.length === 0
+            ? "Open incidents change what a paid channel cost or which customers it produced there. Channel comparisons at those branches are not a safe basis for moving budget yet."
+            : holds.length === 0
+              ? "A paid channel there has customers whose cost the records cannot count yet. Its branch has no channel ranking to move budget on; a pair of verified channels can still be compared."
+              : "Open incidents, or customers whose cost the records cannot count yet, change what a paid channel cost there. Channel rankings at those branches are not a safe basis for moving budget yet."}
         </Callout>
       ) : (
         <Callout tone="good" title="No budget decision in your scope is blocked by an open incident">
@@ -202,11 +210,11 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           id="holds"
           className="xl:col-span-3"
           title="Issues requiring review"
-          subtitle="Open incidents that put a branch's budget signal on hold, most severe first"
+          subtitle={held.length > 0 ? "Open incidents, most severe first, then channels whose cost the records cannot count yet" : "Open incidents that put a branch's budget signal on hold, most severe first"}
           action={<Link href="/exceptions" className="text-xs font-medium text-accent hover:underline">All incidents</Link>}
           flush
         >
-          {holds.length === 0 ? (
+          {holdCount === 0 ? (
             <p className="px-4 py-6 text-sm text-muted" data-testid="decision-holds-empty">No budget signal in your scope is gated by an open incident.</p>
           ) : (
             <ul className="divide-y divide-border text-sm" data-testid="decision-holds">
@@ -228,6 +236,23 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                     >
                       incident #{h.exceptionId}
                     </IncidentRef>
+                    <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="inline-flex min-h-6 items-center text-accent hover:underline">readiness</Link>
+                  </span>
+                </li>
+              ))}
+              {held.map((h) => (
+                <li key={`${h.branchId}:${h.channelCode}:${h.code}`} className="grid grid-cols-[3.25rem_1fr] gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[3.25rem_1fr_auto]" data-testid="evidence-hold" data-code={h.code}>
+                  <Link href={`/branches/${h.branchId}?period=${period.key}`} className="font-semibold text-accent hover:underline">
+                    {h.branchId}
+                  </Link>
+                  <div className="min-w-0">
+                    <Badge tone="warn" dot>{h.code === "held" ? "Spend held at intake" : h.code === "no_spend" ? "No spend recorded" : "Cost counted at another branch"}</Badge>
+                    <p className="mt-1 break-words leading-5 text-text">{h.summary}</p>
+                  </div>
+                  <span className="col-start-2 flex gap-3 text-xs sm:col-start-auto sm:flex-col sm:items-end sm:gap-0">
+                    {h.href && (viewer.can.sync || viewer.can.approve) && (
+                      <Link href={h.href} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">held records</Link>
+                    )}
                     <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="inline-flex min-h-6 items-center text-accent hover:underline">readiness</Link>
                   </span>
                 </li>

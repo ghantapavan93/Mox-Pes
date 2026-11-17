@@ -284,7 +284,10 @@ describe("adversarial intake · business and operational challenges", () => {
 });
 
 describe("adversarial intake · push API boundary", () => {
-  const post = (source: string, body: string, key = "dev-ingest-key", headers: Record<string, string> = {}) =>
+  // The key the route accepts here: INGEST_API_KEY when the environment sets one (CI does),
+  // otherwise the development default (app/api/ingest/[source]/route.ts).
+  const KEY = process.env.INGEST_API_KEY ?? "dev-ingest-key";
+  const post = (source: string, body: string, key = KEY, headers: Record<string, string> = {}) =>
     ingestPost(new Request(`http://localhost/api/ingest/${source}`, { method: "POST", body, headers: { "content-type": "application/json", "x-ingest-key": key, ...headers } }), {
       params: Promise.resolve({ source }),
     });
@@ -305,7 +308,7 @@ describe("adversarial intake · push API boundary", () => {
   });
 
   it("ADV-43 a declared Content-Length over the limit is refused without reading", async () => {
-    const res = await post("calls", JSON.stringify({ records: [] }), "dev-ingest-key", { "content-length": String(50 * 1024 * 1024) });
+    const res = await post("calls", JSON.stringify({ records: [] }), KEY, { "content-length": String(50 * 1024 * 1024) });
     expect(res.status).toBe(413);
   });
 

@@ -8,7 +8,9 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # The suite runs serially (playwright.config.ts: one worker): 19 browser specs, one of them
+    # about 12 minutes alone, plus the twin rollout's integration tests.
+    timeout-minutes: 90
     services:
       postgres:
         image: postgres:17
@@ -23,6 +25,10 @@ jobs:
       DATABASE_URL: postgres://postgres@127.0.0.1:54333/revenue_signal
       TEST_DATABASE_URL: postgres://postgres@127.0.0.1:54333/revenue_signal_test
       INGEST_API_KEY: ci-ingest-key
+      # Postgres runs in a service container, so its data directory is not on the runner's
+      # filesystem and the twin's disk preflight cannot measure it (lib/twin/disk.ts). The
+      # runner is discarded after the job; a full disk there harms nothing else.
+      TWIN_SKIP_DISK_PREFLIGHT: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

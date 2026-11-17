@@ -118,7 +118,8 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
 
     // The proposing role can neither dry-run nor approve; the server says so.
     expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "dry_run" } })).status()).toBe(403);
-    expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "self-approval attempt" } })).status()).toBe(403);
+    // A well-formed approval (it names a dry run's fingerprint) so the refusal is the role's, not the body's.
+    expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "self-approval attempt", fingerprint: "0".repeat(64) } })).status()).toBe(403);
 
     await proposed.getByRole("link", { name: /open the case/ }).click();
     await expect(page).toHaveURL(new RegExp(`/exceptions/${gapId}$`));
@@ -144,7 +145,7 @@ test.describe.serial("golden path · B09 LSA → PMax incident, from signal to v
     await expect(page.getByTestId("budget-signal")).toContainText("Not trustworthy yet");
     // An engineer cannot approve.
     await expect(card.getByRole("button", { name: "Approve" })).toHaveCount(0);
-    expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "engineer approval attempt" } })).status()).toBe(403);
+    expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "engineer approval attempt", fingerprint: "0".repeat(64) } })).status()).toBe(403);
   });
 
   test("f · an approver, a different role, approves", async ({ page }) => {

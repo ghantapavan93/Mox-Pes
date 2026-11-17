@@ -9,7 +9,8 @@ import { BRANCHES, BRANCH_BY_ID } from "@/lib/reference";
 import { getPool } from "@/lib/server";
 import { VIEWERS, type Viewer } from "@/lib/viewer";
 import { LIVE_PROPOSAL_STATUSES } from "@/lib/workflow/cases";
-import { KIND_TITLE, kindsFor, type ProposalKind } from "@/lib/workflow/kinds";
+import { failureText } from "@/lib/workflow/failure";
+import { KIND_TITLE, kindsFor, leadBranchesOfCampaign, type ProposalKind } from "@/lib/workflow/kinds";
 import { OWNER_ROLES, type ProposalStatus } from "@/lib/workflow/proposals";
 import { caseAudit, caseForException, caseProposals, caseTimeline, type CaseEvent, type ProposalDetail } from "@/lib/workflow/queries";
 import { MANUAL_CLOSE_STATES, STATE_LABEL, canTransition, type CaseState } from "@/lib/workflow/states";
@@ -34,13 +35,17 @@ export async function WorkflowPanel({ exception, viewer }: { exception: Exceptio
 
   const canTakeProposal = exception.status === "open" && (!kase || kase.state === "proposed" || canTransition(kase.state, "proposed"));
   const kinds = kindsFor(exception.kind);
+  // An unmapped campaign may be mapped only to a branch its own leads name (lib/workflow/kinds.ts).
+  const campaignId = Number((exception.evidence as Record<string, unknown>).campaignId);
+  const leadBranches = exception.kind === "unmapped_spend" && Number.isInteger(campaignId) ? await leadBranchesOfCampaign(pool, campaignId) : [];
   const proposable: ProposableKind[] = kinds
     .filter((k) => k.available)
-    .map((k) => ({ kind: k.kind, title: KIND_TITLE[k.kind], label: k.label, fields: fieldsFor(k.kind, exception) }));
+    .map((k) => ({ kind: k.kind, title: KIND_TITLE[k.kind], label: k.label, fields: fieldsFor(k.kind, exception, leadBranches) }));
   const unavailable = kinds.filter((k) => !k.available);
 
   return (
     <Card
+      id="workflow"
       title="Workflow"
       subtitle="Propose → dry run (rolled back) → approval by a different role → execution by the application, verified and audited"
       action={kase ? <span className="text-xs text-faint">Case #{kase.id}</span> : undefined}
@@ -205,7 +210,7 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
             </span>
           </summary>
           <div className="mt-2 space-y-2">
-            {p.dryRun.error && <p className="text-xs text-bad">{p.dryRun.error}</p>}
+            {p.dryRun.error && <p className="text-xs text-bad">{failureText("Did not verify", p.dryRun.verification)}</p>}
             {p.dryRun.result && <ResultLine result={p.dryRun.result} />}
             {p.dryRun.before && <SnapshotDiff before={p.dryRun.before} after={p.dryRun.after} verification={p.dryRun.verification} />}
           </div>
@@ -245,7 +250,7 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
             </p>
           </div>
           <div className="space-y-2 px-3 py-2.5">
-            {p.execution.error && <p className="text-xs text-bad">{p.execution.error}</p>}
+            {p.execution.error && <p className="text-xs text-bad">{failureText("Rolled back", p.execution.verification)}</p>}
             {p.execution.result && <ResultLine result={p.execution.result} />}
             {p.execution.before && <SnapshotDiff before={p.execution.before} after={p.execution.after} verification={p.execution.verification} />}
             <details className="group border-t border-border pt-2 text-xs" data-testid="idempotency-proof">
@@ -273,6 +278,7 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
         blocked={blocked}
         executionTargetId={executionTargetId}
         executionId={p.execution?.id ?? null}
+        reviewedFingerprint={p.dryRun?.fingerprint ?? null}
       />
     </article>
   );
@@ -343,7 +349,7 @@ function EventDetail({ detail }: { detail: Record<string, unknown> }) {
 }
 
 /** Parameter inputs per kind, with defaults taken from the exception's evidence. */
-function fieldsFor(kind: ProposalKind, exception: ExceptionRow): ParamField[] {
+function fieldsFor(kind: ProposalKind, exception: ExceptionRow, leadBranches: string[]): ParamField[] {
   const ev = exception.evidence as Record<string, unknown>;
   const versionField = (source: SourceName): ParamField => {
     const versions = mapperVersions(source);
@@ -361,15 +367,22 @@ function fieldsFor(kind: ProposalKind, exception: ExceptionRow): ParamField[] {
     case "replay_quarantine":
       return [versionField(String(ev.source) as SourceName)];
     case "map_campaign": {
+      // The branches the campaign's leads name are the evidence; with none, every branch is offered.
+      const branches = leadBranches.length > 0 ? BRANCHES.filter((b) => leadBranches.includes(b.id)) : BRANCHES;
       const suggested = String(ev.name ?? "").match(/^(B\d{2})\b/)?.[1];
       return [
         {
           name: "branchId",
           label: "Branch",
           type: "select",
-          options: BRANCHES.map((b) => ({ value: b.id, label: `${b.id} ${b.name}` })),
-          defaultValue: suggested ?? BRANCHES[0].id,
-          hint: suggested ? `${suggested} is suggested from the campaign name: a suggestion, not a fact.` : undefined,
+          options: branches.map((b) => ({ value: b.id, label: `${b.id} ${b.name}` })),
+          defaultValue: branches.find((b) => b.id === suggested)?.id ?? branches[0].id,
+          hint:
+            leadBranches.length > 0
+              ? `The campaign's leads name ${leadBranches.join(", ")}: only ${leadBranches.length === 1 ? "that branch is" : "those branches are"} offered.`
+              : suggested
+                ? `${suggested} is suggested from the campaign name: a suggestion, not a fact.`
+                : undefined,
         },
       ];
     }

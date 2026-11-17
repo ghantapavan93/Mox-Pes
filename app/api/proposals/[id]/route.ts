@@ -5,13 +5,15 @@ import { afterResponse, errorResponse } from "@/lib/http";
 import { dispatchEvents } from "@/lib/events/consumers";
 import { drainJobs } from "@/lib/jobs/kick";
 import { getPool, getViewer } from "@/lib/server";
+import { failureText } from "@/lib/workflow/failure";
 import { approveProposal, dryRunProposal, executeProposal, rejectProposal } from "@/lib/workflow/proposals";
 import { parseRecordId } from "@/lib/record-id";
 
 const reason = z.string().trim().min(5).max(1000);
 const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("dry_run") }),
-  z.object({ action: z.literal("approve"), reason }),
+  // The fingerprint of the dry run the approver reviewed: an approval binds to what was read.
+  z.object({ action: z.literal("approve"), reason, fingerprint: z.string().regex(/^[0-9a-f]{64}$/, "The reviewed dry run's fingerprint is required") }),
   z.object({ action: z.literal("reject"), reason }),
   z.object({ action: z.literal("execute") }),
 ]);
@@ -35,14 +37,14 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     switch (input.action) {
       case "dry_run": {
         const proposal = await dryRunProposal(pool, { proposalId, actor: viewer });
-        const message =
-          proposal.status === "dry_run_ok"
-            ? "Dry run verified and rolled back. Awaiting approval by a different role."
-            : `Dry run did not verify: ${proposal.dryRun?.error ?? "see the result"}`;
-        return NextResponse.json({ proposal, message });
+        const ok = proposal.status === "dry_run_ok";
+        // The request succeeded either way; `outcome` says whether the dry run did, so a failed one
+        // is shown as a failure, not with a success mark (lib/workflow/failure.ts).
+        const message = ok ? "Dry run verified and rolled back. Awaiting approval by a different role." : failureText("Dry run did not verify", proposal.dryRun?.verification);
+        return NextResponse.json({ proposal, message, outcome: ok ? "succeeded" : "failed" });
       }
       case "approve": {
-        const proposal = await approveProposal(pool, { proposalId, actor: viewer, reason: input.reason });
+        const proposal = await approveProposal(pool, { proposalId, actor: viewer, reason: input.reason, reviewedFingerprint: input.fingerprint });
         // Says what has NOT happened yet and who acts next: the case stays awaiting until the
         // approved fix is executed (UX red team 2026-11-12: "can now execute it" read as done).
         return NextResponse.json({ proposal, message: "Approved, not yet applied. Next: an approver executes it once (Execute); until then nothing has changed and the case stays awaiting." });
@@ -67,8 +69,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
           ? `Already executed (${result.execution.status}); nothing ran again.`
           : result.execution.status === "succeeded"
             ? "Executed and verified."
-            : `Execution failed and was rolled back: ${result.execution.error}`;
-        return NextResponse.json({ ...result, message });
+            : failureText("Execution failed and was rolled back", result.execution.verification);
+        return NextResponse.json({ ...result, message, outcome: result.execution.status });
       }
     }
   } catch (error) {

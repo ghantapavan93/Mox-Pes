@@ -8,6 +8,7 @@ import {
   overrideLeadBranchInTransaction,
 } from "@/lib/actions";
 import type { SourceName } from "@/lib/adapters/contract";
+import type { Queryable } from "@/lib/db";
 import { mapperVersions } from "@/lib/adapters/registry";
 import { replay } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
@@ -146,6 +147,16 @@ const replayQuarantine: KindSpec<{ mapperVersion: string }> = {
   mayChange: [],
 };
 
+/** The branches a campaign's own (not excluded) leads name: the evidence a mapping must agree with. */
+export async function leadBranchesOfCampaign(db: Queryable, campaignId: number): Promise<string[]> {
+  const { rows } = await db.query<{ branch_id: string }>(
+    `select distinct l.branch_id from leads l join ad_campaigns c on c.external_campaign_id = l.campaign_external_id
+     where c.id = $1 and l.branch_id is not null and l.excluded_code is null order by 1`,
+    [campaignId],
+  );
+  return rows.map((r) => r.branch_id);
+}
+
 const mapCampaign: KindSpec<{ branchId: string }> = {
   label: "Map the campaign to a branch",
   exceptionKinds: ["unmapped_spend"],
@@ -155,15 +166,29 @@ const mapCampaign: KindSpec<{ branchId: string }> = {
   },
   branchFor: (_e, p) => p.branchId,
   async touches(tx, exception) {
+    const campaignId = Number(evidence(exception).campaignId);
     const { rows } = await tx.query(
       `select c.id, c.platform, c.external_campaign_id, m.branch_id as mapped_to
        from ad_campaigns c left join campaign_branch_map m on m.campaign_id = c.id where c.id = $1`,
-      [Number(evidence(exception).campaignId)],
+      [campaignId],
     );
-    return rows[0] ?? null;
+    // The spend the mapping moves: a day added or restated after the dry run is another plan, so
+    // the execution must refuse it (audit A1: a $500 day landed after approval and was mapped).
+    const spend = await tx.query(
+      "select spend_date, cost_cents, raw_event_id from ad_spend_daily where campaign_id = $1 order by spend_date, raw_event_id",
+      [campaignId],
+    );
+    return rows[0] ? { ...rows[0], spend: spend.rows } : null;
   },
   async execute(ctx, p) {
     const campaignId = Number(evidence(ctx.exception).campaignId);
+    // A mapping must agree with the campaign's own evidence: mapping B44's campaign to B43 tied out
+    // to the cent and moved both branches' CAC (audit A5 / ALLOC). A campaign whose leads name no
+    // branch has no evidence to check against, and any branch is accepted.
+    const named = await leadBranchesOfCampaign(ctx.tx, campaignId);
+    if (named.length > 0 && !named.includes(p.branchId)) {
+      throw new ActionError(`The campaign's leads name ${named.join(", ")}, not ${p.branchId}. Map it to a branch its evidence supports.`, 400);
+    }
     await mapCampaignToBranchInTransaction(ctx.tx, { campaignId, branchId: p.branchId, actor: ctx.actor, reason: ctx.reason, now: ctx.now });
     return { campaignId, branchId: p.branchId };
   },

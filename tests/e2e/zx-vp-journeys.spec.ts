@@ -194,7 +194,7 @@ test("J6 · out-of-scope reads and writes are refused, and nothing is stored", a
 
   const proposalId = await count("select coalesce(min(id), 1) as n from action_proposals");
   const approvals = await count("select count(*) as n from action_approvals");
-  const decide = await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "guest should not be able to approve this" } });
+  const decide = await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "guest should not be able to approve this", fingerprint: "0".repeat(64) } });
   expect([403, 404]).toContain(decide.status());
   expect(await count("select count(*) as n from action_approvals")).toBe(approvals);
 });

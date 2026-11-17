@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ActionError, acknowledgeException, closeException, mapCampaignToBranch, overrideLeadBranch } from "@/lib/actions";
+import { ActionError, acknowledgeException, closeException, overrideLeadBranch } from "@/lib/actions";
 import { errorResponse } from "@/lib/http";
 import { getException } from "@/lib/queries";
 import { businessNow, getPool, getViewer } from "@/lib/server";
@@ -41,8 +41,13 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     switch (input.action) {
       case "map_campaign":
         if (!viewer.can.decide) throw new ForbiddenError(`${viewer.label} cannot map campaigns`);
-        await mapCampaignToBranch(pool, { campaignId: Number(ev.campaignId), branchId: input.branchId, actor: viewer.role, reason: input.reason, now });
-        return NextResponse.json({ message: `Campaign mapped to ${input.branchId}. Spend now counts in that branch's CAC.` });
+        // A mapping moves a branch's spend and so its CAC: it is a fix, made in the workflow (propose,
+        // dry run, approval by a different role), as replays are (app/api/replays/route.ts). This
+        // route mapped it on one person's word (book gap N7; audit W8: B44 CAC $236.09 → $332.92).
+        throw new ActionError(
+          "Mapping a campaign changes a branch's CAC, so it is a fix: propose “Map the campaign to a branch” on this incident; a different role approves it after a dry run.",
+          409,
+        );
       case "override_lead_branch": {
         if (!viewer.can.decide) throw new ForbiddenError(`${viewer.label} cannot change lead credit`);
         const allowed = [ev.crmBranch, ev.territoryBranch].filter(Boolean);

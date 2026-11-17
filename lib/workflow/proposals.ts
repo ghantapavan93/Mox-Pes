@@ -348,7 +348,21 @@ function assertSeparateRole(viewer: Viewer, proposal: ProposalRow, verb: string)
 }
 
 /** Approves the latest successful dry run of a proposal (its fingerprint is recorded). */
-export async function approveProposal(pool: Pool, input: { proposalId: number; actor: Viewer; reason: string; now?: Date }): Promise<ProposalRow> {
+export async function approveProposal(
+  pool: Pool,
+  input: {
+    proposalId: number;
+    actor: Viewer;
+    reason: string;
+    /**
+     * The precondition fingerprint of the dry run the approver reviewed. Given (the HTTP route
+     * always gives it), an approval of any other dry run is refused: a dry run re-run after the
+     * approver opened the page has other records and other numbers, which nobody approved.
+     */
+    reviewedFingerprint?: string;
+    now?: Date;
+  },
+): Promise<ProposalRow> {
   requirePermission(input.actor, "approve", "approve proposals");
   const reason = input.reason.trim();
   if (reason.length < 5) throw new ActionError("An approval reason of at least 5 characters is required", 400);
@@ -357,6 +371,9 @@ export async function approveProposal(pool: Pool, input: { proposalId: number; a
     assertSeparateRole(input.actor, proposal, "approve");
     if (proposal.status !== "dry_run_ok" || !proposal.preconditionFingerprint) {
       throw new ActionError(`Only a proposal with a successful dry run can be approved (this one is ${proposal.status})`, 409);
+    }
+    if (input.reviewedFingerprint !== undefined && input.reviewedFingerprint !== proposal.preconditionFingerprint) {
+      throw new ActionError("This proposal was dry-run again after you opened it. Review the new dry run, then approve.", 409);
     }
     const now = input.now ?? (await getNow(tx));
     const kase = (await lockCase(tx, proposal.caseId))!;

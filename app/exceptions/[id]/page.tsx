@@ -26,7 +26,7 @@ import { dateRanges, gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatus } from "@/lib/reconcile/gap-status";
 import { dayEvidence, defaultDay, windowFacts } from "@/lib/reconcile/gap-days";
 import { correctionsOf, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
-import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
+import { BRAND_BY_ID, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { parseRecordId } from "@/lib/record-id";
@@ -535,17 +535,15 @@ async function Actions({ exception, viewer }: { exception: ExceptionRow; viewer:
   if (exception.status === "resolved") return <p className="text-sm text-muted">Nothing to do.</p>;
 
   if (exception.kind === "unmapped_spend") {
-    if (!viewer.can.decide) return <p className="text-sm text-muted">Read-only for your role.</p>;
-    const suggested = String(ev.name ?? "").match(/^(B\d{2})\b/)?.[1];
+    // Mapping moves a branch's spend and CAC, so it is a fix with two people, not one form (N7).
     return (
-      <DecisionForm
-        exceptionId={exception.id}
-        action="map_campaign"
-        branchOptions={BRANCHES.map((b) => ({ id: b.id, label: `${b.id} ${b.name}` }))}
-        defaultBranch={suggested}
-        submitLabel="Map campaign to branch"
-        hint={suggested ? `${suggested} is suggested from the campaign name — a suggestion, not a fact. Confirm with the campaign owner.` : undefined}
-      />
+      <p className="text-sm text-muted" data-testid="map-campaign-pointer">
+        Mapping the campaign changes a branch&apos;s CAC, so it goes through the fix workflow:{" "}
+        <a href="#workflow" className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">
+          propose &ldquo;Map the campaign to a branch&rdquo;
+        </a>
+        , and a different role approves it after a dry run. Only branches the campaign&apos;s leads name are offered.
+      </p>
     );
   }
 

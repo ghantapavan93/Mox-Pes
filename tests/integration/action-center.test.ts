@@ -651,12 +651,21 @@ describe("API routes", () => {
     route.viewer = engineer;
     const dry = await proposal.POST(post(`/api/proposals/${p.id}`, { action: "dry_run" }), params(p.id));
     expect(dry.status).toBe(200);
-    expect(((await dry.json()) as { proposal: { status: string } }).proposal.status).toBe("dry_run_ok");
-    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "looks right" }), params(p.id))).status).toBe(403);
+    const dryRun = ((await dry.json()) as { proposal: { status: string; preconditionFingerprint: string } }).proposal;
+    expect(dryRun.status).toBe("dry_run_ok");
+    const fingerprint = dryRun.preconditionFingerprint;
+    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "looks right", fingerprint }), params(p.id))).status).toBe(403);
     route.viewer = approver;
-    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve" }), params(p.id))).status).toBe(400);
+    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", fingerprint }), params(p.id))).status).toBe(400);
     expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "execute" }), params(p.id))).status).toBe(409);
-    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "Dry run verified" }), params(p.id))).status).toBe(200);
+    // An approval binds to the dry run the approver reviewed (audit A2): none named is a bad request,
+    // another dry run's fingerprint is refused, and only the reviewed one approves.
+    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "Dry run verified" }), params(p.id))).status).toBe(400);
+    const other = await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "Dry run verified", fingerprint: "0".repeat(64) }), params(p.id));
+    expect(other.status).toBe(409);
+    expect(((await other.json()) as { error: string }).error).toMatch(/dry-run again/);
+    expect(await one(pool, "select count(*)::int as n from action_approvals where proposal_id = $1", [p.id])).toEqual({ n: 0 });
+    expect((await proposal.POST(post(`/api/proposals/${p.id}`, { action: "approve", reason: "Dry run verified", fingerprint }), params(p.id))).status).toBe(200);
     const executed = await proposal.POST(post(`/api/proposals/${p.id}`, { action: "execute" }), params(p.id));
     expect(executed.status).toBe(200);
     expect(await executed.json()).toMatchObject({ alreadyProcessed: false, execution: { status: "succeeded" }, message: "Executed and verified." });

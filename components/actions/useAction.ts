@@ -23,9 +23,11 @@ export function useAction() {
     setMessage(null);
     try {
       const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-      const json = (await res.json().catch(() => ({}))) as { message?: string; error?: string; issues?: string[] };
+      const json = (await res.json().catch(() => ({}))) as { message?: string; error?: string; issues?: string[]; outcome?: string };
       if (!res.ok) throw new Error([json.error ?? `HTTP ${res.status}`, ...(json.issues ?? [])].join(" — "));
-      setMessage({ ok: true, text: json.message ?? "Done." });
+      // The request can succeed while the action it ran failed (a dry run that did not verify, an
+      // execution that rolled back): shown as a failure, and the page still refreshes to show it.
+      setMessage({ ok: json.outcome !== "failed", text: json.message ?? "Done." });
       router.refresh();
       return true;
     } catch (error) {

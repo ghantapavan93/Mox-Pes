@@ -33,6 +33,7 @@ export function ProposalControls({
   blocked,
   executionTargetId,
   executionId,
+  reviewedFingerprint,
 }: {
   proposalId: number;
   /** Whether the proposal can still be acted on; when false only the status region renders. */
@@ -47,6 +48,8 @@ export function ProposalControls({
   executionTargetId: string;
   /** The stored execution's id, or null: a new id after an execute means the result is on screen. */
   executionId: number | null;
+  /** The precondition fingerprint of the dry run on screen: an approval is bound to it. */
+  reviewedFingerprint: string | null;
 }) {
   const id = useId();
   const [reason, setReason] = useState("");
@@ -116,7 +119,7 @@ export function ProposalControls({
             type="button"
             {...busyProps}
             disabled={!reasonOk}
-            onClick={() => act("approve", { action: "approve", reason })}
+            onClick={() => act("approve", { action: "approve", reason, fingerprint: reviewedFingerprint })}
             className="inline-flex items-center gap-1.5 rounded-md bg-good px-3 py-1.5 font-medium text-white disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           >
             {busy === "approve" ? <Working label="Approving…" /> : "Approve"}

@@ -95,7 +95,7 @@ test("B09 golden path: overview → incident → evidence → dry run → approv
   await expect(card.getByText("conserved")).toHaveCount(golden.conservedRows.length);
   await expect(signal).toContainText(golden.signalBefore.status); // nothing was saved
   const proposalId = Number((await card.textContent())!.match(/#(\d+)/)![1]);
-  expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "self-approval attempt" } })).status()).toBe(403);
+  expect((await page.request.post(`/api/proposals/${proposalId}`, { data: { action: "approve", reason: "self-approval attempt", fingerprint: "0".repeat(64) } })).status()).toBe(403);
 
   // 5 · Approval — a different role.
   await next(page, 5);

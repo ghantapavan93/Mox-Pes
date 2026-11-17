@@ -18,6 +18,17 @@ import { TEST_DATABASE_URL, freshDb, testPool } from "../helpers";
 
 const twins = (...names: string[]): OwnedTwin[] => names.map((database, i) => ({ evaluationId: i + 1, database }));
 
+// This file tests the preflight itself, so the opt-out CI sets because its service container's
+// disk cannot be measured (TWIN_SKIP_DISK_PREFLIGHT, .github/workflows/ci.yml) is cleared while it
+// runs. Every measurement here is injected; none reads a real disk.
+const skipPreflight = process.env.TWIN_SKIP_DISK_PREFLIGHT;
+beforeAll(() => {
+  delete process.env.TWIN_SKIP_DISK_PREFLIGHT;
+});
+afterAll(() => {
+  if (skipPreflight !== undefined) process.env.TWIN_SKIP_DISK_PREFLIGHT = skipPreflight;
+});
+
 describe("diskPreflight", () => {
   it("drops the caller's own finished twins, oldest first, only until there is room", async () => {
     let free = 100;

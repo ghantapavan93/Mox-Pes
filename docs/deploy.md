@@ -14,27 +14,30 @@ is synthetic.
 4. **Plan.** A free database expires 30 days after creation, and Render deletes it after a
    further 14-day grace period; an account holds one free database at a time. Choose a paid plan
    if the link must outlive that.
-5. When the database is available, copy its **External Database URL**. It holds the password:
-   paste it only into the prompt in step 2 and into Vercel, never into a chat or a file.
+5. When the database is available, click the copy icon beside its **External Database URL**.
+   (The Internal one works only inside Render.) The URL holds the password: it goes only to the
+   loader in step 2 and into Vercel, never into a chat or a file.
 
 ## 2. The data
 
 ```bash
-npm run db:load-hosted
+npm run db:load-hosted:clipboard
 ```
 
-Paste the External Database URL at the hidden prompt. The script seeds a fresh local copy
+The script reads the URL from the clipboard (Windows), seeds a fresh local copy
 (`revenue_signal_deploy`; it never touches `revenue_signal` or `revenue_signal_rc`), restores it
-into Render in one transaction, compares every table's row count, and prints the `sslmode` the
-app needs. Rerun it to reset the hosted demo. It needs the local Postgres on port 54333 and the
-PostgreSQL 17 client tools (`pg_dump`, `pg_restore`).
+into Render in one transaction, and compares every table's row count. When it finishes, the
+clipboard holds the exact `DATABASE_URL` value for Vercel: the URL with the `sslmode` it
+verified. `npm run db:load-hosted` asks for the URL at a hidden prompt instead. Rerun either to
+reset the hosted demo. It needs the local Postgres on port 54333 and the PostgreSQL 17 client
+tools (`pg_dump`, `pg_restore`).
 
 ## 3. The app, on Vercel
 
 1. In Vercel, choose **Add New**, then **Project**, and import `ghantapavan93/Mox-Pes`. The
    framework is detected as Next.js; leave the build settings as they are.
-2. Before the first deploy, add one environment variable: `DATABASE_URL`, set to the External
-   Database URL followed by `?sslmode=` and the mode step 2 printed.
+2. Before the first deploy, add one environment variable: `DATABASE_URL`, with the value step 2
+   left on the clipboard (Ctrl+V).
 3. Deploy. The link is `https://<project>.vercel.app`.
 
 Leave every other variable unset:

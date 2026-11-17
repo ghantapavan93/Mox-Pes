@@ -24,6 +24,7 @@
     "eval:ai": "tsx scripts/eval-ai.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:load-hosted": "tsx scripts/load-hosted-db.ts",
+    "db:load-hosted:clipboard": "tsx scripts/load-hosted-db.ts --from-clipboard",
     "audit:report": "tsx scripts/audit-report.ts",
     "demo:exports": "tsx scripts/make-demo-exports.ts",
     "eval:mapping": "tsx scripts/eval-mapping.ts",

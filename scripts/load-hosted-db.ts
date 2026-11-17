@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -14,8 +14,10 @@ import { seed } from "@/lib/sim/seed";
  * the seed's daily runs over the internet would take a round trip per query. Rerun it to reset
  * the hosted demo. Steps: docs/deploy.md.
  *
- * The hosted URL comes from HOSTED_DATABASE_URL or a hidden prompt. It is never printed and never
- * put on a command line: pg_restore reads it from PG* environment variables.
+ * The hosted URL comes from HOSTED_DATABASE_URL, the clipboard (`-- --from-clipboard`, Windows),
+ * or a hidden prompt. It is never printed and never put on a command line: pg_restore reads it
+ * from PG* environment variables. On Windows a successful load leaves the exact DATABASE_URL
+ * value for Vercel (the URL with its sslmode) on the clipboard.
  *
  * Environment: LOCAL_ADMIN_URL (default postgres://postgres@127.0.0.1:54333/postgres), the local
  * server the copy is built on; PG_BIN, the folder holding pg_dump and pg_restore (default
@@ -81,27 +83,78 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv): Promise<v
   });
 }
 
-/** Asks for a value without echoing it (the URL holds the database password). */
+/**
+ * Asks for a value without echoing it (the URL holds the database password). Each character
+ * shows as "*", so a paste visibly registers while its text stays hidden.
+ */
 function askHidden(question: string): Promise<string> {
   return new Promise((resolve) => {
     const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-    const output = rl as unknown as { _writeToOutput: (text: string) => void };
-    const write = output._writeToOutput.bind(rl);
-    let muted = false;
-    output._writeToOutput = (text: string) => {
-      if (!muted) write(text);
+    const internals = rl as unknown as { _writeToOutput: (text: string) => void; line: string };
+    const write = internals._writeToOutput.bind(rl);
+    let masked = false;
+    internals._writeToOutput = (text: string) => {
+      if (!masked) return write(text);
+      write(`\r\x1b[2K${question}${"*".repeat(internals.line.length)}`);
     };
     rl.question(question, (answer) => {
       rl.close();
       process.stdout.write("\n");
       resolve(answer.trim());
     });
-    muted = true;
+    masked = true;
   });
 }
 
+const PASTE_HELP =
+  "In the Render dashboard, click the copy icon beside External Database URL, then paste here " +
+  "(right-click or Ctrl+V) and press Enter.";
+const FROM_CLIPBOARD = process.argv.includes("--from-clipboard");
+const DATABASE_URL_PATTERN = /^postgres(ql)?:\/\//;
+
+/** The clipboard's text (Windows; the machine docs/deploy.md is written for). */
+function readClipboard(): Promise<string> {
+  if (process.platform !== "win32") return Promise.reject(new Error("--from-clipboard works on Windows only."));
+  return new Promise((resolve, reject) => {
+    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Get-Clipboard -Raw"], { windowsHide: true }, (error, stdout) =>
+      error ? reject(error) : resolve(stdout.trim()),
+    );
+  });
+}
+
+/** Puts a value on the clipboard (Windows) without printing it. */
+function writeClipboard(value: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn("clip.exe", [], { stdio: ["pipe", "ignore", "inherit"], windowsHide: true });
+    child.on("error", reject);
+    child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`clip.exe exited with code ${code}`))));
+    child.stdin.end(value);
+  });
+}
+
+/** The hosted URL: HOSTED_DATABASE_URL, the clipboard when asked, or three tries at the hidden prompt. */
+async function readHostedUrl(): Promise<string> {
+  if (process.env.HOSTED_DATABASE_URL) return process.env.HOSTED_DATABASE_URL;
+  if (FROM_CLIPBOARD) {
+    const clipboard = await readClipboard();
+    if (DATABASE_URL_PATTERN.test(clipboard)) return clipboard;
+    console.log("The clipboard does not hold a database URL.");
+  }
+  console.log(PASTE_HELP);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const answer = await askHidden("Render External Database URL: ");
+    if (DATABASE_URL_PATTERN.test(answer)) return answer;
+    console.log(
+      answer === ""
+        ? "Nothing was pasted. " + PASTE_HELP
+        : `That was ${answer.length} characters but not a database URL; it starts with postgresql://. ` + PASTE_HELP,
+    );
+  }
+  throw new Error("No database URL after three tries; nothing was changed.");
+}
+
 async function hostedTarget(): Promise<URL> {
-  const raw = process.env.HOSTED_DATABASE_URL || (await askHidden("Render External Database URL (hidden): "));
+  const raw = await readHostedUrl();
   let url: URL;
   try {
     url = new URL(raw);
@@ -109,6 +162,10 @@ async function hostedTarget(): Promise<URL> {
     throw new Error("That is not a database URL. Copy the External Database URL from the Render dashboard.");
   }
   if (!/^postgres(ql)?:$/.test(url.protocol)) throw new Error("The URL must start with postgres:// or postgresql://.");
+  // Render's internal host is a bare service id (dpg-…-a); the external one is a full domain.
+  if (!isLocalHost(url) && !url.hostname.includes(".")) {
+    throw new Error("That is the Internal Database URL, which works only inside Render. Copy the External Database URL.");
+  }
   if (isLocalHost(url)) {
     if (process.env.ALLOW_LOCAL_TARGET !== "1") {
       throw new Error("That URL points at this computer. Set ALLOW_LOCAL_TARGET=1 only for a rehearsal.");
@@ -178,7 +235,7 @@ async function rowCounts(pool: Pool): Promise<Map<string, number>> {
 async function main() {
   const target = await hostedTarget();
   const sslmode = await appSslMode(target);
-  console.log(`Connected to the hosted database (app sslmode: ${sslmode}).`);
+  console.log(`Connected to ${target.hostname}, database ${databaseName(target)} (app sslmode: ${sslmode}).`);
 
   console.log(`Seeding a fresh local copy (${LOCAL_COPY})…`);
   const adminUrl = new URL(process.env.LOCAL_ADMIN_URL ?? "postgres://postgres@127.0.0.1:54333/postgres");
@@ -230,7 +287,12 @@ async function main() {
   }
 
   console.log("");
-  console.log(`Done. In Vercel, set DATABASE_URL to the same URL with ?sslmode=${sslmode} at the end.`);
+  if (process.platform === "win32" && !isLocalHost(target)) {
+    await writeClipboard(withSslMode(target, sslmode));
+    console.log("Done. Your clipboard now holds the exact DATABASE_URL value for Vercel: paste it into Value.");
+  } else {
+    console.log(`Done. In Vercel, set DATABASE_URL to the same URL with ?sslmode=${sslmode} at the end.`);
+  }
 }
 
 main().catch((error) => {

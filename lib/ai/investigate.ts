@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
 import { ActionError } from "@/lib/actions";
 import { getNow } from "@/lib/db";
-import { BRANCH_BY_ID, BRAND_BY_ID, branchesOfBrands } from "@/lib/reference";
+import { BRANCH_BY_ID, BRANDS, BRAND_BY_ID, brandWords, branchesOfBrands } from "@/lib/reference";
 import { ForbiddenError, requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
 import { buildClaims, evidenceFacts, groundDraft } from "./analyst";
 import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
@@ -64,9 +64,20 @@ const QUESTION_MAX = 2000;
 const BRANCH_REF = /\b[Bb]\s?(\d{1,2})\b|\bbranch(?:es)?\s+(?:#|no\.?\s*|number\s+)?(\d{1,2})\b/gi;
 /** A branch by its name: "Elm's", "the Summit branch" (names are common words, so only these forms). */
 const BRANCH_NAME_REF = new RegExp(String.raw`\b(${[...BRANCH_BY_ID.values()].map((b) => b.name).join("|")})(?:['’]s|\s+branch)\b`, "g");
-/** A brand however capitalized: "Joshua's", "joshuas", "MISSION". */
-const BRAND_REF = /\b(moxie|joshua['’]?s?|mission)\b/i;
-const BRAND_OF_WORD: Record<string, string> = { moxie: "moxie", joshua: "joshuas", "joshua's": "joshuas", "joshua’s": "joshuas", joshuas: "joshuas", mission: "mission" };
+/**
+ * A brand however capitalized, by id or by any of its names without the trade suffix: "Copper
+ * Mesa's", "bluepine", "joshuas", "MISSION" (former names stay recognised, lib/reference.ts).
+ */
+const BRAND_OF_WORD = new Map<string, string>(
+  BRANDS.flatMap((b) => [b.id, ...brandWords(b)].map((w) => [w.toLowerCase(), b.id] as const)),
+);
+const BRAND_REF = new RegExp(
+  String.raw`\b(${[...BRAND_OF_WORD.keys()]
+    .sort((a, b) => b.length - a.length)
+    .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|")})(?:['’]?s)?\b`,
+  "i",
+);
 
 function assertQuestionInScope(viewer: Viewer, question: string): void {
   if (!viewer.branchIds) return;
@@ -83,7 +94,7 @@ function assertQuestionInScope(viewer: Viewer, question: string): void {
   // also names an in-scope branch it is about: "What did Joshua's spend?" from a Moxie branch
   // partner was answered about the partner's own branch (review 2026-11-12, authorization 8).
   const word = BRAND_REF.exec(question)?.[1]?.toLowerCase();
-  const brand = brandNamed(question) ?? (word ? (BRAND_OF_WORD[word] as ReturnType<typeof brandNamed>) ?? null : null);
+  const brand = brandNamed(question) ?? (word ? ((BRAND_OF_WORD.get(word) as ReturnType<typeof brandNamed>) ?? null) : null);
   if (brand) {
     const ids = branchesOfBrands([brand]);
     const outside = ids.filter((id) => !viewer.branchIds?.includes(id));

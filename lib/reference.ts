@@ -8,22 +8,37 @@
 /**
  * Organization (shared kernel): Company → Brand → Branch → CRM office.
  *
- * The three brand NAMES are public (the company markets Moxie, Joshua's and Mission). Which
- * fictional branch belongs to which brand is SYNTHETIC: it gives the model a real multi-brand
- * shape without implying anything about a real location.
+ * The three brands are FICTIONAL, like the branches: a real company's brand beside synthetic
+ * numbers reads as a statement about that company (book gap N30; research/12-demo-design.md §2:
+ * a fictional company, never the real brand in the UI). The shape stays: one anchor brand and two
+ * acquired ones, with a synthetic branch-to-brand assignment. `formerNames` are the earlier display
+ * names, recognised in typed questions and answers only (lib/shadow, lib/ai), never displayed.
  */
 export type BrandId = "moxie" | "joshuas" | "mission";
 
 export interface Brand {
+  /** Stable key in scope, URLs and the reporting contract; not displayed. */
   id: BrandId;
+  /** The fictional name every screen shows. */
   name: string;
+  /** Earlier display names: recognised when typed, never shown. */
+  formerNames: string[];
 }
 
 export const BRANDS: Brand[] = [
-  { id: "moxie", name: "Moxie Pest Control" },
-  { id: "joshuas", name: "Joshua's Pest Control" },
-  { id: "mission", name: "Mission Pest Control" },
+  { id: "moxie", name: "Desert Range Pest", formerNames: ["Moxie Pest Control"] },
+  { id: "joshuas", name: "Copper Mesa Pest", formerNames: ["Joshua's Pest Control"] },
+  { id: "mission", name: "Bluepine Pest", formerNames: ["Mission Pest Control"] },
 ];
+
+/** Every name a brand may be written as, display name first. */
+export const brandNames = (b: Brand): string[] => [b.name, ...b.formerNames];
+
+/**
+ * Each name without its trade suffix or possessive, as people write a brand in a sentence:
+ * "Copper Mesa", "Bluepine", and the former "Joshua", "Moxie", "Mission".
+ */
+export const brandWords = (b: Brand): string[] => brandNames(b).map((n) => n.replace(/\s+Pest(?:\s+Control)?$/, "").replace(/['’]s$/, ""));
 
 export const BRAND_BY_ID = new Map(BRANDS.map((b) => [b.id, b]));
 

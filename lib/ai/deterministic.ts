@@ -4,7 +4,7 @@ import { FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import type { PeriodKey } from "@/lib/period";
 import { exactDollars } from "@/lib/lineage/trace";
 import { formatCents } from "@/lib/primitives";
-import { BRANCH_BY_ID, BRANDS, CHANNEL_BY_CODE, type BrandId, type ChannelCode } from "@/lib/reference";
+import { BRANCH_BY_ID, BRANDS, CHANNEL_BY_CODE, brandWords, type BrandId, type ChannelCode } from "@/lib/reference";
 import type { Viewer } from "@/lib/viewer";
 import type { DraftFindings, Observation, ProposalSuggestion } from "./contract";
 import { evidence, uniqueIds } from "./evidence";
@@ -178,12 +178,13 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
 /** Measures no tool records: accounting revenue, profit, untracked sources (sponsorships, billboards). */
 const UNMEASURED = /\b(?:recogni[sz]ed revenue|accounting|gaap|accrual|profit\w*|margins?|ebitda|lifetime value|ltv|sponsorships?|arena|billboards?|radio|television|tv ads?|print ads?|mailers?|flyers?|word of mouth)\b/i;
 
-/** The brand a question names ("Joshua's", "the Mission brand"), if any. */
+/** The brand a question names ("Copper Mesa's", "the Bluepine brand", or a former name), if any. */
 export function brandNamed(question: string): BrandId | null {
   for (const b of BRANDS) {
-    const first = b.name.split(" ")[0].replace(/'s$/, "");
-    // Case-sensitive: a brand is a proper noun ("our mission" is not the Mission brand).
-    if (new RegExp(String.raw`\b${first}(?:'?s)?\b`).test(question)) return b.id;
+    for (const word of brandWords(b)) {
+      // Case-sensitive: a brand is a proper noun ("our mission" is not the Mission brand).
+      if (new RegExp(String.raw`\b${word}(?:'?s)?\b`).test(question)) return b.id;
+    }
   }
   return null;
 }

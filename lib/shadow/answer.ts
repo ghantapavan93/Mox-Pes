@@ -4,7 +4,7 @@ import { metricFacts } from "@/lib/ai/facts";
 import { judge, proveStatement, type Proof } from "@/lib/ai/proof";
 import { getBranchMetrics, getBrandMetrics, getCashTrace, getMetricTrace, type ToolContext } from "@/lib/ai/tools";
 import type { Queryable } from "@/lib/db";
-import { BRANCHES, BRANDS, branchesOfBrands, type BrandId } from "@/lib/reference";
+import { BRANCHES, BRANDS, brandNames, brandWords, branchesOfBrands, type BrandId } from "@/lib/reference";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 
 /**
@@ -51,8 +51,14 @@ const MAX_BRANCHES = 4;
 const BRANCH_ID = /\bB\d{2}\b/g;
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const BRANCH_NAME = BRANCHES.map((b) => ({ id: b.id, re: new RegExp(`\\b${escape(b.name)}\\b`) }));
-/** A brand by its full name, or by its distinctive first word with a possessive ("Joshua's"). */
-const BRAND_NAME = BRANDS.map((b) => ({ id: b.id, re: new RegExp(`\\b${escape(b.name)}\\b|\\b${escape(b.name.split(" ")[0])}(?:'s)? (?:Pest|brand|branches)\\b`, "i") }));
+/**
+ * A brand by any of its names (the fictional display name or a former one) in full, or by a name's
+ * distinctive first word with a possessive ("Copper Mesa's brand", "Joshua's Pest").
+ */
+const BRAND_NAME = BRANDS.map((b) => ({
+  id: b.id,
+  re: new RegExp([...brandNames(b).map((n) => `\\b${escape(n)}\\b`), ...brandWords(b).map((w) => `\\b${escape(w)}(?:'s)? (?:Pest|brand|branches)\\b`)].join("|"), "i"),
+}));
 
 /** Words that make a piece a claim: a figure, a metric, an entity, a direction, a status or a cause. */
 const CLAIM_WORD = /[$%\d]|\b(?:CAC|spend|spent|cost|revenue|cash|collect\w*|customers?|leads?|calls?|refund\w*|invoic\w*|billed|booked|budget|campaigns?|channels?|Meta|Google|Microsoft|Bing|LSA|Local Services|rose|rise|fell|fall|increase\w*|decrease\w*|grew|grow\w*|drop\w*|declin\w*|doubled|halved|higher|lower|up|down|because|due to|caus\w*|driv\w*|led to|ready|complete|stale|fresh)\b/i;

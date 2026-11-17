@@ -236,8 +236,10 @@ describe("tool scope enforcement", () => {
       ["What is branch 9's paid CAC in October?", /cannot view branch B09/],
       ["What is B9's paid CAC in October?", /cannot view branch B09/],
       ["What is Elm's paid CAC in October?", /cannot view branch B12/],
-      ["What did Joshua's spend in October?", /cannot view Joshua's Pest Control as a whole/],
-      ["What did joshuas spend in October?", /cannot view Joshua's Pest Control as a whole/],
+      // The brand is shown by its fictional name (N30); its former name is still recognised.
+      ["What did Copper Mesa spend in October?", /cannot view Copper Mesa Pest as a whole/],
+      ["What did Joshua's spend in October?", /cannot view Copper Mesa Pest as a whole/],
+      ["What did joshuas spend in October?", /cannot view Copper Mesa Pest as a whole/],
     ] as const) {
       await expect(runInvestigation(pool, { question, branchId: null, viewer: partner, now: NOW }), question).rejects.toThrow(refusal);
     }

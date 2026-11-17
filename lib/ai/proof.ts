@@ -36,7 +36,7 @@
  * stays UNRESOLVED, and `judge` decides what that means for the claim.
  */
 import { PERIODS, type PeriodKey } from "@/lib/period";
-import { BRANCHES, BRANCH_BY_ID, BRANDS } from "@/lib/reference";
+import { BRANCHES, BRANCH_BY_ID, BRANDS, brandWords } from "@/lib/reference";
 import { METRIC_NAME, METRIC_UNIT, type MetricFact, type MetricKey, type StatusFacts, type Unit } from "./facts";
 import { claimNumbers, maskQuoted, type ClaimNumber } from "./numbers";
 
@@ -1440,7 +1440,9 @@ const BRANCH_NAME = new RegExp(String.raw`\b(${BRANCHES.map((b) => escapeRe(b.na
 const BRANCH_BY_NAME = new Map(BRANCHES.map((b) => [b.name, b.id]));
 const COMPANY = /\b(?:company[- ]?wide|the (?:whole |entire )?company|across (?:the )?company|all (?:\d+ |of the |the |our )?branches|every branch|each branch|overall|network[- ]wide|nationwide|in total|altogether|combined|together)\b/i;
 /** A brand named in lower case: the reader reads brands as proper nouns only. */
-const LOWER_BRAND = /\b(?:moxie|mission|joshua)(?:['’]?s)?\b/;
+const LOWER_BRAND = new RegExp(
+  String.raw`\b(?:${BRANDS.flatMap((b) => brandWords(b).map((w) => w.toLowerCase())).join("|")})(?:['’]?s)?\b`,
+);
 const CUSTOMER_REF = /\b[Cc]ustomers?\s+#?\d{2,}\b/;
 const CAMPAIGN_REF = /\b[Cc]ampaigns?\s+["“'‘]?([A-Za-z0-9][\w-]*\d[\w-]*|[A-Za-z0-9]+-[\w-]+)|\b([A-Z]{1,5}-\d{1,6})\b/g;
 /** Channel names text may use, the cited ones and others: a channel the facts do not cover gets none of the branch's numbers. */

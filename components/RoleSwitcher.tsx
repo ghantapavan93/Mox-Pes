@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { SCENARIO } from "@/lib/reference";
+import { BRAND_BY_ID, SCENARIO } from "@/lib/reference";
 
 const OPTIONS = [
   ["guest", "Guest (read-only)"],
@@ -10,7 +10,7 @@ const OPTIONS = [
   ["engineer", "Integration engineer"],
   ["approver", "Revenue ops approver"],
   ["partner", `Branch partner (${SCENARIO.callFeedDriftBranch})`],
-  ["brand", "Brand marketing lead (Joshua's)"],
+  ["brand", `Brand marketing lead (${BRAND_BY_ID.get("joshuas")!.name})`],
 ] as const;
 
 export function RoleSwitcher({ current }: { current: string }) {

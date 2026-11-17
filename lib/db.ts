@@ -25,13 +25,24 @@ export function getPool(): Pool {
 
 /**
  * Every connection runs in UTC, so no result depends on the database server's time zone; a
- * database on another machine is reached over TLS (see tlsOption).
+ * database on another machine is reached over TLS with a small pool (see tlsOption, poolMax).
  */
 export function createPool(connectionString: string): Pool {
-  return new Pool({ connectionString, max: 10, options: "-c TimeZone=UTC", ...tlsOption(connectionString) });
+  return new Pool({ connectionString, max: poolMax(connectionString), options: "-c TimeZone=UTC", ...tlsOption(connectionString) });
 }
 
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/** True for a database on another machine; local hosts and Unix sockets are not remote. */
+function isRemoteDatabase(connectionString: string): boolean {
+  let host: string;
+  try {
+    host = new URL(connectionString).hostname;
+  } catch {
+    return false;
+  }
+  return Boolean(host) && !LOCAL_HOSTS.has(host);
+}
 
 /**
  * TLS for a database on another machine. Hosted Postgres (Render, behind the Vercel deployment)
@@ -41,13 +52,16 @@ const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
  * and Unix sockets stay plain.
  */
 export function tlsOption(connectionString: string): { ssl?: { rejectUnauthorized: true } } {
-  let host: string;
-  try {
-    host = new URL(connectionString).hostname;
-  } catch {
-    return {};
-  }
-  return !host || LOCAL_HOSTS.has(host) ? {} : { ssl: { rejectUnauthorized: true } };
+  return isRemoteDatabase(connectionString) ? { ssl: { rejectUnauthorized: true } } : {};
+}
+
+/**
+ * Connections per pool. A page runs its reads in parallel; on the hosted demo database (Render's
+ * free instance, 256 MB) ten at once from one serverless instance ran the server out of memory
+ * and restarted it (2026-11-16). Remote pools take three, and the other reads wait their turn.
+ */
+export function poolMax(connectionString: string): number {
+  return isRemoteDatabase(connectionString) ? 3 : 10;
 }
 
 export async function withTransaction<T>(pool: Pool, fn: (tx: PoolClient) => Promise<T>): Promise<T> {

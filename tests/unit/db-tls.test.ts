@@ -1,6 +1,6 @@
 import { Client } from "pg";
 import { describe, expect, it } from "vitest";
-import { tlsOption } from "@/lib/db";
+import { poolMax, tlsOption } from "@/lib/db";
 
 /** The TLS the driver will actually use for a URL, after it merges the URL with our option. */
 function effectiveSsl(connectionString: string): unknown {
@@ -36,5 +36,13 @@ describe("tlsOption: hosted databases are reached over TLS", () => {
 
   it("adds nothing to a string that is not a URL", () => {
     expect(tlsOption("not a url")).toEqual({});
+  });
+});
+
+describe("poolMax: a hosted database gets a small pool", () => {
+  it("keeps ten connections locally and three for a hosted database", () => {
+    expect(poolMax("postgres://postgres@127.0.0.1:54333/revenue_signal")).toBe(10);
+    expect(poolMax("postgres:///revenue_signal?host=/var/run/postgresql")).toBe(10);
+    expect(poolMax("postgresql://user:secret@dpg-example-a.virginia-postgres.render.com/revenue_signal")).toBe(3);
   });
 });

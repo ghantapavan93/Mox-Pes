@@ -1,0 +1,73 @@
+branch X (trustworthy in October, most Meta customers): B03
+
+--- C0 before: B03 oct
+gate: trustworthy=true signal=shift ratio=2.32 blockers=[]
+scorecard: {"paidSpend":"$11,370.95","paidAcquired":50,"cac":"$227.42","heldCampaignAcquired":0,"partlyHeldAcquired":0}
+  google_search  $6,948.40 / 26 = $267.25         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect]
+  google_lsa     $2,440.21 / 14 = $174.30         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect]
+  meta           $1,037.38 / 9 = $115.26          readiness=ready; integrity pass | verified=READY_WITH_LIMITATIONS [measured_effect]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect]
+open at branch (excl. disputes): []
+C: counted fb-B03 October before: $1,037.38 over 30 days
+C run stats: {"fetched":30,"inserted":30,"duplicates":0,"conflicts":0,"projected":0,"quarantined":0,"excluded":30,"rowsChanged":30}
+C: counted fb-B03 October rows after: 0; new open exceptions: 1
+
+--- C1 after (all October Meta days excluded): B03 oct
+gate: trustworthy=false signal=none ratio=null blockers=["#7009 channel_coverage_gap"]
+scorecard: {"paidSpend":"$10,333.57","paidAcquired":50,"cac":"$206.67","heldCampaignAcquired":0,"partlyHeldAcquired":9}
+  google_search  $6,948.40 / 26 = $267.25         readiness=not_ready [budget_gate]; integrity warn | verified=NOT_READY [readiness,integrity_warnings,measured_effect,complete]
+  google_lsa     $2,440.21 / 14 = $174.30         readiness=not_ready [budget_gate]; integrity warn | verified=NOT_READY [readiness,integrity_warnings,measured_effect,complete]
+  meta           $0.00 / 9 = $0.00                readiness=not_ready [integrity,budget_gate]; integrity fail | verified=NOT_READY [readiness,integrity,measured_effect,complete]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [budget_gate,min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect,complete]
+open at branch (excl. disputes): ["#7009 channel_coverage_gap"]
+branch X (trustworthy in October, most Meta customers): B03
+
+--- D1 refused newer revision fb Oct 20 (CAD, 3x amount): B03 oct
+gate: trustworthy=false signal=shift ratio=2.32 blockers=["#7011 quarantined_source_records"]
+scorecard: {"paidSpend":"$11,370.95","paidAcquired":50,"cac":"$227.42","heldCampaignAcquired":0,"partlyHeldAcquired":0}
+  google_search  $6,948.40 / 26 = $267.25         readiness=not_ready [budget_gate]; integrity warn | verified=NOT_READY [readiness,integrity_warnings,measured_effect]
+  google_lsa     $2,440.21 / 14 = $174.30         readiness=not_ready [budget_gate]; integrity warn | verified=NOT_READY [readiness,integrity_warnings,measured_effect]
+  meta           $1,037.38 / 9 = $115.26          readiness=not_ready [integrity,budget_gate]; integrity fail | verified=NOT_READY [readiness,integrity,measured_effect]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [budget_gate,min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect]
+open at branch (excl. disputes): ["#7011 quarantined_source_records"]
+
+--- D1 control: same branch September: B03 sep
+gate: trustworthy=true signal=shift ratio=2.23 blockers=[]
+scorecard: {"paidSpend":"$12,945.09","paidAcquired":51,"cac":"$253.83","heldCampaignAcquired":0,"partlyHeldAcquired":0}
+  google_search  $8,015.62 / 25 = $320.62         readiness=ready; integrity warn | verified=-
+  google_lsa     $2,730.94 / 19 = $143.73         readiness=ready; integrity warn | verified=-
+  meta           $1,157.10 / 6 = $192.85          readiness=ready; integrity pass | verified=-
+  microsoft      $1,041.43 / 1 = $1,041.43        readiness=not_ready [min_customers]; integrity pass | verified=-
+open at branch (excl. disputes): ["#7011 quarantined_source_records"]
+D1 Overview holds (oct): ["B03#7011 refused"]
+E incident after excluded newer revision: [{"id":"7011","status":"resolved","resolution":"Corrected. Oct 20: the ledger no longer counts a revision of this campaign-day."}]
+E counted Oct 20 row now: none (no record) (was $34.28)
+
+--- E after: refused (CAD) then newer excluded (no currency rule): B03 oct
+gate: trustworthy=true signal=shift ratio=2.40 blockers=[]
+scorecard: {"paidSpend":"$11,336.67","paidAcquired":50,"cac":"$226.73","heldCampaignAcquired":0,"partlyHeldAcquired":9}
+  google_search  $6,948.40 / 26 = $267.25         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect,complete]
+  google_lsa     $2,440.21 / 14 = $174.30         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect,complete]
+  meta           $1,003.10 / 9 = $111.46          readiness=ready; integrity pass | verified=READY_WITH_LIMITATIONS [measured_effect,complete]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect,complete]
+open at branch (excl. disputes): []
+branch X (trustworthy in October, most Meta customers): B03
+
+--- R0 before: B03 oct
+gate: trustworthy=true signal=shift ratio=2.32 blockers=[]
+scorecard: {"paidSpend":"$11,370.95","paidAcquired":50,"cac":"$227.42","heldCampaignAcquired":0,"partlyHeldAcquired":0}
+  google_search  $6,948.40 / 26 = $267.25         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect]
+  google_lsa     $2,440.21 / 14 = $174.30         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect]
+  meta           $1,037.38 / 9 = $115.26          readiness=ready; integrity pass | verified=READY_WITH_LIMITATIONS [measured_effect]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect]
+open at branch (excl. disputes): []
+R revoke result: {"excluded":74}
+
+--- R1 after revocation + reconcile: B03 oct
+gate: trustworthy=true signal=none ratio=null blockers=[]
+scorecard: {"paidSpend":"$8,930.74","paidAcquired":36,"cac":"$248.08","heldCampaignAcquired":14,"partlyHeldAcquired":0}
+  google_search  $6,948.40 / 26 = $267.25         readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect,complete]
+  google_lsa     $0.00 / 14 = $0.00               readiness=ready; integrity warn | verified=NEEDS_REVIEW [integrity_warnings,measured_effect,complete]
+  meta           $1,037.38 / 9 = $115.26          readiness=ready; integrity pass | verified=READY_WITH_LIMITATIONS [measured_effect,complete]
+  microsoft      $944.96 / 1 = $944.96            readiness=not_ready [min_customers]; integrity pass | verified=NOT_READY [readiness,measured_effect,complete]
+open at branch (excl. disputes): []

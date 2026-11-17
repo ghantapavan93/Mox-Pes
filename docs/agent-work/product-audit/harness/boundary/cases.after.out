@@ -1,0 +1,199 @@
+
+--- baseline: B03 on the seed
+ledger: spend $1,234,318.64 over 11422 campaign-days; collected $1,203,871.00
+card.gate: Data integrity: no blocking incidents
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gate open
+lab.builder: google_search → meta
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[]
+lab.scenario google_search→google_lsa: decisionReady=true blockers=[]
+overview.incidentHolds: none
+overview.evidenceHolds: none
+
+R revoke: {"excluded":74}
+ledger: spend $1,227,768.65 over 11348 campaign-days; collected $1,203,871.00
+
+--- R: B03 after the Local Services rule is revoked
+card.gate: Data integrity: no blocking incidents
+card.headline: Among verified channels, Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). Not a branch-wide ranking: Google Local Services is left out.
+card.decision: [warn] Branch-wide recommendation held: Google Local Services is left out, and its missing cost could change which channel is cheapest or most expensive. A move between the verified channels can still be reviewed in the Decision Lab; a move involving Google Local Services cannot until its cost here is known.
+card.excluded: Google Local Services (14 customers): Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | — | held
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 2.3× Meta per customer (Google Local Services left out) · recommendation held
+lab.builder: (none) → (none)
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = not_ready [cost_held] — Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[] warnings: This compares two channels, not the branch: Google Local Services is left out of B03's comparison (held at intake), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+overview.incidentHolds: none
+overview.evidenceHolds: [held] Google Local Services: Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+
+--- R: B04 control identical to before the case (5c72c56e354f)
+ledger: spend $1,234,318.64 over 11422 campaign-days; collected $1,203,871.00
+
+--- D: B03 with a refused revision of Meta on Oct 20
+card.gate: Not trustworthy yet
+card.headline: Among verified channels, Google Search costs 1.5× Google Local Services per attributed new customer (first evidenced touch). Not a branch-wide ranking: Meta is left out.
+card.blocked: Do not move budget at B03 yet. Open incidents hold every move here; they change what Meta cost or which customers it produced:
+card.excluded: Meta (9 customers): #23992: A newer revision of Oct 20's Meta spend (fb-B03) was refused: it is billed in CAD and only US dollars are summed. The ledger still counts the earlier $34.28, so Oct 20 is not confirmed. It holds until a newer revision is accepted.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26 | refused
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 1.5× Google Local Services per customer (Meta left out) · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [integrity,budget_gate] — Data integrity fails for Meta: a newer revision of spend it reads was refused, so that spend is not confirmed.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate,integrity]
+lab.scenario google_search→google_lsa: decisionReady=false blockers=[budget_gate] warnings: This compares two channels, not the branch: Meta is left out of B03's comparison (revision refused), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+overview.incidentHolds: #23992 quarantined_source_records (refused revision)
+overview.evidenceHolds: none
+
+--- D (same META-1 account): B04 control identical to before the case (5c72c56e354f)
+ledger: spend $1,233,281.26 over 11392 campaign-days; collected $1,203,871.00
+
+--- C: B03 with all October Meta spend excluded
+card.gate: Not trustworthy yet
+card.headline: Among verified channels, Google Search costs 1.5× Google Local Services per attributed new customer (first evidenced touch). Not a branch-wide ranking: Meta is left out.
+card.blocked: Do not move budget at B03 yet. Open incidents hold every move here; they change what Meta cost or which customers it produced:
+card.excluded: Meta (9 customers): Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). None of it is counted, so its 9 customers have no cost per customer until the held records are accepted. #24360: Meta spend at B03 stopped after Sep 30, but 26 Meta leads kept arriving.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $0.00 | 9 | — | held,incident
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 1.5× Google Local Services per customer (Meta left out) · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [integrity,budget_gate,cost_held] — Data integrity fails for Meta: the records this decision would rest on are known to be wrong. | Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). None of it is counted, so its 9 customers have no cost per customer until the held records are accepted.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: refused 409: Meta has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). None of it is counted, so its 9 customers have no cost per customer until the held records are accepted.
+lab.scenario google_search→google_lsa: decisionReady=false blockers=[budget_gate] warnings: This compares two channels, not the branch: Meta is left out of B03's comparison (held at intake, incident #24360), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+overview.incidentHolds: #24360 channel_coverage_gap
+overview.evidenceHolds: [held] Meta: Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). None of it is counted, so its 9 customers have no cost per customer until the held records are accepted.
+
+E incident: [{"id":"24362","status":"resolved","resolution":"Corrected. Oct 20: the ledger no longer counts a revision of this campaign-day."}]
+ledger: spend $1,234,284.36 over 11421 campaign-days; collected $1,203,871.00
+
+--- E: B03 after the refused revision is superseded by an excluded one
+card.gate: Data integrity: no blocking incidents
+card.headline: Among verified channels, Google Search costs 1.5× Google Local Services per attributed new customer (first evidenced touch). Not a branch-wide ranking: Meta is left out.
+card.decision: [warn] Branch-wide recommendation held: Meta is left out, and its missing cost could change which channel is cheapest or most expensive. A move between the verified channels can still be reviewed in the Decision Lab; a move involving Meta cannot until its cost here is known.
+card.excluded: Meta (9 customers): Its spend at B03 is held at intake on 1 day of the period (Oct 20): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). The counted spend leaves that day out, so its cost per customer is understated until the held records are accepted.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,003.10 | 9 | $111.46 | held
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 1.5× Google Local Services per customer (Meta left out) · recommendation held
+lab.builder: (none) → (none)
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = not_ready [cost_held] — Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 1 day of the period (Oct 20): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). The counted spend leaves that day out, so its cost per customer is understated until the held records are accepted.
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[cost_held]
+lab.scenario google_search→google_lsa: decisionReady=true blockers=[] warnings: This compares two channels, not the branch: Meta is left out of B03's comparison (held at intake), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+overview.incidentHolds: none
+overview.evidenceHolds: [held] Meta: Its spend at B03 is held at intake on 1 day of the period (Oct 20): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account META-2). The counted spend leaves that day out, so its cost per customer is understated until the held records are accepted.
+
+--- RDfix 1: B03 with Local Services held and a refused Meta revision
+card.gate: Not trustworthy yet
+card.headline: Fewer than two paid channels at B03 can be compared on verified figures: Google Local Services and Meta are left out.
+card.blocked: Do not move budget at B03 yet. Open incidents hold every move here; they change what Meta cost or which customers it produced:
+card.excluded: Google Local Services (14 customers): Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+card.excluded: Meta (9 customers): #24732: A newer revision of Oct 20's Meta spend (fb-B03) was refused: it is billed in CAD and only US dollars are summed. The ledger still counts the earlier $34.28, so Oct 20 is not confirmed. It holds until a newer revision is accepted.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | — | held
+card.row: Meta | $1,037.38 | 9 | $115.26 | refused
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: fewer than two channels can be compared (Google Local Services and Meta left out) · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate,cost_held] — Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+lab.readiness: Meta = not_ready [integrity,budget_gate] — Data integrity fails for Meta: a newer revision of spend it reads was refused, so that spend is not confirmed.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate,integrity] warnings: This compares two channels, not the branch: Google Local Services is left out of B03's comparison (held at intake), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+overview.incidentHolds: #24732 quarantined_source_records (refused revision)
+overview.evidenceHolds: [held] Google Local Services: Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+
+RDfix incident after the accepted newer revision: [{"id":"24732","status":"resolved","resolution":"Corrected. Oct 20: ingestion run #741 accepted a newer revision (fetched Oct 31, 1:40 PM UTC); $34.28, unchanged."}]
+ledger: spend $1,227,768.65 over 11348 campaign-days; collected $1,203,871.00
+
+--- RDfix 2: B03 after the correction (Local Services still held)
+card.gate: Data integrity: no blocking incidents
+card.headline: Among verified channels, Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). Not a branch-wide ranking: Google Local Services is left out.
+card.decision: [warn] Branch-wide recommendation held: Google Local Services is left out, and its missing cost could change which channel is cheapest or most expensive. A move between the verified channels can still be reviewed in the Decision Lab; a move involving Google Local Services cannot until its cost here is known.
+card.excluded: Google Local Services (14 customers): Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | — | held
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 2.3× Meta per customer (Google Local Services left out) · recommendation held
+lab.builder: (none) → (none)
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = not_ready [cost_held] — Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[] warnings: This compares two channels, not the branch: Google Local Services is left out of B03's comparison (held at intake), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+overview.incidentHolds: none
+overview.evidenceHolds: [held] Google Local Services: Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the currency rule that made this spend countable was revoked (CURRENCY_UNSTATED, account LSA-B03). None of it is counted, so its 14 customers have no cost per customer until the held records are accepted.
+ledger: spend $1,231,878.43 over 11422 campaign-days; collected $1,203,871.00
+
+--- Z: B03 with Local Services recorded at $0.00
+card.gate: Not trustworthy yet
+card.headline: Among verified channels, Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). Not a branch-wide ranking: Google Local Services is left out.
+card.blocked: Do not move budget at B03 yet. Open incidents hold every move here; they change what Google Local Services cost or which customers it produced:
+card.excluded: Google Local Services (14 customers): The source recorded $0.00 for it at B03 on all 30 counted days of the period: there is no cost per customer to act on. No record of it is held. #25284: Google Local Services spend at B03 stopped after Sep 30, but 32 Google Local Services leads kept arriving.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | — | recorded_zero,incident
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Search costs 2.3× Meta per customer (Google Local Services left out) · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [integrity,budget_gate,cost_recorded_zero] — Data integrity fails for Google Local Services: the records this decision would rest on are known to be wrong. | Its cost per customer cannot carry a decision: the source recorded $0.00 for it at B03 on all 30 counted days of the period: there is no cost per customer to act on. No record of it is held.
+lab.readiness: Meta = not_ready [budget_gate]
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate] warnings: This compares two channels, not the branch: Google Local Services is left out of B03's comparison (incident #25284), and its missing cost could change which channel is cheapest. The branch-wide recommendation stays held.
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: the source recorded $0.00 for it at B03 on all 30 counted days of the period: there is no cost per customer to act on. No record of it is held.
+overview.incidentHolds: #25284 channel_coverage_gap
+overview.evidenceHolds: none
+ledger: spend $1,227,370.24 over 11392 campaign-days; collected $1,203,871.00
+
+--- S: B03 with October Search spend excluded
+card.gate: Not trustworthy yet
+card.headline: Among verified channels, Google Local Services costs 1.5× Meta per attributed new customer (first evidenced touch). Not a branch-wide ranking: Google Search is left out.
+card.blocked: Do not move budget at B03 yet. Open incidents hold every move here; they change what Google Search cost or which customers it produced:
+card.excluded: Google Search (26 customers): Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account GA-WEST-X). None of it is counted, so its 26 customers have no cost per customer until the held records are accepted. #25469: Google Search spend at B03 stopped after Sep 30, but 65 Google Search leads kept arriving.
+card.row: Google Search | $0.00 | 26 | — | held,incident
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal, among verified channels: Google Local Services costs 1.5× Meta per customer (Google Search left out) · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [integrity,budget_gate,cost_held] — Data integrity fails for Google Search: the records this decision would rest on are known to be wrong. | Its cost per customer cannot carry a decision: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account GA-WEST-X). None of it is counted, so its 26 customers have no cost per customer until the held records are accepted.
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [budget_gate]
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: refused 409: Google Search has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account GA-WEST-X). None of it is counted, so its 26 customers have no cost per customer until the held records are accepted.
+lab.scenario google_search→google_lsa: refused 409: Google Search has no counted spend at B03 in Oct 1–30, 2026 (UTC), so there is no cost per customer to extrapolate from: its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account GA-WEST-X). None of it is counted, so its 26 customers have no cost per customer until the held records are accepted.
+overview.incidentHolds: #25469 channel_coverage_gap
+overview.evidenceHolds: [held] Google Search: Its spend at B03 is held at intake on 30 days of the period (Oct 1–Oct 30): the feed stated no currency and no authorized rule says this ad account reports in USD; not counted (CURRENCY_UNSTATED, account GA-WEST-X). None of it is counted, so its 26 customers have no cost per customer until the held records are accepted.
+
+--- S (same GA-WEST account): B04 control identical to before the case (5c72c56e354f)

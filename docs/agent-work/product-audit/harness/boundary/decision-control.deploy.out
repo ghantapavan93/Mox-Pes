@@ -1,0 +1,19 @@
+revenue_signal_deploy ledger: {"spend":"123431864","days":"11422","collected":"120387100","raw_events":"134088","open_exceptions":"187"}
+legacy outputs: 132 branch-periods, 0 mismatches, fingerprint 4286f88bf2f023e9
+WHERE THE BOUNDARY SAYS MORE (14):
+sep B06: limitations google_search,google_lsa
+sep B07: limitations google_lsa,google_search
+sep B09: basis verified; recommendation held (raw none); left out google_search[incident] google_lsa[incident]
+sep B20: basis unverified; recommendation held (raw shift)
+oct B06: limitations google_search,google_lsa,meta
+oct B07: limitations google_search,google_lsa,meta
+oct B09: basis verified; recommendation held (raw shift); left out google_lsa[incident] google_search[incident]
+oct B20: basis unverified; recommendation held (raw none)
+oct B44: basis verified; recommendation held (raw shift); left out google_lsa[unmapped]; readiness now fails google_lsa:cost_unmapped
+all B06: limitations google_search,google_lsa,meta
+all B07: limitations google_search,google_lsa,meta
+all B09: basis verified; recommendation held (raw shift); left out google_search[incident] google_lsa[incident]
+all B20: basis unverified; recommendation held (raw none)
+all B44: basis verified; recommendation held (raw shift); left out google_lsa[unmapped]; readiness now fails google_lsa:cost_unmapped
+revenue_signal_deploy: 1350 CAC figures, fingerprint 85bd0e019d5e0c54
+no zero-spend case with paid customers

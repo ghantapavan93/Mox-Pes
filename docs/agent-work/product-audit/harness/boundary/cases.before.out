@@ -1,0 +1,173 @@
+
+--- baseline: B03 on the seed
+ledger: spend $1,234,318.64 over 11422 campaign-days; collected $1,203,871.00
+card.gate: Data integrity: no blocking incidents
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gate open
+lab.builder: google_search → meta
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[]
+lab.scenario google_search→google_lsa: decisionReady=true blockers=[]
+overview.incidentHolds: none
+
+R revoke: {"excluded":74}
+ledger: spend $1,227,768.65 over 11348 campaign-days; collected $1,203,871.00
+
+--- R: B03 after the Local Services rule is revoked
+card.gate: Data integrity: no blocking incidents
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | —
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gate open
+lab.builder: google_search → meta
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[]
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no spend at this branch in the period: there is no cost per customer to extrapolate from
+overview.incidentHolds: none
+
+--- R: B04 control identical to before the case (11bc56574208)
+ledger: spend $1,234,318.64 over 11422 campaign-days; collected $1,203,871.00
+
+--- D: B03 with a refused revision of Meta on Oct 20
+card.gate: Not trustworthy yet
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [integrity,budget_gate] — Data integrity fails for Meta: a newer revision of spend it reads was refused, so that spend is not confirmed.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate,integrity]
+lab.scenario google_search→google_lsa: decisionReady=false blockers=[budget_gate]
+overview.incidentHolds: #20666 quarantined_source_records (refused revision)
+
+--- D (same META-1 account): B04 control identical to before the case (11bc56574208)
+ledger: spend $1,233,281.26 over 11392 campaign-days; collected $1,203,871.00
+
+--- C: B03 with all October Meta spend excluded
+card.gate: Not trustworthy yet
+card.headline: Google Search costs 1.5× Google Local Services per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $0.00 | 9 | —
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 1.5× Google Local Services per customer · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [integrity,budget_gate] — Data integrity fails for Meta: the records this decision would rest on are known to be wrong.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: refused 409: Meta has no spend at this branch in the period: there is no cost per customer to extrapolate from
+lab.scenario google_search→google_lsa: decisionReady=false blockers=[budget_gate]
+overview.incidentHolds: #21034 channel_coverage_gap
+
+E incident: [{"id":"21036","status":"resolved","resolution":"Corrected. Oct 20: the ledger no longer counts a revision of this campaign-day."}]
+ledger: spend $1,234,284.36 over 11421 campaign-days; collected $1,203,871.00
+
+--- E: B03 after the refused revision is superseded by an excluded one
+card.gate: Data integrity: no blocking incidents
+card.headline: Google Search costs 2.4× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,003.10 | 9 | $111.46
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.4× Meta per customer · gate open
+lab.builder: google_search → meta
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[]
+lab.scenario google_search→google_lsa: decisionReady=true blockers=[]
+overview.incidentHolds: none
+
+--- RDfix 1: B03 with Local Services held and a refused Meta revision
+card.gate: Not trustworthy yet
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | —
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [integrity,budget_gate] — Data integrity fails for Meta: a newer revision of spend it reads was refused, so that spend is not confirmed.
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate,integrity]
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no spend at this branch in the period: there is no cost per customer to extrapolate from
+overview.incidentHolds: #21406 quarantined_source_records (refused revision)
+
+RDfix incident after the accepted newer revision: [{"id":"21406","status":"resolved","resolution":"Corrected. Oct 20: ingestion run #725 accepted a newer revision (fetched Oct 31, 1:40 PM UTC); $34.28, unchanged."}]
+ledger: spend $1,227,768.65 over 11348 campaign-days; collected $1,203,871.00
+
+--- RDfix 2: B03 after the correction (Local Services still held)
+card.gate: Data integrity: no blocking incidents
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | —
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gate open
+lab.builder: google_search → meta
+lab.readiness: Google Search = ready
+lab.readiness: Google Local Services = ready
+lab.readiness: Meta = ready
+lab.readiness: Microsoft Ads = not_ready [min_customers]
+lab.scenario google_search→meta: decisionReady=true blockers=[]
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no spend at this branch in the period: there is no cost per customer to extrapolate from
+overview.incidentHolds: none
+ledger: spend $1,231,878.43 over 11422 campaign-days; collected $1,203,871.00
+
+--- Z: B03 with Local Services recorded at $0.00
+card.gate: Not trustworthy yet
+card.headline: Google Search costs 2.3× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $6,948.40 | 26 | $267.25
+card.row: Google Local Services | $0.00 | 14 | —
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Search costs 2.3× Meta per customer · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [budget_gate]
+lab.readiness: Google Local Services = not_ready [integrity,budget_gate] — Data integrity fails for Google Local Services: the records this decision would rest on are known to be wrong.
+lab.readiness: Meta = not_ready [budget_gate]
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: decisionReady=false blockers=[budget_gate]
+lab.scenario google_search→google_lsa: refused 409: Google Local Services has no spend at this branch in the period: there is no cost per customer to extrapolate from
+overview.incidentHolds: #21958 channel_coverage_gap
+ledger: spend $1,227,370.24 over 11392 campaign-days; collected $1,203,871.00
+
+--- S: B03 with October Search spend excluded
+card.gate: Not trustworthy yet
+card.headline: Google Local Services costs 1.5× Meta per attributed new customer (first evidenced touch). An observation, not a recommendation.
+card.row: Google Search | $0.00 | 26 | —
+card.row: Google Local Services | $2,440.21 | 14 | $174.30
+card.row: Meta | $1,037.38 | 9 | $115.26
+card.row: Microsoft Ads | $944.96 | 1 | $944.96
+lab.note: Budget signal: Google Local Services costs 1.5× Meta per customer · gated
+lab.builder: (none) → (none)
+lab.readiness: Google Search = not_ready [integrity,budget_gate] — Data integrity fails for Google Search: the records this decision would rest on are known to be wrong.
+lab.readiness: Google Local Services = not_ready [budget_gate]
+lab.readiness: Meta = not_ready [budget_gate]
+lab.readiness: Microsoft Ads = not_ready [budget_gate,min_customers]
+lab.scenario google_search→meta: refused 400: Cannot move more than the $0 a month that Google Search spends at this branch
+lab.scenario google_search→google_lsa: refused 400: Cannot move more than the $0 a month that Google Search spends at this branch
+overview.incidentHolds: #22143 channel_coverage_gap
+
+--- S (same GA-WEST account): B04 control identical to before the case (11bc56574208)

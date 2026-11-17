@@ -1,0 +1,38 @@
+{
+  "_written": "BEFORE any run. Expected results exactly as given by the requester, plus the concrete fixture parameters chosen for them.",
+  "fixture": {
+    "branchA": "B10 (Cypress, CRM office 110, America/Phoenix)",
+    "branchB": "B11 (Driftwood, CRM office 111, America/Phoenix)",
+    "period": "product period 'oct' = [2026-10-01T00:00Z, 2026-10-31T00:00Z)",
+    "campaign": "google_ads campaign coh-A, mapped to B10; accepted spend $100 on 2026-10-03 + $100 on 2026-10-04 = $200",
+    "inquiries": "two calls from two different phones, both source 'Google Ads', campaign coh-A, tagged B10 (P1 2026-10-06, P2 2026-10-07)",
+    "bookings": "P1 -> CRM customer 9101 / subscription 9201 at office 111 (B11), initial service completed 2026-10-09; P2 -> customer 9102 / subscription 9202 at office 110 (B10), cancelled 2026-10-09 before its initial service",
+    "cash": "customer 9101: payment 9501 +$120 on d1=2026-10-10, payment 9502 +$80 on d2=2026-10-15, refund 9503 -$20 (of 9502) on d3=2026-10-22; payment 9502 re-delivered unchanged on 2026-10-16",
+    "cutoffs": "c1 = 2026-10-12T00:00Z (between d1 and d2); c2 = after d3 (period end 2026-10-31T00:00Z)"
+  },
+  "expected": [
+    "A paid campaign mapped to Branch A has $200 accepted spend (one or more spend days).",
+    "Two distinct inquiries (leads from two different people) are linked to that campaign. Both book.",
+    "One booking completes its first service at Branch B (the customer's CRM office / servicing branch is B). The other booking cancels before service.",
+    "Expected: two bookings, one completed first service, one cancellation — NOT two acquired customers.",
+    "The serviced customer pays $120 (day d1), later pays $80 (d2), later receives a $20 refund (d3). A retry (re-delivery) of the $80 payment must not change totals.",
+    "Expected net collected cash: $120 at a cutoff between d1 and d2; $180 after all three events.",
+    "Expected, under an explicit campaign-cohort basis: cost per booking $100; cost per completed first service $200.",
+    "The same $200 must NOT also be assigned to Branch B, and Branch B's CAC must not be presented as comparable without a branch-credit policy.",
+    "No renewal history -> no defensible lifetime value."
+  ],
+  "expected_numbers": {
+    "bookings": 2,
+    "completed_first_services": 1,
+    "cancellations": 1,
+    "acquired_customers_not": 2,
+    "net_cash_at_c1_cents": 12000,
+    "net_cash_after_all_cents": 18000,
+    "retry_changes_totals": false,
+    "cohort_cost_per_booking_cents": 10000,
+    "cohort_cost_per_completed_first_service_cents": 20000,
+    "spend_assigned_to_B_cents": 0,
+    "branch_B_cac_presented_as_comparable": false,
+    "lifetime_value": "none (no renewal history)"
+  }
+}

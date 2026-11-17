@@ -1,0 +1,27 @@
+{
+  "overviewBefore": "$10,362 Definition of revenue in open exceptions of collected revenue is in 187 open exceptions: $3,130 cannot yet be tied to a lead, branch or channel, and $7,232 is tied but its branch or channel credit is disputed — start with B20 Heron. Ad platforms claimed 7,776 conversions. We received 4,694 unique paid prospects; 1,361 are serviced customers so far. Paid-media CAC is $267.16 ($460.6K of paid media spend ÷ 1,724 new customers whose first evidenced touch was paid).",
+  "b20LinkTarget": "/branches/B20?period=oct",
+  "b20BranchKpis": "Loading…",
+  "defaultMapper": "1.2",
+  "dryRunChanges": "At B20 this run would close 1 (#1063) and would open 3: D2D / paid conflict, $148.00 at stake. A dry run is rolled back: they exist only once the fix is executed.",
+  "afterApprove": [
+    "Approved, not yet applied. Next: an approver executes it once (Execute); until then nothing has changed and the case stays awaiting."
+  ],
+  "focusAfterExecute": "execution-result",
+  "receipt": "Execution succeeded and verified · revenue-signal-app on behalf of approver · Oct 31, 1:00 PM UTC mode quarantined · claimed 119 · projected 119 · requested 119 · mapperVersion 1.2 · stillQuarantined 0 Paid-media CAC at B20, Sep 1 – Oct 30, 2026 (UTC) $364.75→ to $284.06 B20 · SEP 1 – OCT 30, 2026 (UTC) BEFORE AFTER CHECK EXPECTED TO MOVE · what the fix is for Exception open resolved (changed) Paid-media CAC $364.75 $284.06 (changed) New customers from paid media 88 113 (changed) Unattributed new customers 64 34 (changed) New customers (all channels) 246 =246 (unchanged) Paid-media spend $32,098 =$32,098 (unchanged) Open exceptions at B20 3 5 (changed) October budget signal blocked trustworthy (changed) meta spend $3,167 =$3,167 (unchanged) meta cost per customer $351.88 $316.69 (changed) google_lsa spend $7,481 =$7,481 (unchanged) google_lsa cost per customer $287.75 $202.20 (changed) google_search spend $21,450 =$21,450 (unchanged) google_search cost per customer $404.72 $325.00 (changed) Open exceptions (all branches) 187 189 (changed) LEDGER · must not move; a change rolls the fix back Total ad spend $1,234,319 =$1,234,319 (unchanged) conserved Raw events stored 134,088 =134,08",
+  "executeButtonsAfter": 0,
+  "fixResult": "Fixed and verified · proposal #1 Replay quarantine · Oct 31, 1:00 PM UTC Paid-media CAC at B20, Sep 1 – Oct 30, 2026 (UTC) $364.75→ to $284.06 Why it moved Replaying the 119 held calls attached lead records to customers who had none: 30 fewer unattributed (64 → 34), 25 more credited to paid media (88 → 113). What did not paid-media spend ($32,098) and new customers on all channels (246) did not change; the five ledger totals were conserved. Still open The run opened 3 D2D / paid conflict exceptions at B20 ($148.00 at stake). Review them → The October budget signal is now trustworthy: its inputs agree, and moving budget is still a decision. The full receipt: every number before and after ↓",
+  "fixResultNext": "/exceptions?branch=B20&kind=channel_conflict",
+  "overviewAfter": "$7,649 Definition of revenue in open exceptions of collected revenue is in 189 open exceptions: $269.00 cannot yet be tied to a lead, branch or channel, and $7,380 is tied but its branch or channel credit is disputed — start with B01 Alder. Ad platforms claimed 7,776 conversions. We received 4,753 unique paid prospects; 1,386 are serviced customers so far. Paid-media CAC is $263.34 ($460.6K of paid media spend ÷ 1,749 new customers whose first evidenced touch was paid).",
+  "b20BranchAfter": "Overview B20 Heron BRANCH · CENTRAL · AMERICA/CHICAGO · OCT 1–30, 2026 (UTC) B20 Heron Which part of the acquisition-to-revenue path deserves investigation? Decision readiness Incidents Period: Oct 1–30 Sep 1–30 Sep 1 – Oct 30 Paid media spend Show definition $15.2K Where does this come from? Collected revenue Show definition $15.9K $169.00 refunded Where does this come from? Unique prospects Show definition 238 135 paid New customers serviced Show definition 109 114 sold in period Paid-media CAC Show definition $271.31 company $263.34 Where does this come from? Unattributed share Show definit",
+  "partnerOverview": "MARKETING REVENUE INTEGRITY · BRANCH B20 · OCT 1–30, 2026 (UTC) Where did the conversions go? $148.00 Definition of revenue in open exceptions of collected revenue is in 5 open exceptions: all of it is tied, but its branch or channel credit is disputed. Ad platforms claimed 205 conversions. We received 135 unique paid prospects; 44 are serviced customers so far. Paid-media CAC is $271.31 ($15.2K of paid media spend ÷ 56 new customers whose first evidenced touch was paid). Period: Oct 1–30 Sep 1–",
+  "brandOverview": "MARKETING REVENUE INTEGRITY · COPPER MESA PEST · OCT 1–30, 2026 (UTC) Where did the conversions go? $493.00 Definition of revenue in open exceptions of collected revenue is in 15 open exceptions: all of it is tied, but its branch or channel credit is disputed — start with B41 Slate. Ad platforms claimed 893 conversions. We received 541 unique paid prospects; 172 are serviced customers so far. Paid-media CAC is $249.66 ($50.9K of paid media spend ÷ 204 new customers whose first evidenced touch wa",
+  "brandHoldLinks": [
+    "All incidents -> /exceptions",
+    "B44 -> /branches/B44?period=oct",
+    "readiness -> /decisions?branch=B44&period=oct"
+  ],
+  "brandHoldUnavailable": "incident #970 (company-wide, outside your scope; an analyst resolves it)",
+  "phoneFixResultTop": 628,
+  "phoneOverflow": 0
+}

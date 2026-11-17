@@ -2,7 +2,7 @@ import { Pool } from "pg";
 import { evidence } from "@/lib/ai/evidence";
 import type { Queryable } from "@/lib/db";
 import { METRICS } from "@/lib/metrics/definitions";
-import { branchRows, type BranchRow } from "@/lib/metrics/scorecard";
+import { branchRows, paidCac, type BranchRow } from "@/lib/metrics/scorecard";
 import type { Period } from "@/lib/period";
 import { BRANCH_BY_ID, branchesOfBrands, BRANDS, type BrandId } from "@/lib/reference";
 import { canSeeBranch, ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
@@ -272,7 +272,7 @@ export async function rollupBrand(db: Queryable, viewer: Viewer, args: { brandId
   if (outside.length) throw new ForbiddenError(`${viewer.label} cannot view ${brand.name} as a whole`);
   const rows = await branchRows(db, { from: args.period.from, to: args.period.to, branchIds: ids });
   const sum = (k: "paidSpendCents" | "acquired" | "paidAcquired" | "collectedCents" | "refundsCents") => rows.reduce((t, r) => t + r[k], 0);
-  const totals = { paidSpendCents: sum("paidSpendCents"), acquired: sum("acquired"), paidAcquired: sum("paidAcquired"), paidCacCents: sum("paidAcquired") > 0 ? Math.round(sum("paidSpendCents") / sum("paidAcquired")) : null, collectedCents: sum("collectedCents"), refundsCents: sum("refundsCents") };
+  const totals = { paidSpendCents: sum("paidSpendCents"), acquired: sum("acquired"), paidAcquired: sum("paidAcquired"), paidCacCents: paidCac(sum("paidSpendCents"), sum("paidAcquired")), collectedCents: sum("collectedCents"), refundsCents: sum("refundsCents") };
   const invariants: Invariant[] = [{ name: "the brand is exactly its branches", holds: rows.length === ids.length && rows.every((r) => ids.includes(r.branchId)), detail: `${rows.length} of ${ids.length} branches` }];
   if (!viewer.branchIds) {
     // Company-wide viewers: the three brands must add up to the company, to the cent. The company

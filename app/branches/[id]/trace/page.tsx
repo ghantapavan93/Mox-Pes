@@ -121,7 +121,10 @@ async function Trace({ params, searchParams }: Props) {
 
       {v.matches ? (
         <Callout tone="good" title="Reproduced from the records below" testId="trace-reproduced">
-          {isCac
+          {isCac && v.reproduced.paidCacCents === null && v.reproduced.paidAcquired > 0
+            ? // The refusal (definition v4): customers with no spend counted are a gap, not a $0 cost.
+              `${exactDollars(v.reproduced.paidSpendCents)} of paid media spend for ${count(v.reproduced.paidAcquired)} new paid customers: not computed, the same as the scorecard. No paid-media spend is mapped to ${branch.id} in ${period.label}, so these customers' cost sits at another branch, in another period, or with no campaign tied to them; $0.00 would read as the cheapest CAC in the company.`
+            : isCac
             ? `${exactDollars(v.reproduced.paidSpendCents)} of paid media spend ÷ ${count(v.reproduced.paidAcquired)} new paid customers = ${v.reproduced.paidCacCents === null ? "n/a" : exactDollars(v.reproduced.paidCacCents)} (rounded to the cent), the same as the scorecard: spend to the cent, customers exactly.`
             : `${exactDollars(v.reproduced.paidSpendCents)} of paid media spend, the same as the scorecard to the cent.`}
         </Callout>

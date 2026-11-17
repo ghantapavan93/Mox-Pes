@@ -13,7 +13,7 @@ import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
 import { decisionHolds } from "@/lib/metrics/decision";
 import { overviewMovement, parseChannel, parseWeek } from "@/lib/metrics/movement";
-import { branchRows, conversionBridge, freshness, totals, type Totals } from "@/lib/metrics/scorecard";
+import { branchRows, cacDefined, conversionBridge, freshness, paidCac, totals, type Totals } from "@/lib/metrics/scorecard";
 import { PERIODS, parsePeriod } from "@/lib/period";
 import { weeklySeries } from "@/lib/queries";
 import { BRANCHES, BRANDS, BRAND_BY_ID, type BrandId } from "@/lib/reference";
@@ -281,7 +281,10 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                       </div>
                     </Td>
                     <Td align="right">{money(r.paidSpendCents, true)}</Td>
-                    <Td align="right">{money(r.paidAcquired ? Math.round(r.paidSpendCents / r.paidAcquired) : null)}</Td>
+                    <Td align="right">
+                      {money(paidCac(r.paidSpendCents, r.paidAcquired))}
+                      {r.paidAcquired > 0 && !cacDefined(r.paidSpendCents, r.paidAcquired) && <div className="text-[11px] text-faint">no spend mapped here</div>}
+                    </Td>
                     <Td align="right">{pct(r.acquired ? r.unknownAcquired / r.acquired : null)}</Td>
                     <Td align="right">{count(r.acquired)}</Td>
                     <Td align="right">{money(r.atRiskCents)}</Td>

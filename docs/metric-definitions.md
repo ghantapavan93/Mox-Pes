@@ -32,7 +32,7 @@ server's zone (regression test F3). Branch-local month boundaries are a known li
 | Paid media spend | Σ cost of media campaigns **mapped** to the branch, by spend date | Budget by branch | Unmapped campaigns are excluded from every branch (shown as unallocated). D2D commission is not media spend. |
 | Unique prospects | distinct prospect keys with a lead record in the period | Demand by branch/channel | See prospect approximation. |
 | New customers serviced | count of acquisitions whose initial service completed in the period | Acquisition volume | Lags sales by days; the last week of a period is always light. |
-| Paid-media CAC | paid media spend ÷ new customers serviced whose credited channel is paid **media** (cost basis `media`), excluding customers credited to a campaign no branch is mapped to (their cost is unallocated spend) | Channel/branch efficiency | **Period CAC**, not cohort: October spend vs October completions. Young periods look worse. **Branch keys differ:** spend follows the campaign's mapped (marketing) branch, customers follow the CRM office that services them. A customer sold by one branch's campaign and serviced by another moves cost and customer to different rows (9 such customers in the October seed, B06/B07). Known limitation, not yet resolved: which branch owns CAC is a business decision (audit 2026-11-09, D-2). |
+| Paid-media CAC | paid media spend ÷ new customers serviced whose credited channel is paid **media** (cost basis `media`), excluding customers credited to a campaign no branch is mapped to (their cost is unallocated spend) | Channel/branch efficiency | **Period CAC**, not cohort: October spend vs October completions. Young periods look worse. **Branch keys differ:** spend follows the campaign's mapped (marketing) branch, customers follow the CRM office that services them. A customer sold by one branch's campaign and serviced by another moves cost and customer to different rows (8 such customers in the October seed, all serviced at B07 from B06's campaigns; counted in UTC on 2026-11-17). Known limitation, not yet resolved: which branch owns CAC is a business decision (audit 2026-11-09, D-2). **Not computed (—)** where paid customers have no paid spend counted in the scope (v4, 2026-11-17): a servicing branch whose only paid customers came from another branch's campaign read **$0.00**, the cheapest figure in the company; the branch page says "no spend mapped here" and the trace says why. |
 | Unattributed share | serviced new customers with channel `unknown` ÷ all serviced new customers | Measurement health | A jump usually means broken capture or linkage, not changed behaviour — the seeded incident shows exactly this. |
 | Collected revenue | Σ successful payments − refunds (negative rows), by payment date, in the CRM office's branch | Cash by branch | Includes the existing base. Booked contract value and invoice totals are never revenue. |
 | Collected from new customers | Σ successful payments − refunds, to date, from customers serviced in the period | Early payback | Young customers have paid little so far. |
@@ -78,3 +78,11 @@ have happened without the ad. Incremental lift needs holdouts (geo split, platfo
 - LSA cost should be charged − credited; the synthetic LSA feed has no credits.
 - D2D cost (commission) is not modelled; D2D is excluded from paid-media CAC, visibly.
 - Lead-cohort CAC with a maturity flag is not built; only period CAC.
+- A branch CAC can still mix its own spend with customers another branch's campaign produced (the
+  D-2 split). In the business-fit fixture, B11's own $50 over one customer B10's campaign produced
+  read $50.00, and $100.00 after an equal-total restatement between the two campaigns; company
+  totals did not move. Which branch carries the cost is still undecided: nothing is reassigned and
+  no other figure is offered.
+- The scorecard restates history silently: a revision accepted after a decision moves the figure,
+  with no "as known at" view. A stored Shadow check keeps the figure it compared, and a re-run
+  names the records that arrived after it.

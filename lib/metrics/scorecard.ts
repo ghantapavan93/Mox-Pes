@@ -219,8 +219,22 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
   }));
 }
 
+/**
+ * Whether a paid-media CAC exists for these parts (definition v4): it needs paid customers to divide
+ * by AND paid spend counted in the same scope. Paid customers with no spend counted are a
+ * measurement gap, not free customers: a branch serving customers that a campaign mapped to another
+ * branch produced, or a week whose spend fell in an earlier week, read "$0.00", the cheapest figure
+ * in the company (business-fit fixture 2026-11-17: B10's campaign, B11's customer; the branch keys
+ * of D-2 in docs/metric-definitions.md). Which branch or period should carry that cost is a business
+ * decision; this only declines to show a cost the scope does not contain.
+ */
+export function cacDefined(spendCents: number, paidAcquired: number): boolean {
+  return paidAcquired > 0 && spendCents > 0;
+}
+
+/** Paid-media CAC in cents, rounded to the cent; null where cacDefined says there is none. */
 export function paidCac(spendCents: number, paidAcquired: number): number | null {
-  return paidAcquired > 0 ? Math.round(spendCents / paidAcquired) : null;
+  return cacDefined(spendCents, paidAcquired) ? Math.round(spendCents / paidAcquired) : null;
 }
 
 export async function totals(db: Queryable, scope: Scope, rows?: BranchRow[]): Promise<Totals> {

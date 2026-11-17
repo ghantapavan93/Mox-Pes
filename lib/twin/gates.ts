@@ -289,7 +289,8 @@ export async function evaluateGates(g: GateInput): Promise<Gate[]> {
   // denominator must be the reference's paid customers (A); the CAC is then recomputed here,
   // in integer cents, not with the scorecard's function. G does NOT re-derive spend from the ad
   // payloads: it relies on E for that (review 2026-11-12, financial 4).
-  const cacOf = (spend: number, paid: number) => (paid > 0 ? Math.floor((2 * spend + paid) / (2 * paid)) : null);
+  // Definition v4: no CAC without paid customers, nor with no spend counted for them.
+  const cacOf = (spend: number, paid: number) => (paid > 0 && spend > 0 ? Math.floor((2 * spend + paid) / (2 * paid)) : null);
   const moved = Object.keys(after.branches).filter((b) => after.branches[b].paidCacCents !== before.branches[b]?.paidCacCents);
   const unexplained = Object.keys(after.branches).filter((b) => {
     const a = after.branches[b];

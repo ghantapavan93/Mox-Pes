@@ -78,7 +78,7 @@ describe("metric trace · paid CAC for one branch", () => {
     expect(t.value.reproduced).toEqual(t.value.scorecard);
     expect(t.value.scorecard).toMatchObject({ paidSpendCents: row.paidSpendCents, paidAcquired: row.paidAcquired });
     expect(t.value.reproduced).toEqual({ paidSpendCents: 40_000, paidAcquired: 2, paidCacCents: 20_000 });
-    expect(t.metric.definitionVersion).toMatch(/^v3/);
+    expect(t.metric.definitionVersion).toMatch(/^v4/);
   });
 
   it("names each campaign's mapping, the mapper versions and raw events behind its spend, and the currency basis", async () => {

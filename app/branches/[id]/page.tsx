@@ -7,7 +7,7 @@ import { WeeklyBars } from "@/components/WeeklyBars";
 import { ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, Skeleton, Stat, TableWrap, Td, Th } from "@/components/ui";
 import { count, money, pct } from "@/lib/format";
 import { budgetSignal } from "@/lib/metrics/decision";
-import { branchRows, channelRows, totals } from "@/lib/metrics/scorecard";
+import { branchRows, cacDefined, channelRows, totals } from "@/lib/metrics/scorecard";
 import { parsePeriod } from "@/lib/period";
 import { listExceptions, weeklySeries } from "@/lib/queries";
 import { BRANCH_BY_ID } from "@/lib/reference";
@@ -80,14 +80,14 @@ async function Branch({ params, searchParams }: Props) {
         <Stat metric="collected" value={money(t.collectedCents, true)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=collected`} sub={`${money(t.refundsCents, true)} refunded`} />
         <Stat metric="prospects" value={count(t.prospects)} sub={`${count(t.paidProspects)} paid`} />
         <Stat metric="acquired" value={count(t.acquired)} sub={`${count(t.sold)} sold in period`} />
-        <Stat metric="paidCac" value={money(t.paidCacCents)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_cac`} sub={company ? `company ${money(company.paidCacCents)}` : undefined} tone={company?.paidCacCents && t.paidCacCents && t.paidCacCents > company.paidCacCents * 1.4 ? "bad" : "neutral"} />
+        <Stat metric="paidCac" value={money(t.paidCacCents)} traceHref={`/branches/${branch.id}/trace?period=${period.key}&metric=paid_cac`} sub={t.paidAcquired > 0 && t.paidCacCents === null ? `no spend mapped here for ${count(t.paidAcquired)} paid customer${t.paidAcquired === 1 ? "" : "s"}` : company ? `company ${money(company.paidCacCents)}` : undefined} tone={company?.paidCacCents && t.paidCacCents && t.paidCacCents > company.paidCacCents * 1.4 ? "bad" : "neutral"} />
         <Stat metric="unknownShare" value={pct(t.unknownShare)} sub={companyUnknown !== null ? `company ${pct(companyUnknown)}` : undefined} tone={companyUnknown && t.unknownShare && t.unknownShare > companyUnknown * 1.6 ? "bad" : "neutral"} />
         <Stat metric="atRisk" value={money(t.atRiskCents)} sub={`${count(t.openExceptions)} open exceptions`} tone={t.openExceptions > 0 ? "bad" : "good"} />
       </div>
 
       <Card title="Weekly trend" subtitle="New customers by week of initial service. Spend by week of spend.">
         <div className="grid gap-6 md:grid-cols-2">
-          <WeeklyBars points={weeks} label="Paid-media CAC" value={(p) => (p.paidAcquired > 0 ? p.spendCents / p.paidAcquired : null)} format={(v) => money(Math.round(v))} reference={company?.paidCacCents ? { value: company.paidCacCents, label: "company CAC" } : undefined} />
+          <WeeklyBars points={weeks} label="Paid-media CAC" value={(p) => (cacDefined(p.spendCents, p.paidAcquired) ? p.spendCents / p.paidAcquired : null)} format={(v) => money(Math.round(v))} reference={company?.paidCacCents ? { value: company.paidCacCents, label: "company CAC" } : undefined} />
           <WeeklyBars points={weeks} label="Unattributed share of new customers" value={(p) => (p.acquired > 0 ? p.unknownAcquired / p.acquired : null)} format={(v) => pct(v)} reference={companyUnknown !== null ? { value: companyUnknown, label: "company share" } : undefined} />
         </div>
       </Card>

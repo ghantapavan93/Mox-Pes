@@ -1,4 +1,4 @@
-import type { BranchRow } from "@/lib/metrics/scorecard";
+import { cacDefined, type BranchRow } from "@/lib/metrics/scorecard";
 
 /**
  * Which branches deserve a look first. Deliberately simple and explainable: each flag is
@@ -18,7 +18,9 @@ function median(values: number[]): number {
 }
 
 export function attentionFlags(rows: BranchRow[]): Map<string, Flag[]> {
-  const cac = (r: BranchRow) => (r.paidAcquired > 0 ? r.paidSpendCents / r.paidAcquired : NaN);
+  // Unrounded, as before; a branch with no CAC (definition v4: no paid customers, or no spend
+  // counted for them) is left out of the median rather than pulling it toward $0.
+  const cac = (r: BranchRow) => (cacDefined(r.paidSpendCents, r.paidAcquired) ? r.paidSpendCents / r.paidAcquired : NaN);
   const unknown = (r: BranchRow) => (r.acquired > 0 ? r.unknownAcquired / r.acquired : NaN);
   const medCac = median(rows.map(cac));
   const medUnknown = median(rows.map(unknown));

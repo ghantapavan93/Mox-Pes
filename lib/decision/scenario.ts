@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import { getNow, withTransaction, type Queryable } from "@/lib/db";
 import { SIGNAL_MIN_CUSTOMERS } from "@/lib/metrics/decision";
+import { paidCac } from "@/lib/metrics/scorecard";
 import { PERIODS, type Period, type PeriodKey } from "@/lib/period";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 import { gamma, quantile, rng, seedFrom } from "./stats";
@@ -218,7 +219,7 @@ export function projectScenario(
       spendCents: b.spendCents + (delta.get(b.channelCode) ?? 0),
       baselineCustomers: b.customers,
       customers: range(pointByChannel[k], drawsByChannel[k]),
-      baselineCostPerCustomerCents: b.customers > 0 ? Math.round(b.spendCents / b.customers) : null,
+      baselineCostPerCustomerCents: paidCac(b.spendCents, b.customers),
     })),
     paidCustomers: range(pointTotal, totals),
     deltaCustomers: range(pointTotal - baseCustomers, deltas),
@@ -301,7 +302,7 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
       monthDays: MONTH_DAYS,
       paidSpendCents,
       paidCustomers,
-      paidCacCents: paidCustomers > 0 ? Math.round(paidSpendCents / paidCustomers) : null,
+      paidCacCents: paidCac(paidSpendCents, paidCustomers),
       channels: baseline,
     },
     projection,

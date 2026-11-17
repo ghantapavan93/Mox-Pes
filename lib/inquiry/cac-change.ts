@@ -5,7 +5,7 @@ import type { Queryable } from "@/lib/db";
 import { FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import { traceBranchMetric, exactDollars } from "@/lib/lineage/trace";
 import { METRICS } from "@/lib/metrics/definitions";
-import { branchRows, freshness } from "@/lib/metrics/scorecard";
+import { branchRows, freshness, paidCac } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
 import type { Viewer } from "@/lib/viewer";
 
@@ -79,16 +79,18 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
   const oct = PERIODS.oct;
   const [sRow] = await read(branchRows(db, { from: sep.from, to: sep.to, branchIds: [b] }));
   const [oRow] = await read(branchRows(db, { from: oct.from, to: oct.to, branchIds: [b] }));
-  const cac = (r: typeof sRow) => (r.paidAcquired > 0 ? Math.round(r.paidSpendCents / r.paidAcquired) : null);
+  const cac = (r: typeof sRow) => paidCac(r.paidSpendCents, r.paidAcquired);
   const sCac = cac(sRow);
   const oCac = cac(oRow);
+  // Definition v4: no CAC without paid customers, nor for paid customers with no spend counted.
+  const undefinedBecause = (r: typeof sRow) => (r.paidAcquired === 0 ? "no paid customers" : "no paid-media spend is mapped to the branch for its paid customers");
   const bmIds = [evidence.branchMetrics(b, "sep"), evidence.branchMetrics(b, "oct")];
   const question = `Why did ${b}'s paid CAC increase?`;
   const definitionVersion = METRICS.paidCac.version;
 
   const premise: CacChangeResult["premise"] =
     sCac === null || oCac === null
-      ? { holds: null, detail: `Paid CAC is not defined for ${sCac === null ? "September" : "October"} (no paid customers), so a change cannot be measured.`, sepCacCents: sCac, octCacCents: oCac, evidenceIds: bmIds }
+      ? { holds: null, detail: `Paid CAC is not defined for ${sCac === null ? "September" : "October"} (${undefinedBecause(sCac === null ? sRow : oRow)}), so a change cannot be measured.`, sepCacCents: sCac, octCacCents: oCac, evidenceIds: bmIds }
       : { holds: oCac > sCac, detail: `Paid CAC went from ${exactDollars(sCac)} in September to ${exactDollars(oCac)} in October (${oCac > sCac ? "+" : ""}${exactDollars(oCac - sCac)}).`, sepCacCents: sCac, octCacCents: oCac, evidenceIds: bmIds };
 
   // ln(CAC Oct / CAC Sep) = ln(spend Oct / spend Sep) − ln(paid Oct / paid Sep), from the

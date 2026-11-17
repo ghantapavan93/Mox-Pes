@@ -77,7 +77,7 @@ describe("spend whose currency is not stated", () => {
     expect(t.value.matches).toBe(true);
     expect(t.value.reproduced).toEqual({ paidSpendCents: 30_000, paidAcquired: 2, paidCacCents: 15_000 });
     expect(t.excluded.find((e) => e.code === "CAMPAIGN_SPEND_HELD")).toMatchObject({ count: 2 });
-    expect(t.metric.definitionVersion).toMatch(/^v3/);
+    expect(t.metric.definitionVersion).toMatch(/^v4/);
   });
 
   it("counts once an engineer proposes and a different approver authorizes the account's rule, and is excluded again when it is revoked", async () => {

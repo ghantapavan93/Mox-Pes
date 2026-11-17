@@ -134,10 +134,12 @@ export function Segmented({ label, items, testId }: { label: string; items: Arra
 }
 
 export function PeriodTabs({ current, base, extra = "" }: { current: string; base: string; extra?: string }) {
+  // The tabs name their dates: "October" was read as the whole month, but the period ends Oct 30,
+  // the last complete day before the data cut-off (lib/period.ts; panel audit Q12, R-56).
   const tabs = [
-    ["oct", "October"],
-    ["sep", "September"],
-    ["all", "Both months"],
+    ["oct", "Oct 1–30"],
+    ["sep", "Sep 1–30"],
+    ["all", "Sep 1 – Oct 30"],
   ];
   return <Segmented label="Period" items={tabs.map(([key, label]) => ({ href: `${base}?period=${key}${extra}`, label, current: current === key }))} />;
 }

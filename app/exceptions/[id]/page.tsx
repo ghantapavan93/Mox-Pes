@@ -8,6 +8,7 @@ import { DecisionForm } from "@/components/DecisionForm";
 import { ReplayPanel } from "@/components/ReplayPanel";
 import { DriftReview } from "@/components/incidents/DriftReview";
 import { GapRecovery } from "@/components/incidents/GapRecovery";
+import { FixResult } from "@/components/incidents/FixResult";
 import { RevisionHold } from "@/components/incidents/RevisionHold";
 import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
@@ -227,6 +228,9 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         }
         actions={leadsWithDecision ? undefined : headerActions}
       />
+
+      {/* A resolved incident leads with what its fix did, before the evidence that was the problem. */}
+      {!leadsWithDecision && <FixResult exception={exception} viewer={viewer} />}
 
       {coverage && status && strip && (
         <GapRecovery

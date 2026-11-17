@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
+import { IncidentRef } from "@/components/incidents/IncidentRef";
 import { Callout, Card, metricAnchor, Skeleton } from "@/components/ui";
 import { METRICS } from "@/lib/metrics/definitions";
 import { shortDay, takeaway } from "@/lib/metrics/movement-copy";
@@ -51,12 +52,15 @@ export function MovementSection({
   periodKey,
   brandParam,
   selection,
+  scoped = false,
 }: {
   state: MovementState;
   branchOptions: Branch[];
   periodKey: string;
   brandParam: string | null;
   selection: Selection | null;
+  /** The viewer sees only some branches: a company-level hold is named, not linked (IncidentRef). */
+  scoped?: boolean;
 }) {
   const selectedBranch = state.kind === "ready" ? (state.movement.scope.branchId ?? "") : state.branchId;
   const picker = (
@@ -144,9 +148,9 @@ export function MovementSection({
               branch && (
                 <>
                   {" "}
-                  <Link href={`/exceptions/${m.holds[0].exceptionId}`} className="font-medium text-accent underline">
+                  <IncidentRef href={`/exceptions/${m.holds[0].exceptionId}`} companyLevel={m.holds[0].companyLevel} scoped={scoped} className="font-medium text-accent underline">
                     Open incident #{m.holds[0].exceptionId}
-                  </Link>
+                  </IncidentRef>
                 </>
               )
             )}

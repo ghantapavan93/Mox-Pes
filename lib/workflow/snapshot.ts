@@ -37,9 +37,20 @@ export interface BranchSnapshot {
   unknownAcquired: number;
   paidCacCents: number | null;
   openExceptions: number;
+  /**
+   * The open exceptions counted in openExceptions, so a receipt can say which ones the run closed
+   * and which it opened, not only that the count moved. Absent from snapshots stored before it.
+   */
+  openExceptionList?: OpenExceptionRef[];
   channels: Record<string, { spendCents: number; acquired: number; cacCents: number | null }>;
   /** October budget signal, as the branch page shows it. */
   budgetSignal: { signal: "shift" | "none"; trustworthy: boolean; blockers: number; ratio: number | null };
+}
+
+export interface OpenExceptionRef {
+  id: number;
+  kind: string;
+  amountCents: number;
 }
 
 export interface StateSnapshot {
@@ -88,6 +99,11 @@ async function branchSnapshot(db: Queryable, branchId: string): Promise<BranchSn
   if (!row) return null;
   const channels = await channelRows(db, scope);
   const signal = await budgetSignal(db, branchId, { from: PERIODS.oct.from, to: PERIODS.oct.to });
+  // The same rows branchRows counts as open_exceptions (lib/metrics/scorecard.ts).
+  const open = await db.query<{ id: number; kind: string; amount_cents: string | number | null }>(
+    "select id, kind, amount_cents from exceptions where status = 'open' and branch_id = $1 order by id",
+    [branchId],
+  );
   return {
     branchId,
     paidSpendCents: row.paidSpendCents,
@@ -96,6 +112,7 @@ async function branchSnapshot(db: Queryable, branchId: string): Promise<BranchSn
     unknownAcquired: row.unknownAcquired,
     paidCacCents: paidCac(row.paidSpendCents, row.paidAcquired),
     openExceptions: row.openExceptions,
+    openExceptionList: open.rows.map((e) => ({ id: Number(e.id), kind: e.kind, amountCents: Number(e.amount_cents ?? 0) })),
     channels: Object.fromEntries(
       channels
         .filter((c) => c.costBasis === "media")

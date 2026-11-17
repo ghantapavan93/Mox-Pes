@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IncidentRef } from "@/components/incidents/IncidentRef";
 import { Badge, Card, TableWrap, Td, Th } from "@/components/ui";
 import { budgetSignalCopy } from "@/lib/decision/signal-copy";
 import { count, money } from "@/lib/format";
@@ -10,7 +11,18 @@ import type { PeriodKey } from "@/lib/period";
  * observation on attributed cost and a data-integrity gate; readiness and effectiveness are the
  * Decision Lab's verdicts, linked rather than restated (see `budgetSignalCopy`).
  */
-export function BudgetSignalCard({ signal, periodLabel, periodKey }: { signal: BudgetSignal; periodLabel: string; periodKey: PeriodKey }) {
+export function BudgetSignalCard({
+  signal,
+  periodLabel,
+  periodKey,
+  scoped = false,
+}: {
+  signal: BudgetSignal;
+  periodLabel: string;
+  periodKey: PeriodKey;
+  /** The viewer sees only some branches: a company-level blocker is named, not linked (IncidentRef). */
+  scoped?: boolean;
+}) {
   const copy = budgetSignalCopy(signal, signal.branchId, periodKey);
   return (
     <Card
@@ -28,7 +40,10 @@ export function BudgetSignalCard({ signal, periodLabel, periodKey }: { signal: B
             <ul className="mt-1 list-disc pl-5">
               {signal.blockers.map((b) => (
                 <li key={b.exceptionId}>
-                  <Link href={`/exceptions/${b.exceptionId}`} className="text-accent hover:underline">#{b.exceptionId}</Link> {b.summary}
+                  <IncidentRef href={`/exceptions/${b.exceptionId}`} companyLevel={b.companyLevel} scoped={scoped} className="text-accent hover:underline">
+                    #{b.exceptionId}
+                  </IncidentRef>{" "}
+                  {b.summary}
                 </li>
               ))}
             </ul>

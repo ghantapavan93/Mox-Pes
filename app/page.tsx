@@ -5,6 +5,7 @@ import { AtRiskSplit } from "@/components/AtRiskSplit";
 import { Bridge } from "@/components/Bridge";
 import { CountUp } from "@/components/CountUp";
 import { StackedWeeks } from "@/components/StackedWeeks";
+import { IncidentRef } from "@/components/incidents/IncidentRef";
 import { MovementSectionAsync, MovementSkeleton } from "@/components/overview/MovementSection";
 import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
 import { attentionFlags } from "@/lib/attention";
@@ -152,7 +153,12 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           <>
             <BrandTabs viewer={viewer} current={brandParam} period={period.key} />
             <PeriodTabs current={period.key} base="/" extra={brandParam ? `&brand=${brandParam}` : ""} />
-            {compare && <span className="text-xs text-faint">Changes compare with September (same branches, same definitions). October&apos;s last week is still maturing, so serviced-customer counts lag.</span>}
+            {compare && (
+              <span className="text-xs text-faint">
+                Changes compare with September (same branches, same definitions). The period ends Oct 30, the last complete day: Oct 31&apos;s CRM records count in no
+                period yet. Its last week is still maturing, so serviced-customer counts lag.
+              </span>
+            )}
           </>
         }
       />
@@ -178,6 +184,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           periodKey={period.key}
           brandParam={brandParam}
           selection={channelParam && weekParam ? { channel: channelParam, week: weekParam } : null}
+          scoped={viewer.branchIds !== null}
         />
       </Suspense>
 
@@ -213,7 +220,14 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                     <p className="mt-1 leading-5 text-text">{h.summary}</p>
                   </div>
                   <span className="col-start-2 flex gap-3 text-xs sm:col-start-auto sm:flex-col sm:items-end sm:gap-0">
-                    <Link href={`/exceptions/${h.exceptionId}?period=${period.key}#recovery`} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">incident #{h.exceptionId}</Link>
+                    <IncidentRef
+                      href={`/exceptions/${h.exceptionId}?period=${period.key}#recovery`}
+                      companyLevel={h.companyLevel}
+                      scoped={viewer.branchIds !== null}
+                      className="inline-flex min-h-6 items-center font-medium text-accent hover:underline"
+                    >
+                      incident #{h.exceptionId}
+                    </IncidentRef>
                     <Link href={`/decisions?branch=${h.branchId}&period=${period.key}`} className="inline-flex min-h-6 items-center text-accent hover:underline">readiness</Link>
                   </span>
                 </li>

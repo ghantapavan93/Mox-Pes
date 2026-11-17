@@ -399,6 +399,14 @@ describe("execution", () => {
     expect(execution.verification!.ok).toBe(true);
     expect(execution.before!.branch!.unknownAcquired).toBe(N);
     expect(execution.after!.branch).toMatchObject({ paidAcquired: N, unknownAcquired: 0 });
+    // The receipt names which open exceptions the run closed and opened, not only a count: the
+    // replay closes its own exception, and the list is exactly the rows the count counts.
+    const openBefore = execution.before!.branch!.openExceptionList!;
+    const openAfter = execution.after!.branch!.openExceptionList!;
+    expect(openBefore.map((e) => e.id)).toContain(exceptionId);
+    expect(openAfter.map((e) => e.id)).not.toContain(exceptionId);
+    expect(openBefore).toHaveLength(execution.before!.branch!.openExceptions);
+    expect(openAfter).toHaveLength(execution.after!.branch!.openExceptions);
     expect(await ledger()).toEqual(invariants);
     expect(await count("select count(*) n from leads")).toBe(N);
     expect((await one(pool, "select status from exceptions where id = $1", [exceptionId])).status).toBe("resolved");

@@ -66,7 +66,7 @@ function fixture(over: Partial<Movement> = {}): Movement {
     markers: [
       { exceptionId: 77, status: "open", date: "2026-10-14", week: "2026-10-12", channel: "google_lsa", channelLabel: "Google Local Services", successors: [{ externalCampaignId: "pmax-x", classifiedAs: ["Google Search"], spendSinceCents: 150_000, firstSpendDate: "2026-10-14" }] },
     ],
-    holds: [{ exceptionId: 77, branchId: "B12", kind: "channel_coverage_gap", summary: "…", amountCents: 150_000 }],
+    holds: [{ exceptionId: 77, branchId: "B12", kind: "channel_coverage_gap", summary: "…", amountCents: 150_000, companyLevel: false }],
     deliveredThrough: "2026-10-30",
     feedStale: null,
     totals: { periodCents: 100_000, compareCents: 380_000 },

@@ -191,8 +191,36 @@ export async function decisionVerdicts(db: Queryable, viewer: Viewer, args: { br
     period: { key: period.key, label: period.label, from: period.from.toISOString(), to: period.to.toISOString() },
     asOf: now.toISOString(),
     budgetSignal: { signal: signal.signal, ratio: signal.ratio, trustworthy: signal.trustworthy, from: signal.from, to: signal.to },
-    channels,
+    channels: viewer.branchIds === null ? channels : await withoutUnopenableLinks(db, channels),
   };
+}
+
+/**
+ * A branch- or brand-scoped viewer may not open a company-level incident (no branch of its own,
+ * such as unmapped spend counted where its customers are): its reasons keep their text, say so,
+ * and lose the link that led to "not found" (book gap N27; components/incidents/IncidentRef.tsx).
+ */
+async function withoutUnopenableLinks<C extends { integrity: { reasons: Reason[] }; readiness: { reasons: Reason[] }; effectiveness: { reasons: Reason[] } }>(
+  db: Queryable,
+  channels: C[],
+): Promise<C[]> {
+  const linked = channels.flatMap((c) => [...c.integrity.reasons, ...c.readiness.reasons, ...c.effectiveness.reasons]).map((r) => Number(r.href?.match(/^\/exceptions\/(\d+)/)?.[1]));
+  const ids = [...new Set(linked.filter((id) => Number.isInteger(id)))];
+  if (ids.length === 0) return channels;
+  const { rows } = await db.query<{ id: string }>("select id from exceptions where id = any($1::bigint[]) and branch_id is null", [ids]);
+  const companyLevel = new Set(rows.map((r) => Number(r.id)));
+  if (companyLevel.size === 0) return channels;
+  const unlink = (reasons: Reason[]) =>
+    reasons.map((r) => {
+      const id = Number(r.href?.match(/^\/exceptions\/(\d+)/)?.[1]);
+      return companyLevel.has(id) ? { ...r, href: undefined, text: `${r.text} (company-wide, outside your scope; an analyst resolves it)` } : r;
+    });
+  return channels.map((c) => ({
+    ...c,
+    integrity: { ...c.integrity, reasons: unlink(c.integrity.reasons) },
+    readiness: { ...c.readiness, reasons: unlink(c.readiness.reasons) },
+    effectiveness: { ...c.effectiveness, reasons: unlink(c.effectiveness.reasons) },
+  }));
 }
 
 // ── integrity ────────────────────────────────────────────────────────────────

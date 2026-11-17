@@ -92,7 +92,7 @@ async function Branch({ params, searchParams }: Props) {
         </div>
       </Card>
 
-      <BudgetSignalCard signal={signal} periodLabel={period.label} periodKey={period.key} />
+      <BudgetSignalCard signal={signal} periodLabel={period.label} periodKey={period.key} scoped={viewer.branchIds !== null} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Channels" subtitle="Acquisitions credited by first evidenced touch">

@@ -40,6 +40,11 @@ export interface Blocker {
   kind: string;
   summary: string;
   /**
+   * An incident with no branch of its own (unmapped spend, counted where its customers are). Only
+   * company-wide roles may open it, so a branch- or brand-scoped view names it without a link.
+   */
+  companyLevel: boolean;
+  /**
    * For a hold on refused spend revisions: the refused revisions dated inside the period, each
    * beside the amount that still counts (lib/reconcile/refused-revisions.ts). Empty otherwise.
    */
@@ -69,18 +74,18 @@ export async function budgetSignal(db: Queryable, branchId: string, scope: Omit<
 
   // A hold on refused spend revisions names its campaign-days' dates: it holds the decision for a
   // period containing one of them, never another period's (HOLD-TO-DECISION.md §1.4, scenario 2b).
-  const { rows } = await db.query<{ id: string; kind: string; summary: string; revisions: unknown }>(
-    `select id, kind, summary, revisions from (
-       select e.id, e.kind, e.summary, e.severity, ${refusedRevisionsInPeriod("$4", "$5")} as revisions from exceptions e
+  const { rows } = await db.query<{ id: string; kind: string; summary: string; revisions: unknown; company_level: boolean }>(
+    `select id, kind, summary, revisions, company_level from (
+       select e.id, e.kind, e.summary, e.severity, ${refusedRevisionsInPeriod("$4", "$5")} as revisions, false as company_level from exceptions e
        where e.status = 'open' and e.branch_id = $1 and e.kind = any($2::text[]) and ${refusedDatesInPeriod("$4", "$5")}
        union
-       select u.id, u.kind, u.summary, u.severity, null::jsonb from (${UNMAPPED_AT_BRANCH}) u
+       select u.id, u.kind, u.summary, u.severity, null::jsonb, true from (${UNMAPPED_AT_BRANCH}) u
        where u.branch_id = $1 and u.channel_code = any($3::text[]) and u.initial_completed_at >= $4 and u.initial_completed_at < $5
      ) b
      order by case severity when 'high' then 0 when 'medium' then 1 else 2 end, id`,
     [branchId, DECISION_BLOCKING_KINDS, channels.map((c) => c.channelCode), scope.from, scope.to],
   );
-  const blockers = rows.map((r) => ({ exceptionId: Number(r.id), kind: r.kind, summary: r.summary, revisions: revisionsOf({ revisions: r.revisions }) }));
+  const blockers = rows.map((r) => ({ exceptionId: Number(r.id), kind: r.kind, summary: r.summary, companyLevel: r.company_level, revisions: revisionsOf({ revisions: r.revisions }) }));
   const pick = (c: ChannelRow | null) =>
     c && { channelCode: c.channelCode, label: c.label, spendCents: c.spendCents, acquired: c.acquired, cacCents: c.cacCents };
   return {
@@ -103,6 +108,8 @@ export interface DecisionHold {
   amountCents: number;
   /** A hold on refused spend revisions (lib/reconcile/refused-revisions.ts), not held lead records. */
   refusedRevision?: boolean;
+  /** The incident has no branch of its own (see Blocker.companyLevel): only company-wide roles may open it. */
+  companyLevel: boolean;
 }
 
 /**
@@ -113,18 +120,26 @@ export interface DecisionHold {
  * every open hold counts.
  */
 export async function decisionHolds(db: Queryable, branchIds: string[] | null, limit = 8, period: { from: Date; to: Date } | null = null): Promise<DecisionHold[]> {
-  const { rows } = await db.query<{ id: string; branch_id: string; kind: string; summary: string; amount_cents: string; refused_revision: boolean }>(
-    `select id, branch_id, kind, summary, amount_cents, refused_revision from (
-       select e.id, e.branch_id, e.kind, e.summary, e.amount_cents, e.severity, (e.evidence ? 'spendDates') as refused_revision from exceptions e
+  const { rows } = await db.query<{ id: string; branch_id: string; kind: string; summary: string; amount_cents: string; refused_revision: boolean; company_level: boolean }>(
+    `select id, branch_id, kind, summary, amount_cents, refused_revision, company_level from (
+       select e.id, e.branch_id, e.kind, e.summary, e.amount_cents, e.severity, (e.evidence ? 'spendDates') as refused_revision, false as company_level from exceptions e
        where e.status = 'open' and e.branch_id is not null and e.kind = any($1::text[])
          and ($4::timestamptz is null or ${refusedDatesInPeriod("$4", "$5")})
        union
-       select distinct u.id, u.branch_id, u.kind, u.summary, u.amount_cents, u.severity, false from (${UNMAPPED_AT_BRANCH}) u
+       select distinct u.id, u.branch_id, u.kind, u.summary, u.amount_cents, u.severity, false, true from (${UNMAPPED_AT_BRANCH}) u
      ) h
      where ($2::text[] is null or branch_id = any($2::text[]))
      order by case severity when 'high' then 0 when 'medium' then 1 else 2 end, amount_cents desc, id
      limit $3`,
     [DECISION_BLOCKING_KINDS, branchIds, limit, period?.from ?? null, period?.to ?? null],
   );
-  return rows.map((r) => ({ exceptionId: Number(r.id), branchId: r.branch_id, kind: r.kind, summary: r.summary, amountCents: Number(r.amount_cents), refusedRevision: r.refused_revision }));
+  return rows.map((r) => ({
+    exceptionId: Number(r.id),
+    branchId: r.branch_id,
+    kind: r.kind,
+    summary: r.summary,
+    amountCents: Number(r.amount_cents),
+    refusedRevision: r.refused_revision,
+    companyLevel: r.company_level,
+  }));
 }

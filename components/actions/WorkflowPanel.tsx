@@ -164,6 +164,11 @@ export async function WorkflowPanel({ exception, viewer }: { exception: Exceptio
 
 const DRY_RUNNABLE: ProposalStatus[] = ["draft", "dry_run_failed", "dry_run_ok", "stale", "approved"];
 
+/** Whether the viewer may open a branch's incidents (an unscoped viewer may open every branch's). */
+function canOpenBranch(viewer: Viewer, branchId: string | null): boolean {
+  return branchId !== null && (viewer.branchIds === null || viewer.branchIds.includes(branchId));
+}
+
 function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewer: Viewer }) {
   const live = (LIVE_PROPOSAL_STATUSES as readonly string[]).includes(p.status);
   const sameRole = viewer.role === p.proposedRole;
@@ -252,7 +257,15 @@ function ProposalCard({ proposal: p, viewer }: { proposal: ProposalDetail; viewe
           <div className="space-y-2 px-3 py-2.5">
             {p.execution.error && <p className="text-xs text-bad">{failureText("Rolled back", p.execution.verification)}</p>}
             {p.execution.result && <ResultLine result={p.execution.result} />}
-            {p.execution.before && <SnapshotDiff before={p.execution.before} after={p.execution.after} verification={p.execution.verification} />}
+            {p.execution.before && (
+              <SnapshotDiff
+                before={p.execution.before}
+                after={p.execution.after}
+                verification={p.execution.verification}
+                executed={p.execution.status === "succeeded"}
+                linkExceptions={canOpenBranch(viewer, p.execution.before.branch?.branchId ?? null)}
+              />
+            )}
             <details className="group border-t border-border pt-2 text-xs" data-testid="idempotency-proof">
               <summary className="inline-flex items-center gap-1 font-medium text-accent hover:underline">
                 <ChevronRight aria-hidden className="size-3 transition-transform duration-150 group-open:rotate-90" />

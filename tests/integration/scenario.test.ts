@@ -8,8 +8,10 @@ import { branchRows, conversionBridge, totals } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
 import { quarantineGroupIds, replay } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
-import { budgetSignal } from "@/lib/metrics/decision";
+import { budgetSignal, decisionHolds } from "@/lib/metrics/decision";
+import { decisionVerdicts } from "@/lib/decision/verdicts";
 import { getException } from "@/lib/queries";
+import { VIEWERS, type Viewer } from "@/lib/viewer";
 import { one, testPool } from "../helpers";
 
 /**
@@ -154,5 +156,22 @@ describe("seeded demo scenario", () => {
     expect(signal.blockers.map((b) => b.exceptionId)).toContain(Number(unmapped.id));
     // It blocks only where its customers are: the ChangeGuard branch is not held by it.
     expect((await budgetSignal(pool, "B09", OCT)).blockers.map((b) => b.exceptionId)).not.toContain(Number(unmapped.id));
+    // No branch owns it, so only company-wide roles may open it: holds and blockers say so, and a
+    // branch- or brand-scoped view names it without a link to "not found" (book gap N27).
+    expect(signal.blockers.find((b) => b.exceptionId === Number(unmapped.id))?.companyLevel).toBe(true);
+    expect((await decisionHolds(pool, ["B44"])).find((h) => h.exceptionId === Number(unmapped.id))).toMatchObject({ branchId: "B44", companyLevel: true });
+    // Control, whatever the earlier tests resolved: a hold is company-level exactly when its incident
+    // has no branch, so a branch's own incidents stay openable from its holds.
+    for (const h of await decisionHolds(pool, null, 100)) {
+      const own = await one<{ branch_id: string | null }>(pool, "select branch_id from exceptions where id = $1", [h.exceptionId]);
+      expect(h.companyLevel, `hold #${h.exceptionId}`).toBe(own.branch_id === null);
+    }
+    // Decision Lab: the brand lead (B44 is in the brand) reads the reason without a dead link; a
+    // company-wide role still opens it.
+    const hrefs = async (viewer: Viewer) =>
+      (await decisionVerdicts(pool, viewer, { branchId: "B44", period: PERIODS.oct })).channels.flatMap((c) => [...c.integrity.reasons, ...c.readiness.reasons]).map((r) => r.href);
+    expect(VIEWERS.brand.branchIds).toContain("B44");
+    expect(await hrefs(VIEWERS.brand)).not.toContain(`/exceptions/${unmapped.id}`);
+    expect(await hrefs(VIEWERS.marketing)).toContain(`/exceptions/${unmapped.id}`);
   });
 });

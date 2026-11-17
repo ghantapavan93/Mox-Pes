@@ -37,7 +37,8 @@ tools (`pg_dump`, `pg_restore`).
 1. In Vercel, choose **Add New**, then **Project**, and import `ghantapavan93/Mox-Pes`. The
    framework is detected as Next.js; leave the build settings as they are.
 2. Before the first deploy, add one environment variable: `DATABASE_URL`, with the value step 2
-   left on the clipboard (Ctrl+V).
+   left on the clipboard (Ctrl+V). The plain External Database URL works too: the app turns on
+   TLS with certificate checks for any database that is not on the same machine (`lib/db.ts`).
 3. Deploy. The link is `https://<project>.vercel.app`.
 
 Leave every other variable unset:

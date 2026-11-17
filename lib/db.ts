@@ -23,9 +23,31 @@ export function getPool(): Pool {
   return globalForPool.__rsPool;
 }
 
-/** Every connection runs in UTC, so no result depends on the database server's time zone. */
+/**
+ * Every connection runs in UTC, so no result depends on the database server's time zone; a
+ * database on another machine is reached over TLS (see tlsOption).
+ */
 export function createPool(connectionString: string): Pool {
-  return new Pool({ connectionString, max: 10, options: "-c TimeZone=UTC" });
+  return new Pool({ connectionString, max: 10, options: "-c TimeZone=UTC", ...tlsOption(connectionString) });
+}
+
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/**
+ * TLS for a database on another machine. Hosted Postgres (Render, behind the Vercel deployment)
+ * refuses plain connections, and the URL its dashboard copies names no sslmode, so a remote host
+ * gets TLS with full certificate checks by default. An sslmode in the URL still decides
+ * (node-postgres lets the URL override this option). Local databases (development, tests, CI)
+ * and Unix sockets stay plain.
+ */
+export function tlsOption(connectionString: string): { ssl?: { rejectUnauthorized: true } } {
+  let host: string;
+  try {
+    host = new URL(connectionString).hostname;
+  } catch {
+    return {};
+  }
+  return !host || LOCAL_HOSTS.has(host) ? {} : { ssl: { rejectUnauthorized: true } };
 }
 
 export async function withTransaction<T>(pool: Pool, fn: (tx: PoolClient) => Promise<T>): Promise<T> {

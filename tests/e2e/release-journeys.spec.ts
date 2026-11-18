@@ -221,7 +221,9 @@ test.describe("J3 · incidents and the Decision Lab", () => {
     await setRole(page, "guest");
     await page.goto(`/exceptions/${replayable}`);
     await expect(page.getByTestId("exception-summary")).toBeVisible();
-    await expect(page.getByText("Investigations need any role except guest.")).toBeVisible();
+    // The public-demo guest may ask in their own workspace (J4), so the page offers it, as a
+    // secondary link: it no longer says guests cannot investigate.
+    await expect(page.getByTestId("investigate-link")).toBeVisible();
     await expect(page.getByRole("button", { name: /Dry run|Propose fix|Approve|Execute/ })).toHaveCount(0);
     expect(await page.locator(PRIMARY).count()).toBe(0);
 
@@ -247,8 +249,17 @@ test.describe("J3 · incidents and the Decision Lab", () => {
     await expect(receipt.getByTestId("fix-result-cac")).toContainText("$490.11");
     await expect(receipt.getByTestId("fix-result-cac")).toContainText("$271.31");
     await expect(receipt.getByTestId("fix-result-why")).toContainText("paid customers 31 → 56");
-    await expect(receipt.getByTestId("fix-result-unchanged")).toContainText("paid-media spend ($15,193) and serviced customers on all channels (109) did not change");
+    // The spend to the cent, so the reader can check both CACs: $15,193.47 ÷ 31 and ÷ 56.
+    await expect(receipt.getByTestId("fix-result-arithmetic")).toContainText("Both divide the same $15,193.47 of paid spend: by 31 paid customers before the repair, by 56 after.");
+    await expect(receipt.getByTestId("fix-result-unchanged")).toContainText("paid-media spend ($15,193.47) and serviced customers on all channels (109) did not change");
+    // A completed repair, approved as a repair: not a budget move, and the decision one link away.
+    await expect(receipt.getByTestId("fix-result-approval")).toContainText("The repair only, not a budget move");
+    await expect(receipt.getByTestId("fix-result-decision")).toHaveAttribute("href", "/decisions?branch=B20&period=oct");
+    await expect(page.getByText("Until they are replayed")).toHaveCount(0);
+    await expect(page.getByText(/While they were held, every downstream number that depended on them was understated/)).toBeVisible();
+    // The replay's whole window, kept apart from October.
     await expect(receipt.getByTestId("fix-result-window")).toContainText("Replay window");
+    await expect(receipt.getByTestId("fix-result-window")).toContainText("September and October together, not the October figure above");
     await expect(receipt.getByTestId("fix-result-window")).toContainText("$364.75 → $284.06");
     expect(await page.locator(PRIMARY).count()).toBeLessThanOrEqual(1);
 

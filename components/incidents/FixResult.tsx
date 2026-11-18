@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
+import { exactDollars } from "@/lib/lineage/trace";
 import { StateBadge } from "@/components/ui";
 import { PERIODS } from "@/lib/period";
 import { CHANNEL_BY_CODE } from "@/lib/reference";
@@ -24,6 +25,9 @@ import { caseForException, caseProposals } from "@/lib/workflow/queries";
  * It leads with the latest calendar month the business clock has reached (October on the seeded
  * data), the period a budget decision is made on, with the replay's whole window below it
  * (release design §5.8). An execution stored before the month was captured shows the window only.
+ *
+ * It says what the approval covered: the repair, never a budget move. A corrected measurement is
+ * not a decision to move money; that is made in Decision Lab, which it links to.
  */
 export async function FixResult({ exception, viewer }: { exception: ExceptionRow; viewer: Viewer }) {
   if (exception.status !== "resolved") return null;
@@ -58,6 +62,11 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
   const opened = b0.openExceptionList && b1.openExceptionList ? b1.openExceptionList.filter((e) => !wasOpen.has(e.id)) : [];
   const openedKinds = [...new Set(opened.map((e) => e.kind))];
   const canOpen = canSeeBranch(viewer, branchId);
+  // The period the headline figure measures, in a sentence, and where its budget decision is made.
+  // The snapshot's budget signal is always October's (lib/workflow/snapshot.ts).
+  const monthName = monthKey === "oct" ? "October" : monthKey === "sep" ? "September" : "the replay window";
+  const decisionsHref = `/decisions?branch=${branchId}&period=${monthKey ?? "oct"}`;
+  const signal = b1.budgetSignal;
 
   return (
     <section aria-labelledby="fix-result-title" className="overflow-hidden rounded-xl bg-surface ring-1 ring-text/10" data-testid="fix-result">
@@ -75,7 +84,8 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
       </div>
       <div className="flex flex-wrap items-center gap-2 px-4 pt-3" data-testid="fix-result-states">
         <StateBadge state="corrected" detail={`CAC ${money(b0.paidCacCents)} → ${money(b1.paidCacCents)}`} testId="fix-result-corrected" />
-        {approval && <StateBadge state="approved" detail={`by ${approval.actor}, ${dateTime(approval.decidedAt)}`} testId="fix-result-approved" />}
+        {/* What the approval covered: this repair, never a budget move. */}
+        {approval && <StateBadge state="approved" detail={`repair only, by ${approval.actor}, ${dateTime(approval.decidedAt)}`} testId="fix-result-approved" />}
       </div>
       <div className="space-y-3 px-4 py-3">
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
@@ -91,6 +101,14 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
             {money(b1.paidCacCents)}
           </span>
         </p>
+        {/* The arithmetic a reader can check: one spend, two denominators. */}
+        {spendSame && b0.paidCacCents !== null && b1.paidCacCents !== null && (
+          <p className="text-sm leading-6 text-muted" data-testid="fix-result-arithmetic">
+            Both divide the same <span className="font-medium tabular-nums text-text">{exactDollars(b1.paidSpendCents)}</span> of paid spend: by{" "}
+            <span className="font-medium tabular-nums text-text">{count(b0.paidAcquired)}</span> paid customers before the repair, by{" "}
+            <span className="font-medium tabular-nums text-text">{count(b1.paidAcquired)}</span> after.
+          </p>
+        )}
         <dl className="grid gap-x-6 gap-y-2 text-sm leading-6 md:grid-cols-[8rem_minmax(0,1fr)]">
           <dt className="font-medium text-text">Why it moved</dt>
           <dd className="text-muted" data-testid="fix-result-why">
@@ -104,12 +122,24 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
             <>
               <dt className="font-medium text-text">What did not</dt>
               <dd className="text-muted" data-testid="fix-result-unchanged">
-                {[spendSame && `paid-media spend (${money(b1.paidSpendCents)})`, customersSame && `serviced customers on all channels (${count(b1.acquired)})`].filter(Boolean).join(" and ")}
+                {[spendSame && `paid-media spend (${exactDollars(b1.paidSpendCents)})`, customersSame && `serviced customers on all channels (${count(b1.acquired)})`].filter(Boolean).join(" and ")}
                 {(spendSame || customersSame) && " did not change"}
                 {ledgerConserved && `${spendSame || customersSame ? "; " : ""}the five ledger totals were conserved`}.
               </dd>
             </>
           )}
+          {/* The approval covered the repair. A corrected measurement is not a budget decision. */}
+          <dt className="font-medium text-text">What was approved</dt>
+          <dd className="text-muted" data-testid="fix-result-approval">
+            The repair only, not a budget move: it corrected how {monthName} was measured.{" "}
+            {signal?.trustworthy && signal.recommendation !== "held" && <>The October budget signal&apos;s inputs now agree; </>}
+            {signal?.trustworthy && signal.recommendation !== "held" ? "moving" : "Moving"} budget is a separate decision.{" "}
+            {canOpen && (
+              <Link href={decisionsHref} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline" data-testid="fix-result-decision">
+                Decision readiness for {branchId} →
+              </Link>
+            )}
+          </dd>
           <dt className="font-medium text-text">Still open</dt>
           <dd className="text-muted" data-testid="fix-result-open">
             {opened.length > 0 ? (
@@ -133,19 +163,19 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
             )}
             {/* This fix's verification is history; the decision's status is what holds it now. A
                 snapshot stored before 2026-11-17 has no recommendation: read as before. */}
-            {b1.budgetSignal?.trustworthy && b1.budgetSignal.recommendation !== "held" && <> The October budget signal is now trustworthy: its inputs agree, and moving budget is still a decision.</>}
-            {b1.budgetSignal?.trustworthy && b1.budgetSignal.recommendation === "held" && (
+            {signal?.trustworthy && signal.recommendation === "held" && (
               <span data-testid="fix-result-still-held">
                 {" "}
-                No open incident gates the October budget signal now, but its recommendation is still held: {b1.budgetSignal.heldBy?.[0] ?? "a channel's cost is not counted yet."}
+                No open incident gates the October budget signal now, but its recommendation is still held: {signal.heldBy?.[0] ?? "a channel's cost is not counted yet."}
               </span>
             )}
           </dd>
         </dl>
+        {/* The replay's whole window, apart from the month above: its figures are both months together. */}
         {monthKey && (
-          <p className="text-sm text-muted" data-testid="fix-result-window">
-            <span className="font-medium text-text">Replay window</span>, {PERIODS.all.label}: paid-media CAC {money(w0.paidCacCents)} → {money(w1.paidCacCents)}, paid
-            customers {count(w0.paidAcquired)} → {count(w1.paidAcquired)}.
+          <p className="border-t border-border pt-3 text-sm leading-6 text-muted" data-testid="fix-result-window">
+            <span className="font-medium text-text">Replay window</span>, {PERIODS.all.label}: September and October together, not the {monthName} figure above. Paid-media CAC{" "}
+            {money(w0.paidCacCents)} → {money(w1.paidCacCents)}, paid customers {count(w0.paidAcquired)} → {count(w1.paidAcquired)}.
           </p>
         )}
         <p className="text-xs">

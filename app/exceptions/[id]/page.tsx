@@ -77,6 +77,15 @@ const WHY: Record<string, string> = {
     "Nothing failed validation. A paid channel kept producing leads at this branch while its spend stopped, because the spend now arrives under a new campaign that the mapper files in a different channel. Cost per customer is wrong for both channels until the stored records are re-mapped. This demo simulates the move Google is making for eligible Local Services advertisers, to Performance Max campaigns with pay-per-lead goals. The branch, dates and amounts are synthetic, and the misfiling is ours: our older mapper filed the migrated campaign's spend as Google Search. Google did not.",
 };
 
+/**
+ * The same kinds once resolved, in the past tense: the hold is over, so what it did is history.
+ * Kinds not listed read the same either way.
+ */
+const RESOLVED_WHY: Record<string, string> = {
+  quarantined_source_records:
+    "Records failed validation and were held back instead of being guessed at. While they were held, every downstream number that depended on them was understated — here, customers who called in looked like they came from nowhere.",
+};
+
 /** A hold on refused spend revisions (lib/reconcile/refused-revisions.ts): spend, not lead records. */
 const REVISION_WHY =
   "The source sent a newer revision of this spend, and intake refused it. The ledger keeps counting the last accepted amount and never counts the refused one, so the date is neither $0 nor the refused amount. Until a newer revision is accepted, the budget decision that reads this date is held.";
@@ -179,16 +188,25 @@ async function ExceptionDetail({ params, searchParams }: Props) {
         ? REVISION_WHY
         : unattributed
           ? UNATTRIBUTED_WHY
-          : WHY[exception.kind];
+          : exception.status === "resolved"
+            ? (RESOLVED_WHY[exception.kind] ?? WHY[exception.kind])
+            : WHY[exception.kind];
   // An incident with a decision panel (a coverage gap, a hold on refused revisions) leads with it,
   // straight after the title: on a phone the decision, why and the one next action come first in
   // reading and focus order. What was detected, what the kind means and the secondary actions follow.
   const leadsWithDecision = Boolean((coverage && status) || revisionHold);
   const headerActions = (
     <>
-      {viewer.can.investigate ? (
-        // Secondary beside a decision panel: the panel's next action is the page's one primary.
-        <ButtonLink href={`/investigator?exception=${exception.id}`} variant={leadsWithDecision ? "secondary" : "primary"} testId="investigate-link" icon={<Bot aria-hidden className="size-4" />}>
+      {/* A public-demo guest asks in their own workspace (app/investigator/page.tsx). */}
+      {viewer.can.investigate || viewer.can.workspace ? (
+        // Secondary beside a decision panel (the panel's next action is the page's one primary), and
+        // for the guest, who has no action on an incident: asking is reading, not acting.
+        <ButtonLink
+          href={`/investigator?exception=${exception.id}`}
+          variant={leadsWithDecision || !viewer.can.investigate ? "secondary" : "primary"}
+          testId="investigate-link"
+          icon={<Bot aria-hidden className="size-4" />}
+        >
           Investigate with AI
         </ButtonLink>
       ) : (
@@ -635,8 +653,13 @@ async function Records({ exception }: { exception: ExceptionRow }) {
     const ids = await quarantineGroupIds(pool, { source: String(ev.source), errorCode: String(ev.errorCode), branchId: exception.branchId });
     const sampleIds = ids.length > 0 ? ids.slice(0, 12) : ((ev.sampleRawEventIds as number[]) ?? []);
     const samples = await quarantineSamples(pool, sampleIds);
+    // Resolved: the records shown are the ones that were held, as they are stored now.
+    const resolved = exception.status === "resolved";
     return (
-      <Card title={`Held records (${count(ids.length)} quarantined now)`} subtitle="Payloads are stored redacted: contact details are hashed before anything else sees them">
+      <Card
+        title={resolved ? `Records that were held (${count(ids.length)} held now)` : `Held records (${count(ids.length)} quarantined now)`}
+        subtitle="Payloads are stored redacted: contact details are hashed before anything else sees them"
+      >
         <TableWrap label="Raw events behind this incident">
           <thead>
             <tr>
@@ -644,7 +667,7 @@ async function Records({ exception }: { exception: ExceptionRow }) {
               <Th>Source time</Th>
               <Th>Status / error</Th>
               <Th>Payload (redacted)</Th>
-              <Th>CRM customer it would attach to</Th>
+              <Th>{resolved ? "CRM customer it attached to" : "CRM customer it would attach to"}</Th>
             </tr>
           </thead>
           <tbody>

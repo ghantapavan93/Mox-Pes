@@ -43,7 +43,7 @@ export const METRICS: Record<string, MetricDefinition> = {
   },
   paidCac: {
     key: "paidCac",
-    version: "v4 (2026-11-17: not computed where paid customers have no paid spend counted in the scope, which read $0.00, business-fit fixture; v3 2026-11-12: customers credited to a campaign whose spend was all held at intake left the denominator too, held-out IV-26; v2 2026-11-09: campaigns mapped to no branch, audit D-3)",
+    version: "v4 (2026-11-17: not computed where paid customers have no paid spend counted in the scope, which read $0.00; v3 2026-11-12: customers credited to a campaign whose spend was all held at intake leave the denominator too; v2 2026-11-09: so do customers of campaigns mapped to no branch)",
     label: "Paid-media CAC",
     formula: "Paid media spend ÷ new customers serviced whose first evidenced touch was a paid channel",
     sources: "paidSpend ÷ acquired (paid channels)",

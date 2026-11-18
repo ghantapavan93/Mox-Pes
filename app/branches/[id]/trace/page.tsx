@@ -140,7 +140,7 @@ async function Trace({ params, searchParams }: Props) {
             columns={1}
             items={[
               ["Formula", trace.metric.formula],
-              ["Scope", `${branch.id} ${branch.name} (${branch.brandId}), ${period.label}`],
+              ["Scope", `${branch.id} ${branch.name} (${BRAND_BY_ID.get(branch.brandId)?.name ?? "no brand"}), ${period.label}`],
               ["Caveat", trace.metric.caveat],
             ]}
           />

@@ -64,7 +64,7 @@ async function Demo() {
         )}
         <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-muted">
           <li>Roles switch three times (marketing → engineer → approver). The bar at the top of each step has a “Use this role” button.</li>
-          <li>Every step&apos;s numbers are pinned in tests/fixtures/b09-golden.json and checked in the browser by the four-minute-path test.</li>
+          <li>Every step&apos;s numbers are pinned in the project&apos;s tests and checked in a browser, step by step.</li>
         </ul>
       </Card>
 

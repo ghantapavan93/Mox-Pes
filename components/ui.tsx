@@ -426,7 +426,8 @@ export function FilterSelect({ name, label, value, options }: { name: string; la
   return (
     <label className="flex min-w-0 flex-col gap-1">
       <span className="text-[11px] font-medium text-muted">{label}</span>
-      <select name={name} defaultValue={value} className="h-8 max-w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-text">
+      {/* Keyed by its value: an uncontrolled select keeps its old choice when a link changes the URL under it. */}
+      <select key={value} name={name} defaultValue={value} className="h-8 max-w-full rounded-md border border-border-strong bg-surface px-2 text-sm text-text">
         {options.map(([v, l]) => (
           <option key={v} value={v}>
             {l}

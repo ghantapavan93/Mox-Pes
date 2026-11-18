@@ -4,7 +4,7 @@ import { ChangeForm } from "@/components/changes/ChangeForm";
 import { Badge, Callout, Card, EmptyState, PageHeader, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { listCampaignOptions, listChanges } from "@/lib/changeguard/service";
 import { dateTime } from "@/lib/format";
-import { BRANCHES } from "@/lib/reference";
+import { BRAND_BY_ID, BRANCHES } from "@/lib/reference";
 import { getPool, getViewer } from "@/lib/server";
 import { STATUS_TONE } from "./status";
 
@@ -38,7 +38,7 @@ async function Changes({ searchParams }: { searchParams: SearchParams }) {
   const [sp, viewer] = await Promise.all([searchParams, getViewer()]);
   const pool = getPool();
   const [changes, campaigns] = await Promise.all([listChanges(pool, viewer), viewer.can.propose ? listCampaignOptions(pool, viewer) : Promise.resolve([])]);
-  const branches = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name} (${b.brandId})` }));
+  const branches = BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name} (${BRAND_BY_ID.get(b.brandId)?.name ?? "no brand"})` }));
   // Arriving from a metric trace (/branches/[id]/trace): the campaign and branch it pointed at.
   // Only values this viewer could pick anyway are used; anything else is ignored.
   const askedCampaign = Number(typeof sp.campaign === "string" ? sp.campaign : NaN);
@@ -60,7 +60,7 @@ async function Changes({ searchParams }: { searchParams: SearchParams }) {
       <Card title="Changes" flush>
         {changes.length === 0 ? (
           <div className="p-4">
-            <EmptyState title="No changes yet">Propose one above: an unmapped campaign is a good first change.</EmptyState>
+            <EmptyState title="No changes yet">{viewer.can.propose ? "Propose one above: an unmapped campaign is a good first change." : "None has been proposed in your scope."}</EmptyState>
           </div>
         ) : (
           <TableWrap flush label="Configuration changes" minWidth={720} testId="change-list">

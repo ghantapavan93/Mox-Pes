@@ -16,7 +16,7 @@ import { CHECK_LABEL, type PreflightCheck } from "@/lib/changeguard/model";
 import { getChange, listCampaignOptions, type ChangeRow } from "@/lib/changeguard/service";
 import { dateTime, money } from "@/lib/format";
 import { parseRecordId } from "@/lib/record-id";
-import { BRANCHES, BRANCH_BY_ID, platformLabel } from "@/lib/reference";
+import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, platformLabel } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import { STATUS_TONE } from "../status";
@@ -143,7 +143,7 @@ async function Change({ params }: { params: Params }) {
               Campaign <strong>{String(campaign?.externalId ?? payload.campaignId)}</strong>
               {campaign?.platform ? ` (${platformLabel(campaign.platform)}, “${campaign.name ?? ""}”)` : ""} maps to{" "}
               <strong>{previous ?? "no branch"}</strong> now; this change maps it to <strong>{payload.branchId} {BRANCH_BY_ID.get(payload.branchId ?? "")?.name}</strong>{" "}
-              (brand {BRANCH_BY_ID.get(payload.branchId ?? "")?.brandId}).
+              (brand {BRAND_BY_ID.get(BRANCH_BY_ID.get(payload.branchId ?? "")?.brandId ?? "moxie")?.name}).
             </p>
           ) : (
             <p>
@@ -259,7 +259,7 @@ async function Change({ params }: { params: Params }) {
               {canCorrect && (
                 <ChangeForm
                   campaigns={campaigns}
-                  branches={BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name} (${b.brandId})` }))}
+                  branches={BRANCHES.filter((b) => !viewer.branchIds || viewer.branchIds.includes(b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name} (${BRAND_BY_ID.get(b.brandId)?.name ?? "no brand"})` }))}
                   defaults={{ campaignId: payload.campaignId, branchId: correction.branchId, reason: `Corrected: ${correction.why}` }}
                   supersedes={change.id}
                   submitLabel="Resubmit corrected change"

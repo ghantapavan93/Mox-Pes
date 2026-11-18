@@ -25,6 +25,21 @@ function Facts({ items }: { items: Array<[string, ReactNode]> }) {
 
 const HEALTH_TONE: Record<HealthStatus, "good" | "warn" | "bad" | "neutral"> = { healthy: "good", degraded: "warn", failing: "bad", idle: "neutral" };
 
+/**
+ * The address a connector reads, as a reader should see it. The seeded connector points at this
+ * app's own FieldRoutes mock on localhost: on a deployment "localhost" would mean the reader's own
+ * machine, and the mock only runs in the local demo, so it is named in words instead.
+ */
+function shownBaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) && u.pathname.replace(/\/+$/, "").endsWith("/api/mock/fieldroutes")) return "this app's FieldRoutes mock (local demo)";
+  } catch {
+    // Not a URL: shown as stored.
+  }
+  return url;
+}
+
 export function ConnectorCard({ summary, controls }: { summary: ConnectorSummary; controls: ReactNode }) {
   const { connector: c, health: h, credentialSources: cred } = summary;
   return (
@@ -37,7 +52,7 @@ export function ConnectorCard({ summary, controls }: { summary: ConnectorSummary
           {!c.enabled && <Badge tone="bad">disabled</Badge>}
         </span>
       }
-      subtitle={<span className="font-mono">{c.slug} · {c.baseUrl}</span>}
+      subtitle={<span className="font-mono">{c.slug} · {shownBaseUrl(c.baseUrl)}</span>}
     >
       <div className="space-y-4">
         <p className="text-sm text-muted" data-testid="connector-health-reason">{h.reason}</p>

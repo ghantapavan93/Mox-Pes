@@ -53,7 +53,7 @@ async function Assurance({ searchParams }: { searchParams: SearchParams }) {
       )}
       <Card title="Recent checks" subtitle="Every check is recorded with what was entered, who ran it and the result. Only checks within your scope are listed.">
         {checks.length === 0 ? (
-          <EmptyState title="No checks yet">Enter a figure or an answer above.</EmptyState>
+          <EmptyState title="No checks yet">{viewer.can.investigate ? "Enter a figure or an answer above." : "None has been run in your scope."}</EmptyState>
         ) : (
           <TableWrap label="Recent checks" testId="shadow-checks">
             <thead>

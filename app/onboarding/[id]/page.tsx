@@ -184,8 +184,8 @@ function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry:
       : `${count(dry.ledger.counts.matches)} match the ledger and ${count(dry.ledger.counts.differs)} differ${dry.ledger.money ? ` (${exact(dry.ledger.money.matchedDifferenceCents)} on the shared rows)` : ""}.`;
   const support = [
     spend
-      ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. ${heldBack > 0 ? `The ${plural(counted, "counted row")} passed` : "Every row passed"} the checks the live feed applies.`
-      : "Every counted row passed the checks the live feed applies.",
+      ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. ${heldBack > 0 ? `The other ${plural(counted, "row")} passed` : "Every row passed"} the checks the live feed applies.`
+      : "The checks are the ones the live feed applies.",
     ledgerLine,
     // The workspace's own label below says it for a visitor's file.
     mode === "workspace" ? "" : dry.authority === "reconcile" ? "Nothing was added to the ledger." : "Nothing is in the ledger until an approver publishes it.",

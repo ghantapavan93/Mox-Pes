@@ -75,8 +75,12 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
         title="Decision Lab"
         description={
           <p className="max-w-3xl">
-            Can this branch move paid budget on the evidence it has? Three separate questions: are the records right, is there enough reliable evidence to
-            act, and did the spend cause the customers. Clean data answers the first two; only a randomized experiment answers the third.
+            Can this branch move paid budget on the evidence it has?{" "}
+            {/* On a phone the section tabs below name the three questions, and the verdict and its next action fit the first screen (390 × 844). */}
+            <span className="hidden sm:inline">
+              Three separate questions: are the records right, is there enough reliable evidence to act, and did the spend cause the customers. Clean data
+              answers the first two; only a randomized experiment answers the third.
+            </span>
           </p>
         }
         actions={

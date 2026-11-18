@@ -57,7 +57,7 @@ export function TraceTable({ steps, live = false }: { steps: InvestigationStep[]
 export function ModeBadge({ mode, label }: { mode: "deterministic" | "model"; label: string }) {
   return (
     <span data-testid="mode-badge">
-      <Badge tone={mode === "model" ? "accent" : "warn"}>{label}</Badge>
+      <Badge tone={mode === "model" ? "accent" : "warn"} wrap>{label}</Badge>
     </span>
   );
 }

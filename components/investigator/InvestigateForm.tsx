@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { Button } from "@/components/ui";
 import type { InvestigationStep } from "@/lib/ai/steps";
 import type { InvestigationStreamEvent } from "@/lib/ai/stream-events";
 import { TraceTable } from "./TraceTable";
@@ -143,15 +144,10 @@ export function InvestigateForm({
               ))}
             </select>
           </div>
-          <button
-            type="submit"
-            // Busy: aria-disabled keeps focus on the button; submit() ignores presses while running.
-            disabled={!canInvestigate || (!busy && question.trim().length < 3)}
-            aria-disabled={busy || undefined}
-            className="rounded bg-accent px-4 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-          >
-            {busy ? "Investigating…" : "Investigate"}
-          </button>
+          {/* The page's one primary action. Busy: aria-disabled keeps focus on the button, and submit() ignores presses while running. */}
+          <Button type="submit" variant="primary" busy={busy} busyLabel="Investigating…" disabled={!canInvestigate || (!busy && question.trim().length < 3)} testId="investigate-submit">
+            Investigate
+          </Button>
           <span className="text-[11px] text-faint">Ctrl/⌘ + Enter</span>
         </div>
         <p id={ids.help} className="text-xs text-muted">

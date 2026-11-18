@@ -299,6 +299,8 @@ export function MappingEditor(props: {
                     </div>
                   )}
                   {vals && vals.length > 0 && (
+                    // Scrolls inside the card on a narrow screen: the selects' option names are wider than 320 px allows.
+                    <div className="max-w-full overflow-x-auto">
                     <table className="w-full text-xs">
                       <caption className="sr-only">Translations for {f.label}</caption>
                       <thead>
@@ -334,6 +336,7 @@ export function MappingEditor(props: {
                         })}
                       </tbody>
                     </table>
+                    </div>
                   )}
                 </div>
               </li>

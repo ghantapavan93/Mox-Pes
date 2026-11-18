@@ -467,7 +467,7 @@ export function Pager({ page, lastPage, first, last, total, hrefFor, label, test
 
 export type BadgeTone = "neutral" | "bad" | "warn" | "good" | "accent";
 
-export function Badge({ children, tone = "neutral", dot = false, testId }: { children: ReactNode; tone?: BadgeTone; dot?: boolean; testId?: string }) {
+export function Badge({ children, tone = "neutral", dot = false, testId, wrap = false }: { children: ReactNode; tone?: BadgeTone; dot?: boolean; testId?: string; /** A sentence, not a word: it may wrap on a narrow screen. */ wrap?: boolean }) {
   const map = {
     neutral: "bg-surface-2 text-muted ring-border",
     bad: "bg-bad-soft text-bad ring-bad/20",
@@ -476,7 +476,7 @@ export function Badge({ children, tone = "neutral", dot = false, testId }: { chi
     accent: "bg-accent-soft text-accent ring-accent/20",
   };
   return (
-    <span data-testid={testId} className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${map[tone]}`}>
+    <span data-testid={testId} className={`inline-flex items-center gap-1 ${wrap ? "max-w-full" : "whitespace-nowrap"} rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${map[tone]}`}>
       {dot && <span aria-hidden className="size-1.5 rounded-full bg-current" />}
       {children}
     </span>

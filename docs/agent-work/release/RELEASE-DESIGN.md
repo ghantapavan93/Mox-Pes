@@ -1645,6 +1645,15 @@ unset.
 **Time box:** one working session. A failure left at the end stops the release before promotion
 and is reported as the blocker.
 
+**Implementation notes** (WP-I; detail in `ci-root-causes.md`):
+1. The seven files on `7d38ad7`: 62 passed, 2 failed, 12.9 minutes (59.8 before). WP-G removed
+   the slow rendering behind ten of the twelve failures; the Decision Lab's layout shift was
+   already fixed in WP-0. The two left: the subset's missing precondition (passes in the full
+   suite) and a new axe finding from the 320 px mapping-table fix, corrected in `91acac5`.
+2. The full suite on `91acac5`: 138 passed, 3 failed, 3 skipped (the pixel baselines), 27.8
+   minutes. The three were the tests' own (an incident found by scanning, a hidden block read with
+   `innerText`), fixed in `c87029c`; the two files then passed in the mirror (19 of 19).
+
 ### WP-J. Verification, release, rollback
 
 1. **The release SHA.** Every code, test and doc change for the release is committed (including
@@ -1718,3 +1727,46 @@ and is reported as the blocker.
     `cold-review.md`, `flood.md`, the production runs, the recording) is committed in one docs-only
     commit on the git release branch and pushed there only. `main` stays at the release SHA, so
     Production runs exactly the verified commit; the docs reach `main` with the next merge.
+
+**Implementation notes** (WP-J):
+1. The release SHA is `af5a24e`. Step 1 ran in full on clean checkouts after each fix: `f84c61c`
+   (every check passed: build, typecheck, lint, 1,083 unit and integration tests, eval 15/15,
+   browser suite 144 passed and 1 skipped with the pixel baselines, B09 acceptance 177/177, BYOF
+   54/54; `checks/release-f84c61c/`), `8ae6776` (the Preview smoke's sentence, the cold review's
+   fixes and the hosted correction; the same results, `checks/release-8ae6776/`) and `af5a24e`
+   (`checks/release-af5a24e/`). GitHub CI passed on `f84c61c` and `8ae6776` and failed once on
+   `bd6acef`: an Overview definition a test had opened closed when September's deltas streamed in,
+   because the whole tile row was one Suspense boundary. `af5a24e` streams each delta on its own.
+2. The build mirror, checked out clean at the SHA, served as the release worktree; a second
+   install was not needed. `rso-prev` holds the previous build `1814616` for the rehearsal.
+3. Vercel refuses a git-branch variable until the branch exists on GitHub, so the order in step 5
+   could not hold: the branch was pushed first, the two Preview variables added, and the Preview
+   built before them redeployed. That build could only fail on the old database: the app runs no
+   migration on boot or build.
+4. Neon's default branch is named `production`, not `main`; `release-2026-11-18` was made from it
+   with auto-delete off. The project's history window is 6 hours, now stated on `/onboarding`.
+5. The cold review (`cold-review.md`) answered the upload and held-decision questions from the
+   product alone, and found no correction to read: the hosted copy had none, and a guest cannot run
+   one. `npm run db:correct-hosted` now runs B20's fix through the Action Center on the loaded copy
+   (rehearsed on `revenue_signal_rehearse`, then run on the release branch), so a visitor reads an
+   approved correction, what it changed and what it did not. Seven more points were fixed in
+   `df7c0c3`; the rest are recorded there as follow-ups.
+6. Preview smoke (`bd6acef`, then `8ae6776`): `/api/health` names the SHA and migrations to 0038;
+   the Overview's verdict at 1,528 ms on the first load and 1,244, 808 and 792 ms after (goal
+   1,500); a guest's unseen export read, compared, never counted, its ledger link and Back (scroll
+   kept), reopened from the list; the chart's evidence and Back with the selection and focus
+   restored; J4 by hand in about 8 s; a 10,000-row file staged in 1.4 s and dry-run in 2.2 s (limit
+   60 s); every smoke item deleted.
+7. Promotion (`af5a24e`): Production's `DATABASE_URL` record (shared with Preview) updated from
+   Neon's copy button through `clipboard-to-stdout.ts`, `PUBLIC_WORKSPACE=1` added for Production,
+   `main` fast-forwarded from `1814616` and pushed. `https://revenue-signal-os-green.vercel.app/api/health`
+   then named `af5a24e…` with migrations to 0038. The hosted journeys (`--grep @core`, no database
+   access) passed 7 of 7; the Overview's verdict as a guest, in fresh contexts: 1,012 ms first,
+   856, 1,292 and 868 ms after (median 868; `measurements/production-after.json`).
+8. Rollback, exercised once: `vercel rollback` to the previous production deployment took 23 s,
+   and `/api/health` answered from `1814616` (no `commit` field) on its own database (migrations to
+   0034). `vercel promote` of the release deployment took 10 s; `/api/health` named `af5a24e`
+   again and the hosted journeys passed 7 of 7 again.
+9. The B20 walkthrough (`recording/b20-walkthrough.webm`, `harness/record-b20.cjs`) runs as a guest
+   on the production URL: the Overview, B20's trace, Decision Lab, the corrected incident's
+   receipt, and the investigator's answer, whose question it deletes at the end.

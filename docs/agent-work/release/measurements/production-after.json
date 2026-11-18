@@ -1,0 +1,15 @@
+{
+  "label": "production-after",
+  "release": "af5a24e7e0daa19672bb6cf0109f6862bb0ac791",
+  "baseUrl": "https://revenue-signal-os-green.vercel.app",
+  "at": "2026-11-18T22:04:51.994Z",
+  "method": "harness/prod-measure.cjs: the Overview as a guest, four loads, each in a fresh Playwright context, Element Timing on the verdict",
+  "overview": { "firstMs": 1012, "warmRuns": [856, 1292, 868], "warmMedianMs": 868 },
+  "preview": {
+    "deployment": "bd6acef, in the owner's Chrome (cached assets), Element Timing",
+    "overview": { "firstMs": 1528, "laterRuns": [1244, 808, 792] },
+    "upload10000Rows": { "stageMs": 1409, "mappingMs": 371, "dryRunMs": 2193 },
+    "investigatorQuestionSeconds": 8
+  },
+  "goal": "Preview and production Overview warm verdict at or under 1,500 ms (§4)"
+}

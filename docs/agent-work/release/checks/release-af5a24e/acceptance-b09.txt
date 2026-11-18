@@ -1,0 +1,4 @@
+[acceptance] seeding revenue_signal_acceptance (synthetic demo world, about a minute); the server will use port 3990
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 49543 ms
+[acceptance] 177 of 177 checks passed at af5a24e (build X1YTNnEZ7hmFJCGh7itoK); record: test-results\acceptance-b09\results.json
+  1 passed (1.5m)

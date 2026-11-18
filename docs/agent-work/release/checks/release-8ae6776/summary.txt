@@ -1,0 +1,11 @@
+tree: 8ae677673a004e40364bd4b06921084435c73d97 porcelain=[0]
+npm-ci exit=0 34s
+build exit=0 32s
+typecheck exit=0 17s
+lint exit=0 27s
+vitest exit=0 991s
+eval-ai exit=0 12s
+e2e exit=0 1168s
+acceptance-b09 exit=0 142s
+acceptance-byof exit=0 43s
+done

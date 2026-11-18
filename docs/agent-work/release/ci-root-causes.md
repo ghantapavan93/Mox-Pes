@@ -70,3 +70,10 @@ were the tests' own:
 | `release-journeys:291`, J2 | The data times before and after differed | Read with `innerText` before React revealed the block: a hidden block's innerText has no line breaks, so the same times compared unequal | Read once visible, compared as words |
 
 No assertion was weakened and no timeout raised.
+
+**GitHub CI on the pull request** (`ci / verify`, Ubuntu, the full suite): `f84c61c` passed in
+40 minutes, the first green run since `1814616`. `bd6acef` failed once, in
+`z-redesign-navigation:138`: a stat's definition the test had opened was replaced when
+September's deltas streamed in (the tile row was one Suspense boundary), so the link detached
+mid-click. `8ae6776` passed (47 minutes) and the release SHA `af5a24e`, which streams each delta
+on its own, passed in 31 minutes.

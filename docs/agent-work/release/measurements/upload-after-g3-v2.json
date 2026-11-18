@@ -1,0 +1,33 @@
+{
+  "label": "upload-after-g3-v2",
+  "baseUrl": "http://localhost:3995",
+  "at": "2026-11-18T17:06:10.319Z",
+  "pages": {
+    "upload": {
+      "path": "/onboarding → sample-demo-calls.csv → result",
+      "firstMs": 1440,
+      "medianMs": 719,
+      "runs": [
+        1440,
+        723,
+        719,
+        689,
+        666
+      ],
+      "readyRuns": [
+        227,
+        34,
+        19,
+        227,
+        212
+      ],
+      "cls": 0.003,
+      "phone": {
+        "resultTop": 353,
+        "firstScreen": true,
+        "ms": 606,
+        "cls": 0
+      }
+    }
+  }
+}

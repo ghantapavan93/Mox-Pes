@@ -1,0 +1,33 @@
+{
+  "label": "upload-before-v2",
+  "baseUrl": "http://localhost:3995",
+  "at": "2026-11-18T17:04:54.387Z",
+  "pages": {
+    "upload": {
+      "path": "/onboarding → sample-demo-calls.csv → result",
+      "firstMs": 1038,
+      "medianMs": 712,
+      "runs": [
+        1038,
+        753,
+        681,
+        712,
+        667
+      ],
+      "readyRuns": [
+        230,
+        27,
+        34,
+        21,
+        33
+      ],
+      "cls": 0,
+      "phone": {
+        "resultTop": 353,
+        "firstScreen": true,
+        "ms": 582,
+        "cls": 0
+      }
+    }
+  }
+}

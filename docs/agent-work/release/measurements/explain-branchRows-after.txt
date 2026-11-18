@@ -1,0 +1,476 @@
+branchRows: 1 statement(s); slowest 275 ms
+Merge Left Join  (cost=5892.67..6078.66 rows=44 width=305) (actual time=195.129..201.796 rows=44 loops=1)
+  Merge Cond: (br.id = risk.branch_id)
+  Buffers: shared hit=131439
+  CTE p
+    ->  Result  (cost=0.00..0.01 rows=1 width=16) (actual time=0.000..0.001 rows=1 loops=1)
+  CTE held_records
+    ->  Append  (cost=0.12..43.44 rows=9 width=68) (actual time=0.011..0.012 rows=0 loops=1)
+          Buffers: shared hit=3
+          ->  Index Scan using raw_events_excluded_idx on raw_events re_1  (cost=0.12..8.40 rows=1 width=68) (actual time=0.004..0.004 rows=0 loops=1)
+                Index Cond: (source = 'ads'::text)
+                Buffers: shared hit=2
+          ->  Index Scan using raw_events_quarantined_idx on raw_events re_2  (cost=0.14..34.99 rows=8 width=68) (actual time=0.006..0.006 rows=0 loops=1)
+                Index Cond: (source = 'ads'::text)
+                Buffers: shared hit=1
+  CTE held_campaigns
+    ->  Unique  (cost=59.73..59.77 rows=5 width=64) (actual time=0.018..0.020 rows=0 loops=1)
+          Buffers: shared hit=3
+          ->  Sort  (cost=59.73..59.74 rows=5 width=64) (actual time=0.018..0.019 rows=0 loops=1)
+                Sort Key: h.platform, h.ext
+                Sort Method: quicksort  Memory: 25kB
+                Buffers: shared hit=3
+                ->  Nested Loop Anti Join  (cost=0.56..59.67 rows=5 width=64) (actual time=0.011..0.013 rows=0 loops=1)
+                      Buffers: shared hit=3
+                      ->  CTE Scan on held_records h  (cost=0.00..0.18 rows=9 width=64) (actual time=0.011..0.011 rows=0 loops=1)
+                            Filter: (ext IS NOT NULL)
+                            Buffers: shared hit=3
+                      ->  Nested Loop  (cost=0.56..9.89 rows=73 width=16) (never executed)
+                            ->  Index Scan using ad_campaigns_platform_external_campaign_id_key on ad_campaigns c_2  (cost=0.27..5.62 rows=1 width=24) (never executed)
+                                  Index Cond: ((platform = h.platform) AND (external_campaign_id = h.ext))
+                            ->  Index Only Scan using ad_spend_daily_pkey on ad_spend_daily s_2  (cost=0.29..3.54 rows=73 width=8) (never executed)
+                                  Index Cond: (campaign_id = c_2.id)
+                                  Heap Fetches: 0
+  CTE period_acq
+    ->  Hash Right Join  (cost=1853.13..2265.28 rows=7 width=75) (actual time=114.859..127.916 rows=3687 loops=1)
+          Hash Cond: (p_5.crm_customer_id = c_3.crm_customer_id)
+          Buffers: shared hit=102201
+          ->  HashAggregate  (cost=350.96..500.26 rows=9953 width=16) (actual time=4.428..7.532 rows=10321 loops=1)
+                Group Key: p_5.crm_customer_id
+                Batches: 1  Memory Usage: 4241kB
+                Buffers: shared hit=159
+                ->  Seq Scan on crm_payments p_5  (cost=0.00..298.14 rows=10565 width=16) (actual time=0.014..1.207 rows=10565 loops=1)
+                      Filter: (status = 'successful'::text)
+                      Rows Removed by Filter: 566
+                      Buffers: shared hit=159
+          ->  Hash  (cost=1502.08..1502.08 rows=7 width=197) (actual time=110.378..110.395 rows=3687 loops=1)
+                Buckets: 4096 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 812kB
+                Buffers: shared hit=93713
+                ->  Nested Loop  (cost=85.47..1502.08 rows=7 width=197) (actual time=0.850..108.701 rows=3687 loops=1)
+                      Join Filter: (ch_3.code = COALESCE("*SELECT* 1_1".channel_code, 'unknown'::text))
+                      Rows Removed by Join Filter: 14236
+                      Buffers: shared hit=93713
+                      ->  Nested Loop Left Join  (cost=85.47..1500.13 rows=7 width=190) (actual time=0.837..106.183 rows=3687 loops=1)
+                            Buffers: shared hit=93712
+                            ->  Nested Loop Left Join  (cost=1.15..909.75 rows=7 width=165) (actual time=0.759..29.456 rows=3687 loops=1)
+                                  Join Filter: (b_1.crm_office_id = s_5.office_id)
+                                  Rows Removed by Join Filter: 79219
+                                  Buffers: shared hit=44810
+                                  ->  Nested Loop  (cost=1.15..903.58 rows=7 width=165) (actual time=0.738..22.688 rows=3687 loops=1)
+                                        Buffers: shared hit=44809
+                                        ->  Nested Loop Anti Join  (cost=0.86..900.71 rows=7 width=35) (actual time=0.729..17.773 rows=3687 loops=1)
+                                              Buffers: shared hit=33748
+                                              ->  Nested Loop  (cost=0.57..896.73 rows=10 width=43) (actual time=0.715..13.199 rows=3687 loops=1)
+                                                    Buffers: shared hit=22687
+                                                    ->  Nested Loop Anti Join  (cost=0.29..817.68 rows=10 width=8) (actual time=0.700..8.214 rows=3687 loops=1)
+                                                          Buffers: shared hit=11626
+                                                          ->  Seq Scan on crm_appointments a_1  (cost=0.00..658.88 rows=20 width=34) (actual time=0.684..2.179 rows=3687 loops=1)
+                                                                Filter: ((completed_at >= '2026-10-01 00:00:00+00'::timestamp with time zone) AND (completed_at < '2026-10-31 00:00:00+00'::timestamp with time zone) AND (kind = 'initial'::text) AND (COALESCE(status, 'missing'::text) = 'completed'::text))
+                                                                Rows Removed by Filter: 13157
+                                                                Buffers: shared hit=322
+                                                          ->  Index Scan using crm_appointments_subscription_idx on crm_appointments x  (cost=0.29..7.93 rows=1 width=34) (actual time=0.001..0.001 rows=0 loops=3687)
+                                                                Index Cond: (crm_subscription_id = a_1.crm_subscription_id)
+                                                                Filter: ((kind = 'initial'::text) AND (((status = 'rescheduled'::text) < (a_1.status = 'rescheduled'::text)) OR (((status = 'rescheduled'::text) = (a_1.status = 'rescheduled'::text)) AND ((scheduled_for > a_1.scheduled_for) OR ((scheduled_for = a_1.scheduled_for) AND (crm_appointment_id < a_1.crm_appointment_id))))))
+                                                                Rows Removed by Filter: 1
+                                                                Buffers: shared hit=11304
+                                                    ->  Index Scan using crm_subscriptions_pkey on crm_subscriptions s_5  (cost=0.29..7.90 rows=1 width=43) (actual time=0.001..0.001 rows=1 loops=3687)
+                                                          Index Cond: (crm_subscription_id = a_1.crm_subscription_id)
+                                                          Buffers: shared hit=11061
+                                              ->  Index Scan using crm_subscriptions_customer_idx on crm_subscriptions e_2  (cost=0.29..0.39 rows=1 width=24) (actual time=0.001..0.001 rows=0 loops=3687)
+                                                    Index Cond: (crm_customer_id = s_5.crm_customer_id)
+                                                    Filter: (ROW(sold_at, crm_subscription_id) < ROW(s_5.sold_at, s_5.crm_subscription_id))
+                                                    Rows Removed by Filter: 1
+                                                    Buffers: shared hit=11061
+                                        ->  Index Scan using crm_customers_pkey on crm_customers c_3  (cost=0.29..0.41 rows=1 width=138) (actual time=0.001..0.001 rows=1 loops=3687)
+                                              Index Cond: (crm_customer_id = s_5.crm_customer_id)
+                                              Buffers: shared hit=11061
+                                  ->  Materialize  (cost=0.00..1.66 rows=44 width=8) (actual time=0.000..0.001 rows=22 loops=3687)
+                                        Buffers: shared hit=1
+                                        ->  Seq Scan on branches b_1  (cost=0.00..1.44 rows=44 width=8) (actual time=0.009..0.013 rows=44 loops=1)
+                                              Buffers: shared hit=1
+                            ->  Limit  (cost=84.32..84.32 rows=1 width=419) (actual time=0.020..0.020 rows=1 loops=3687)
+                                  Buffers: shared hit=48902
+                                  ->  Sort  (cost=84.32..84.32 rows=2 width=419) (actual time=0.020..0.020 rows=1 loops=3687)
+                                        Sort Key: (("*SELECT* 1_1".attribution_evidence = 'none'::text)), "*SELECT* 1_1".occurred_at, "*SELECT* 1_1".id
+                                        Sort Method: quicksort  Memory: 25kB
+                                        Buffers: shared hit=48902
+                                        ->  Nested Loop Anti Join  (cost=0.42..84.31 rows=2 width=419) (actual time=0.014..0.019 rows=1 loops=3687)
+                                              Join Filter: (k_4.lead_id = "*SELECT* 1_1".id)
+                                              Buffers: shared hit=48902
+                                              ->  Append  (cost=0.42..84.25 rows=2 width=34) (actual time=0.012..0.016 rows=1 loops=3687)
+                                                    Buffers: shared hit=48902
+                                                    ->  Subquery Scan on "*SELECT* 1_1"  (cost=0.42..42.12 rows=1 width=34) (actual time=0.011..0.012 rows=1 loops=3687)
+                                                          Filter: ((ANY ("*SELECT* 1_1".id = (hashed SubPlan 9).col1)) OR ((NOT (ANY ("*SELECT* 1_1".id = (hashed SubPlan 11).col1))) AND (NOT EXISTS(SubPlan 12)) AND (NOT EXISTS(SubPlan 13))))
+                                                          Buffers: shared hit=34372
+                                                          ->  Index Scan using leads_phone_idx on leads l_2  (cost=0.42..8.44 rows=1 width=461) (actual time=0.003..0.003 rows=1 loops=3687)
+                                                                Index Cond: ((phone_hash = c_3.phone_hash) AND (occurred_at >= (s_5.sold_at - '60 days'::interval)) AND (occurred_at <= (s_5.sold_at + '02:00:00'::interval)))
+                                                                Filter: (excluded_code IS NULL)
+                                                                Buffers: shared hit=14940
+                                                          SubPlan 9
+                                                            ->  Nested Loop Anti Join  (cost=0.00..0.01 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=4471)
+                                                                  Join Filter: ((n.id > k.id) AND (n.lead_id = k.lead_id))
+                                                                  ->  Seq Scan on identity_conflicts k  (cost=0.00..0.00 rows=1 width=24) (actual time=0.000..0.000 rows=0 loops=4471)
+                                                                        Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (crm_customer_id = c_3.crm_customer_id) AND (status = 'accepted'::text))
+                                                                  ->  Seq Scan on identity_conflicts n  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                        Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (crm_customer_id = c_3.crm_customer_id))
+                                                          SubPlan 11
+                                                            ->  Nested Loop Anti Join  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=4471)
+                                                                  Join Filter: ((n_1.id > k_1.id) AND (n_1.lead_id = k_1.lead_id) AND (n_1.crm_customer_id = k_1.crm_customer_id))
+                                                                  ->  Seq Scan on identity_conflicts k_1  (cost=0.00..0.00 rows=1 width=24) (actual time=0.000..0.000 rows=0 loops=4471)
+                                                                        Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (crm_customer_id <> c_3.crm_customer_id) AND (status = 'accepted'::text))
+                                                                  ->  Seq Scan on identity_conflicts n_1  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                        Filter: (status = ANY ('{accepted,rejected}'::text[]))
+                                                          SubPlan 12
+                                                            ->  Result  (cost=8.73..16.82 rows=1 width=0) (actual time=0.003..0.003 rows=0 loops=4858)
+                                                                  One-Time Filter: ("*SELECT* 1_1".phone_hash IS NOT NULL)
+                                                                  Buffers: shared hit=19432
+                                                                  ->  Nested Loop  (cost=8.73..16.82 rows=1 width=0) (actual time=0.002..0.002 rows=0 loops=4858)
+                                                                        Buffers: shared hit=19432
+                                                                        ->  Nested Loop Anti Join  (cost=0.41..8.46 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=4858)
+                                                                              Join Filter: (k_2.crm_customer_id = o_1.crm_customer_id)
+                                                                              Buffers: shared hit=19432
+                                                                              ->  Index Scan using crm_customers_phone_idx on crm_customers o_1  (cost=0.41..8.43 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=4858)
+                                                                                    Index Cond: (phone_hash = "*SELECT* 1_1".phone_hash)
+                                                                                    Filter: (crm_customer_id <> c_3.crm_customer_id)
+                                                                                    Rows Removed by Filter: 1
+                                                                                    Buffers: shared hit=19432
+                                                                              ->  Nested Loop Anti Join  (cost=0.00..0.01 rows=1 width=8) (never executed)
+                                                                                    Join Filter: ((n_2.id > k_2.id) AND (n_2.crm_customer_id = k_2.crm_customer_id))
+                                                                                    ->  Seq Scan on identity_conflicts k_2  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                                          Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (lead_id = "*SELECT* 1_1".id) AND (status = 'rejected'::text))
+                                                                                    ->  Seq Scan on identity_conflicts n_2  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                                          Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (lead_id = "*SELECT* 1_1".id))
+                                                                        ->  Subquery Scan on os  (cost=8.31..8.35 rows=1 width=8) (never executed)
+                                                                              Filter: (("*SELECT* 1_1".occurred_at >= (os.sold_at - '60 days'::interval)) AND ("*SELECT* 1_1".occurred_at <= (os.sold_at + '02:00:00'::interval)) AND ((os.sold_at < s_5.sold_at) OR (os.sold_at = s_5.sold_at)) AND ((os.sold_at < s_5.sold_at) OR ((os.sold_at = s_5.sold_at) AND (o_1.crm_customer_id < c_3.crm_customer_id))))
+                                                                              ->  Limit  (cost=8.31..8.32 rows=1 width=16) (never executed)
+                                                                                    ->  Sort  (cost=8.31..8.32 rows=1 width=16) (never executed)
+                                                                                          Sort Key: s_3.sold_at, s_3.crm_subscription_id
+                                                                                          ->  Index Scan using crm_subscriptions_customer_idx on crm_subscriptions s_3  (cost=0.29..8.30 rows=1 width=16) (never executed)
+                                                                                                Index Cond: (crm_customer_id = o_1.crm_customer_id)
+                                                          SubPlan 13
+                                                            ->  Result  (cost=8.73..16.82 rows=1 width=0) (actual time=0.001..0.001 rows=0 loops=4858)
+                                                                  One-Time Filter: ("*SELECT* 1_1".email_hash IS NOT NULL)
+                                                                  Buffers: shared hit=7768
+                                                                  ->  Nested Loop  (cost=8.73..16.82 rows=1 width=0) (actual time=0.002..0.002 rows=0 loops=1942)
+                                                                        Buffers: shared hit=7768
+                                                                        ->  Nested Loop Anti Join  (cost=0.41..8.46 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=1942)
+                                                                              Join Filter: (k_3.crm_customer_id = o_2.crm_customer_id)
+                                                                              Buffers: shared hit=7768
+                                                                              ->  Index Scan using crm_customers_email_idx on crm_customers o_2  (cost=0.41..8.43 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=1942)
+                                                                                    Index Cond: (email_hash = "*SELECT* 1_1".email_hash)
+                                                                                    Filter: (crm_customer_id <> c_3.crm_customer_id)
+                                                                                    Rows Removed by Filter: 1
+                                                                                    Buffers: shared hit=7768
+                                                                              ->  Nested Loop Anti Join  (cost=0.00..0.01 rows=1 width=8) (never executed)
+                                                                                    Join Filter: ((n_3.id > k_3.id) AND (n_3.crm_customer_id = k_3.crm_customer_id))
+                                                                                    ->  Seq Scan on identity_conflicts k_3  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                                          Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (lead_id = "*SELECT* 1_1".id) AND (status = 'rejected'::text))
+                                                                                    ->  Seq Scan on identity_conflicts n_3  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                                          Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (lead_id = "*SELECT* 1_1".id))
+                                                                        ->  Subquery Scan on os_1  (cost=8.31..8.35 rows=1 width=8) (never executed)
+                                                                              Filter: (("*SELECT* 1_1".occurred_at >= (os_1.sold_at - '60 days'::interval)) AND ("*SELECT* 1_1".occurred_at <= (os_1.sold_at + '02:00:00'::interval)) AND ((os_1.sold_at < s_5.sold_at) OR (os_1.sold_at = s_5.sold_at)) AND ((os_1.sold_at < s_5.sold_at) OR ((os_1.sold_at = s_5.sold_at) AND (o_2.crm_customer_id < c_3.crm_customer_id))))
+                                                                              ->  Limit  (cost=8.31..8.32 rows=1 width=16) (never executed)
+                                                                                    ->  Sort  (cost=8.31..8.32 rows=1 width=16) (never executed)
+                                                                                          Sort Key: s_4.sold_at, s_4.crm_subscription_id
+                                                                                          ->  Index Scan using crm_subscriptions_customer_idx on crm_subscriptions s_4  (cost=0.29..8.30 rows=1 width=16) (never executed)
+                                                                                                Index Cond: (crm_customer_id = o_2.crm_customer_id)
+                                                    ->  Subquery Scan on "*SELECT* 2"  (cost=0.42..42.12 rows=1 width=34) (actual time=0.004..0.004 rows=0 loops=3687)
+                                                          Filter: ((ANY ("*SELECT* 2".id = (hashed SubPlan 9).col1)) OR ((NOT (ANY ("*SELECT* 2".id = (hashed SubPlan 11).col1))) AND (NOT EXISTS(SubPlan 12)) AND (NOT EXISTS(SubPlan 13))))
+                                                          Buffers: shared hit=14530
+                                                          ->  Index Scan using leads_email_idx on leads l_3  (cost=0.42..8.44 rows=1 width=461) (actual time=0.001..0.001 rows=0 loops=3687)
+                                                                Index Cond: ((email_hash = c_3.email_hash) AND (occurred_at >= (s_5.sold_at - '60 days'::interval)) AND (occurred_at <= (s_5.sold_at + '02:00:00'::interval)))
+                                                                Filter: (excluded_code IS NULL)
+                                                                Buffers: shared hit=6762
+                                              ->  Materialize  (cost=0.00..0.02 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=4858)
+                                                    ->  Nested Loop Anti Join  (cost=0.00..0.01 rows=1 width=8) (actual time=0.002..0.002 rows=0 loops=3531)
+                                                          Join Filter: ((n_4.id > k_4.id) AND (n_4.lead_id = k_4.lead_id))
+                                                          ->  Seq Scan on identity_conflicts k_4  (cost=0.00..0.00 rows=1 width=24) (actual time=0.000..0.000 rows=0 loops=3531)
+                                                                Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (crm_customer_id = c_3.crm_customer_id) AND (status = 'rejected'::text))
+                                                          ->  Seq Scan on identity_conflicts n_4  (cost=0.00..0.00 rows=1 width=24) (never executed)
+                                                                Filter: ((status = ANY ('{accepted,rejected}'::text[])) AND (crm_customer_id = c_3.crm_customer_id))
+                      ->  Materialize  (cost=0.00..1.14 rows=9 width=17) (actual time=0.000..0.000 rows=5 loops=3687)
+                            Buffers: shared hit=1
+                            ->  Seq Scan on channels ch_3  (cost=0.00..1.09 rows=9 width=17) (actual time=0.006..0.007 rows=9 loops=1)
+                                  Buffers: shared hit=1
+          SubPlan 5
+            ->  Seq Scan on channels ch_2  (cost=0.00..1.09 rows=5 width=10) (actual time=0.013..0.014 rows=5 loops=1)
+                  Filter: is_paid
+                  Rows Removed by Filter: 4
+                  Buffers: shared hit=1
+          SubPlan 6
+            ->  Index Scan using leads_phone_idx on leads d  (cost=0.41..8.44 rows=1 width=0) (actual time=0.002..0.002 rows=0 loops=1726)
+                  Index Cond: ((phone_hash = c_3.phone_hash) AND (occurred_at > "*SELECT* 1_1".occurred_at) AND (occurred_at <= (s_5.sold_at + '02:00:00'::interval)))
+                  Filter: (attribution_evidence = 'rep_signature'::text)
+                  Rows Removed by Filter: 0
+                  Buffers: shared hit=5440
+          SubPlan 7
+            ->  Index Scan using leads_email_idx on leads d_1  (cost=0.41..8.44 rows=1 width=0) (actual time=0.001..0.001 rows=0 loops=1682)
+                  Index Cond: ((email_hash = c_3.email_hash) AND (occurred_at > "*SELECT* 1_1".occurred_at) AND (occurred_at <= (s_5.sold_at + '02:00:00'::interval)))
+                  Filter: (attribution_evidence = 'rep_signature'::text)
+                  Rows Removed by Filter: 0
+                  Buffers: shared hit=2888
+  ->  Merge Left Join  (cost=2605.32..2789.85 rows=44 width=273) (actual time=187.338..193.960 rows=44 loops=1)
+        Merge Cond: (br.id = exceptions.branch_id)
+        Buffers: shared hit=131157
+        ->  Merge Left Join  (cost=2605.05..2763.89 rows=44 width=265) (actual time=187.317..193.870 rows=44 loops=1)
+              Merge Cond: (br.id = a.branch_id)
+              Buffers: shared hit=131152
+              ->  Merge Left Join  (cost=2511.08..2548.08 rows=44 width=153) (actual time=30.014..32.905 rows=44 loops=1)
+                    Merge Cond: (br.id = sold.branch_id)
+                    Buffers: shared hit=6211
+                    ->  Merge Left Join  (cost=566.07..602.29 rows=44 width=145) (actual time=21.640..24.509 rows=44 loops=1)
+                          Merge Cond: (br.id = (COALESCE(o.value, l.branch_id)))
+                          Buffers: shared hit=5594
+                          ->  Sort  (cost=190.08..190.19 rows=44 width=121) (actual time=6.119..6.131 rows=44 loops=1)
+                                Sort Key: br.id
+                                Sort Method: quicksort  Memory: 27kB
+                                Buffers: shared hit=275
+                                ->  Hash Left Join  (cost=187.06..188.88 rows=44 width=121) (actual time=6.073..6.111 rows=44 loops=1)
+                                      Hash Cond: (br.id = rev.branch_id)
+                                      Buffers: shared hit=275
+                                      ->  Hash Left Join  (cost=91.31..93.01 rows=44 width=57) (actual time=3.473..3.502 rows=44 loops=1)
+                                            Hash Cond: (br.id = spend.branch_id)
+                                            Buffers: shared hit=189
+                                            ->  Hash Join  (cost=1.99..3.56 rows=44 width=17) (actual time=0.037..0.051 rows=44 loops=1)
+                                                  Hash Cond: (branches.id = br.id)
+                                                  Buffers: shared hit=2
+                                                  ->  Seq Scan on branches  (cost=0.00..1.44 rows=44 width=4) (actual time=0.016..0.020 rows=44 loops=1)
+                                                        Buffers: shared hit=1
+                                                  ->  Hash  (cost=1.44..1.44 rows=44 width=17) (actual time=0.016..0.017 rows=44 loops=1)
+                                                        Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                        Buffers: shared hit=1
+                                                        ->  Seq Scan on branches br  (cost=0.00..1.44 rows=44 width=17) (actual time=0.004..0.007 rows=44 loops=1)
+                                                              Buffers: shared hit=1
+                                            ->  Hash  (cost=88.77..88.77 rows=44 width=44) (actual time=3.432..3.436 rows=44 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                                  Buffers: shared hit=187
+                                                  ->  Subquery Scan on spend  (cost=87.78..88.77 rows=44 width=44) (actual time=3.410..3.423 rows=44 loops=1)
+                                                        Buffers: shared hit=187
+                                                        ->  HashAggregate  (cost=87.78..88.33 rows=44 width=44) (actual time=3.410..3.420 rows=44 loops=1)
+                                                              Group Key: m.branch_id
+                                                              Batches: 1  Memory Usage: 48kB
+                                                              Buffers: shared hit=187
+                                                              ->  Hash Join  (cost=6.95..83.58 rows=560 width=16) (actual time=0.071..2.581 rows=4620 loops=1)
+                                                                    Hash Cond: (s.campaign_id = m.campaign_id)
+                                                                    Buffers: shared hit=187
+                                                                    ->  Hash Join  (cost=1.46..76.57 rows=564 width=20) (actual time=0.037..2.005 rows=4646 loops=1)
+                                                                          Hash Cond: (s.channel_code = ch.code)
+                                                                          Buffers: shared hit=185
+                                                                          ->  Nested Loop  (cost=0.29..70.51 rows=1269 width=30) (actual time=0.023..1.274 rows=4646 loops=1)
+                                                                                Buffers: shared hit=184
+                                                                                ->  CTE Scan on p  (cost=0.00..0.02 rows=1 width=16) (actual time=0.001..0.002 rows=1 loops=1)
+                                                                                ->  Index Scan using ad_spend_daily_date_idx on ad_spend_daily s  (cost=0.29..57.80 rows=1269 width=34) (actual time=0.018..0.959 rows=4646 loops=1)
+                                                                                      Index Cond: ((spend_date >= ((p.t0 AT TIME ZONE 'UTC'::text))::date) AND (spend_date < ((p.t1 AT TIME ZONE 'UTC'::text))::date))
+                                                                                      Buffers: shared hit=184
+                                                                          ->  Hash  (cost=1.11..1.11 rows=4 width=10) (actual time=0.011..0.012 rows=4 loops=1)
+                                                                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                                Buffers: shared hit=1
+                                                                                ->  Seq Scan on channels ch  (cost=0.00..1.11 rows=4 width=10) (actual time=0.006..0.007 rows=4 loops=1)
+                                                                                      Filter: (cost_basis = 'media'::text)
+                                                                                      Rows Removed by Filter: 5
+                                                                                      Buffers: shared hit=1
+                                                                    ->  Hash  (cost=3.55..3.55 rows=155 width=12) (actual time=0.030..0.030 rows=155 loops=1)
+                                                                          Buckets: 1024  Batches: 1  Memory Usage: 16kB
+                                                                          Buffers: shared hit=2
+                                                                          ->  Seq Scan on campaign_branch_map m  (cost=0.00..3.55 rows=155 width=12) (actual time=0.007..0.016 rows=155 loops=1)
+                                                                                Buffers: shared hit=2
+                                      ->  Hash  (cost=95.20..95.20 rows=44 width=68) (actual time=2.593..2.595 rows=44 loops=1)
+                                            Buckets: 1024  Batches: 1  Memory Usage: 11kB
+                                            Buffers: shared hit=86
+                                            ->  Subquery Scan on rev  (cost=93.99..95.20 rows=44 width=68) (actual time=2.566..2.583 rows=44 loops=1)
+                                                  Buffers: shared hit=86
+                                                  ->  HashAggregate  (cost=93.99..94.76 rows=44 width=68) (actual time=2.566..2.579 rows=44 loops=1)
+                                                        Group Key: br_1.id
+                                                        Batches: 1  Memory Usage: 48kB
+                                                        Buffers: shared hit=86
+                                                        ->  Hash Join  (cost=2.28..82.25 rows=1174 width=12) (actual time=0.038..1.721 rows=4543 loops=1)
+                                                              Hash Cond: (pm.office_id = br_1.crm_office_id)
+                                                              Buffers: shared hit=86
+                                                              ->  Nested Loop  (cost=0.29..76.88 rows=1174 width=12) (actual time=0.013..1.153 rows=4543 loops=1)
+                                                                    Buffers: shared hit=85
+                                                                    ->  CTE Scan on p p_1  (cost=0.00..0.02 rows=1 width=16) (actual time=0.000..0.001 rows=1 loops=1)
+                                                                    ->  Index Scan using crm_payments_paid_idx on crm_payments pm  (cost=0.29..65.12 rows=1174 width=20) (actual time=0.011..0.861 rows=4543 loops=1)
+                                                                          Index Cond: ((paid_at >= p_1.t0) AND (paid_at < p_1.t1))
+                                                                          Filter: (status = 'successful'::text)
+                                                                          Rows Removed by Filter: 241
+                                                                          Buffers: shared hit=85
+                                                              ->  Hash  (cost=1.44..1.44 rows=44 width=8) (actual time=0.019..0.019 rows=44 loops=1)
+                                                                    Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                                                    Buffers: shared hit=1
+                                                                    ->  Seq Scan on branches br_1  (cost=0.00..1.44 rows=44 width=8) (actual time=0.007..0.010 rows=44 loops=1)
+                                                                          Buffers: shared hit=1
+                          ->  GroupAggregate  (cost=375.99..411.00 rows=44 width=56) (actual time=15.518..18.357 rows=44 loops=1)
+                                Group Key: (COALESCE(o.value, l.branch_id))
+                                Buffers: shared hit=5319
+                                ->  Sort  (cost=375.99..382.90 rows=2766 width=163) (actual time=15.430..16.223 rows=9331 loops=1)
+                                      Sort Key: (COALESCE(o.value, l.branch_id)), (COALESCE(l.phone_hash, l.email_hash))
+                                      Sort Method: quicksort  Memory: 1897kB
+                                      Buffers: shared hit=5319
+                                      ->  Hash Join  (cost=1.50..217.86 rows=2766 width=163) (actual time=0.053..7.658 rows=9331 loops=1)
+                                            Hash Cond: (l.channel_code = ch_1.code)
+                                            Buffers: shared hit=5319
+                                            ->  Hash Left Join  (cost=0.30..205.98 rows=2766 width=175) (actual time=0.040..5.874 rows=9331 loops=1)
+                                                  Hash Cond: ((l.id)::text = o.subject_id)
+                                                  Buffers: shared hit=5318
+                                                  ->  Nested Loop  (cost=0.29..197.83 rows=2766 width=151) (actual time=0.023..4.204 rows=9331 loops=1)
+                                                        Buffers: shared hit=5318
+                                                        ->  CTE Scan on p p_2  (cost=0.00..0.02 rows=1 width=16) (actual time=0.000..0.001 rows=1 loops=1)
+                                                        ->  Index Scan using leads_occurred_idx on leads l  (cost=0.29..170.15 rows=2766 width=159) (actual time=0.022..3.410 rows=9331 loops=1)
+                                                              Index Cond: ((occurred_at >= p_2.t0) AND (occurred_at < p_2.t1))
+                                                              Filter: (excluded_code IS NULL)
+                                                              Buffers: shared hit=5318
+                                                  ->  Hash  (cost=0.00..0.00 rows=1 width=64) (actual time=0.007..0.008 rows=0 loops=1)
+                                                        Buckets: 1024  Batches: 1  Memory Usage: 8kB
+                                                        ->  Seq Scan on overrides o  (cost=0.00..0.00 rows=1 width=64) (actual time=0.007..0.007 rows=0 loops=1)
+                                                              Filter: ((subject_type = 'lead'::text) AND (field = 'branch_id'::text))
+                                            ->  Hash  (cost=1.09..1.09 rows=9 width=11) (actual time=0.008..0.009 rows=9 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  Buffers: shared hit=1
+                                                  ->  Seq Scan on channels ch_1  (cost=0.00..1.09 rows=9 width=11) (actual time=0.005..0.006 rows=9 loops=1)
+                                                        Buffers: shared hit=1
+                    ->  Sort  (cost=1945.01..1945.12 rows=44 width=12) (actual time=8.371..8.378 rows=44 loops=1)
+                          Sort Key: sold.branch_id
+                          Sort Method: quicksort  Memory: 26kB
+                          Buffers: shared hit=617
+                          ->  Subquery Scan on sold  (cost=1942.93..1943.81 rows=44 width=12) (actual time=8.354..8.364 rows=44 loops=1)
+                                Buffers: shared hit=617
+                                ->  HashAggregate  (cost=1942.93..1943.37 rows=44 width=12) (actual time=8.354..8.360 rows=44 loops=1)
+                                      Group Key: b.id
+                                      Batches: 1  Memory Usage: 24kB
+                                      Buffers: shared hit=617
+                                      ->  Hash Join  (cost=1267.64..1929.60 rows=2667 width=4) (actual time=6.758..7.946 rows=3835 loops=1)
+                                            Hash Cond: (s_1.office_id = b.crm_office_id)
+                                            Buffers: shared hit=617
+                                            ->  Hash Join  (cost=1265.65..1919.93 rows=2667 width=4) (actual time=6.722..7.524 rows=3835 loops=1)
+                                                  Hash Cond: (c.crm_customer_id = s_1.crm_customer_id)
+                                                  Buffers: shared hit=616
+                                                  ->  Index Only Scan using crm_customers_pkey on crm_customers c  (cost=0.29..520.95 rows=17111 width=8) (actual time=0.013..1.138 rows=17111 loops=1)
+                                                        Heap Fetches: 0
+                                                        Buffers: shared hit=66
+                                                  ->  Hash  (cost=1232.03..1232.03 rows=2667 width=12) (actual time=4.836..4.837 rows=3835 loops=1)
+                                                        Buckets: 4096  Batches: 1  Memory Usage: 197kB
+                                                        Buffers: shared hit=550
+                                                        ->  Hash Right Anti Join  (cost=588.10..1232.03 rows=2667 width=12) (actual time=4.223..4.497 rows=3835 loops=1)
+                                                              Hash Cond: (e.crm_customer_id = s_1.crm_customer_id)
+                                                              Join Filter: (ROW(e.sold_at, e.crm_subscription_id) < ROW(s_1.sold_at, s_1.crm_subscription_id))
+                                                              Rows Removed by Join Filter: 4001
+                                                              Buffers: shared hit=550
+                                                              ->  Seq Scan on crm_subscriptions e  (cost=0.00..450.39 rows=17539 width=24) (actual time=0.006..0.725 rows=17539 loops=1)
+                                                                    Buffers: shared hit=275
+                                                              ->  Hash  (cost=538.09..538.09 rows=4001 width=28) (actual time=1.791..1.792 rows=4001 loops=1)
+                                                                    Buckets: 4096  Batches: 1  Memory Usage: 267kB
+                                                                    Buffers: shared hit=275
+                                                                    ->  Seq Scan on crm_subscriptions s_1  (cost=0.00..538.09 rows=4001 width=28) (actual time=0.966..1.471 rows=4001 loops=1)
+                                                                          Filter: ((sold_at >= '2026-10-01 00:00:00+00'::timestamp with time zone) AND (sold_at < '2026-10-31 00:00:00+00'::timestamp with time zone))
+                                                                          Rows Removed by Filter: 13538
+                                                                          Buffers: shared hit=275
+                                            ->  Hash  (cost=1.44..1.44 rows=44 width=8) (actual time=0.027..0.027 rows=44 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 10kB
+                                                  Buffers: shared hit=1
+                                                  ->  Seq Scan on branches b  (cost=0.00..1.44 rows=44 width=8) (actual time=0.017..0.021 rows=44 loops=1)
+                                                        Buffers: shared hit=1
+              ->  GroupAggregate  (cost=93.97..215.54 rows=7 width=144) (actual time=157.300..160.941 rows=44 loops=1)
+                    Group Key: a.branch_id
+                    Buffers: shared hit=124941
+                    ->  Sort  (cost=93.97..93.99 rows=7 width=209) (actual time=157.130..157.478 rows=3687 loops=1)
+                          Sort Key: a.branch_id
+                          Sort Method: quicksort  Memory: 465kB
+                          Buffers: shared hit=124936
+                          ->  Nested Loop  (cost=0.98..93.87 rows=7 width=209) (actual time=115.006..155.489 rows=3687 loops=1)
+                                Buffers: shared hit=124936
+                                ->  CTE Scan on p p_3  (cost=0.00..0.02 rows=1 width=16) (actual time=0.001..0.001 rows=1 loops=1)
+                                ->  Nested Loop Left Join  (cost=0.98..93.78 rows=7 width=193) (actual time=115.004..155.096 rows=3687 loops=1)
+                                      Join Filter: ((c_1.platform = named.platforms[1]) AND (cardinality(named.platforms) = 1))
+                                      Rows Removed by Join Filter: 12
+                                      Buffers: shared hit=124936
+                                      ->  Nested Loop Left Join  (cost=0.71..83.45 rows=7 width=217) (actual time=114.988..145.764 rows=3687 loops=1)
+                                            Buffers: shared hit=119694
+                                            ->  CTE Scan on period_acq a  (cost=0.00..0.14 rows=7 width=154) (actual time=114.861..129.162 rows=3687 loops=1)
+                                                  Buffers: shared hit=102201
+                                            ->  Nested Loop  (cost=0.71..11.89 rows=1 width=79) (actual time=0.004..0.004 rows=0 loops=3687)
+                                                  Buffers: shared hit=17493
+                                                  ->  Nested Loop  (cost=0.71..11.54 rows=1 width=305) (actual time=0.002..0.003 rows=0 loops=3687)
+                                                        Buffers: shared hit=17493
+                                                        ->  Index Scan using leads_pkey on leads l_1  (cost=0.29..8.30 rows=1 width=28) (actual time=0.001..0.001 rows=0 loops=3687)
+                                                              Index Cond: (id = a.lead_id)
+                                                              Filter: (campaign_external_id IS NOT NULL)
+                                                              Rows Removed by Filter: 0
+                                                              Buffers: shared hit=10593
+                                                        ->  Index Scan using raw_events_pkey on raw_events re  (cost=0.42..3.24 rows=1 width=293) (actual time=0.002..0.002 rows=1 loops=1725)
+                                                              Index Cond: (id = l_1.raw_event_id)
+                                                              Buffers: shared hit=6900
+                                                  ->  Subquery Scan on named  (cost=0.00..0.34 rows=1 width=64) (actual time=0.003..0.003 rows=1 loops=1725)
+                                                        ->  Result  (cost=0.00..0.33 rows=1 width=32) (actual time=0.003..0.003 rows=1 loops=1725)
+                                      ->  Index Scan using ad_campaigns_platform_external_campaign_id_key on ad_campaigns c_1  (cost=0.27..1.46 rows=1 width=24) (actual time=0.002..0.002 rows=0 loops=3687)
+                                            Index Cond: (external_campaign_id = l_1.campaign_external_id)
+                                            Buffers: shared hit=5242
+                    SubPlan 16
+                      ->  Seq Scan on campaign_branch_map um  (cost=0.00..3.55 rows=155 width=8) (actual time=0.021..0.029 rows=155 loops=1)
+                            Buffers: shared hit=2
+                    SubPlan 18
+                      ->  CTE Scan on held_campaigns hc  (cost=0.00..0.10 rows=5 width=64) (actual time=0.019..0.019 rows=0 loops=1)
+                            Buffers: shared hit=3
+                    SubPlan 20
+                      ->  CTE Scan on held_campaigns hc_1  (cost=0.00..0.10 rows=5 width=64) (actual time=0.000..0.000 rows=0 loops=1)
+                    SubPlan 22
+                      ->  CTE Scan on held_campaigns hc_2  (cost=0.00..0.10 rows=5 width=64) (actual time=0.000..0.000 rows=0 loops=1)
+                    SubPlan 23
+                      ->  Subquery Scan on hd  (cost=12.98..13.00 rows=1 width=0) (actual time=0.001..0.001 rows=0 loops=1726)
+                            ->  Unique  (cost=12.98..12.99 rows=1 width=68) (actual time=0.001..0.001 rows=0 loops=1726)
+                                  ->  Sort  (cost=12.98..12.99 rows=1 width=68) (actual time=0.001..0.001 rows=0 loops=1726)
+                                        Sort Key: h_1.day
+                                        Sort Method: quicksort  Memory: 25kB
+                                        ->  Nested Loop Anti Join  (cost=0.56..12.97 rows=1 width=68) (actual time=0.000..0.000 rows=0 loops=1726)
+                                              ->  CTE Scan on held_records h_1  (cost=0.00..0.36 rows=1 width=68) (actual time=0.000..0.000 rows=0 loops=1726)
+                                                    Filter: ((ext IS NOT NULL) AND (day IS NOT NULL) AND (platform = (CASE WHEN (cardinality(named.platforms) = 1) THEN named.platforms[1] ELSE NULL::text END)) AND (ext = l_1.campaign_external_id) AND (day >= ((p_3.t0 AT TIME ZONE 'UTC'::text))::date) AND (day < ((p_3.t1 AT TIME ZONE 'UTC'::text))::date))
+                                              ->  Nested Loop  (cost=0.56..12.60 rows=1 width=20) (never executed)
+                                                    ->  Index Scan using ad_campaigns_platform_external_campaign_id_key on ad_campaigns c_4  (cost=0.27..8.29 rows=1 width=24) (never executed)
+                                                          Index Cond: ((platform = (CASE WHEN (cardinality(named.platforms) = 1) THEN named.platforms[1] ELSE NULL::text END)) AND (external_campaign_id = l_1.campaign_external_id))
+                                                    ->  Index Only Scan using ad_spend_daily_pkey on ad_spend_daily s_6  (cost=0.29..4.30 rows=1 width=12) (never executed)
+                                                          Index Cond: ((campaign_id = c_4.id) AND (spend_date = h_1.day))
+                                                          Heap Fetches: 0
+        ->  GroupAggregate  (cost=0.27..24.88 rows=43 width=12) (actual time=0.019..0.073 rows=43 loops=1)
+              Group Key: exceptions.branch_id
+              Buffers: shared hit=5
+              ->  Index Only Scan using exceptions_open_idx on exceptions  (cost=0.27..23.52 rows=186 width=4) (actual time=0.016..0.045 rows=186 loops=1)
+                    Index Cond: (branch_id IS NOT NULL)
+                    Heap Fetches: 0
+                    Buffers: shared hit=5
+  ->  Sort  (cost=918.85..919.31 rows=184 width=36) (actual time=7.788..7.793 rows=43 loops=1)
+        Sort Key: risk.branch_id
+        Sort Method: quicksort  Memory: 26kB
+        Buffers: shared hit=282
+        ->  Subquery Scan on risk  (cost=907.78..911.92 rows=184 width=36) (actual time=7.762..7.774 rows=43 loops=1)
+              Buffers: shared hit=282
+              ->  HashAggregate  (cost=907.78..910.08 rows=184 width=36) (actual time=7.761..7.770 rows=43 loops=1)
+                    Group Key: e_1.branch_id
+                    Batches: 1  Memory Usage: 48kB
+                    Buffers: shared hit=282
+                    ->  Hash Right Join  (cost=484.28..862.00 rows=9157 width=12) (actual time=4.716..7.703 rows=236 loops=1)
+                          Hash Cond: (p_4.crm_customer_id = (unnest(e_1.customer_ids)))
+                          Buffers: shared hit=282
+                          ->  HashAggregate  (cost=350.96..500.26 rows=9953 width=16) (actual time=4.423..6.892 rows=10321 loops=1)
+                                Group Key: p_4.crm_customer_id
+                                Batches: 1  Memory Usage: 4241kB
+                                Buffers: shared hit=159
+                                ->  Seq Scan on crm_payments p_4  (cost=0.00..298.14 rows=10565 width=16) (actual time=0.009..1.192 rows=10565 loops=1)
+                                      Filter: (status = 'successful'::text)
+                                      Rows Removed by Filter: 566
+                                      Buffers: shared hit=159
+                          ->  Hash  (cost=131.02..131.02 rows=184 width=12) (actual time=0.271..0.272 rows=236 loops=1)
+                                Buckets: 1024  Batches: 1  Memory Usage: 20kB
+                                Buffers: shared hit=123
+                                ->  HashAggregate  (cost=128.72..131.02 rows=184 width=12) (actual time=0.228..0.248 rows=236 loops=1)
+                                      Group Key: e_1.branch_id, unnest(e_1.customer_ids)
+                                      Batches: 1  Memory Usage: 61kB
+                                      Buffers: shared hit=123
+                                      ->  ProjectSet  (cost=0.00..127.79 rows=186 width=12) (actual time=0.014..0.172 rows=237 loops=1)
+                                            Buffers: shared hit=123
+                                            ->  Seq Scan on exceptions e_1  (cost=0.00..125.46 rows=186 width=34) (actual time=0.012..0.132 rows=186 loops=1)
+                                                  Filter: ((branch_id IS NOT NULL) AND (status = 'open'::text))
+                                                  Rows Removed by Filter: 11
+                                                  Buffers: shared hit=123
+Planning:
+  Buffers: shared hit=225
+Planning Time: 8.099 ms
+Execution Time: 204.257 ms

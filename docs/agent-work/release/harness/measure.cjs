@@ -87,8 +87,9 @@ const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
 /**
  * The upload journey, as a marketing analyst (the server runs with DEMO_MODE=1): the built-in call
- * sample, from the click to the result card's counts. The two questions a file cannot answer are
- * answered when the page asks them; nothing else is clicked.
+ * sample, from the click to the result card's conclusion. The two questions a file cannot answer
+ * are answered when the page asks them; nothing else is clicked. Where the result sits on the first
+ * screen is read after a reload, from the top: the page scrolls to the result after a dry run.
  */
 async function uploadOnce(browser, viewport) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
@@ -97,8 +98,15 @@ async function uploadOnce(browser, viewport) {
   if (!role.ok()) throw new Error(`role: ${role.status()}`);
   const page = await context.newPage();
   await page.goto(baseUrl + "/onboarding", { waitUntil: "load", timeout: 120_000 });
+  // The clock starts when the sample can be clicked. React reveals streamed sections in batches,
+  // at least 300 ms apart, so the button can stay hidden for up to a second after the load event:
+  // page time, not upload time, recorded apart as `readyMs`. (Until 2026-11-18 the clock started
+  // before Playwright waited for the button, so each run carried that wait.)
+  const sample = page.getByTestId("sample-demo-calls.csv");
+  const loaded = Date.now();
+  await sample.waitFor({ state: "visible", timeout: 120_000 });
   const started = Date.now();
-  await page.getByTestId("sample-demo-calls.csv").click();
+  await sample.click();
   await page.waitForURL(/\/onboarding\/\d+$/, { timeout: 120_000 });
   // The mapping form streams in after the URL changes: wait for it (or for a result the page
   // already reached on its own) before reading what it asks.
@@ -116,7 +124,8 @@ async function uploadOnce(browser, viewport) {
     }
     await go.click();
   }
-  const result = await settled(page, '[data-testid="dry-run-counts"]').catch(async (e) => {
+  // A build from before the result card (WP-D) shows the dry run's counts; both appear together on newer builds.
+  const result = await settled(page, '[data-testid="result-conclusion"], [data-testid="dry-run-counts"]').catch(async (e) => {
     const shot = path.join(path.dirname(outJson), `upload-failure-${label}.png`);
     await page.screenshot({ path: shot, fullPage: true });
     console.error("upload stalled at", page.url(), "screenshot:", shot);
@@ -125,9 +134,13 @@ async function uploadOnce(browser, viewport) {
   const ms = Date.now() - started;
   await page.waitForTimeout(1500);
   const cls = await page.evaluate(() => window.__cls ?? null);
-  const box = await result.boundingBox();
+  await page.reload({ waitUntil: "load" });
+  const card = page.locator('[data-testid="upload-result"], [data-testid="dry-run-counts"]').first();
+  await card.waitFor({ state: "visible", timeout: 60_000 });
+  const box = await card.boundingBox();
+  void result;
   await context.close();
-  return { ms, cls: cls === null ? null : Math.round(cls * 1000) / 1000, resultTop: box ? Math.round(box.y) : null };
+  return { ms, readyMs: started - loaded, cls: cls === null ? null : Math.round(cls * 1000) / 1000, resultTop: box ? Math.round(box.y) : null };
 }
 
 /** Writes what has been measured so far, so a later failure does not lose the earlier numbers. */
@@ -165,13 +178,15 @@ function save(out) {
   }
   if (process.env.MEASURE_UPLOAD !== "0") {
     const desktop = [];
-    for (let i = 0; i < 3; i++) desktop.push(await uploadOnce(browser, { width: 1440, height: 900 }));
+    // Five runs: three gave a median that fell on either side of React's reveal batches.
+    for (let i = 0; i < 5; i++) desktop.push(await uploadOnce(browser, { width: 1440, height: 900 }));
     const phone = await uploadOnce(browser, { width: 390, height: 844 });
     out.pages.upload = {
       path: "/onboarding → sample-demo-calls.csv → result",
       firstMs: desktop[0].ms,
       medianMs: median(desktop.map((d) => d.ms)),
       runs: desktop.map((d) => d.ms),
+      readyRuns: desktop.map((d) => d.readyMs),
       cls: Math.max(...desktop.map((d) => d.cls ?? 0)),
       phone: { resultTop: phone.resultTop, firstScreen: phone.resultTop !== null && phone.resultTop < 844, ms: phone.ms, cls: phone.cls },
     };

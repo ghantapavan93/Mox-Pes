@@ -1,0 +1,30 @@
+{
+  "focus-desktop": {
+    "focused": true,
+    "file": "docs\\agent-work\\release\\captures\\before-focus-desktop.png"
+  },
+  "pending-desktop": {
+    "file": "docs\\agent-work\\release\\captures\\before-pending-desktop.png"
+  },
+  "point-desktop": {
+    "file": "docs\\agent-work\\release\\captures\\before-point-desktop.png"
+  },
+  "result-desktop": {
+    "url": "http://localhost:3995/branches/B09/trace?period=oct&metric=paid_spend&channel=google_search&week=2026-10-12",
+    "file": "docs\\agent-work\\release\\captures\\before-result-desktop.png"
+  },
+  "focus-phone": {
+    "focused": true,
+    "file": "docs\\agent-work\\release\\captures\\before-focus-phone.png"
+  },
+  "pending-phone": {
+    "file": "docs\\agent-work\\release\\captures\\before-pending-phone.png"
+  },
+  "point-phone": {
+    "file": "docs\\agent-work\\release\\captures\\before-point-phone.png"
+  },
+  "result-phone": {
+    "url": "http://localhost:3995/branches/B09/trace?period=oct&metric=paid_spend&channel=google_search&week=2026-10-12",
+    "file": "docs\\agent-work\\release\\captures\\before-result-phone.png"
+  }
+}

@@ -421,7 +421,7 @@ decreased when items are deleted. One advisory lock serialises the budget check 
 | Limit | Value | When reached |
 |---|---|---|
 | Bytes per workspace file | 4 MB, checked in the browser from the file's size before sending, and on the server (Vercel refuses bodies over 4.5 MB with its own 413, which the form shows as this same refusal) | Refused (413): "This file is 4.6 MB; the public demo takes files up to 4 MB." |
-| Rows per workspace file | 10,000 (staff keep 50,000), passed into the parser, which stops there | Refused (422): "The public demo takes files up to 10,000 rows; this file has more. Upload one month at a time, or run the local demo for files up to 50,000 rows." |
+| Rows per workspace file | 10,000 (staff keep 50,000), checked on the parsed table; the parser's own 50,000-row bound caps the work, and a 4 MB file parses in well under a second | Refused (422): "The public demo takes files up to 10,000 rows; this file has 12,345. Upload one month at a time, or run the local demo for files up to 50,000 rows." ("more than 50,000" when the parser stopped at its bound) |
 | Mapping versions per workspace upload | 10 | Refused (409): "This upload has reached the 10-version limit. Delete it, then upload the file again." |
 | Rows held by all workspace uploads | 100,000, counting each upload as twice its rows (its staged rows plus its one set of results) | At staging, the oldest uploads that are more than 30 minutes old are deleted to make room; if none is old enough, refused (503): "The public demo is full right now. Try again in a few minutes." |
 | Rows written by staging and dry runs, all visitors | 50,000 a minute, 500,000 a day; the built-in sample is exempt | Refused (429): "The public demo is at capacity. Try again in a minute." The daily limit says "The public demo has handled its share of files for today; the built-in sample still works. Try again after midnight UTC." |
@@ -471,10 +471,10 @@ growth.
 workspace) and then sends the chosen file, or `public/samples/demo-calls.csv`, to
 `POST /api/onboarding/uploads` as raw bytes with `x-filename`; a response that is not JSON (Vercel's
 own 413) is shown as the size refusal. The route sets or refreshes the visitor cookie for a
-workspace guest (§5.1). `stageUpload` counts the start against the quotas, runs repeat detection,
-then `parseUpload` (format, encoding, delimiter, and the row limit for this viewer, which the parser
-stops at) and `profileTable`, makes room within the budget under the advisory lock, and writes the
-upload and its rows.
+workspace guest (§5.1). `stageWorkspaceUpload` counts the start against the quotas, runs repeat
+detection, then `parseUpload` (format, encoding, delimiter) and the row limit for this viewer on the
+parsed table, then `profileTable`, makes room within the budget under the advisory lock, and writes
+the upload and its rows.
 
 **2. Map.** `/onboarding/[id]` shows the profile and the suggested mapping. The person answers what
 the file cannot say (date order, local time), then saves a mapping version (`proposeMapping`).
@@ -639,8 +639,9 @@ Selecting and opening stay separate, as the chart already does:
 blue stays "you can act here", and every state also has a word.
 
 - **B20.** The fix receipt leads with October: CAC **$490.11 → $271.31**, the same spend
-  ($15,193.50) and the same 109 serviced customers, shown together. Paid customers rise 31 → 56 (22
-  from unknown, 3 from door-to-door). The replay's own window (Sep 1–Oct 30, $364.75 → $284.06) sits
+  ($15,193.47) and the same 109 serviced customers, shown together. Paid customers rise 31 → 56: of the 33
+  customers whose channel changed, 30 had none and 3 were door-to-door; 25 now count as paid media
+  and 8 as organic Business Profile. The replay's own window (Sep 1–Oct 30, $364.75 → $284.06) sits
   below, labelled "Replay window". The receipt (`FixResult.tsx`) reads the execution's stored state
   (`action_executions`, written from `captureState()` in `lib/workflow/snapshot.ts`), which today
   covers the whole demo window. `captureState` gains `month`: the branch's figures for the latest
@@ -1077,7 +1078,7 @@ Create (C) or Modify (M). Paths are from the repository root.
 | WP-C | C `docs/agent-work/release/route-audit.md`, `harness/route-audit.cjs`, `components/useRestoreFocus.ts`, `tests/e2e/release-journeys.spec.ts`; M `app/page.tsx`, `components/overview/MovementChart.tsx`, `components/overview/MovementSection.tsx`, `lib/metrics/movement-copy.ts`; and, where `route-audit.md` fails them, the page file of each route in §6 not listed for WP-D, WP-E or WP-F (each named in the commit that changes it) |
 | WP-D | C `database/migrations/0037_workspace_and_ledger_targets.sql`, `lib/workspace.ts`, `lib/onboarding/access.ts`, `app/api/workspace/cleanup/route.ts`, `vercel.json`, `tests/fixtures/onboarding/unseen.ts`, `tests/integration/workspace.test.ts`, `tests/integration/onboarding-publish-once.test.ts`, `harness/flood-workspace.ts`; M `lib/viewer.ts`, `lib/server.ts`, `lib/http.ts` (`readBodyBytes` limit and message), `lib/onboarding/service.ts`, `lib/onboarding/ledger.ts`, `lib/onboarding/limits.ts`, `lib/onboarding/parse.ts`, `lib/onboarding/xlsx.ts`, `app/api/onboarding/uploads/route.ts`, `app/api/onboarding/uploads/[id]/route.ts`, `app/api/onboarding/uploads/[id]/mappings/route.ts`, `app/api/onboarding/uploads/[id]/dry-run/route.ts`, `app/api/onboarding/uploads/[id]/rows/route.ts`, `app/onboarding/page.tsx`, `app/onboarding/[id]/page.tsx`, `components/onboarding/UploadForm.tsx`, `components/onboarding/MappingEditor.tsx`, `components/onboarding/DecisionPanel.tsx`, `.gitattributes`, C `tests/unit/workspace-sample-hash.test.ts`, `playwright.config.ts` (one env line), `tests/e2e/db.ts` (`expireWorkspaceItem`, `seedReplayableIncident`), `tests/e2e/z-onboarding.spec.ts` (line 38: the eligible label; line 73: the guest now sees the workspace form, partner and brand keep 403), `tests/integration/review-regressions.test.ts` (lines 108–111: the permission set gains `workspace: false`), `tests/unit/get-viewer.test.ts` (the workspace guest cases) |
 | WP-E | M `lib/workflow/snapshot.ts`, `components/incidents/FixResult.tsx`, `components/incidents/RevisionHold.tsx`, `components/incidents/GapRecovery.tsx`, `components/actions/SnapshotDiff.tsx`, `components/actions/CaseQueue.tsx`, `components/actions/badges.tsx`, `app/exceptions/[id]/page.tsx`, `app/exceptions/page.tsx`, `app/decisions/page.tsx`; C `tests/integration/b20-receipt.test.ts` |
-| WP-G | M the `connection()` line in `lib/server.ts` (done, `3087cac`), `components/ShellStatus.tsx` (`FreshnessIndicator` reads data without the viewer, so it gets its own `connection()`; done), the verdict's reads in `app/page.tsx`, `lib/metrics/scorecard.ts`, `lib/queries.ts`, `tests/unit/get-viewer.test.ts` (mock `next/server`'s `connection`, as `tests/integration/identity.test.ts:30` does), `harness/measure.cjs` (Element Timing), `docs/agent-work/release/measurements/steps.md`; only if step 3 runs: C `database/migrations/0038_acquisitions_total_order.sql`, `tests/integration/scorecard-equality.test.ts`, M `lib/metrics/eligibility.ts` |
+| WP-G | M the `connection()` line in `lib/server.ts` (done, `3087cac`), `components/ShellStatus.tsx` (`FreshnessIndicator` reads data without the viewer, so it gets its own `connection()`; done), the verdict's reads in `app/page.tsx`, `lib/metrics/scorecard.ts`, `lib/queries.ts`, `tests/unit/get-viewer.test.ts` (mock `next/server`'s `connection`, as `tests/integration/identity.test.ts:30` does), `harness/measure.cjs` (Element Timing), `docs/agent-work/release/measurements/steps.md`; step 3 (ran): C `database/migrations/0038_set_based_acquisitions.sql`, `tests/integration/scorecard-equality.test.ts`, M `lib/metrics/scorecard.ts`, `lib/metrics/decision.ts` (eligibility needed no change) |
 | WP-F | M `lib/ai/model.ts`, `lib/ai/investigate.ts`, `lib/ai/steps.ts`, `lib/ai/queries.ts`, `lib/ai/contract.ts`, `scripts/eval-ai.ts`, `app/api/investigations/route.ts`, `app/api/investigations/[id]/route.ts`, `app/api/investigations/[id]/evidence/route.ts`, `app/investigator/page.tsx`, `app/investigator/[id]/page.tsx`, `components/investigator/InvestigateForm.tsx`, `tests/unit/ai-model-loop.test.ts`, `tests/integration/ai-investigator.test.ts` (its `@/lib/server` mock gains `viewerForWorkspaceStart`); C `tests/integration/investigator-fallback.test.ts`, `tests/integration/workspace-investigations.test.ts`, `tests/unit/model-profiles.test.ts`, `tests/unit/no-uploads-to-models.test.ts`, `docs/agent-work/release/ollama-run.md` |
 | WP-H | M `app/api/health/route.ts`; C `tests/integration/health.test.ts` |
 | WP-I | M `docs/agent-work/release/ci-root-causes.md`, `harness/linux-ci-repro.sh`, `.github/workflows/ci.yml` (only if a cause lives there) |
@@ -1213,6 +1214,24 @@ export function useRestoreFocus(): void;         // on mount: focus the remember
 6. On `/`, at most one visible `[data-variant="primary"]`; at 720 × 450 with device scale factor 2
    the verdict and its action are visible and the page has no sideways scroll.
 
+**Implementation notes** (WP-C steps 1–2):
+1. The Overview's one primary action is the verdict's: "Open B20 Heron" (`headline-action`) under
+   the sentence, which now names the branch without an inline link. "Open evidence" and "Reset" in
+   the chart's panel are a secondary and a ghost button.
+2. A dot keeps its 4 px mark; a transparent 12-unit target under every dot takes a finger's tap,
+   drawn beneath all lines and dots so a pointer on a dot still reaches the dot.
+3. Back can show the page before it is visible, and the page can render again from the server just
+   after, replacing the focused element. `restoreRememberedFocus` therefore keeps focus on the
+   remembered element for about two seconds, until the reader presses a key or the pointer, then
+   forgets it.
+4. The chart journey's accessibility check found two names that did not contain their visible
+   words (WCAG 2.5.3): the sidebar toggle ("Collapse" in "Navigation sidebar"; its visible word is
+   now "Navigation") and the header's data-times link, whose name now starts with exactly what it
+   shows, then adds the other three times (WP-B's link, `components/ShellStatus.tsx`).
+5. WP-G step 2 is in the same change: the Overview awaits only the verdict's reads (branch rows,
+   bridge, holds); September's comparison, the weekly series, the brand lines and the feeds'
+   freshness start after the verdict and "What changed", each in its own Suspense section.
+
 ### WP-D. Visitor workspace and the upload result
 
 **Writes (runtime).**
@@ -1267,9 +1286,11 @@ export function requireOnboarding(viewer: Viewer, action: string, kind?: "propos
 export async function uploadFor(db: Queryable, viewer: Viewer, id: number): Promise<UploadSummary>; // 404 unless visible and unexpired
 // UploadSummary gains: workspaceStartedAt: string | null
 
-// lib/onboarding/parse.ts and xlsx.ts
-export function parseUpload(args: { filename: string; bytes: Buffer; sheetIndex?: number; maxRows?: number }): ParsedTable | Refusal;
-// maxRows (default LIMITS.maxRows) reaches tabulate, parseJson, splitCsv and readXlsx
+// lib/onboarding/parse.ts and xlsx.ts: unchanged. The workspace's row limit is checked on the parsed
+// table (implementation note 1 below).
+
+// lib/onboarding/limits.ts (no server import: UploadForm checks the size with the same words)
+export function tooLargeMessage(bytes: number | null, maxBytes: number, scope: "workspace" | "company"): string;
 
 // lib/onboarding/service.ts
 // stageUpload keeps its type for company uploads ({ upload } | { refused }), so its callers and tests are untouched;
@@ -1294,11 +1315,12 @@ export function ledgerHref(target: LedgerTarget): string | null;
 3. `stageWorkspaceUpload`, in this order:
    a. `deleteExpiredWorkspace()`;
    b. `countStart(pool, "upload")`;
-   c. the repeat lookup (same owner, same `file_sha256`, live) → `repeatOf`;
-   d. `parseUpload` with `maxRows: WORKSPACE.maxRows`;
+   c. the size check (413), then the repeat lookup (same owner, same `file_sha256` and sheet, live) →
+      `repeatOf`;
+   d. `parseUpload`, then the row limit on the parsed table (422);
    e. `countRows(pool, rows, isSample)`;
-   f. one transaction: the advisory lock, `makeRoomForUpload`, then the insert of the upload and its
-      rows.
+   f. one transaction: the advisory lock, `makeRoomForUpload`, the repeat lookup again (a retry that
+      raced the first request finds it here), then the insert of the upload and its rows.
    Company uploads keep today's path; `purgeExpired()` gains `workspace_owner is null`.
 4. Mappings and dry runs: workspace mappings keyed to their upload; the layout-wide queries with
    `workspace_owner is null`; a new dry run of a workspace upload replaces the previous one in the
@@ -1372,6 +1394,29 @@ export function ledgerHref(target: LedgerTarget): string | null;
   (WP-J step 4): 35 uploads a minute for 3 minutes, each a different 10,000-row file; refusals,
   table sizes and WAL growth into `docs/agent-work/release/flood.md`.
 
+**Implementation notes** (decided while building WP-D; no interface above them changed meaning):
+1. The workspace's row limit is checked on the parsed table, not threaded into the parser and the
+   XLSX reader: the parser's own 50,000-row bound already caps the work, and the refusal can then
+   name the file's own count. `parse.ts` and `xlsx.ts` are unchanged.
+2. `makeRoomForUpload` deletes only when deleting is enough: it picks the oldest uploads past their
+   residency whose rows cover the shortfall (one window query), and when even all of them would not,
+   it deletes nothing and refuses (503).
+3. Files the plan did not list: `components/onboarding/DeleteNow.tsx` ("Delete it now", used by the
+   result card and the counting card); `lib/element-timing.d.ts` (types the `elementtiming`
+   attribute); `tests/unit/uploads-never-reach-models.test.ts` (the threat model's "a unit test keeps
+   it so"); `lib/actions.ts` (`ActionError` takes 413, 422, 429 and 503). J2 creates `tests/e2e/release-journeys.spec.ts`; WP-C steps 1–2 add J1 to it.
+4. `LOCAL_DEMO_URL` in `lib/workspace.ts` links to the README's "Run the demo locally" section,
+   which WP-J writes (its Files row lists `README.md`). WP-J also adds Neon's restore window, read
+   from the project's Backup & Restore page, to the retention sentence on `/onboarding`.
+5. The header shows the role picker only in demo mode. Outside it `POST /api/role` answers 404, so
+   on the hosted demo the picker offered staff roles that did nothing; the header now names the
+   visitor instead ("Guest · your workspace"), and in demo mode the guest's option says whether it
+   has a workspace (`app/layout.tsx`, `components/RoleSwitcher.tsx`).
+6. The route audit's `/onboarding` row failed on a phone (the upload button at 998 px): the intro
+   is shorter and the upload card comes before the workspace note; the result's next action comes
+   before the note too (`docs/agent-work/release/route-audit.md`, "Failures, and where each is
+   fixed").
+
 ### WP-C steps 1–2
 
 As listed in WP-C above, after WP-D.
@@ -1397,7 +1442,7 @@ route audit's failures on `/exceptions`, `/exceptions/[id]` and `/decisions`.
 **Tests.**
 - `tests/integration/b20-receipt.test.ts` (new; seeds in `beforeAll`): runs B20's fix through the
   Action Center functions (propose, dry run, approve, execute); the stored execution's `month` is
-  October: paid CAC 49011 → 27131 cents, paid-media spend 1519350 cents before and after, 109
+  October: paid CAC 49011 → 27131 cents, paid-media spend 1519347 cents before and after, 109
   serviced customers, paid customers 31 → 56.
 - J3 in `release-journeys.spec.ts` (added, `@core` is not set: it needs staff roles). Before it,
   `seedReplayableIncident()` (added to `tests/e2e/db.ts`) ingests three calls at B07 with the field
@@ -1410,6 +1455,21 @@ route audit's failures on `/exceptions`, `/exceptions/[id]` and `/decisions`.
   `os-golden-path.spec.ts`, the stored receipt with Corrected and Approved badges and October's
   $490.11 → $271.31 first; as guest on the same incident, the reason and no action; B09's held
   decision in Decision Lab offers no approval; at most one `[data-variant="primary"]` per page.
+
+**Implementation notes** (WP-E):
+1. The stored figures corrected two numbers in this design: October's paid-media spend is
+   $15,193.47, and the 25 newly paid customers are not "22 from unknown, 3 from door-to-door": 33
+   customers changed channel (30 had none, 3 were door-to-door); 25 now count as paid media and 8
+   as organic Business Profile. Snapshots gain `acquiredByChannel` (every channel), and the receipt
+   words the move from it; §5.8 says the same.
+2. One primary action per page: the proposal form's "Propose fix" is secondary, and Decision Lab
+   puts the first blocking incident's primary action directly under its verdict at every width (the
+   list below links the others), with a Held badge beside "Not ready".
+3. "Switch to <role>" prompts appear only in demo mode; on the hosted demo the incident and the
+   scenario builder say the records or scenarios are shown read-only (`app/exceptions/[id]/page.tsx`,
+   `app/decisions/page.tsx`).
+4. J3 fixes B20 itself through the Action Center when it runs without `golden-path.spec.ts`, which
+   otherwise fixes it earlier in the suite.
 
 ### WP-G. Performance
 
@@ -1435,6 +1495,31 @@ route audit's failures on `/exceptions`, `/exceptions/[id]` and `/decisions`.
   the test) and the new one; on added fixtures with ties in `sold_at` and `scheduled_for` and
   subscriptions spanning September and October, the two agree once both orderings are total.
 - `measure-cold.sh` after each step, same data; the §4 goals reported, regressions blocking.
+
+**Implementation notes** (WP-G):
+1. Step 3 ran: after step 2 the warm verdict was 1,396 ms. Each of the verdict's four reads spent
+   most of its time deciding `v_acquisitions`' two "firsts" for all 17,111 customers before keeping
+   its period, and two of them also credited every customer's first touch to keep a few
+   (`measurements/steps.md`, step 3).
+2. The migration is `0038_set_based_acquisitions.sql`. It adds `v_first_subscriptions` (each
+   customer's first subscription) and `v_initial_appointments` (each subscription's deciding
+   initial appointment, the appointment id now its last key), both written as "no row orders before
+   this one", so the planner can start from a period's rows or from one customer's.
+   `v_acquisitions` reads them; its columns and its first-touch rule are 0026's.
+3. Four statements changed with it. The scorecard's `sold` count reads `v_first_subscriptions`
+   (it never used the first touch). The scorecard's `period_acq` takes the period as parameters:
+   read from `p`, the planner credited 9,477 customers before keeping October's 3,687. The bridge's
+   `acq` and the unmapped-spend hold (`UNMAPPED_AT_BRANCH`, also in `budgetSignal`) first name the
+   customers that share a phone or email with the leads in question, passed as an array: as a
+   semi-join, the planner credited every customer first (1.9 s for the bridge).
+4. `lib/metrics/eligibility.ts` needed no change: its `period_acq` already keeps the period first,
+   and it reads the new view.
+5. `tests/integration/scorecard-equality.test.ts` runs every read twice on one connection: as it
+   is, and on 0026's view (read from that migration, kept as a temporary table) with the old text
+   of each changed statement. A changed statement that no longer contains its new text fails the
+   test, so a later edit updates the old text or retires the check. It covers the scorecard for
+   every month and week, the bridge for every branch and month, eligibility and both holds for the
+   company and nine branches, and `budgetSignal` for every branch in October and September.
 
 ### WP-F. Investigator
 
@@ -1515,6 +1600,28 @@ export function tablesFor(viewer: Viewer): InvestigationTables; // StepRecorder 
   October?" by keyboard; the answer names the deterministic path and cites records; a cited record
   opens; at most one `[data-variant="primary"]`.
 - A recorded local run against Ollama (`qwen3:8b`), not in CI: `docs/agent-work/release/ollama-run.md`.
+
+**Implementation notes** (WP-F):
+1. One fallback class was added: `declined`, for a model's own refusal (`stop_reason: "refusal"`),
+   which none of the others named honestly. `classifyModelError` also maps 403 to `auth`, 404 (a
+   model not pulled into Ollama) to `bad_request`, and 5xx to `unreachable`.
+2. "No verified statement" is decided after the model draft is grounded: when the analyst keeps
+   no claim (`claimsKept` is 0), the deterministic investigator answers and the result's
+   `fallback` says so. The stored `model` is the model that was tried, on a fallback too.
+3. A non-loopback `OLLAMA_BASE_URL` throws `ModelConfigError` when the client is built, so the
+   misconfiguration fails loudly instead of falling back quietly; the investigator page treats it
+   as "no model" for its label only.
+4. The Anthropic SDK 1.3 sends any API key as `Authorization: Bearer`. The Ollama client passes
+   the placeholder key explicitly, which also stops the SDK reading `ANTHROPIC_AUTH_TOKEN`;
+   `tests/unit/model-profiles.test.ts` checks that no environment credential reaches Ollama.
+5. The table-naming rule lives in `tests/unit/uploads-never-reach-models.test.ts` (WP-D's), not
+   a second file. `components/investigator/DeleteInvestigation.tsx` is new ("Delete it now"), and
+   `InvestigateForm` takes the visitor's own help sentence (no fix is drafted for a visitor).
+6. Messages are written as predicates of "The model …" / "The local model …", so the page reads
+   "The local model timed out after 45 s, so this answer came from the deterministic evidence
+   path." `tests/unit/ai-contract.test.ts` and `tests/integration/ai-investigator.test.ts` follow
+   the reworded labels; one model draft in the latter gains a statement the evidence supports, so
+   it still tests rejections inside an answer that stands.
 
 ### WP-H. Build identity
 

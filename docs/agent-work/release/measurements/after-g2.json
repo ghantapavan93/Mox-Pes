@@ -1,0 +1,81 @@
+{
+  "label": "after-g2",
+  "baseUrl": "http://localhost:3995",
+  "at": "2026-11-18T16:24:29.369Z",
+  "pages": {
+    "overview": {
+      "path": "/",
+      "coldVerdictMs": 2138,
+      "warmVerdictMs": 1396,
+      "warmRuns": [
+        1397,
+        1396,
+        1380
+      ],
+      "cls": 0.003,
+      "phone": {
+        "verdictTop": 318,
+        "actionTop": 464,
+        "firstScreen": true,
+        "sideways": false,
+        "verdictMs": 1387,
+        "cls": 0
+      }
+    },
+    "decision-lab-b20": {
+      "path": "/decisions?branch=B20&period=oct",
+      "coldVerdictMs": 888,
+      "warmVerdictMs": 412,
+      "warmRuns": [
+        856,
+        412,
+        405
+      ],
+      "cls": 0.003,
+      "phone": {
+        "verdictTop": 656,
+        "actionTop": 814,
+        "firstScreen": false,
+        "sideways": false,
+        "verdictMs": 891,
+        "cls": 0
+      }
+    },
+    "decision-lab-b09": {
+      "path": "/decisions?branch=B09&period=oct",
+      "coldVerdictMs": 412,
+      "warmVerdictMs": 879,
+      "warmRuns": [
+        881,
+        879,
+        414
+      ],
+      "cls": 0.003,
+      "phone": {
+        "verdictTop": 656,
+        "actionTop": 814,
+        "firstScreen": false,
+        "sideways": false,
+        "verdictMs": 882,
+        "cls": 0
+      }
+    },
+    "upload": {
+      "path": "/onboarding → sample-demo-calls.csv → result",
+      "firstMs": 937,
+      "medianMs": 937,
+      "runs": [
+        937,
+        1243,
+        757
+      ],
+      "cls": 0,
+      "phone": {
+        "resultTop": 4216,
+        "firstScreen": false,
+        "ms": 715,
+        "cls": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "label": "before-v2",
+  "baseUrl": "http://localhost:3995",
+  "at": "2026-11-18T17:08:56.183Z",
+  "pages": {
+    "overview": {
+      "path": "/",
+      "coldVerdictMs": 2034,
+      "warmVerdictMs": 1434,
+      "warmRuns": [
+        1927,
+        1434,
+        1424
+      ],
+      "cls": 0.003,
+      "phone": {
+        "verdictTop": 318,
+        "actionTop": 434,
+        "firstScreen": true,
+        "sideways": false,
+        "verdictMs": 1530,
+        "cls": 0
+      }
+    },
+    "decision-lab-b20": {
+      "path": "/decisions?branch=B20&period=oct",
+      "coldVerdictMs": 877,
+      "warmVerdictMs": 877,
+      "warmRuns": [
+        877,
+        870,
+        889
+      ],
+      "cls": 0.006,
+      "phone": {
+        "verdictTop": 654,
+        "actionTop": 850,
+        "firstScreen": false,
+        "sideways": false,
+        "verdictMs": 895,
+        "cls": 0
+      }
+    },
+    "decision-lab-b09": {
+      "path": "/decisions?branch=B09&period=oct",
+      "coldVerdictMs": 429,
+      "warmVerdictMs": 876,
+      "warmRuns": [
+        876,
+        885,
+        874
+      ],
+      "cls": 0.003,
+      "phone": {
+        "verdictTop": 654,
+        "actionTop": 890,
+        "firstScreen": false,
+        "sideways": false,
+        "verdictMs": 872,
+        "cls": 0
+      }
+    },
+    "upload": {
+      "path": "/onboarding → sample-demo-calls.csv → result",
+      "firstMs": 988,
+      "medianMs": 729,
+      "runs": [
+        988,
+        806,
+        686,
+        644,
+        729
+      ],
+      "readyRuns": [
+        36,
+        34,
+        22,
+        20,
+        24
+      ],
+      "cls": 0,
+      "phone": {
+        "resultTop": 351,
+        "firstScreen": true,
+        "ms": 681,
+        "cls": 0
+      }
+    }
+  }
+}

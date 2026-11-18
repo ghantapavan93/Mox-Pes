@@ -1,0 +1,140 @@
+{
+  "base": "http://localhost:3990",
+  "path": "/decisions?branch=B09&period=oct",
+  "runs": 6,
+  "lockMs": 1500,
+  "results": [
+    {
+      "width": 1440,
+      "run": 1,
+      "lockMs": 1500,
+      "cls": 0.006,
+      "over": false,
+      "shifts": [
+        "0.006 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3784
+    },
+    {
+      "width": 1440,
+      "run": 2,
+      "lockMs": 1500,
+      "cls": 0.006,
+      "over": false,
+      "shifts": [
+        "0.006 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3827
+    },
+    {
+      "width": 1440,
+      "run": 3,
+      "lockMs": 1500,
+      "cls": 0.003,
+      "over": false,
+      "shifts": [
+        "0.003 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3845
+    },
+    {
+      "width": 1440,
+      "run": 4,
+      "lockMs": 1500,
+      "cls": 0.006,
+      "over": false,
+      "shifts": [
+        "0.006 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3710
+    },
+    {
+      "width": 1440,
+      "run": 5,
+      "lockMs": 1500,
+      "cls": 0.006,
+      "over": false,
+      "shifts": [
+        "0.006 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3723
+    },
+    {
+      "width": 1440,
+      "run": 6,
+      "lockMs": 1500,
+      "cls": 0.006,
+      "over": false,
+      "shifts": [
+        "0.006 div.flex min-w-0 flex-wrap items-center justify-end ga"
+      ],
+      "ms": 3705
+    },
+    {
+      "width": 390,
+      "run": 1,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3704
+    },
+    {
+      "width": 390,
+      "run": 2,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3774
+    },
+    {
+      "width": 390,
+      "run": 3,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3692
+    },
+    {
+      "width": 390,
+      "run": 4,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3707
+    },
+    {
+      "width": 390,
+      "run": 5,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3742
+    },
+    {
+      "width": 390,
+      "run": 6,
+      "lockMs": 1500,
+      "cls": 0,
+      "over": false,
+      "shifts": [
+        "0.000 p.inline-flex items-center gap-1.5 rounded-md bg-war"
+      ],
+      "ms": 3708
+    }
+  ]
+}

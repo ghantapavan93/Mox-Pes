@@ -17,7 +17,9 @@ async function openIncidentWithCaseControls(page: Page): Promise<void> {
   await page.goto("/exceptions?status=open");
   const links = page.locator('a[href^="/exceptions/"]').filter({ hasNotText: /^$/ });
   const hrefs = (await links.evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""))).filter((h) => /^\/exceptions\/\d+/.test(h));
-  for (const href of hrefs.slice(0, 8)) {
+  // Earlier specs fix and close the most severe cases (golden-path, os-golden-path), so look past
+  // the first few: any open case the analyst can assign will do.
+  for (const href of hrefs.slice(0, 40)) {
     await page.goto(href);
     if (await page.getByTestId("case-controls").getByRole("button", { name: "Assign" }).count()) return;
   }

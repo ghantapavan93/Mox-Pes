@@ -1,7 +1,9 @@
 import type { Pool } from "pg";
-import { createPool, DEFAULT_DATABASE_URL, getNow } from "../../lib/db";
+import { mapperFor } from "../../lib/adapters/registry";
+import { createPool, DEFAULT_DATABASE_URL, getNow, withTransaction } from "../../lib/db";
 import { resolveIdentities } from "../../lib/identity/resolve";
 import { instantToWallTime } from "../../lib/primitives";
+import { reconcile } from "../../lib/reconcile/reconcile";
 import { deleteWorkspaceUploads } from "../../lib/workspace";
 import { seed } from "../../lib/sim/seed";
 import type { LedgerCall } from "../fixtures/onboarding/unseen";
@@ -96,9 +98,10 @@ export async function seedIdentityConflicts(): Promise<ConflictFixture> {
  * Calls the demo ledger holds, as a call-tracking export would state them, for the unseen export
  * of J2: their rows are compared with the ledger and link to their journeys. Only calls with a
  * live identity (so the link exists), no campaign and a whole-minute start (so every compared fact
- * can agree with a file that has no campaign column and minute times).
+ * can agree with a file that has no campaign column and minute times): the latest `n`, or the
+ * ones `ids` names, in that order.
  */
-export async function ledgerCalls(n: number): Promise<LedgerCall[]> {
+export async function ledgerCalls(n: number, ids: string[] | null = null): Promise<LedgerCall[]> {
   return withDemoPool(async (pool) => {
     const rows = (
       await pool.query<{ id: string; branch: string; timezone: string; occurred_at: Date; source: string }>(
@@ -107,13 +110,14 @@ export async function ledgerCalls(n: number): Promise<LedgerCall[]> {
          join branches b on b.id = l.branch_id
          join raw_events r on r.id = l.raw_event_id
          where l.source = 'calls' and l.campaign_external_id is null and extract(second from l.occurred_at) = 0
+           and ($2::text[] is null or l.source_lead_id = any($2::text[]))
            and exists (
              select 1 from identity_links k join identities i on i.id = k.identity_id
              where k.record_table = 'leads' and k.record_id = l.id and i.retired_at is null
            )
          order by l.occurred_at desc, l.id
          limit $1`,
-        [n],
+        [n, ids],
       )
     ).rows;
     // The world stores callers' numbers hashed; the export states a fictional 555 number instead.
@@ -143,5 +147,41 @@ export async function clearWorkspace(): Promise<void> {
     const ids = (await pool.query<{ id: string }>("select id from onboarding_uploads where workspace_owner is not null")).rows.map((r) => Number(r.id));
     await deleteWorkspaceUploads(pool, ids);
     await pool.query("delete from workspace_quota");
+  });
+}
+
+/**
+ * One incident that offers a replay, for J3: three B07 calls delivered in the changed shape
+ * calls@1.0 cannot read (the caller's number under `caller.number`, the field rename that held
+ * B20's calls), ingested through calls@1.0 so they are quarantined, then reconciled at the business
+ * clock. Their incident replays with calls@1.1. Returns its id. Fictional numbers (555-01xx).
+ */
+export async function seedReplayableIncident(): Promise<number> {
+  return withDemoPool(async (pool) => {
+    const now = await getNow(pool);
+    const records = [1, 2, 3].map((n) => {
+      const record = call(`CAL-E2E-J3-${n}`, "B07", `+1206555013${n}`, new Date(Date.UTC(2026, 9, 20 + n, 16, 0)));
+      const payload = record.payload as Record<string, unknown>;
+      payload.caller = { number: payload.customer_phone_number };
+      delete payload.customer_phone_number;
+      return record;
+    });
+    await ingest(pool, "calls", records, { mapper: mapperFor("calls", "1.0"), now });
+    await withTransaction(pool, (tx) => reconcile(tx, now));
+    const row = (
+      await pool.query<{ id: string }>(
+        "select id from exceptions where branch_id = 'B07' and kind = 'quarantined_source_records' and status = 'open' order by id desc limit 1",
+      )
+    ).rows[0];
+    if (!row) throw new Error("reconciliation opened no quarantine incident at B07");
+    return Number(row.id);
+  });
+}
+
+/** The first incident of a kind at a branch (any status), or null. */
+export async function incidentOf(branchId: string, kind: string): Promise<{ id: number; status: string } | null> {
+  return withDemoPool(async (pool) => {
+    const row = (await pool.query<{ id: string; status: string }>("select id, status from exceptions where branch_id = $1 and kind = $2 order by id limit 1", [branchId, kind])).rows[0];
+    return row ? { id: Number(row.id), status: row.status } : null;
   });
 }

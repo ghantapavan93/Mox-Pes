@@ -75,13 +75,12 @@ const iso = (d: Date | string | null | undefined) => (d ? new Date(d).toISOStrin
 const num = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
 
 /**
- * The branch a raw event belongs to: the branch its payload names (branch tag or CRM office),
- * else — for ad spend, which names a campaign, not a branch — the branch the campaign is
- * mapped to. Null = company-wide (an unmapped campaign or an unknown branch).
+ * The branch a raw event belongs to (migration 0036, raw_event_branch): for ad spend, which names a
+ * campaign, the branch the campaign is mapped to, whatever branch key the payload carries; for any
+ * other record, the branch its payload names (branch tag or CRM office). Null = company-wide (an
+ * unmapped campaign or an unknown branch).
  */
-const RAW_EVENT_BRANCH = `coalesce(payload_branch(re.payload), (
-    select m.branch_id from ad_campaigns c join campaign_branch_map m on m.campaign_id = c.id
-    where c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId'))`;
+const RAW_EVENT_BRANCH = "raw_event_branch(re.source, re.entity, re.payload)";
 
 async function campaignBranch(db: Queryable, campaignId: number): Promise<{ found: boolean; branchId: string | null }> {
   const { rows } = await db.query<{ branch_id: string | null }>(
@@ -510,15 +509,22 @@ export const getIngestionFailures = defineTool({
     if (input.branchId) knownBranch(input.branchId);
     const scope = resolveScope(ctx.viewer, input.branchId ?? null);
     const groups = await ctx.db.query(
+      // The incidents' own groups (v_quarantine_holds, migrations 0034 and 0036): a refused spend
+      // revision newer than the counted one sits in its campaign's branch group, linked to that
+      // incident. A refused revision a counted one superseded holds nothing: it is listed in a group of
+      // its own, by the record's branch, and no incident tracks it (EGM review 2026-11-18, K4).
       `with q as (
-         select re.id, re.source, re.error_code, re.error_detail, re.adapter_version, re.occurred_at, payload_branch(re.payload) as branch_id
-         from raw_events re where re.status = 'quarantined' and ($1::text is null or re.source = $1))
+         select re.id, re.source, re.error_code, re.error_detail, re.adapter_version, re.occurred_at,
+                case when h.id is not null then h.branch_id else raw_event_branch(re.source, re.entity, re.payload) end as branch_id,
+                h.id is not null as holds
+         from raw_events re left join v_quarantine_holds h on h.id = re.id
+         where re.status = 'quarantined' and ($1::text is null or re.source = $1))
        select q.source, q.error_code, q.branch_id, count(*) as records, array_agg(distinct q.adapter_version) as versions,
               min(q.occurred_at) as first_at, max(q.occurred_at) as last_at, min(q.error_detail) as sample_error,
               (array_agg(q.id order by q.id))[1:10] as sample_ids,
-              (select e.id from exceptions e where e.fingerprint = 'quarantine:' || q.source || ':' || q.error_code || ':' || coalesce(q.branch_id, '-')) as exception_id
+              case when q.holds then (select e.id from exceptions e where e.fingerprint = 'quarantine:' || q.source || ':' || q.error_code || ':' || coalesce(q.branch_id, '-')) end as exception_id
        from q where ($2::text[] is null or q.branch_id = any($2::text[]))
-       group by q.source, q.error_code, q.branch_id order by count(*) desc limit 20`,
+       group by q.source, q.error_code, q.branch_id, q.holds order by count(*) desc limit 20`,
       [input.source ?? null, scope],
     );
     // Redelivered versions only (delivery_count > 1): filtering first keeps the branch lookup off

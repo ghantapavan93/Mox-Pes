@@ -4,6 +4,7 @@ import { FRESHNESS_MAX_AGE_HOURS } from "@/lib/decision/verdicts";
 import type { PeriodKey } from "@/lib/period";
 import { exactDollars } from "@/lib/lineage/trace";
 import { formatCents } from "@/lib/primitives";
+import { heldDaysLabel, holdSentence, isRefusedRevisionHold, revisionsOf } from "@/lib/reconcile/refused-revisions";
 import { BRANCH_BY_ID, BRANDS, CHANNEL_BY_CODE, brandWords, type BrandId, type ChannelCode } from "@/lib/reference";
 import type { Viewer } from "@/lib/viewer";
 import type { DraftFindings, Observation, ProposalSuggestion } from "./contract";
@@ -590,7 +591,11 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
     }
   }
   const unmappedHere = trace?.missing.find((x) => x.kind === "unmapped_campaign") ?? null;
-  const quarantine = exc?.exceptions.find((e) => e.kind === "quarantined_source_records");
+  // Held lead records and a hold on refused spend revisions share an incident kind but not a story:
+  // a refused revision leaves its earlier amount counted and removes no customer (EGM review
+  // 2026-11-18, K4), so it never gets the lead-record hypothesis below.
+  const quarantine = exc?.exceptions.find((e) => e.kind === "quarantined_source_records" && !isRefusedRevisionHold(e.evidence));
+  const revisionHold = exc?.exceptions.find((e) => e.kind === "quarantined_source_records" && isRefusedRevisionHold(e.evidence));
   const gap = exc?.exceptions.find((e) => e.kind === "channel_coverage_gap");
   const proposals: ProposalSuggestion[] = [];
   let cause: DraftFindings["suspectedCause"] = null;
@@ -654,6 +659,27 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       next = `An integration engineer dry-runs the proposed replay on exception ${quarantine.id}; a different role approves it.`;
     }
   }
+  if (revisionHold) {
+    const revisions = revisionsOf(revisionHold.evidence);
+    const rId = evidence.exception(revisionHold.id);
+    if (revisions.length > 0) {
+      observations.push({ text: `Incident #${revisionHold.id}: ${holdSentence(revisions)}`, evidenceIds: [rId], status: "verified" });
+      observations.push({
+        text: `${b}'s paid CAC rests on spend the source has since revised: the ledger still counts the earlier amounts for ${heldDaysLabel(revisions)}. Whether the newer revisions would raise or lower the CAC is not known until one is accepted.`,
+        evidenceIds: [rId, bm, evidence.metricDefinition("paidCac")],
+        status: "hypothesis",
+        strength: "weak",
+      });
+    }
+    if (!quarantine) {
+      cause = {
+        text: `The source sent newer revisions of spend that intake refused (${String(revisionHold.evidence.errorCode)}); the ledger keeps the earlier amounts, so those dates are not confirmed.`,
+        evidenceIds: [rId],
+      };
+      confidence = { level: "medium", why: "The hold names each refused revision and the amount that still counts; which way the CAC would move is not known until a revision is accepted." };
+      next = `A newer revision of those dates from the source lifts the hold on incident ${revisionHold.id}; no replay here maps these records correctly yet.`;
+    }
+  }
   if (gap) {
     observations.push({
       // Quoted: the exception's own summary, whose figures are the detector's, not checked here.
@@ -662,7 +688,7 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
       status: "verified",
     });
   }
-  if (!quarantine && !gap && unmappedHere) {
+  if (!quarantine && !revisionHold && !gap && unmappedHere) {
     // Not a write the AI path may take: the mapping is a person-owned configuration, previewed
     // and approved in ChangeGuard (no Action Center proposal is suggested for it here).
     next = `Preview mapping the campaign to ${b} in ChangeGuard (the trace links to it prefilled); a different person approves it there.`;

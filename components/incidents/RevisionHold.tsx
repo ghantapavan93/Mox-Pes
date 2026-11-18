@@ -5,12 +5,24 @@ import { dateTime } from "@/lib/format";
 import { dollars } from "@/lib/metrics/movement-copy";
 import type { ExceptionRow } from "@/lib/queries";
 import { dateRanges } from "@/lib/reconcile/gap-coverage";
-import { correctionClause, holdSentence, refusalReason, type RefusedRevision, type RevisionCorrection } from "@/lib/reconcile/refused-revisions";
+import {
+  LISTED_DAYS,
+  correctionClause,
+  dayKey,
+  holdMoney,
+  holdSentence,
+  isCorrection,
+  refusalReason,
+  type RefusedRevision,
+  type RevisionCorrection,
+} from "@/lib/reconcile/refused-revisions";
 import { CHANNEL_BY_CODE } from "@/lib/reference";
 
 const channelName = (code: string) => CHANNEL_BY_CODE.get(code as never)?.label ?? code;
 const month = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
 const list = (items: string[]) => (items.length <= 1 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
+/** "raw #121, #122, #123" for a few deliveries; "raw #121 … #176" for many. */
+const refusalIds = (ids: number[]) => (ids.length <= 4 ? `raw ${ids.map((id) => `#${id}`).join(", ")}` : `raw #${ids[0]} … #${ids[ids.length - 1]}`);
 
 /**
  * A hold on refused spend revisions, for its incident page (docs/agent-work/HOLD-TO-DECISION.md):
@@ -39,15 +51,22 @@ export function RevisionHold({
   const branch = exception.branchId ?? "this branch";
   const held = exception.status !== "resolved" && revisions.length > 0;
   const months = list([...new Set(revisions.map((r) => month(r.date)))]);
-  const changed = corrections.filter((c) => c.correction.cents !== null && c.correction.cents !== c.acceptedCents);
-  const delta = changed.reduce((t, c) => t + (c.correction.cents! - c.acceptedCents), 0);
+  // Counted once per campaign-day (K1); a day no longer counted left the total, it is not $0.00 (K2).
+  const money = holdMoney(revisions, corrections);
+  // Only an accepted revision corrects a hold. The others hand it on: the day became held spend, or
+  // the campaign is mapped to another branch, whose incident holds it now (K2).
+  const corrected = corrections.every((c) => isCorrection(c));
+  const moved = corrections.filter((c) => c.correction.how === "other" && c.correction.branchId !== null && c.correction.branchId !== exception.branchId);
   const headline = held
     ? "Hold the budget decision"
-    : corrections.every((c) => c.correction.how === "newer_accepted")
-      ? "Hold lifted · a newer revision was accepted"
-      : corrections.every((c) => c.correction.how === "accepted_itself")
-        ? "Hold lifted · the refused revision was accepted"
-        : "Hold lifted";
+    : !corrected
+      ? "No longer held by this incident"
+      : corrections.every((c) => c.correction.how === "newer_accepted")
+        ? "Hold lifted · a newer revision was accepted"
+        : corrections.every((c) => c.correction.how === "accepted_itself")
+          ? "Hold lifted · the refused revision was accepted"
+          : "Hold lifted";
+  const listed = revisions.slice(0, LISTED_DAYS);
   const run = (id: number | null, testId: string) =>
     id === null ? "no run" : links.run ? (
       <Link href={links.run(id)} className="font-medium text-accent hover:underline" data-testid={testId}>
@@ -74,18 +93,21 @@ export function RevisionHold({
               {corrections.length > 0 && (
                 // A campaign-day already corrected in this incident stays visible, with its delivery.
                 <p className="text-sm leading-6 text-muted" data-testid="hold-corrected">
-                  Already corrected, and no longer holding it: {corrections.map(correctionClause).join("; ")}.
+                  Already lifted, and no longer holding it: {corrections.map((c) => correctionClause(c, exception.branchId)).join("; ")}.
                 </p>
               )}
             </>
           ) : (
             <div className="space-y-1.5 text-[15px] leading-6 text-text" data-testid="hold-reason">
-              <p>{corrections.length > 0 ? `${corrections.map(correctionClause).join("; ")}.` : (exception.resolution ?? "No refused revision holds this decision any more.")}</p>
+              <p>{corrections.length > 0 ? `${corrections.map((c) => correctionClause(c, exception.branchId)).join("; ")}.` : (exception.resolution ?? "No refused revision holds this decision any more.")}</p>
               {branchSpend && (
                 <p data-testid="hold-total">
-                  {changed.length === 0
+                  {money.changedDays === 0 && moved.length === 0
                     ? `No amount changed: ${branch}'s paid media spend in ${branchSpend.periodLabel} is ${dollars(branchSpend.cents)}.`
-                    : `The correction changed the amount, so ${branch}'s paid media spend in ${branchSpend.periodLabel} is now ${dollars(branchSpend.cents)}, ${delta >= 0 ? "+" : "−"}${dollars(Math.abs(delta))} against the amount counted before it.`}
+                    : // An accepted correction keeps its sentence; a hand-off says what left the total, and where it went.
+                      `${corrected ? "The correction changed the amount, so " : ""}${branch}'s paid media spend in ${branchSpend.periodLabel} is now ${dollars(branchSpend.cents)}${
+                        money.changeCents === 0 ? "" : `, ${money.changeCents >= 0 ? "+" : "−"}${dollars(Math.abs(money.changeCents))} against the amount counted before it`
+                      }${moved.length === 0 ? "" : `; ${list(moved.map((c) => `${dateRanges([c.date])}'s ${dollars(c.acceptedCents)} now counts at ${c.correction.branchId}`))}`}.`}
                 </p>
               )}
             </div>
@@ -94,7 +116,9 @@ export function RevisionHold({
             <span className="font-medium text-text">Next: </span>
             {held
               ? `The source has to send a newer revision of ${dateRanges(revisions.map((r) => r.date))} that intake accepts; the hold then lifts by itself. Nothing on this page lifts it, and closing the case does not.`
-              : "See in Decision Lab what still prevents a decision. Lifting this hold approves no budget change."}
+              : corrected
+                ? "See in Decision Lab what still prevents a decision. Lifting this hold approves no budget change."
+                : "See in Decision Lab what holds the decision now. Nothing here was corrected, and nothing approves a budget change."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -129,8 +153,8 @@ export function RevisionHold({
                   </tr>
                 </thead>
                 <tbody>
-                  {revisions.map((r) => (
-                    <tr key={r.rawEventId} data-date={r.date}>
+                  {listed.map((r) => (
+                    <tr key={dayKey(r)} data-date={r.date}>
                       <Td className="whitespace-nowrap">
                         {dateRanges([r.date])}
                         <span className="block text-xs text-muted">
@@ -148,6 +172,12 @@ export function RevisionHold({
                         <span className="block text-muted">
                           fetched {dateTime(r.refusedFetchedAt)} · {run(r.refusedRunId, "hold-refused-run")} · <span className="font-mono">raw #{r.rawEventId}</span>
                         </span>
+                        {r.refusedRawEventIds.length > 1 && (
+                          // Every delivery stays on record; the counted amount is still one amount.
+                          <span className="block text-muted" data-testid="hold-refusals">
+                            refused {r.refusedRawEventIds.length} times: <span className="font-mono">{refusalIds(r.refusedRawEventIds)}</span>
+                          </span>
+                        )}
                         <span className="block text-text">Refused because {refusalReason(r)}.</span>
                       </Td>
                     </tr>
@@ -155,8 +185,13 @@ export function RevisionHold({
                 </tbody>
               </TableWrap>
             )}
+            {revisions.length > listed.length && (
+              <p className="text-xs leading-5 text-muted" data-testid="hold-unlisted">
+                {revisions.length - listed.length} more held campaign-days are not listed here. The incident holds every one of them, and the records list below shows each refused delivery.
+              </p>
+            )}
             {corrections.length > 0 && (
-              <TableWrap label="Corrections that lifted the hold" minWidth={560} testId="hold-corrections">
+              <TableWrap label="How each campaign-day stopped holding" minWidth={560} testId="hold-corrections">
                 <thead>
                   <tr>
                     <Th>Date</Th>
@@ -167,7 +202,7 @@ export function RevisionHold({
                 </thead>
                 <tbody>
                   {corrections.map((c) => (
-                    <tr key={c.rawEventId} data-date={c.date}>
+                    <tr key={`${dayKey(c)}|${c.correction.at}`} data-date={c.date}>
                       <Td className="whitespace-nowrap">
                         {dateRanges([c.date])}
                         <span className="block text-xs text-muted">{c.externalCampaignId}</span>
@@ -182,9 +217,11 @@ export function RevisionHold({
                         ) : c.correction.how === "accepted_itself" ? (
                           `the refused revision itself${c.correction.replayId === null ? "" : `, replay #${c.correction.replayId}`}`
                         ) : c.correction.how === "no_longer_counted" ? (
-                          "the ledger no longer counts this campaign-day"
+                          "the ledger no longer counts this campaign-day; not a correction"
+                        ) : c.correction.branchId !== null && c.correction.branchId !== exception.branchId ? (
+                          `the campaign is mapped to ${c.correction.branchId} now; not a correction`
                         ) : (
-                          "the counted revision or the mapping changed"
+                          "the counted revision changed; not a correction"
                         )}
                       </Td>
                     </tr>

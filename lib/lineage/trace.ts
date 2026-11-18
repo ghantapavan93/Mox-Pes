@@ -220,12 +220,10 @@ async function traceIn(db: Queryable, viewer: Viewer, args: { branchId: string; 
             (array_agg(re.id order by re.id desc))[1:3] as sample
      from raw_events re
      where re.status in ('excluded', 'quarantined') and re.occurred_at >= $1 and re.occurred_at < $2
-       -- The same branch rule as the investigator's tools: the branch the payload names (call tag,
-       -- web branch, D2D branch, CRM office), else for spend the branch its campaign maps to
-       -- (independent review F6: held spend was invisible here).
-       and coalesce(payload_branch(re.payload), (
-             select m.branch_id from ad_campaigns c join campaign_branch_map m on m.campaign_id = c.id
-             where c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId')) = $3
+       -- The same branch rule as the investigator's tools (migration 0036): spend belongs to the branch
+       -- its campaign maps to (independent review F6: held spend was invisible here); any other
+       -- record to the branch its payload names (call tag, web branch, D2D branch, CRM office).
+       and raw_event_branch(re.source, re.entity, re.payload) = $3
      group by re.source, re.status, coalesce(re.exclusion_code, re.error_code)
      order by count(*) desc`,
     params,

@@ -2,7 +2,7 @@ import type { Queryable } from "@/lib/db";
 import { currentSnapshot, currentTxid, recordEvent } from "@/lib/events/outbox";
 import { syncCases } from "@/lib/workflow/cases";
 import { gapCoverage, verificationOf, verifiedResolution } from "./gap-coverage";
-import { correctedResolution, correctionsFor, correctionsOf, revisionsOf } from "./refused-revisions";
+import { correctedResolution, correctionsFor, correctionsOf, dayKey, revisionsOf } from "./refused-revisions";
 
 /**
  * Cross-system reconciliation. Each detector is one SQL statement that states a rule the
@@ -95,17 +95,24 @@ const DETECTORS: string[] = [
        'customersWithoutLead', coalesce(i.customers, 0), 'annualContractValueCents', coalesce(i.acv, 0))
      || case when rv.records is null then '{}'::jsonb else jsonb_build_object(
        'campaignDays', rv.days, 'spendDates', rv.dates, 'channels', rv.channels,
-       -- At most 50, oldest date first: the page lists them; a mass refusal must not bloat the row.
-       'revisions', (select jsonb_agg(x.r order by x.d, x.id) from (
-          select v.spend_date as d, v.raw_event_id as id, jsonb_build_object(
-                   'rawEventId', v.raw_event_id, 'campaignId', v.campaign_id, 'externalCampaignId', v.external_campaign_id,
-                   'platform', v.platform, 'date', v.spend_date, 'channel', v.channel_code, 'errorDetail', v.error_detail,
-                   'refusedFetchedAt', v.refused_fetched_at, 'refusedRunId', v.refused_run_id, 'refusedCents', v.refused_cents,
-                   'acceptedRawEventId', v.accepted_raw_event_id, 'acceptedFetchedAt', v.accepted_fetched_at,
-                   'acceptedRunId', v.accepted_run_id, 'acceptedCents', v.accepted_cents) as r
+       -- One entry per campaign-day, oldest date first: its newest refused revision beside the
+       -- counted one, and every refused delivery of that day (the source re-fetches recent days,
+       -- so a lasting refusal repeats; EGM review 2026-11-18, K1). The list is bounded by
+       -- campaign-days, not deliveries, and is not cut: rule 1a and the gate read every day, and the
+       -- page lists the first LISTED_DAYS.
+       'revisions', (select jsonb_agg(d.r || jsonb_build_object('refusedRawEventIds', d.ids) order by d.spend_date, d.campaign_id) from (
+          select v.campaign_id, v.spend_date,
+                 (array_agg(jsonb_build_object(
+                    'rawEventId', v.raw_event_id, 'campaignId', v.campaign_id, 'externalCampaignId', v.external_campaign_id,
+                    'platform', v.platform, 'date', v.spend_date, 'channel', v.channel_code, 'errorDetail', v.error_detail,
+                    'refusedFetchedAt', v.refused_fetched_at, 'refusedRunId', v.refused_run_id, 'refusedCents', v.refused_cents,
+                    'acceptedRawEventId', v.accepted_raw_event_id, 'acceptedFetchedAt', v.accepted_fetched_at,
+                    'acceptedRunId', v.accepted_run_id, 'acceptedCents', v.accepted_cents)
+                  order by v.refused_fetched_at desc, v.raw_event_id desc))[1] as r,
+                 jsonb_agg(v.raw_event_id order by v.refused_fetched_at, v.raw_event_id) as ids
           from v_refused_spend_revisions v
           where v.standing = 'newer' and v.raw_event_id = any(array_agg(q.id))
-          order by v.spend_date, v.raw_event_id limit 50) x)) end,
+          group by v.campaign_id, v.spend_date) d)) end,
      coalesce(i.collected, 0),
      coalesce(i.customer_ids, '{}')
    from q
@@ -341,16 +348,18 @@ async function carryCoverageGaps(tx: Queryable, now: Date): Promise<void> {
  *     corrections as its resolution (the generic step below keeps it).
  */
 async function carryRefusedRevisions(tx: Queryable, now: Date): Promise<void> {
-  const { rows } = await tx.query<{ id: string; fingerprint: string; evidence: Record<string, unknown> }>(
-    `select id, fingerprint, evidence from exceptions
+  const { rows } = await tx.query<{ id: string; fingerprint: string; branch_id: string | null; evidence: Record<string, unknown> }>(
+    `select id, fingerprint, branch_id, evidence from exceptions
      where kind = 'quarantined_source_records' and status in ('open', 'acknowledged') and evidence ? 'revisions'
      order by id`,
   );
   for (const e of rows) {
     const detected = (await tx.query<{ evidence: Record<string, unknown> }>("select evidence from detected where fingerprint = $1", [e.fingerprint])).rows[0];
-    const still = new Set(revisionsOf(detected?.evidence).map((r) => r.rawEventId));
-    const gone = revisionsOf(e.evidence).filter((r) => !still.has(r.rawEventId));
-    const corrected = [...correctionsOf(e.evidence), ...(await correctionsFor(tx, gone, now))].slice(-50);
+    // By campaign-day, never by refused record: a later refusal of a held day is the same hold, not
+    // a correction of the earlier one (EGM review 2026-11-18, K1).
+    const still = new Set(revisionsOf(detected?.evidence).map(dayKey));
+    const gone = revisionsOf(e.evidence).filter((r) => !still.has(dayKey(r)));
+    const corrected = [...correctionsOf(e.evidence), ...(await correctionsFor(tx, gone, now))];
     if (detected) {
       if (corrected.length > 0) {
         await tx.query("update detected set evidence = evidence || jsonb_build_object('corrected', $2::jsonb) where fingerprint = $1", [e.fingerprint, JSON.stringify(corrected)]);
@@ -358,7 +367,7 @@ async function carryRefusedRevisions(tx: Queryable, now: Date): Promise<void> {
     } else if (corrected.length > 0) {
       await tx.query(
         "update exceptions set resolution = $2, evidence = evidence || jsonb_build_object('corrected', $3::jsonb) where id = $1",
-        [e.id, correctedResolution(corrected), JSON.stringify(corrected)],
+        [e.id, correctedResolution(corrected, e.branch_id), JSON.stringify(corrected)],
       );
     }
   }

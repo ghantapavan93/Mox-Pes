@@ -124,10 +124,8 @@ function crmEntityFilter(f: Family): string {
   return crm === "payment" ? "re.entity = 'payment'" : crm === "customer" ? "re.entity <> 'payment'" : "true";
 }
 
-/** The branch a raw event belongs to: what its payload names, else (ad spend) its campaign's mapping. */
-const EVENT_BRANCH = `coalesce(payload_branch(re.payload), (
-    select m.branch_id from ad_campaigns c join campaign_branch_map m on m.campaign_id = c.id
-    where c.platform = re.payload ->> 'platform' and c.external_campaign_id = re.payload ->> 'campaignId'))`;
+/** The branch a raw event belongs to (migration 0036): ad spend its campaign's mapping, anything else what its payload names. */
+const EVENT_BRANCH = "raw_event_branch(re.source, re.entity, re.payload)";
 
 async function productFigure(db: Queryable, ours: ProductDefinition, branchIds: string[] | null, from: Date, to: Date): Promise<{ value: number | null; numerator: number | null; denominator: number | null }> {
   let rows: Pick<BranchRow, "paidSpendCents" | "paidAcquired" | "acquired" | "collectedCents" | "refundsCents">[];

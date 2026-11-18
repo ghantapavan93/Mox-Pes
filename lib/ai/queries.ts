@@ -351,14 +351,21 @@ export async function suggestedQuestions(db: Queryable, viewer: Viewer): Promise
       basis: `Open channel coverage gap (exception ${g.id})`,
     });
   }
-  const quarantine = await db.query<{ id: string; branch_id: string }>(
-    `select id, branch_id from exceptions
+  const quarantine = await db.query<{ id: string; branch_id: string; refused: boolean }>(
+    `select id, branch_id, (evidence ? 'spendDates') as refused from exceptions
      where kind = 'quarantined_source_records' and status = 'open' and branch_id is not null and ($1::text[] is null or branch_id = any($1::text[]))
      order by amount_cents desc, id limit 1`,
     [scope],
   );
   const q = quarantine.rows[0];
-  if (q) out.push({ question: `Why is ${q.branch_id}'s paid CAC so high?`, branchId: q.branch_id, basis: `Open quarantine (exception ${q.id}) at ${q.branch_id}` });
+  // A refused spend revision says nothing about which way the CAC moved (EGM review 2026-11-18, K4).
+  if (q) {
+    out.push(
+      q.refused
+        ? { question: `What holds ${q.branch_id}'s budget decision?`, branchId: q.branch_id, basis: `Refused spend revision (exception ${q.id}) at ${q.branch_id}` }
+        : { question: `Why is ${q.branch_id}'s paid CAC so high?`, branchId: q.branch_id, basis: `Open quarantine (exception ${q.id}) at ${q.branch_id}` },
+    );
+  }
   const customer = await db.query<{ crm_customer_id: string; branch_id: string }>(
     `select a.crm_customer_id, a.branch_id from v_acquisitions a join channels ch on ch.code = a.channel_code and ch.is_paid
      where a.attribution_basis = 'lead_evidence' and a.initial_status = 'completed'

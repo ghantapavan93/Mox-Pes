@@ -422,6 +422,38 @@ describe("B09: a successor that starts two days after the stop", () => {
   });
 });
 
+/**
+ * The earlier overlap (R-54 case 1; HOLD-TO-DECISION.md §7, F2): the successor started on Oct 10,
+ * three days before the predecessor's last day ended the overlap. The decision window still starts
+ * at the gap (Oct 13), so a verification proves the window and nothing before it.
+ */
+describe("B09: a successor that started three days before the stop", () => {
+  beforeAll(async () => {
+    await seed({ successorFrom: 10 });
+  }, 180_000);
+
+  it("the window (Oct 13–30) verifies; the overlap days (Oct 10–12) stay filed as Search, outside what it proves", async () => {
+    const [original] = await gaps();
+    expect(original.status).toBe("open");
+    const before = await coverageOf(original.id);
+    expect([before.window, before.transition]).toEqual([{ from: "2026-10-13", to: "2026-10-30" }, []]);
+    const paid = (await controls()).b09.paid;
+
+    await deliverAds(range(13, 30).map((d) => spend("pmax", d, "2026-10-31T09:00:00Z")), at("09:05"));
+    expect((await gaps()).map((r) => [r.id, r.status])).toEqual([[original.id, "resolved"]]);
+    const [s] = await gapStatusesAt(pool, BRANCH, { range: { from: "2026-10-01", to: "2026-10-31" } });
+    expect(s).toMatchObject({ exceptionId: Number(original.id), state: "verified", reclassified: true });
+    // What moved is the window's money, by hand: Oct 13–30 of pmax-lsa-B09.
+    expect(sum(range(13, 30), "pmax")).toBe(374_319);
+    expect(s.change).toBe("$3,743.19 moved from Google Search to Google Local Services, and no amount changed: reclassified, not added.");
+    // Oct 10–12 of the same campaign were never re-sent: still Google Search, and not part of the claim.
+    expect(sum(range(10, 12), "pmax")).toBe(61_221);
+    expect([await spendOf(BRANCH, "google_lsa"), await spendOf(BRANCH, "google_search")]).toEqual([127_800 + 374_319, 900_000 + 61_221]);
+    expect((await coverageOf(original.id)).window).toEqual({ from: "2026-10-13", to: "2026-10-30" });
+    expect((await controls()).b09.paid).toBe(paid);
+  });
+});
+
 describe("B09: the successor mapped away from the branch does not hide misfiled spend", () => {
   beforeAll(async () => {
     await seed();

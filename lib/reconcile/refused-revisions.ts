@@ -24,9 +24,17 @@ import { dateRanges } from "./gap-coverage";
  * may be reviewed, and whether spend caused anything (never claimed here).
  */
 
-/** One refused revision beside the revision the ledger counts for the same campaign-day. */
+/**
+ * One held campaign-day: its newest refused revision beside the revision the ledger counts for it.
+ * The source re-fetches recent days, so one campaign-day can be refused many times; it is still one
+ * entry, with one counted amount, and every refused delivery is kept in `refusedRawEventIds`
+ * (EGM review 2026-11-18, K1).
+ */
 export interface RefusedRevision {
+  /** The newest refused revision of the campaign-day. */
   rawEventId: number;
+  /** Every refused delivery of the campaign-day, oldest fetch first; it includes `rawEventId`. */
+  refusedRawEventIds: number[];
   campaignId: number;
   externalCampaignId: string;
   platform: string;
@@ -70,12 +78,18 @@ export interface RevisionCorrection extends RefusedRevision {
 const num = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
 const str = (v: unknown) => (typeof v === "string" ? v : v === null || v === undefined ? null : String(v));
 
+/** The identity of a held campaign-day: the campaign the ledger counts, and the date. */
+export const dayKey = (r: Pick<RefusedRevision, "campaignId" | "date">) => `${r.campaignId}|${r.date}`;
+
 function parseRevision(v: Record<string, unknown>): RefusedRevision | null {
   const rawEventId = num(v.rawEventId);
   const date = str(v.date);
   if (rawEventId === null || !date) return null;
+  // Evidence stored before 2026-11-18 has one entry per refused delivery and no list of them.
+  const deliveries = Array.isArray(v.refusedRawEventIds) ? v.refusedRawEventIds.map(Number).filter(Number.isFinite) : [];
   return {
     rawEventId,
+    refusedRawEventIds: deliveries.length > 0 ? deliveries : [rawEventId],
     campaignId: Number(v.campaignId),
     externalCampaignId: String(v.externalCampaignId),
     platform: String(v.platform),
@@ -92,22 +106,44 @@ function parseRevision(v: Record<string, unknown>): RefusedRevision | null {
   };
 }
 
-/** The refused revisions a quarantine incident holds the decision on; [] for any other incident. */
+/** Newer first: the source's fetch time, then the later delivery. */
+const newer = (a: RefusedRevision, b: RefusedRevision) => b.refusedFetchedAt.localeCompare(a.refusedFetchedAt) || b.rawEventId - a.rawEventId;
+
+/**
+ * The campaign-days a quarantine incident holds the decision on, one entry each, oldest date first;
+ * [] for any other incident. Entries for the same campaign-day (evidence stored one per refused
+ * delivery) are merged: the newest refusal speaks for the day, and every delivery is kept.
+ */
 export function revisionsOf(evidence: Record<string, unknown> | null | undefined): RefusedRevision[] {
   const list = evidence?.revisions;
   if (!Array.isArray(list)) return [];
-  return list.map((v) => parseRevision(v as Record<string, unknown>)).filter((r): r is RefusedRevision => r !== null);
+  const byDay = new Map<string, RefusedRevision[]>();
+  for (const r of list.map((v) => parseRevision(v as Record<string, unknown>))) {
+    if (r) byDay.set(dayKey(r), [...(byDay.get(dayKey(r)) ?? []), r]);
+  }
+  return [...byDay.values()]
+    .map((entries) => {
+      const [newest] = [...entries].sort(newer);
+      const deliveries = [...entries].sort((a, b) => -newer(a, b)).flatMap((e) => e.refusedRawEventIds);
+      return { ...newest, refusedRawEventIds: [...new Set(deliveries)] };
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || a.campaignId - b.campaignId);
 }
 
-/** The refused revisions of this incident that were corrected, and how. */
+/** The campaign-days of this incident that stopped holding, and how. Each lift is kept once. */
 export function correctionsOf(evidence: Record<string, unknown> | null | undefined): RevisionCorrection[] {
   const list = evidence?.corrected;
   if (!Array.isArray(list)) return [];
   const out: RevisionCorrection[] = [];
+  const seen = new Set<string>();
   for (const v of list as Array<Record<string, unknown>>) {
     const r = parseRevision(v);
     const c = v.correction as Record<string, unknown> | undefined;
     if (!r || !c) continue;
+    // Evidence stored one entry per refused delivery recorded one lift per delivery: the same lift.
+    const lift = `${dayKey(r)}|${String(c.how)}|${String(c.rawEventId)}|${String(c.at)}`;
+    if (seen.has(lift)) continue;
+    seen.add(lift);
     out.push({
       ...r,
       correction: {
@@ -159,6 +195,44 @@ export function refusalReason(r: Pick<RefusedRevision, "errorDetail">): string {
   return d.replace(/^spend_day [^:]+: /, "") || "it failed validation";
 }
 
+/** The incident page lists at most this many held campaign-days; the incident keeps them all. */
+export const LISTED_DAYS = 50;
+
+/**
+ * The money an incident shows, once per campaign-day however many times the day was refused: what
+ * the ledger still counts for the held days, and, for the days that stopped holding, what it counts
+ * now. A day the ledger counts no revision of any more is not $0.00: its counted amount left the
+ * total (`notCounted`, and a negative change).
+ */
+export interface HoldMoney {
+  heldCents: number;
+  countedNowCents: number;
+  notCounted: number;
+  /** Against what was counted before the lift: positive when the correction raised it. */
+  changeCents: number;
+  /** Days whose counted amount changed or left the total. */
+  changedDays: number;
+}
+
+export function holdMoney(revisions: RefusedRevision[], corrections: RevisionCorrection[]): HoldMoney {
+  const days = new Map(revisions.map((r) => [dayKey(r), r]));
+  const out: HoldMoney = { heldCents: [...days.values()].reduce((t, r) => t + r.acceptedCents, 0), countedNowCents: 0, notCounted: 0, changeCents: 0, changedDays: 0 };
+  for (const c of corrections) {
+    if (c.correction.cents === null) {
+      out.notCounted += 1;
+      out.changeCents -= c.acceptedCents;
+      out.changedDays += 1;
+    } else {
+      out.countedNowCents += c.correction.cents;
+      if (c.correction.cents !== c.acceptedCents) {
+        out.changeCents += c.correction.cents - c.acceptedCents;
+        out.changedDays += 1;
+      }
+    }
+  }
+  return out;
+}
+
 /** "Oct 20 (Google Local Services)": the held campaign-days, by channel. */
 export function heldDaysLabel(revisions: RefusedRevision[]): string {
   const byChannel = unique(revisions.map((r) => r.channel));
@@ -184,8 +258,19 @@ export function holdSentence(revisions: RefusedRevision[]): string {
   return `Newer revisions of ${days} campaign-days were refused (${heldDaysLabel(revisions)}). The ledger still counts their earlier amounts, ${dollars(cents)} in all, so those dates are not confirmed.`;
 }
 
-/** One correction, in words: "Oct 20: ingestion run #680 accepted a newer revision (fetched …): $120.91 became $400.00". */
-export function correctionClause(c: RevisionCorrection): string {
+/**
+ * Only an accepted revision corrects a hold: a newer one, or the refused one itself. A day the
+ * ledger stops counting, or a campaign mapped to another branch, leaves the hold without anything
+ * being corrected (EGM review 2026-11-18, K2).
+ */
+export const isCorrection = (c: RevisionCorrection) => c.correction.how === "newer_accepted" || c.correction.how === "accepted_itself";
+
+/**
+ * One lift, in words: "Oct 20: ingestion run #680 accepted a newer revision (fetched …): $120.91
+ * became $400.00". `heldAt` is the branch whose incident held the day, to say when the campaign's
+ * mapping moved the hold elsewhere.
+ */
+export function correctionClause(c: RevisionCorrection, heldAt: string | null = null): string {
   const day = dateRanges([c.date]);
   const change = c.correction.cents === null ? "" : c.correction.cents === c.acceptedCents ? `; ${dollars(c.acceptedCents)}, unchanged` : `: ${dollars(c.acceptedCents)} became ${dollars(c.correction.cents)}`;
   switch (c.correction.how) {
@@ -194,14 +279,23 @@ export function correctionClause(c: RevisionCorrection): string {
     case "accepted_itself":
       return `${day}: the refused revision itself is now accepted${c.correction.replayId === null ? "" : ` (replay #${c.correction.replayId})`}${change}`;
     case "no_longer_counted":
-      return `${day}: the ledger no longer counts a revision of this campaign-day`;
+      // Not a $0.00 day: nothing is counted for it, and since 2026-11-17 held spend holds its channel.
+      return `${day}: the ledger no longer counts any revision of this campaign-day, so the ${dollars(c.acceptedCents)} it counted left the total; the day is held spend now, which Decision Lab holds on its own`;
     default:
-      return `${day}: the counted revision or the campaign's mapping changed${c.correction.branchId ? ` (now mapped to ${c.correction.branchId})` : ""}`;
+      return c.correction.branchId !== null && c.correction.branchId !== heldAt
+        ? `${day}: the campaign is now mapped to ${c.correction.branchId}, so the hold moved there with it`
+        : `${day}: the counted revision changed without a newer revision being accepted`;
   }
 }
 
-/** The resolution stored when every held campaign-day was corrected. */
-export const correctedResolution = (corrected: RevisionCorrection[]) => `Corrected. ${corrected.map(correctionClause).join("; ")}.`;
+/** The resolution stored when no campaign-day holds the decision any more. "Corrected" only when every one was. */
+export function correctedResolution(lifts: RevisionCorrection[], heldAt: string | null = null): string {
+  const clauses = lifts.map((c) => correctionClause(c, heldAt)).join("; ");
+  const handedOn = lifts.filter((c) => !isCorrection(c));
+  return handedOn.length === 0
+    ? `Corrected. ${clauses}.`
+    : `No longer held by this incident; nothing was corrected for ${dateRanges([...new Set(handedOn.map((c) => c.date))])}. ${clauses}.`;
+}
 
 /**
  * Why refused spend records in a company-level quarantine incident hold no branch's decision, one
@@ -210,8 +304,8 @@ export const correctedResolution = (corrected: RevisionCorrection[]) => `Correct
  *   unidentified   no campaign id, date or fetch time the mapper could identify;
  *   unknownCampaign  a campaign id the ledger has never counted (no campaign record);
  *   unmapped       a campaign the ledger counts but maps to no branch;
- *   heldDay        a mapped campaign's day the ledger never counted: held spend, a limitation in
- *                  verified readiness (N1), not a hold;
+ *   heldDay        a mapped campaign's day the ledger counts no revision of (never, or no longer):
+ *                  held spend, which holds its channel's decision through eligibility (350fb45);
  *   sameInstant    the counted revision has the same fetch time: neither is newer.
  */
 export interface UnattributedSpend {
@@ -261,10 +355,13 @@ export function unattributedSentence(u: UnattributedSpend): string {
   ].filter(Boolean);
   const parts = [
     cannot.length ? `Which branch's decision these affect cannot be verified: ${list(cannot)}. A campaign's name or its ad account is not taken as proof of a branch.` : "",
+    // A held day may have been counted before (a newer revision removed it), so never "never counted";
+    // and since 2026-11-17 held spend holds its channel's decision (EGM review 2026-11-18, K2).
     u.heldDay.count
-      ? `${records(u.heldDay.count)} ${u.heldDay.count === 1 ? "is a day" : "are days"} the ledger never counted at ${list(u.heldDay.branchIds)}: held spend, which Decision Lab's verified readiness lists as a limitation, not a hold.`
+      ? `${records(u.heldDay.count)} ${u.heldDay.count === 1 ? "is a day" : "are days"} the ledger counts no revision of at ${list(u.heldDay.branchIds)}: held spend, which holds that channel's decision in Decision Lab until a revision is accepted.`
       : "",
-    "No branch's budget decision is held by this incident. Whether records like these should hold one has not been decided.",
+    // Held days hold through eligibility already; only the unattributable records are undecided.
+    `No branch's budget decision is held by this incident.${cannot.length ? " Whether records like these should hold one has not been decided." : ""}`,
   ];
   return parts.filter(Boolean).join(" ");
 }
@@ -279,12 +376,12 @@ export async function correctionsFor(db: Queryable, revisions: RefusedRevision[]
   for (const r of revisions) {
     const { rows } = await db.query<{ raw_event_id: string | null; cost_cents: string | null; fetched_at: Date | null; run_id: string | null; branch_id: string | null; replay_id: string | null }>(
       `select s.raw_event_id, s.cost_cents, acc.occurred_at as fetched_at, acc.ingestion_run_id as run_id, m.branch_id,
-              (select max(p.id) from replays p where p.dry_run = false and $3::bigint = any(p.requested_ids)) as replay_id
+              (select max(p.id) from replays p where p.dry_run = false and p.requested_ids && $3::bigint[]) as replay_id
        from (select $1::bigint as campaign_id, $2::date as d) k
        left join ad_spend_daily s on s.campaign_id = k.campaign_id and s.spend_date = k.d
        left join raw_events acc on acc.id = s.raw_event_id
        left join campaign_branch_map m on m.campaign_id = k.campaign_id`,
-      [r.campaignId, r.date, r.rawEventId],
+      [r.campaignId, r.date, r.refusedRawEventIds],
     );
     const row = rows[0];
     const counted = row?.raw_event_id === null || row?.raw_event_id === undefined ? null : Number(row.raw_event_id);
@@ -292,7 +389,7 @@ export async function correctionsFor(db: Queryable, revisions: RefusedRevision[]
     const how: RevisionCorrection["correction"]["how"] =
       counted === null
         ? "no_longer_counted"
-        : counted === r.rawEventId
+        : r.refusedRawEventIds.includes(counted)
           ? "accepted_itself"
           : fetchedAt !== null && fetchedAt > new Date(r.refusedFetchedAt).toISOString()
             ? "newer_accepted"

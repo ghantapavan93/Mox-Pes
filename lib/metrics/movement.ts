@@ -321,8 +321,10 @@ export async function spendDays(db: Queryable, args: { branchId: string; channel
     `select to_char(s.spend_date, 'YYYY-MM-DD') as spend_date, c.external_campaign_id, c.name, c.platform, s.cost_cents, s.raw_event_id,
             (select jsonb_agg(jsonb_build_object('rawEventId', v.raw_event_id, 'fetchedAt', v.refused_fetched_at, 'cents', v.refused_cents,
                       'errorDetail', v.error_detail,
+                      -- Every refused delivery of a held day links to its incident, not only the newest one the entry speaks for.
                       'exceptionId', (select min(e.id) from exceptions e where e.kind = 'quarantined_source_records' and e.status = 'open'
-                                        and e.evidence -> 'revisions' @> jsonb_build_array(jsonb_build_object('rawEventId', v.raw_event_id))))
+                                        and (e.evidence -> 'revisions' @> jsonb_build_array(jsonb_build_object('refusedRawEventIds', jsonb_build_array(v.raw_event_id)))
+                                             or e.evidence -> 'revisions' @> jsonb_build_array(jsonb_build_object('rawEventId', v.raw_event_id)))))
                     order by v.refused_fetched_at)
              from v_refused_spend_revisions v
              where v.campaign_id = s.campaign_id and v.spend_date = s.spend_date and v.standing = 'newer') as refused

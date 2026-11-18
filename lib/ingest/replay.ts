@@ -3,7 +3,7 @@ import { ActionError } from "@/lib/actions";
 import { withRollback, withTransaction } from "@/lib/db";
 import { isExclusion, type MapExclusion, type SourceName } from "@/lib/adapters/contract";
 import { CALL_EXCLUSION_CODES } from "@/lib/adapters/marketing";
-import { mapperFor, referenceContext } from "@/lib/adapters/registry";
+import { REFUSAL_CHECKED_FROM, mapperFor, referenceContext, replayableVersions } from "@/lib/adapters/registry";
 import { recordEvent } from "@/lib/events/outbox";
 import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
 import { branchRows, channelRows, paidCac, type Scope } from "@/lib/metrics/scorecard";
@@ -116,6 +116,7 @@ export async function replay(pool: Pool, req: ReplayRequest): Promise<ReplayResu
     const stored = await loadStored(pool, req.idempotencyKey, fingerprint);
     if (stored) return stored;
   }
+  if (mode === "quarantined") await refuseVersionsThatSkipChecks(pool, req);
   const mapper = mapperFor(req.source, req.mapperVersion);
 
   const body = async (tx: PoolClient): Promise<ReplayResult> => {
@@ -297,6 +298,23 @@ async function loadStored(db: Pool | PoolClient, key: string, fingerprint: strin
     before: r.metric_before,
     after: r.metric_after,
   };
+}
+
+/**
+ * A held record replays only through a mapper version that applies the check that refused it
+ * (REFUSAL_CHECKED_FROM). A dry run is refused the same way: it would show a result no one may apply.
+ */
+async function refuseVersionsThatSkipChecks(db: Pool, req: ReplayRequest): Promise<void> {
+  const { rows } = await db.query<{ error_code: string; n: string }>(
+    `select error_code, count(*) as n from raw_events
+     where id = any($1::bigint[]) and source = $2 and status = 'quarantined' and error_code is not null
+     group by error_code order by error_code`,
+    [req.rawEventIds, req.source],
+  );
+  const skipped = rows.filter((r) => !replayableVersions(req.source, [r.error_code]).includes(req.mapperVersion));
+  if (skipped.length === 0) return;
+  const what = skipped.map((r) => `${r.n} refused for ${r.error_code}, checked from ${req.source}@${REFUSAL_CHECKED_FROM[req.source]![r.error_code]}`).join("; ");
+  throw new ActionError(`${req.source}@${req.mapperVersion} skips the check that refused these records (${what}). Replayed through it they would be counted wrongly.`, 400);
 }
 
 /** The quarantined raw event ids of one exception group (source + error + branch). */

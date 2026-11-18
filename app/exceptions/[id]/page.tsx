@@ -11,7 +11,7 @@ import { GapRecovery } from "@/components/incidents/GapRecovery";
 import { FixResult } from "@/components/incidents/FixResult";
 import { RevisionHold } from "@/components/incidents/RevisionHold";
 import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
-import { ACTIVE_VERSION, mapperVersions } from "@/lib/adapters/registry";
+import { ACTIVE_VERSION, compareVersions, mapperVersions, replayableVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
 import { quarantineGroupIds } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
@@ -26,7 +26,7 @@ import { PERIODS, type PeriodKey } from "@/lib/period";
 import { dateRanges, gapCoverage } from "@/lib/reconcile/gap-coverage";
 import { gapStatus } from "@/lib/reconcile/gap-status";
 import { dayEvidence, defaultDay, windowFacts } from "@/lib/reconcile/gap-days";
-import { correctionsOf, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
+import { correctionsOf, dayKey, holdMoney, isCorrection, isRefusedRevisionHold, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
 import { BRAND_BY_ID, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
@@ -160,12 +160,16 @@ async function ExceptionDetail({ params, searchParams }: Props) {
   // The quiet scope line above the verdict: the branch, then the channel and the window the decision
   // needs, or, for a refused-revision hold, the campaign-days it holds or held and their months.
   const branchName = branch ? `${branch.id} ${branch.name}` : (coverage?.branchId ?? exception.branchId ?? "");
+  // Campaign-days, never refused records: a day refused on every re-fetch is still one day (K1).
   const heldDays = [...revisions, ...corrections];
+  const heldDayCount = new Set(heldDays.map(dayKey)).size;
   const scopeLine = coverage
     ? `${branchName} · ${coverage.channelLabel} · decision window ${dateRangesLabel(coverage)}`
-    : revisionHold && heldDays.length > 0
-      ? `${branchName} · ${heldDays.length === 1 ? "one campaign-day" : `${heldDays.length} campaign-days`} · ${[...new Set(heldDays.map((d) => monthOf(d.date)))].join(" and ")}`
+    : revisionHold && heldDayCount > 0
+      ? `${branchName} · ${heldDayCount === 1 ? "one campaign-day" : `${heldDayCount} campaign-days`} · ${[...new Set(heldDays.map((d) => monthOf(d.date)))].join(" and ")}`
       : null;
+  // What the ledger counts for those days, once per campaign-day (lib/reconcile/refused-revisions.ts).
+  const holdCents = revisionHold ? holdMoney(revisions, corrections) : null;
 
   const why =
     (exception.evidence as { conflict?: unknown } | null)?.conflict === "earlier_version_after_later"
@@ -283,10 +287,16 @@ async function ExceptionDetail({ params, searchParams }: Props) {
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border ring-1 ring-text/10 md:grid-cols-4" data-testid="incident-impact">
         {(
           [
-            revisionHold
+            holdCents
               ? exception.status === "resolved"
-                ? ["Counted now, corrected dates", money(corrections.reduce((t, c) => t + (c.correction.cents ?? 0), 0))]
-                : ["Still counted, held dates", money(revisions.reduce((t, r) => t + r.acceptedCents, 0))]
+                ? holdCents.notCounted === 0
+                  ? ["Counted now, corrected dates", money(holdCents.countedNowCents)]
+                  : // A day the ledger counts nothing for is not a $0.00 day (K2).
+                    [
+                      "Counted now, dates no longer held",
+                      `${holdCents.countedNowCents > 0 ? `${money(holdCents.countedNowCents)}; ` : ""}${holdCents.notCounted} date${holdCents.notCounted === 1 ? "" : "s"} not counted`,
+                    ]
+                : ["Still counted, held dates", money(holdCents.heldCents)]
               : [amountLabel, money(exception.amountCents)],
             ["First detected", dateTime(exception.firstDetectedAt)],
             [exception.resolvedAt ? "Resolved" : "Last detected", dateTime(exception.resolvedAt ?? exception.lastDetectedAt)],
@@ -295,7 +305,10 @@ async function ExceptionDetail({ params, searchParams }: Props) {
               !DECISION_KINDS.has(exception.kind)
                 ? "Not gated by this kind"
                 : exception.status !== "open"
-                  ? "No longer held"
+                  ? // A day that left without a correction is held elsewhere now: in Decision Lab, or at another branch (K2).
+                    revisionHold && corrections.some((c) => !isCorrection(c))
+                    ? "No longer held by this incident"
+                    : "No longer held"
                   : exception.branchId === null && isQuarantine
                     ? "Holds no branch's decision"
                     : revisionHold
@@ -484,6 +497,8 @@ function formatEvidence(key: string, value: unknown): ReactNode {
 
 function actionSubtitle(e: ExceptionRow, viewer: Viewer): string {
   if (e.status === "resolved") return "Closed — re-opens automatically if the condition returns";
+  // A refused spend revision has no replay to offer: no shipped mapper accepts it correctly (K6).
+  if (e.kind === "quarantined_source_records" && isRefusedRevisionHold(e.evidence as Record<string, unknown>)) return "Lifts when the source sends a newer revision";
   if (e.kind === "quarantined_source_records") return viewer.can.replay ? "Replay held records through a fixed mapper" : "Integration engineers replay records";
   if (e.kind === "channel_coverage_gap") return viewer.can.replay ? "Re-map the stored spend records through the fixed mapper" : "Integration engineers re-map records";
   if (e.kind === "unmapped_spend" || e.kind === "branch_mismatch") return viewer.can.decide ? "Record a decision (audited)" : "Read-only for your role";
@@ -516,6 +531,17 @@ async function Actions({ exception, viewer }: { exception: ExceptionRow; viewer:
           after: last.metric_after,
         }
       : null;
+    // A held record replays only through a mapper that still applies the check that refused it (K6).
+    // A refused spend revision was refused by the deployed mapper and no newer one ships, so a replay
+    // could only refuse it again: the way out is a newer revision from the source.
+    const versions = exception.kind === "quarantined_source_records" ? replayableVersions(source, [String(ev.errorCode)]) : mapperVersions(source);
+    if (exception.status !== "resolved" && exception.kind === "quarantined_source_records" && isRefusedRevisionHold(ev) && !versions.some((v) => compareVersions(v, ACTIVE_VERSION[source]) > 0)) {
+      return (
+        <p className="text-sm text-muted" data-testid="replay-none">
+          No shipped mapper accepts these records correctly: {source}@{ACTIVE_VERSION[source]} refuses them again, and older versions skip the check that refused them. The source has to send a newer revision; the hold then lifts by itself.
+        </p>
+      );
+    }
     if (!viewer.can.replay) {
       return exception.status === "resolved" ? (
         <p className="text-sm text-muted">Resolved. Nothing to do.</p>
@@ -527,7 +553,7 @@ async function Actions({ exception, viewer }: { exception: ExceptionRow; viewer:
       <ReplayPanel
         exceptionId={exception.id}
         source={source}
-        versions={mapperVersions(source)}
+        versions={versions}
         defaultVersion={ACTIVE_VERSION[source]}
         records={ids.length}
         lastReplay={lastReplay}

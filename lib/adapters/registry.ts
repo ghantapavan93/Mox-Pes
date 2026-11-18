@@ -50,6 +50,23 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
+/**
+ * The first version of a source's mapper that applies each refusal (its error code). A held record
+ * replayed through an older version skips the check that refused it and is counted wrongly: ads@1.0
+ * files a Performance Max campaign by platform alone (the B09 misfiling), and ads@1.0 and ads@1.1 read
+ * no currency, so they would sum Canadian dollars as US dollars (EGM review 2026-11-18, K6).
+ */
+export const REFUSAL_CHECKED_FROM: Partial<Record<SourceName, Readonly<Record<string, string>>>> = {
+  ads: { AMBIGUOUS_CAMPAIGN_TYPE: "1.1", CURRENCY_UNSUPPORTED: "1.2", FRACTIONAL_CONVERSIONS: "1.2" },
+};
+
+/** The mapper versions that may replay records refused with these codes: those that still apply every check. */
+export function replayableVersions(source: SourceName, errorCodes: Iterable<string>): string[] {
+  const floors = [...errorCodes].map((code) => REFUSAL_CHECKED_FROM[source]?.[code]).filter((v): v is string => v !== undefined);
+  const floor = floors.sort(compareVersions).at(-1);
+  return mapperVersions(source).filter((v) => floor === undefined || compareVersions(v, floor) >= 0);
+}
+
 export const referenceContext: MapContext = {
   timezoneForOffice: (officeId) => BRANCH_BY_OFFICE.get(officeId)?.timezone,
   timezoneForBranch: (branchId) => BRANCH_BY_ID.get(branchId)?.timezone,

@@ -234,8 +234,10 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
     if (!streams.some((s) => s.stream === needed)) stale.push({ stream: needed, lastRunStatus: null, lastSuccessAt: null });
   }
   const held = await read(
-    db.query<{ id: string; records: string; source: string | null; last: string | null }>(
-      "select id, (evidence ->> 'records') as records, evidence ->> 'source' as source, evidence ->> 'lastOccurredAt' as last from exceptions where status = 'open' and branch_id = $1 and kind = 'quarantined_source_records' order by id limit 10",
+    db.query<{ id: string; records: string; source: string | null; last: string | null; refused: boolean; days: string | null }>(
+      `select id, (evidence ->> 'records') as records, evidence ->> 'source' as source, evidence ->> 'lastOccurredAt' as last,
+              (evidence ? 'spendDates') as refused, evidence ->> 'campaignDays' as days
+       from exceptions where status = 'open' and branch_id = $1 and kind = 'quarantined_source_records' order by id limit 10`,
       [b],
     ),
   );
@@ -278,6 +280,16 @@ export async function testCacChange(db: Queryable, viewer: Viewer, args: { branc
     else raises.push({ label: `Feed ${s.stream}`, value: `${feedLine(s)}: October leads or customers may be missing, which raises October CAC`, evidenceIds: [] });
   }
   for (const h of held.rows) {
+    if (h.refused) {
+      // A refused newer spend revision leaves its earlier amount counted: no spend is missing, and
+      // which way the newer revision would move CAC is not known (EGM review 2026-11-18, K4).
+      lowers.push({
+        label: "Refused spend revisions",
+        value: `${h.days ?? "?"} campaign-day(s), exception ${h.id}: a newer revision was refused and the earlier amount still counts, so no spend is absent; which way the newer revision would move CAC is not known`,
+        evidenceIds: [evidence.exception(Number(h.id))],
+      });
+      continue;
+    }
     const line = { label: "Held source records", value: `${h.records ?? "?"} ${h.source ?? "source"} record(s), exception ${h.id}`, evidenceIds: [evidence.exception(Number(h.id))] };
     const septemberSpend = h.source === "ads" && h.last !== null && new Date(h.last).getTime() < oct.from.getTime();
     if (h.source !== "ads" || septemberSpend) raises.push({ ...line, value: `${line.value}: ${septemberSpend ? "September spend missing lowers September CAC" : "missing leads or customers raise CAC"}` });

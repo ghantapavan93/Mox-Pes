@@ -166,7 +166,9 @@ const FAMILY_WORDS: Array<[RegExp, Family]> = [
   [/\bpayments?\b/gi, "payments"],
   [/\bcollect\w*|\bcash\b|\brevenue\b/gi, "collected"],
   [/\b(?:unattributed|unknown(?:-channel)?) (?:share|customers)\b|\bchannel (?:is |was )?unknown\b|\bno (?:evidenced |known )?channel\b|\bunattributed\b/gi, "unknown"],
-  [/\b(?:new )?(?:paid|paying)(?:[- ]media)? (?:new )?(?:customers|acquisitions)\b|\bpaid[- ]channel customers\b/gi, "paidCustomers"],
+  // "new customers whose first evidenced touch was paid" is the templates' name for paid customers:
+  // read as plain "new customers", "fell from 57 to 56" was checked against all new customers.
+  [/\b(?:new )?(?:paid|paying)(?:[- ]media)? (?:new )?(?:customers|acquisitions)\b|\bpaid[- ]channel customers\b|\b(?:new )?(?:customers|acquisitions) (?:whose|with|that had) (?:a |their )?first (?:evidenced )?touch (?:was )?(?:a )?paid\b/gi, "paidCustomers"],
   [/\bnew customers\b|\bcustomers serviced\b|\bacquisitions\b|\bcustomers\b/gi, "customers"],
   [/\b(?:unique )?prospects\b/gi, "prospects"],
   [/\b(?:(?:paid|media|ad|advertising|marketing) )*spend(?:ing)?\b|\bspent\b|\bad costs?\b/gi, "spend"],

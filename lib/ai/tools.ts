@@ -12,6 +12,7 @@ import { exceptionSummary, getException, listExceptions, type ExceptionRow } fro
 import { BRANCH_BY_ID, BRANDS, branchesOfBrands, type BrandId } from "@/lib/reference";
 import { ForbiddenError, canSeeBranch, resolveScope, type Viewer } from "@/lib/viewer";
 import { auditFeed, caseAudit, caseForException } from "@/lib/workflow/queries";
+import type { StateSnapshot, Verification } from "@/lib/workflow/snapshot";
 import { traceCash } from "@/lib/lineage/cash";
 import { TRACEABLE, traceBranchMetric } from "@/lib/lineage/trace";
 import { evidence, uniqueIds } from "./evidence";
@@ -1218,6 +1219,137 @@ export const getDecisionReadiness = defineTool({
   },
 });
 
+// ── getVerifiedCorrections ───────────────────────────────────────────────────
+
+/** A branch's paid-media figures for one period, as an execution's receipt stored them. */
+export interface ReceiptFigures {
+  paidCacCents: number | null;
+  paidSpendCents: number;
+  acquired: number;
+  paidAcquired: number;
+  unknownAcquired: number;
+}
+
+export interface VerifiedCorrection {
+  proposalId: number;
+  exceptionId: number;
+  /** The fix that ran ("replay_quarantine") and the mapper version it names, if any. */
+  kind: string;
+  mapperVersion: string | null;
+  /** The incident it closed, from the incident's stored evidence. */
+  incident: { kind: string; source: string | null; errorCode: string | null; heldRecords: number | null };
+  /** Records the execution replayed (its stored result), when it replayed any. */
+  replayedRecords: number | null;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  executedAt: string | null;
+  /** The asked period's figures, before and after the repair, exactly as the receipt stored them. */
+  before: ReceiptFigures;
+  after: ReceiptFigures;
+  /** Ledger totals the execution checked, and how many it found conserved. */
+  ledgerChecked: number;
+  ledgerConserved: number;
+}
+
+export interface VerifiedCorrections {
+  branchId: string;
+  period: { key: PeriodKey; label: string };
+  metric: "paidCac";
+  /** Newest first. Empty when no verified execution corrected this metric for this branch and period. */
+  corrections: VerifiedCorrection[];
+}
+
+/** A snapshot's figures for one period: the month it captured, or the whole window (PERIODS.all). */
+function receiptFigures(snapshot: StateSnapshot | null, branchId: string, period: PeriodKey): ReceiptFigures | null {
+  const b = period === "all" ? snapshot?.branch : snapshot?.month?.key === period ? snapshot.month.branch : null;
+  if (!b || b.branchId !== branchId) return null;
+  return { paidCacCents: b.paidCacCents, paidSpendCents: b.paidSpendCents, acquired: b.acquired, paidAcquired: b.paidAcquired, unknownAcquired: b.unknownAcquired };
+}
+
+/**
+ * The approved, executed and verified corrections that changed one branch's paid-media CAC for one
+ * period, read from each execution's stored receipt: what the metric measured before the repair
+ * and after it. A receipt matches only the branch, the metric and the period its snapshots
+ * captured, so a question about another branch or month never borrows it. What the metric says
+ * now is getBranchMetrics' job, not this tool's.
+ */
+export const getVerifiedCorrections = defineTool({
+  name: "getVerifiedCorrections",
+  description:
+    "Approved, executed and verified Action Center corrections that changed one branch's paid-media CAC for a period (oct, sep or all), from each execution's stored receipt: the CAC, paid spend, new customers and paid customers before and after the repair, the incident it closed and the records it replayed. Empty when none matches the branch and period. History only: the current figure is getBranchMetrics. Money is integer cents.",
+  input: z.strictObject({ branchId, period }),
+  async run(ctx, input): Promise<ToolOutput<VerifiedCorrections>> {
+    knownBranch(input.branchId);
+    resolveScope(ctx.viewer, input.branchId);
+    const p = PERIODS[input.period];
+    const { rows } = await ctx.db.query<{
+      proposal_id: string;
+      exception_id: string;
+      kind: string;
+      params: Record<string, unknown> | null;
+      before: StateSnapshot | null;
+      after: StateSnapshot | null;
+      verification: Verification | null;
+      result: Record<string, unknown> | null;
+      finished_at: Date | null;
+      exception_kind: string;
+      exception_evidence: Record<string, unknown> | null;
+      approved_by: string | null;
+      approved_at: Date | null;
+    }>(
+      `select p.id as proposal_id, p.exception_id, p.kind, p.params, x.before, x.after, x.verification, x.result, x.finished_at,
+              e.kind as exception_kind, e.evidence as exception_evidence, a.actor as approved_by, a.decided_at as approved_at
+         from action_executions x
+         join action_proposals p on p.id = x.proposal_id
+         join exceptions e on e.id = p.exception_id
+         left join lateral (
+           select actor, decided_at from action_approvals where proposal_id = p.id and decision = 'approved' order by id desc limit 1
+         ) a on true
+        where e.branch_id = $1 and x.status = 'succeeded' and p.status = 'executed' and (x.verification ->> 'ok') = 'true'
+        order by x.finished_at desc, p.id desc
+        limit 10`,
+      [input.branchId],
+    );
+    const corrections: VerifiedCorrection[] = [];
+    for (const r of rows) {
+      const before = receiptFigures(r.before, input.branchId, input.period);
+      const after = receiptFigures(r.after, input.branchId, input.period);
+      // A correction of this metric: the receipt captured the period, and the CAC it stored moved.
+      if (!before || !after || before.paidCacCents === after.paidCacCents) continue;
+      const ev = r.exception_evidence ?? {};
+      const replayed = r.result?.projected ?? r.result?.requested;
+      const conservation = r.verification?.conservation ?? [];
+      corrections.push({
+        proposalId: Number(r.proposal_id),
+        exceptionId: Number(r.exception_id),
+        kind: r.kind,
+        mapperVersion: typeof r.params?.mapperVersion === "string" ? r.params.mapperVersion : null,
+        incident: {
+          kind: r.exception_kind,
+          source: typeof ev.source === "string" ? ev.source : null,
+          errorCode: typeof ev.errorCode === "string" ? ev.errorCode : null,
+          heldRecords: Number.isInteger(Number(ev.records)) && ev.records !== null && ev.records !== undefined ? Number(ev.records) : null,
+        },
+        replayedRecords: replayed === undefined || replayed === null ? null : num(replayed),
+        approvedBy: r.approved_by,
+        approvedAt: iso(r.approved_at),
+        executedAt: iso(r.finished_at),
+        before,
+        after,
+        ledgerChecked: conservation.length,
+        ledgerConserved: conservation.filter((c) => c.ok).length,
+      });
+    }
+    return {
+      data: { branchId: input.branchId, period: { key: p.key, label: p.label }, metric: "paidCac", corrections },
+      evidenceIds: uniqueIds(corrections.flatMap((c) => [evidence.proposal(c.proposalId), evidence.exception(c.exceptionId)])),
+      summary: corrections.length
+        ? `${input.branchId} ${p.key}: ${corrections.map((c) => `proposal ${c.proposalId} corrected paid CAC ${c.before.paidCacCents ?? "n/a"}¢ → ${c.after.paidCacCents ?? "n/a"}¢`).join("; ")}`
+        : `${input.branchId} ${p.key}: no verified correction of paid CAC`,
+    };
+  },
+});
+
 // ── registry ─────────────────────────────────────────────────────────────────
 
 // ── getBrandMetrics ──────────────────────────────────────────────────────────
@@ -1303,6 +1435,7 @@ export const TOOLS = {
   getCashTrace,
   getAuditHistory,
   getDecisionReadiness,
+  getVerifiedCorrections,
 } as const;
 
 export type ToolName = keyof typeof TOOLS;

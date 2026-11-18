@@ -68,6 +68,11 @@ export interface DetectedIntent {
   asksCash: boolean;
   /** The question names collected cash or revenue itself (not only "paid" in "paid CAC"). */
   asksCollected: boolean;
+  /**
+   * The question asks what a figure did, not only what it is ("why did it jump", "before the
+   * fix"): answered with the approved corrections' stored receipts as well as the figure now.
+   */
+  asksHistory: boolean;
 }
 
 const CAUSAL_QUESTION = /\b(?:cause[sd]?|because|due to|thanks to|paid for itself|pay for itself|pays for itself|worth it|roi|return on|effective|drove|bring in more)\b/i;
@@ -173,8 +178,12 @@ export function detectIntent(question: string, viewer: Viewer, requestedBranch: 
     asksCause: CAUSAL_QUESTION.test(question),
     asksCash: /\b(?:collect\w*|cash|revenue|paid|payments?|refunds?)\b/i.test(question),
     asksCollected: /\b(?:collect\w*|cash|revenue)\b/i.test(question),
+    asksHistory: CHANGE_QUESTION.test(question) || HISTORY_QUESTION.test(question),
   };
 }
+
+/** What happened to a figure, beyond a change word: "what happened to", "before the fix", "was it corrected". */
+const HISTORY_QUESTION = /\bwhat happened\b|\bbefore (?:the |its |it was )?(?:fix|repair|correction|replay)\b|\b(?:corrected|repaired|restated)\b/i;
 
 /** Measures no tool records: accounting revenue, profit, untracked sources (sponsorships, billboards). */
 const UNMEASURED = /\b(?:recogni[sz]ed revenue|accounting|gaap|accrual|profit\w*|margins?|ebitda|lifetime value|ltv|sponsorships?|arena|billboards?|radio|television|tv ads?|print ads?|mailers?|flyers?|word of mouth)\b/i;
@@ -603,6 +612,22 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
   let effect = "None proposed.";
   let next = `Check decision readiness for ${b} before acting on its CAC.`;
 
+  // A question about what the figure did ("Why did B20's CAC jump in October?") reads the approved,
+  // verified corrections' stored receipts: what the metric measured before a repair, beside what the
+  // scorecard says now. A receipt counts only for this branch, this metric and this period
+  // (getVerifiedCorrections), so another branch or month never borrows it. An open quarantine is
+  // the current problem, answered below instead.
+  const history = d.asksHistory && !quarantine ? await ctx.call("getVerifiedCorrections", { branchId: b, period: d.period }) : null;
+  const receipt = history?.corrections[0] ?? null;
+  if (receipt) {
+    const told = receiptFindings(receipt, b, metrics.period.label, MONTH_NAME[metrics.period.key] ?? null);
+    // What happened before the repair leads; the figure now (the scorecard) follows it.
+    observations.unshift(...told.observations);
+    cause = told.cause;
+    confidence = { level: "high", why: "The approved repair's stored receipt records the figure before and after it, and the scorecard holds the figure now." };
+    next = `Correction verified, budget move not approved: a verified repair is not permission to move budget. Any budget change for ${b} is decided in Decision Lab, on its decision readiness.`;
+  }
+
   if (quarantine) {
     const ev = quarantine.evidence as Record<string, unknown>;
     const src = String(ev.source) as SourceName;
@@ -695,7 +720,7 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
     effect = "If approved and released, the campaign's spend moves from unallocated to this branch and its customers rejoin the denominator; ChangeGuard previews the exact change. No business improvement follows from a mapping by itself.";
     confidence = { level: "medium", why: "The trace shows a campaign whose leads arrive here but which maps to no branch; whether it belongs here is a person's decision." };
   }
-  if (!quarantine && !gap) {
+  if (!quarantine && !gap && !receipt) {
     observations.push({
       text: `No open quarantine or coverage-gap exception at ${b} explains its CAC; the number may reflect real economics (or slow conversion of recent leads — period CAC is not cohort CAC).`,
       evidenceIds: [bm, evidence.metricDefinition("paidCac")],
@@ -715,7 +740,10 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
   return {
     summary: quarantine
       ? `${b}'s paid CAC (${money(metrics.paidCacCents)}) is inflated by a data problem, not only by spend: ${quarantine.summary}. Those customers count as unknown instead of paid.`
-      : `${b}'s paid CAC is ${money(metrics.paidCacCents)}; no open data-integrity exception explains it.`,
+      : receipt
+        ? // Figures from the scorecard only: the summary is checked against the current facts.
+          `${b}'s ${MONTH_NAME[metrics.period.key] ?? metrics.period.label} paid CAC is ${money(metrics.paidCacCents)} now: the figure was overstated while ${receiptHeld(receipt)} were held, and an approved, verified repair corrected it.`
+        : `${b}'s paid CAC is ${money(metrics.paidCacCents)}; no open data-integrity exception explains it.`,
     observations,
     suspectedCause: cause,
     confidence,
@@ -723,10 +751,73 @@ async function highCacPlan(ctx: PlanContext, d: DetectedIntent): Promise<DraftFi
     expectedEffect: effect,
     risks: quarantine
       ? ["Replayed records change historical lead counts and channel credit for the affected days.", "A lower CAC after the fix is a measurement correction, not a change in marketing performance."]
-      : ["Moving budget on attributed CAC alone risks acting on correlation."],
-    missingInformation: quarantine ? [] : ["Cohort-based CAC (leads followed to conversion) — the scorecard reports period CAC."],
+      : receipt
+        ? ["A verified repair corrects a measurement: it is not approval to move budget, and the corrected CAC says nothing new about marketing performance.", "Moving budget on attributed CAC alone risks acting on correlation."]
+        : ["Moving budget on attributed CAC alone risks acting on correlation."],
+    missingInformation: quarantine
+      ? []
+      : [
+          "Cohort-based CAC (leads followed to conversion) — the scorecard reports period CAC.",
+          ...(history && !receipt ? [`No verified correction of ${b}'s paid-media CAC for ${metrics.period.label} is on record: the figure is as the scorecard measures it.`] : []),
+        ],
     proposals,
   };
+}
+
+type VerifiedCorrection = ToolData<"getVerifiedCorrections">["corrections"][number];
+
+/** "call records": what kind of records a correction's incident held. */
+const recordsWord = (c: VerifiedCorrection) => (c.incident.source === "calls" ? "call records" : c.incident.source ? `${c.incident.source} records` : "records");
+
+/** "119 call records": what the repair replayed, else what its incident held. */
+function receiptHeld(c: VerifiedCorrection): string {
+  const held = c.replayedRecords ?? c.incident.heldRecords;
+  return held === null ? `the incident's ${recordsWord(c)}` : `${held} ${recordsWord(c)}`;
+}
+
+/**
+ * What an approved, verified correction did to a branch's paid-media CAC for one period, from its
+ * stored receipt (getVerifiedCorrections): the figure as measured before the repair, then what
+ * moved and what did not. Each figure is proved against the receipt's stored field, and the
+ * sentences cite the receipt (the proposal and its incident), never today's scorecard: the
+ * scorecard says what the metric is now, in its own sentence.
+ */
+function receiptFindings(c: VerifiedCorrection, b: string, periodLabel: string, monthName: string | null): { observations: Observation[]; cause: NonNullable<DraftFindings["suspectedCause"]> } {
+  const pId = evidence.proposal(c.proposalId);
+  const ids = [pId, evidence.exception(c.exceptionId)];
+  const f = (figure: string | number, path: string) => field(figure, "getVerifiedCorrections", pId, `corrections[proposalId=${c.proposalId}].${path}`);
+  const [w0, w1] = [c.before, c.after];
+  const held = c.replayedRecords ?? c.incident.heldRecords;
+  const heldField = held === null ? [] : [f(held, c.replayedRecords !== null ? "replayedRecords" : "incident.heldRecords")];
+  const measured = w0.paidCacCents === null
+    ? `Before the repair, ${b} had no paid-media CAC for ${periodLabel}: no new customer's first evidenced touch was paid`
+    : // In words, not as an equation: an equation's operands must be scorecard facts, and these are
+      // the receipt's stored fields (each figure is proved against its field below).
+      `Before the repair, ${b}'s paid-media CAC for ${periodLabel} read ${money(w0.paidCacCents)}: ${exactDollars(w0.paidSpendCents)} of paid spend divided by ${w0.paidAcquired} new customers whose first evidenced touch was paid`;
+  const before = rendered<Observation>(
+    { text: `${measured}${held === null ? "" : `, measured while ${receiptHeld(c)} were held`} (the stored receipt of proposal #${c.proposalId}).`, evidenceIds: ids, status: "verified" },
+    [...(w0.paidCacCents === null ? [] : [f(money(w0.paidCacCents), "before.paidCacCents"), f(exactDollars(w0.paidSpendCents), "before.paidSpendCents"), f(w0.paidAcquired, "before.paidAcquired")]), ...heldField],
+  );
+  const spendSame = w0.paidSpendCents === w1.paidSpendCents;
+  const servedSame = w0.acquired === w1.acquired;
+  const unchanged = [spendSame ? `the ${exactDollars(w1.paidSpendCents)} in paid spend` : null, servedSame ? `the ${w1.acquired} serviced customers` : null].filter((s): s is string => s !== null);
+  const did = c.kind === "replay_quarantine" && held !== null ? `replayed the ${held} held ${recordsWord(c)}${c.mapperVersion && c.incident.source ? ` through ${c.incident.source}@${c.mapperVersion}` : ""}` : "changed attribution";
+  const repair = rendered<Observation>(
+    {
+      text: `The approved repair (proposal #${c.proposalId}, executed and verified on ${day(c.executedAt)}) ${did}: paid attribution moved from ${w0.paidAcquired} to ${w1.paidAcquired} customers${unchanged.length ? `, while ${unchanged.join(" and ")} stayed unchanged` : ""}.`,
+      evidenceIds: ids,
+      status: "verified",
+    },
+    [...heldField, f(w0.paidAcquired, "before.paidAcquired"), f(w1.paidAcquired, "after.paidAcquired"), ...(spendSame ? [f(exactDollars(w1.paidSpendCents), "after.paidSpendCents")] : []), ...(servedSame ? [f(w1.acquired, "after.acquired")] : [])],
+  );
+  const cause = rendered<NonNullable<DraftFindings["suspectedCause"]>>(
+    {
+      text: `${b}'s ${monthName ? `${monthName} figure` : `figure for ${periodLabel}`} was measured while ${receiptHeld(c)} were held: customers whose only lead record was among them had no paid touch on record, so ${spendSame ? "the same paid spend was divided by fewer paid customers" : "fewer customers counted as paid"}.`,
+      evidenceIds: ids,
+    },
+    heldField,
+  );
+  return { observations: [before, repair], cause };
 }
 
 // ── quarantine ───────────────────────────────────────────────────────────────

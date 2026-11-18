@@ -133,6 +133,7 @@ describe("model tool loop", () => {
       "getCashTrace",
       "getAuditHistory",
       "getDecisionReadiness",
+      "getVerifiedCorrections",
       "submit_findings",
     ]);
     for (const t of tools) {

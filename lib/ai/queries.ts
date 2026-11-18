@@ -304,6 +304,24 @@ export async function resolveEvidence(ctx: ToolContext, investigationId: number,
         return await live("getCustomerJourney", { customerId: n }, `Customer ${n}`, `/customers/${n}`);
       case "metric_definition":
         return await live("getMetricDefinition", { key: parsed.key }, `Metric definition: ${parsed.key}`, "/definitions");
+      case "proposal": {
+        // A correction's receipt, as the tool returned it, linked to the incident page that shows
+        // it in full; the incident is re-read first, so one outside the viewer's scope is not served.
+        const { rows } = await ctx.db.query<{ exception_id: string; branch_id: string | null }>(
+          "select p.exception_id, e.branch_id from action_proposals p join exceptions e on e.id = p.exception_id where p.id = $1",
+          [n],
+        );
+        if (!rows[0] || !canSeeBranch(ctx.viewer, rows[0].branch_id)) throw new ActionError(`${evidenceId} is not in your scope`, 404);
+        return {
+          evidenceId,
+          kind: parsed.kind,
+          title: `Proposal ${n}: the correction's stored receipt`,
+          href: `/exceptions/${rows[0].exception_id}`,
+          record: returning[0].output,
+          source: "stored_step",
+          returnedBy,
+        };
+      }
       case "audit": {
         const { rows } = await ctx.db.query("select * from audit_log where id = $1", [n]);
         if (!rows[0]) throw new ActionError(`Audit row ${n} not found`, 404);

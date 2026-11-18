@@ -1,15 +1,14 @@
-import { createPool, getNow } from "@/lib/db";
-import { VIEWERS } from "@/lib/viewer";
-import { approveProposal, createProposal, dryRunProposal, executeProposal } from "@/lib/workflow/proposals";
-import { caseForException, caseProposals } from "@/lib/workflow/queries";
+import { createPool } from "@/lib/db";
+import { applyHostedCorrection } from "@/lib/demo/hosted-correction";
 import { readClipboard } from "./clipboard";
 
 /**
- * Runs B20's correction through the Action Center on a loaded copy of the demo world: the
- * marketing analyst proposes replaying the held calls through calls@1.1, the integration engineer
- * dry-runs it, and the revenue ops approver, a different role, approves and executes it. The hosted
- * demo has no staff roles, so without this a visitor finds held decisions but never an approved
- * correction, its receipt and its audit trail (release design §1, success 5).
+ * Runs B20's correction through the Action Center on a loaded copy of the demo world
+ * (lib/demo/hosted-correction.ts): the marketing analyst proposes replaying the held calls through
+ * calls@1.1, the integration engineer dry-runs it, and the revenue ops approver, a different role,
+ * approves and executes it. The hosted demo has no staff roles, so without this a visitor finds
+ * held decisions but never an approved correction, its receipt and its audit trail (release
+ * design §1, success 5).
  *
  * Run once after the hosted loader, on the database it loaded (docs/deploy.md, step 2):
  *
@@ -33,36 +32,13 @@ async function targetUrl(): Promise<string> {
 async function main() {
   const pool = createPool(await targetUrl());
   try {
-    const open = await pool.query<{ id: string }>(
-      "select id from exceptions where branch_id = 'B20' and kind = 'quarantined_source_records' and status = 'open' order by id limit 1",
-    );
-    if (open.rows.length === 0) {
+    const done = await applyHostedCorrection(pool);
+    if (!done) {
       console.log("B20 has no open quarantine incident: nothing to correct.");
       return;
     }
-    const exceptionId = Number(open.rows[0].id);
-    const now = await getNow(pool);
-    const proposal = await createProposal(pool, {
-      exceptionId,
-      kind: "replay_quarantine",
-      params: { mapperVersion: "1.1" },
-      rationale: "Replay the held calls through calls@1.1, which reads the renamed caller field",
-      source: "human",
-      actor: VIEWERS.marketing,
-      now,
-    });
-    const dry = await dryRunProposal(pool, { proposalId: proposal.id, actor: VIEWERS.engineer, now });
-    if (dry.status !== "dry_run_ok") throw new Error(`The dry run did not pass: ${dry.dryRun?.error ?? dry.status}`);
-    await approveProposal(pool, { proposalId: proposal.id, actor: VIEWERS.approver, reason: "Dry run verified; the five ledger totals are conserved", now });
-    await executeProposal(pool, { proposalId: proposal.id, actor: VIEWERS.approver, now });
-
-    const kase = await caseForException(pool, exceptionId);
-    const execution = (await caseProposals(pool, kase!.id)).find((p) => p.id === proposal.id)?.execution;
-    if (execution?.status !== "succeeded") throw new Error(`The execution did not succeed: ${execution?.status ?? "missing"}`);
-    const before = execution.before?.month?.branch;
-    const after = execution.after?.month?.branch;
     const dollars = (cents: number | null | undefined) => (cents == null ? "none" : `$${(cents / 100).toFixed(2)}`);
-    console.log(`Corrected incident #${exceptionId} (proposal #${proposal.id}): October paid CAC ${dollars(before?.paidCacCents)} → ${dollars(after?.paidCacCents)}, paid customers ${before?.paidAcquired} → ${after?.paidAcquired}, serviced ${before?.acquired} → ${after?.acquired}.`);
+    console.log(`Corrected incident #${done.exceptionId} (proposal #${done.proposalId}): October paid CAC ${dollars(done.before?.paidCacCents)} → ${dollars(done.after?.paidCacCents)}, paid customers ${done.before?.paidAcquired} → ${done.after?.paidAcquired}, serviced ${done.before?.acquired} → ${done.after?.acquired}.`);
   } finally {
     await pool.end();
   }

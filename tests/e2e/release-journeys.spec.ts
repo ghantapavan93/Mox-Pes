@@ -284,6 +284,17 @@ test.describe("J4 · the investigator, as a visitor", () => {
     await expect(page.getByTestId("mode-badge")).toHaveText("Answered by the deterministic evidence path (no model)");
     await expect(page.getByTestId("investigation-workspace")).toContainText(/Your question on the public demo\. Available until .+ UTC/);
     await expect(page.getByTestId("findings")).toBeVisible();
+    // B20's quarantine is resolved on the hosted copy (its approved correction) and after J3 here:
+    // what happened comes from the correction's stored receipt, what CAC is now from the
+    // scorecard, and the answer says the correction approved no budget move.
+    if (NO_DATABASE || (await incidentOf("B20", "quarantined_source_records"))?.status === "resolved") {
+      const findings = page.getByTestId("findings");
+      await expect(findings).toContainText("read $490.11: $15,193.47 of paid spend divided by 31 new customers");
+      await expect(findings).toContainText("paid attribution moved from 31 to 56 customers, while the $15,193.47 in paid spend and the 109 serviced customers stayed unchanged");
+      await expect(findings).toContainText("paid-media CAC $271.31");
+      // The recommended next action (the claim check repeats it, collapsed).
+      await expect(page.locator("dd", { hasText: "a verified repair is not permission to move budget" })).toBeVisible();
+    }
     const cite = page.getByTestId("citation").first();
     await expect(cite).toBeVisible();
     await cite.focus();

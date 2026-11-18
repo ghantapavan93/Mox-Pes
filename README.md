@@ -30,7 +30,7 @@ changes nothing.
   the rows it already lands (docs/architecture.md).
 - Not a dashboard product, not an ingestion platform, not an AI feature (docs/decisions.md ADR-10).
 
-## Run it
+## Run the demo locally
 
 Requirements: Node 22, and Postgres 17 (local install or Docker).
 
@@ -59,6 +59,14 @@ Without Docker, point `DATABASE_URL` at any Postgres 17 (see `.env.example`).
 A production build (`npm run build`, then `npm run start`) is **not** a demo unless started with
 `DEMO_MODE=1`: without it the role picker and the FieldRoutes mock are off and every visitor is a
 read-only guest (docs/decisions.md, ADR-20). The browser tests set it for you.
+
+The local demo is the only place a file is **counted**. Pick a role in the header: upload an export
+on Data onboarding as *Marketing analyst*, answer the questions the file cannot, and dry-run it;
+then, as *Revenue ops approver* (a different role), approve the exact rules the dry run used and
+publish. Calls and web leads go through the same intake as the live feeds; payments and ad spend
+are compared, never counted. The hosted demo (`PUBLIC_WORKSPACE=1`, no `DEMO_MODE`) gives every
+visitor a private comparison workspace instead: files are compared with the ledger, kept 24 hours,
+and never counted (docs/agent-work/release/RELEASE-DESIGN.md §5.2).
 
 ## Demo path (2 minutes)
 

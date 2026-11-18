@@ -18,13 +18,16 @@ export async function FreshnessIndicator() {
   const asOf = dataAsOf(streams);
   const { stale, failing, ok } = feedAttention(streams, now);
   // The link's name carries all four data times (release design §5.4); the visible text keeps one.
+  // The name starts with exactly the visible words, so a speech user can say what they see
+  // (WCAG 2.5.3, label in name), then adds the other three times.
   const sync = times.lastSourceSync;
+  const feeds = ok ? `${streams.length} feeds fresh` : `${stale.length + failing.length} of ${streams.length} feeds need attention`;
+  const visible = `${asOf ? `Data as of ${dateTime(asOf)}` : "No successful sync yet"} · ${feeds}`;
   const name = [
-    asOf ? `Data as of ${dateTime(asOf)}` : "No successful sync yet",
+    visible,
     times.snapshotAt ? `synthetic snapshot ${dateTime(times.snapshotAt)}` : null,
     sync ? `last successful source sync ${dateTime(sync.at)} (${sync.kind === "polling_run" ? `polling run, ${sync.stream}` : `CRM sync job, ${sync.entity}, office ${sync.officeId}`})` : null,
     times.lastCountedImport ? `last counted import ${dateTime(times.lastCountedImport.at)}` : "no counted import",
-    ok ? `${streams.length} feeds fresh` : `${stale.length + failing.length} of ${streams.length} feeds need attention`,
   ]
     .filter(Boolean)
     .join("; ");
@@ -40,7 +43,7 @@ export async function FreshnessIndicator() {
       <Database aria-hidden className="size-3.5 shrink-0" />
       <span className="truncate">
         {asOf ? <>Data as of <span className="font-medium text-text">{dateTime(asOf)}</span></> : "No successful sync yet"}
-        <span className="text-faint"> · {ok ? `${streams.length} feeds fresh` : `${stale.length + failing.length} of ${streams.length} feeds need attention`}</span>
+        <span className="text-faint"> · {feeds}</span>
       </span>
     </Link>
   );

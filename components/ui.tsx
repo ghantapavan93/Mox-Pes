@@ -300,6 +300,7 @@ export function Stat({
   tone = "neutral",
   subTone = "neutral",
   delta,
+  deltaPending = false,
   traceHref,
 }: {
   metric: keyof typeof METRICS;
@@ -309,6 +310,8 @@ export function Stat({
   subTone?: "neutral" | "bad";
   /** Change against a comparison period; `good` says which direction is better for this metric. */
   delta?: { label: string; direction: "up" | "down" | "flat"; good: boolean | null };
+  /** The delta is still loading: keep its line's height, so nothing below moves when it arrives. */
+  deltaPending?: boolean;
   /** Where the number's evidence trace is (lib/lineage/trace.ts), for metrics that have one. */
   traceHref?: string;
 }) {
@@ -342,6 +345,7 @@ export function Stat({
           {delta.label}
         </p>
       )}
+      {!delta && deltaPending && <p aria-hidden className="mt-1 h-4" data-testid="stat-delta-pending" />}
       {sub && <p className={`mt-1 text-xs leading-4 ${subTone === "bad" ? "font-medium text-bad" : "text-muted"}`}>{sub}</p>}
       {traceHref && (
         <Link href={traceHref} className="mt-2 text-xs font-medium text-accent hover:underline" data-testid={`trace-link-${String(metric)}`}>

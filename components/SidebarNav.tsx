@@ -135,7 +135,9 @@ export function SidebarCollapseButton() {
       data-testid="sidebar-collapse"
     >
       <Icon aria-hidden className="size-4 shrink-0" />
-      <span data-sidebar-label>Collapse</span>
+      {/* Its visible words are the start of its name (WCAG 2.5.3, label in name); the icon and the
+          tooltip say which way it goes. */}
+      <span data-sidebar-label>Navigation</span>
     </button>
   );
 }

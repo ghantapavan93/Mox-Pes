@@ -167,6 +167,17 @@ export function pointTitle(series: Pick<Series, "label">, week: WeekInfo, scopeL
 }
 
 /**
+ * One point of the chart in one sentence: channel, scope, the week's dates, then its value in US
+ * dollars and its state, in `explainCell`'s words. The point's tooltip and the selection panel
+ * both show exactly this, so a reader gets the same words whether they hover, tap or use the
+ * keyboard (release design §5.7).
+ */
+export function cellSentence(series: Pick<Series, "label" | "channel">, cell: Cell, week: WeekInfo, markers: Marker[], scopeLabel: string): string {
+  const [fact] = explainCell(series, cell, week, markers);
+  return `${pointTitle(series, week, scopeLabel)}: ${fact}`;
+}
+
+/**
  * One point of the chart, in words, with the same values the chart and the table show. The
  * heading (`pointTitle`) names the channel, scope and week; these lines start with the fact.
  */

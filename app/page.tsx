@@ -7,7 +7,7 @@ import { CountUp } from "@/components/CountUp";
 import { StackedWeeks } from "@/components/StackedWeeks";
 import { IncidentRef } from "@/components/incidents/IncidentRef";
 import { MovementSectionAsync, MovementSkeleton } from "@/components/overview/MovementSection";
-import { Badge, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
 import { attentionFlags } from "@/lib/attention";
 import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
@@ -62,22 +62,18 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
   const scope = { from: period.from, to: period.to, branchIds };
   // October is compared with September (same length, same definitions); other periods are not.
   const compare = period.key === "oct" ? { from: PERIODS.sep.from, to: PERIODS.sep.to, branchIds } : null;
-  const branchRowsReady = branchRows(pool, scope);
-  const [rows, bridge, streams, holds, held, brands, weeks, before] = await Promise.all([
-    branchRowsReady,
+  // The verdict's own reads: the branch rows behind the figure and "start with", the bridge in its
+  // paragraph, and the holds the callout under it names. Nothing else is awaited before it
+  // (release WP-G step 2, docs/agent-work/release/measurements/steps.md).
+  const [rows, bridge, holds, held] = await Promise.all([
+    branchRows(pool, scope),
     conversionBridge(pool, scope),
-    freshness(pool),
     // The holds on this period's decisions: a hold on refused spend revisions dated in another
     // period is that period's (HOLD-TO-DECISION.md, scenario 2b).
     decisionHolds(pool, branchIds, 8, period),
     // And the recommendations the records hold with no incident to say so: a channel the rule
     // covers whose spend is held at intake, has none recorded, or is counted at another branch.
     evidenceHolds(pool, branchIds, period),
-    // Brand lines from the same branch rows, as soon as they are ready, instead of the whole
-    // scorecard recomputed once per brand in turn (R-34: about 2 s of every load).
-    brand ? Promise.resolve([]) : branchRowsReady.then((r) => brandRows(pool, scope, r)),
-    weeklySeries(pool, branchIds),
-    compare ? totals(pool, compare) : Promise.resolve(null as Totals | null),
   ]);
   const t = await totals(pool, scope, rows);
   // "What changed" (components/overview) starts its reads only now, once the page's own are done,
@@ -90,6 +86,16 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
   const weekParam = parseWeek(sp.week);
   const movementReady = overviewMovement(pool, viewer, { branchParam, brandBranchIds: brand ? branchIds : null, period, pageHolds: holds, pageEvidenceHolds: held });
   movementReady.catch(() => {}); // awaited by the section; this only keeps an early failure from being unhandled
+  // What the verdict does not show starts after it, and after "What changed" (the next section), so
+  // it never competes with either for the database. Each part renders in its own Suspense section as
+  // it arrives: the September comparison behind the tiles' deltas, the weekly series, the brand
+  // lines (from the same branch rows: R-34) and the feeds' freshness.
+  const beforeReady = compare ? totals(pool, compare) : Promise.resolve(null as Totals | null);
+  const weeksReady = weeklySeries(pool, branchIds);
+  const brandsReady = brand ? Promise.resolve([]) : brandRows(pool, scope, rows);
+  const streamsReady = freshness(pool);
+  // Awaited by their sections; this only keeps an early failure from being unhandled.
+  for (const ready of [beforeReady, weeksReady, brandsReady, streamsReady]) ready.catch(() => {});
   const branchOptions = BRANCHES.filter((b) => branchIds === null || branchIds.includes(b.id));
   const flags = attentionFlags(rows);
   const ranked = [...rows].sort((a, b) => (flags.get(b.branchId)?.length ?? 0) - (flags.get(a.branchId)?.length ?? 0) || b.atRiskCents - a.atRiskCents);
@@ -129,16 +135,25 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
                     <span className="sr-only">Definition of revenue in open exceptions</span>
                   </Link>
                 </p>
-                <p className="mt-0.5 text-[15px] leading-6 text-text">
+                {/* The verdict: what the figure is and where to start. The harness times its first paint. */}
+                <p className="mt-0.5 text-[15px] leading-6 text-text" elementtiming="verdict">
                   of collected revenue is in <strong className="font-semibold">{count(t.openExceptions)}</strong> open exceptions
                   <AtRiskSplit untiedCents={t.untiedCents} creditDisputedCents={t.creditDisputedCents} />
                   {flagged.length > 0 && (
                     <>
-                      {" "}— start with <Link className="font-medium text-accent underline" href={`/branches/${flagged[0].branchId}?period=${period.key}`}>{flagged[0].branchId} {flagged[0].name}</Link>
+                      {" "}— start with {flagged[0].branchId} {flagged[0].name}
                     </>
                   )}
                   .
                 </p>
+                {flagged.length > 0 && (
+                  // The page's one primary action: where the verdict says to start.
+                  <div className="mt-2">
+                    <ButtonLink href={`/branches/${flagged[0].branchId}?period=${period.key}`} variant="primary" testId="headline-action">
+                      Open {flagged[0].branchId} {flagged[0].name}
+                    </ButtonLink>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-[15px] leading-6 text-text">No open exceptions in scope.</p>
@@ -156,7 +171,12 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         toolbar={
           <>
             <BrandTabs viewer={viewer} current={brandParam} period={period.key} />
-            <PeriodTabs current={period.key} base="/" extra={brandParam ? `&brand=${brandParam}` : ""} />
+            {/* A period switch keeps the brand and the chart's branch, channel and week (release design §5.7). */}
+            <PeriodTabs
+              current={period.key}
+              base="/"
+              extra={`${brandParam ? `&brand=${brandParam}` : ""}${branchParam ? `&branch=${encodeURIComponent(branchParam)}` : ""}${channelParam && weekParam ? `&channel=${channelParam}&week=${weekParam}` : ""}`}
+            />
             {compare && (
               <span className="text-xs text-faint">
                 Changes compare with September (same branches, same definitions). The period ends Oct 30, the last complete day: Oct 31&apos;s CRM records count in no
@@ -196,14 +216,9 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         />
       </Suspense>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} delta={delta(t.paidSpendCents, before?.paidSpendCents ?? null, null)} sub={t.unallocatedSpendCents > 0 ? `+ ${money(t.unallocatedSpendCents)} on unmapped campaigns` : "all spend mapped"} subTone={t.unallocatedSpendCents > 0 ? "bad" : "neutral"} />
-        <Stat metric="prospects" value={count(t.prospects)} delta={delta(t.prospects, before?.prospects ?? null, "up")} sub={`${count(t.rawLeads)} lead records`} />
-        <Stat metric="acquired" value={count(t.acquired)} delta={delta(t.acquired, before?.acquired ?? null, "up")} sub={`${count(t.paidAcquired)} from paid media`} />
-        <Stat metric="paidCac" value={money(t.paidCacCents)} delta={delta(t.paidCacCents, before?.paidCacCents ?? null, "down")} sub="period CAC, not cohort" />
-        <Stat metric="unknownShare" value={pct(t.unknownShare)} delta={delta(t.unknownShare, before?.unknownShare ?? null, "down", "pts")} sub={`${count(t.unknownAcquired)} customers`} />
-        <Stat metric="newCollected" value={money(t.newCustomerCollectedCents, true)} delta={delta(t.newCustomerCollectedCents, before?.newCustomerCollectedCents ?? null, "up")} sub={`${money(t.newCustomerAcvCents, true)} booked annual value (not revenue)`} />
-      </div>
+      <Suspense fallback={<StatTiles t={t} before={null} pending={compare !== null} />}>
+        <StatTilesAsync t={t} before={beforeReady} />
+      </Suspense>
 
       <div className="grid gap-6 xl:grid-cols-5">
         <Card
@@ -261,7 +276,9 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
           )}
         </Card>
         <Card className="xl:col-span-2" title="New customers serviced, by week" subtitle={`How their source is known · Sep–Oct${period.key === "oct" ? " (October in full colour)" : ""}`}>
-          <StackedWeeks points={weeks} label="New customers serviced per week, by source: paid media, unknown, other" highlightFrom={period.key === "oct" ? "2026-09-28" : undefined} />
+          <Suspense fallback={<Skeleton lines={6} />}>
+            <WeeksAsync weeks={weeksReady} periodKey={period.key} />
+          </Suspense>
           <p className="mt-3 text-xs leading-5 text-muted">A jump in <span className="font-medium text-warn">unknown source</span> with no change in total usually means broken capture or linkage, not changed customer behaviour.</p>
         </Card>
       </div>
@@ -322,59 +339,101 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         </Card>
       </div>
 
-      {brands.length > 1 && (
-        <Card title="By brand" subtitle="Each brand computed like the company line, not summed from branch rows. Unmapped spend belongs to no brand. Which branch trades under which brand is synthetic." flush>
-          <TableWrap label="Brands" flush>
-            <thead>
-              <tr>
-                <Th>Brand</Th>
-                <Th align="right">Branches</Th>
-                <Th align="right">Paid spend</Th>
-                <Th align="right">Paid CAC</Th>
-                <Th align="right">New cust.</Th>
-                <Th align="right">Unattributed</Th>
-                <Th align="right">Open exceptions</Th>
-                <Th align="right">At risk</Th>
-              </tr>
-            </thead>
-            <tbody data-testid="brand-table">
-              {brands.map((b) => (
-                <tr key={b.brandId}>
-                  <Td className="whitespace-nowrap">
-                    <Link className="font-medium text-accent hover:underline" href={`/?brand=${b.brandId}&period=${period.key}`}>
-                      {b.name}
-                    </Link>
-                    {!b.complete && <div className="text-[11px] text-faint">partial: your scope covers part of this brand</div>}
-                  </Td>
-                  <Td align="right">{count(b.branchIds.length)}</Td>
-                  <Td align="right">{money(b.totals.paidSpendCents, true)}</Td>
-                  <Td align="right">{money(b.totals.paidCacCents)}</Td>
-                  <Td align="right">{count(b.totals.acquired)}</Td>
-                  <Td align="right">{pct(b.totals.unknownShare)}</Td>
-                  <Td align="right">{count(b.totals.openExceptions)}</Td>
-                  <Td align="right">{money(b.totals.atRiskCents)}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableWrap>
-        </Card>
-      )}
+      <Suspense fallback={null}>
+        <BrandsAsync brands={brandsReady} periodKey={period.key} />
+      </Suspense>
 
-      <Card title="Data freshness" subtitle="Every number above is only as current as these feeds" action={<Link href="/integrations" className="text-xs font-medium text-accent hover:underline">Integration runs</Link>}>
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          {streams.map((s) => (
-            <li key={s.stream} className="rounded-md border border-border px-3 py-2 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate font-mono text-[11px] text-text">{s.stream}</span>
-                <Badge dot tone={s.lastRunStatus === "succeeded" ? "good" : "bad"}>{s.lastRunStatus ?? "never"}</Badge>
-              </div>
-              <div className="mt-1 text-muted">last success {dateTime(s.lastSuccessAt)}</div>
-              {s.quarantined > 0 && <div className="mt-0.5 font-medium text-bad">{s.quarantined} quarantined in source</div>}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <Suspense fallback={<Card title="Data freshness" subtitle="Every number above is only as current as these feeds"><Skeleton lines={2} /></Card>}>
+        <FreshnessAsync streams={streamsReady} />
+      </Suspense>
     </div>
+  );
+}
+
+/**
+ * The six tiles: their values from this period's totals, their deltas once September arrives
+ * (`pending` holds each delta's line meanwhile, so the cards below do not move).
+ */
+function StatTiles({ t, before, pending = false }: { t: Totals; before: Totals | null; pending?: boolean }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <Stat deltaPending={pending} metric="paidSpend" value={money(t.paidSpendCents, true)} delta={delta(t.paidSpendCents, before?.paidSpendCents ?? null, null)} sub={t.unallocatedSpendCents > 0 ? `+ ${money(t.unallocatedSpendCents)} on unmapped campaigns` : "all spend mapped"} subTone={t.unallocatedSpendCents > 0 ? "bad" : "neutral"} />
+      <Stat deltaPending={pending} metric="prospects" value={count(t.prospects)} delta={delta(t.prospects, before?.prospects ?? null, "up")} sub={`${count(t.rawLeads)} lead records`} />
+      <Stat deltaPending={pending} metric="acquired" value={count(t.acquired)} delta={delta(t.acquired, before?.acquired ?? null, "up")} sub={`${count(t.paidAcquired)} from paid media`} />
+      <Stat deltaPending={pending} metric="paidCac" value={money(t.paidCacCents)} delta={delta(t.paidCacCents, before?.paidCacCents ?? null, "down")} sub="period CAC, not cohort" />
+      <Stat deltaPending={pending} metric="unknownShare" value={pct(t.unknownShare)} delta={delta(t.unknownShare, before?.unknownShare ?? null, "down", "pts")} sub={`${count(t.unknownAcquired)} customers`} />
+      <Stat deltaPending={pending} metric="newCollected" value={money(t.newCustomerCollectedCents, true)} delta={delta(t.newCustomerCollectedCents, before?.newCustomerCollectedCents ?? null, "up")} sub={`${money(t.newCustomerAcvCents, true)} booked annual value (not revenue)`} />
+    </div>
+  );
+}
+
+async function StatTilesAsync({ t, before }: { t: Totals; before: Promise<Totals | null> }) {
+  return <StatTiles t={t} before={await before} />;
+}
+
+async function WeeksAsync({ weeks, periodKey }: { weeks: ReturnType<typeof weeklySeries>; periodKey: string }) {
+  return <StackedWeeks points={await weeks} label="New customers serviced per week, by source: paid media, unknown, other" highlightFrom={periodKey === "oct" ? "2026-09-28" : undefined} />;
+}
+
+async function BrandsAsync({ brands, periodKey }: { brands: Promise<Awaited<ReturnType<typeof brandRows>>>; periodKey: string }) {
+  const lines = await brands;
+  if (lines.length <= 1) return null;
+  return (
+    <Card title="By brand" subtitle="Each brand computed like the company line, not summed from branch rows. Unmapped spend belongs to no brand. Which branch trades under which brand is synthetic." flush>
+      <TableWrap label="Brands" flush>
+        <thead>
+          <tr>
+            <Th>Brand</Th>
+            <Th align="right">Branches</Th>
+            <Th align="right">Paid spend</Th>
+            <Th align="right">Paid CAC</Th>
+            <Th align="right">New cust.</Th>
+            <Th align="right">Unattributed</Th>
+            <Th align="right">Open exceptions</Th>
+            <Th align="right">At risk</Th>
+          </tr>
+        </thead>
+        <tbody data-testid="brand-table">
+          {lines.map((b) => (
+            <tr key={b.brandId}>
+              <Td className="whitespace-nowrap">
+                <Link className="font-medium text-accent hover:underline" href={`/?brand=${b.brandId}&period=${periodKey}`}>
+                  {b.name}
+                </Link>
+                {!b.complete && <div className="text-[11px] text-faint">partial: your scope covers part of this brand</div>}
+              </Td>
+              <Td align="right">{count(b.branchIds.length)}</Td>
+              <Td align="right">{money(b.totals.paidSpendCents, true)}</Td>
+              <Td align="right">{money(b.totals.paidCacCents)}</Td>
+              <Td align="right">{count(b.totals.acquired)}</Td>
+              <Td align="right">{pct(b.totals.unknownShare)}</Td>
+              <Td align="right">{count(b.totals.openExceptions)}</Td>
+              <Td align="right">{money(b.totals.atRiskCents)}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </TableWrap>
+    </Card>
+  );
+}
+
+async function FreshnessAsync({ streams }: { streams: ReturnType<typeof freshness> }) {
+  const feeds = await streams;
+  return (
+    <Card title="Data freshness" subtitle="Every number above is only as current as these feeds" action={<Link href="/integrations" className="text-xs font-medium text-accent hover:underline">Integration runs</Link>}>
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {feeds.map((f) => (
+          <li key={f.stream} className="rounded-md border border-border px-3 py-2 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate font-mono text-[11px] text-text">{f.stream}</span>
+              <Badge dot tone={f.lastRunStatus === "succeeded" ? "good" : "bad"}>{f.lastRunStatus ?? "never"}</Badge>
+            </div>
+            <div className="mt-1 text-muted">last success {dateTime(f.lastSuccessAt)}</div>
+            {f.quarantined > 0 && <div className="mt-0.5 font-medium text-bad">{f.quarantined} quarantined in source</div>}
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

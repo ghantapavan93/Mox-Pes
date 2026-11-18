@@ -36,6 +36,18 @@ on port 54333 and the PostgreSQL 17 client tools (`pg_dump`, `pg_restore`).
 Never use the loader to reset a database a deployment is serving: load a new release branch
 instead. A rehearsal loads a local database (`ALLOW_LOCAL_TARGET=1`, see the release design §9).
 
+Then, with the same URL on the clipboard (Neon's copy button again, if the loader's value has
+been used), give the hosted copy its one approved correction:
+
+```bash
+npm run db:correct-hosted -- --from-clipboard
+```
+
+The hosted demo has no staff roles, so this runs B20's fix through the Action Center as the demo
+roles would (the analyst proposes, the engineer dry-runs, the approver approves and executes).
+A visitor then finds an approved correction with its receipt and audit trail beside the held
+decisions. It does nothing when B20's incident is already corrected.
+
 ## 3. The app, on Vercel
 
 1. Import `ghantapavan93/Mox-Pes` as a Next.js project; leave the build settings as they are.

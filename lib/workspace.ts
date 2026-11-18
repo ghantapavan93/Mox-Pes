@@ -14,6 +14,12 @@ import { sha256 } from "@/lib/primitives";
 
 export const WORKSPACE = {
   retentionHours: 24,
+  /**
+   * How long deleted rows stay in the hosted database's change history: Neon's history window on
+   * the release project (Settings, Postgres, History window: 6 hours, the free plan's longest),
+   * read 2026-11-18. Only the operator can restore from it.
+   */
+  hostHistoryHours: 6,
   /** Below Vercel's 4.5 MB request-body limit, so the app's own refusal is the one a visitor sees. */
   maxBytes: 4 * 1024 * 1024,
   maxRows: 10_000,

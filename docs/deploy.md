@@ -16,6 +16,9 @@ synthetic.
    release's branch, unchanged.
 4. Copy the branch's connection string with Neon's copy button. It holds the password: it goes
    only to the loader in step 2 and into Vercel, never into a chat or a file.
+5. The project's history window (Settings, Postgres, History window) is 6 hours on the free plan:
+   deleted workspace rows stay that long in Neon's change history. `/onboarding` states it
+   (`WORKSPACE.hostHistoryHours` in `lib/workspace.ts`); change both together.
 
 ## 2. The data
 

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { setRole } from "./action-center";
+import { seedReplayableIncident } from "./db";
 
 /**
  * The shared controls (release WP-A; docs/design-system.md, "Button, ButtonLink, buttonClass"):
@@ -11,19 +12,16 @@ import { setRole } from "./action-center";
 const DROPPED = "The connection dropped before the server answered. The page now shows what the server stored.";
 const REFRESHED = "The page now shows what the server stored.";
 
-/** An open incident whose case can be reassigned by the marketing analyst. */
+/**
+ * An open incident whose case the marketing analyst can assign: B07's replayable quarantine, made
+ * here as J3 makes it and reconciled, so it has a case. (Scanning the open list depended on what
+ * earlier specs had closed: on Linux CI none of the first 40 had a case yet.)
+ */
 async function openIncidentWithCaseControls(page: Page): Promise<void> {
+  const id = await seedReplayableIncident();
   await setRole(page, "marketing");
-  await page.goto("/exceptions?status=open");
-  const links = page.locator('a[href^="/exceptions/"]').filter({ hasNotText: /^$/ });
-  const hrefs = (await links.evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""))).filter((h) => /^\/exceptions\/\d+/.test(h));
-  // Earlier specs fix and close the most severe cases (golden-path, os-golden-path), so look past
-  // the first few: any open case the analyst can assign will do.
-  for (const href of hrefs.slice(0, 40)) {
-    await page.goto(href);
-    if (await page.getByTestId("case-controls").getByRole("button", { name: "Assign" }).count()) return;
-  }
-  throw new Error("no open incident offered case controls to the marketing analyst");
+  await page.goto(`/exceptions/${id}`);
+  await expect(page.getByTestId("case-controls").getByRole("button", { name: "Assign" })).toBeVisible();
 }
 
 /** Chooses an owner other than the current one, so Assign is enabled. */

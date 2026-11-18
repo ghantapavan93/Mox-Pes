@@ -49,12 +49,20 @@ test.afterAll(async () => {
   if (!NO_DATABASE) await clearWorkspace();
 });
 
-/** The Overview's one figure and the four data times on Audit & Health, as a visitor reads them. */
+/**
+ * The Overview's one figure and the four data times on Audit & Health, as a visitor reads them.
+ * Each is read once it shows (React reveals streamed sections after the load event), and the times
+ * as words: the innerText of a block still hidden has no line breaks, so equal times read unequal.
+ */
 async function sharedFigures(page: Page) {
   await page.goto("/?period=oct");
-  const atRisk = (await page.getByTestId("at-risk-figure").textContent())?.trim() ?? "";
+  const figure = page.getByTestId("at-risk-figure");
+  await expect(figure).toBeVisible();
+  const atRisk = (await figure.textContent())?.trim() ?? "";
   await page.goto("/audit");
-  const times = (await page.getByTestId("data-times").innerText()).trim();
+  const block = page.getByTestId("data-times");
+  await expect(block).toBeVisible();
+  const times = ((await block.textContent()) ?? "").replace(/\s+/g, " ").trim();
   return { atRisk, times };
 }
 

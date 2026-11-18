@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Drawer } from "@/components/Drawer";
 import { Badge } from "@/components/ui";
 import { usd, utcDateTime } from "./clientFormat";
 import type { RawEventView, TimelineItem } from "@/lib/identity/journey";
@@ -91,16 +92,6 @@ type Load = { state: "loading" } | { state: "error"; message: string } | { state
 function SourceDrawer({ item, journeyId, onClose }: { item: TimelineItem; journeyId: string; onClose: () => void }) {
   const [rawEventId, setRawEventId] = useState(item.rawEventId);
   const [load, setLoad] = useState<Load>({ state: "loading" });
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -122,28 +113,18 @@ function SourceDrawer({ item, journeyId, onClose }: { item: TimelineItem; journe
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-text/30" onClick={onClose}>
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="source-drawer-title"
-        className="flex h-full w-full max-w-xl flex-col border-l border-border bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
-          <div>
-            <h2 id="source-drawer-title" className="text-sm font-semibold">
-              Source record · {item.title}
-            </h2>
-            <p className="mt-0.5 font-mono text-[11px] text-muted">
-              {item.sourceTable}#{item.sourceId} · {SOURCE_LABEL[item.source]} id {item.sourceRecordId}
-            </p>
-          </div>
-          <button ref={closeRef} type="button" onClick={onClose} className="rounded border border-border px-2 py-1 text-xs hover:bg-surface-2">
-            Close <span className="text-faint">Esc</span>
-          </button>
-        </header>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm" aria-live="polite">
+    <Drawer
+      open
+      onClose={onClose}
+      live
+      testId="source-drawer"
+      title={<>Source record · {item.title}</>}
+      subtitle={
+        <span className="font-mono text-[11px]">
+          {item.sourceTable}#{item.sourceId} · {SOURCE_LABEL[item.source]} id {item.sourceRecordId}
+        </span>
+      }
+    >
           {load.state === "loading" && (
             <div className="animate-pulse space-y-2" aria-busy="true" aria-label="Loading source payload">
               {Array.from({ length: 6 }, (_, i) => (
@@ -153,9 +134,7 @@ function SourceDrawer({ item, journeyId, onClose }: { item: TimelineItem; journe
           )}
           {load.state === "error" && <p role="alert" className="rounded bg-bad-soft p-2 text-bad">Could not load the payload: {load.message}</p>}
           {load.state === "ready" && <RawEventDetail raw={load.raw} onPick={pick} />}
-        </div>
-      </aside>
-    </div>
+    </Drawer>
   );
 }
 

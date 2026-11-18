@@ -144,3 +144,53 @@ test.describe("controls · disclosure", () => {
     await toggle.click(); // leave it expanded for later specs
   });
 });
+
+test.describe("shell · command menu and drawers", () => {
+  test("Ctrl+K opens the menu, a result opens by Enter, and Escape returns focus to the opener", async ({ page }) => {
+    await setRole(page, "marketing");
+    await page.goto("/exceptions");
+    const opener = page.getByRole("link", { name: "Ask the AI investigator" });
+    await opener.focus();
+    await page.keyboard.press("Control+k");
+    const input = page.getByTestId("command-input");
+    await expect(input).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(input).toHaveCount(0);
+    await expect(opener).toBeFocused();
+
+    await page.keyboard.press("Control+k");
+    await input.fill("B09");
+    await expect(page.getByTestId("command-results").getByRole("option").first()).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page).not.toHaveURL(/\/exceptions$/);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("on a touch screen the sidebar's search button opens the menu", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, hasTouch: true });
+    const page = await context.newPage();
+    await setRole(page, "marketing");
+    await page.goto("/exceptions");
+    await page.getByRole("button", { name: /Search or jump to/ }).first().tap();
+    await expect(page.getByTestId("command-input")).toBeFocused();
+    await context.close();
+  });
+
+  test("a drawer keeps Tab inside, locks the page's scroll, and returns focus on Escape", async ({ page }) => {
+    await setRole(page, "marketing");
+    await page.goto("/customers?q=CAL0000838");
+    await page.getByTestId("customer-table").getByRole("link").first().click();
+    const source = page.getByTestId("journey-timeline").getByRole("button", { name: /^Show source payload for / }).first();
+    await source.click();
+    const drawer = page.getByRole("dialog");
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole("button", { name: /Close/ })).toBeFocused();
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
+    for (let i = 0; i < 25; i++) await page.keyboard.press("Tab");
+    expect(await drawer.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+    await expect(source).toBeFocused();
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
+  });
+});

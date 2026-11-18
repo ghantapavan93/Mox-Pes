@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Drawer } from "@/components/Drawer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui";
 import type { InvestigationResult, Observation } from "@/lib/ai/contract";
@@ -240,16 +241,6 @@ function EvidenceDrawer({
   onPick: (ref: string) => void;
 }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -266,26 +257,14 @@ function EvidenceDrawer({
   }, [investigationId, evidenceId]);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-text/30" onClick={onClose}>
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="evidence-drawer-title"
-        className="flex h-full w-full max-w-xl flex-col border-l border-border bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
-          <div>
-            <h2 id="evidence-drawer-title" className="text-sm font-semibold">
-              Evidence · {load.state === "ready" ? load.view.title : evidenceId}
-            </h2>
-            <p className="mt-0.5 font-mono text-[11px] text-muted">{evidenceId}</p>
-          </div>
-          <button ref={closeRef} type="button" onClick={onClose} className="rounded border border-border px-2 py-1 text-xs hover:bg-surface-2">
-            Close <span className="text-faint">Esc</span>
-          </button>
-        </header>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm" aria-live="polite">
+    <Drawer
+      open
+      onClose={onClose}
+      live
+      testId="evidence-drawer"
+      title={<>Evidence · {load.state === "ready" ? load.view.title : evidenceId}</>}
+      subtitle={<span className="font-mono text-[11px]">{evidenceId}</span>}
+    >
           {load.state === "loading" && (
             <div className="animate-pulse space-y-2" aria-busy="true" aria-label="Loading evidence">
               {Array.from({ length: 6 }, (_, i) => (
@@ -299,9 +278,7 @@ function EvidenceDrawer({
             </p>
           )}
           {load.state === "ready" && <EvidenceBody view={load.view} returned={returned} onPick={onPick} />}
-        </div>
-      </aside>
-    </div>
+    </Drawer>
   );
 }
 

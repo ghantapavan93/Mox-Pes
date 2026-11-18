@@ -8,7 +8,8 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { FreshnessIndicator, ScopeIndicator } from "@/components/ShellStatus";
 import { SidebarDisclosure } from "@/components/SidebarDisclosure";
 import { SIDEBAR_BOOT_SCRIPT, SidebarCollapseButton, SidebarNav, SidebarNavFallback } from "@/components/SidebarNav";
-import { getViewer } from "@/lib/server";
+import { demoModeEnabled } from "@/lib/demo-mode";
+import { getViewer, workspaceEnabled } from "@/lib/server";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -23,11 +24,20 @@ export const metadata: Metadata = {
 
 async function ViewerControls() {
   const viewer = await getViewer();
+  // Outside demo mode nobody can switch roles (POST /api/role answers 404): no picker that would
+  // do nothing, just who the visitor is ("Guest · your workspace" on the hosted demo).
+  if (!demoModeEnabled()) {
+    return (
+      <span className="text-xs text-muted" data-testid="viewer-label">
+        {viewer.label}
+      </span>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* 2xl only: below it the role select already names the viewer, and the top bar must stay one row. */}
       <span className="hidden text-xs text-faint 2xl:inline" data-testid="viewer-label">{viewer.label}</span>
-      <RoleSwitcher current={viewer.role} />
+      <RoleSwitcher current={viewer.role} guestLabel={workspaceEnabled() ? "Guest (own workspace)" : "Guest (read-only)"} />
     </div>
   );
 }

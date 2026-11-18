@@ -13,7 +13,8 @@ const OPTIONS = [
   ["brand", `Brand marketing lead (${BRAND_BY_ID.get("joshuas")!.name})`],
 ] as const;
 
-export function RoleSwitcher({ current }: { current: string }) {
+/** Demo mode only (app/layout.tsx). `guestLabel` says what the guest can do in this deployment. */
+export function RoleSwitcher({ current, guestLabel }: { current: string; guestLabel: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
@@ -37,7 +38,7 @@ export function RoleSwitcher({ current }: { current: string }) {
       >
         {OPTIONS.map(([value, label]) => (
           <option key={value} value={value}>
-            {label}
+            {value === "guest" ? guestLabel : label}
           </option>
         ))}
       </select>

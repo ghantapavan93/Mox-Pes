@@ -1,0 +1,53 @@
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2133 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 54338 ms
+
+Running 7 tests using 1 worker
+
+  ok 1 [chromium] › tests\e2e\os-modules.spec.ts:22:7 › Customer 360 › search by lead id → journey timeline → stored payload drawer (2.9s)
+  ok 2 [chromium] › tests\e2e\os-modules.spec.ts:46:7 › Customer 360 › a branch partner cannot open another branch's customer (123ms)
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":1,"errorKind":"rate_limit","retryInMs":2000,"workerId":"web:42656"}
+  ok 3 [chromium] › tests\e2e\os-modules.spec.ts:57:7 › Integration Studio · rate limit → retry → success › an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault (9.1s)
+  ok 4 [chromium] › tests\e2e\os-modules.spec.ts:120:7 › identity review permissions › guests, approvers and branch partners can read the conflict but not decide it (1.4s)
+  ok 5 [chromium] › tests\e2e\os-modules.spec.ts:144:7 › identity review permissions › a marketing analyst accepts one match; its sibling is rejected automatically (1.5s)
+  ok 6 [chromium] › tests\e2e\os-modules.spec.ts:158:7 › identity review permissions › an integration engineer rejects a match (857ms)
+  ok 7 [chromium] › tests\e2e\os-modules.spec.ts:170:7 › command menu › ⌘K finds branch B09 and its incident (2.9s)
+
+  7 passed (1.3m)

@@ -15,6 +15,10 @@ Synthetic data only. Nothing pushed or deployed.
   suite in one run), so `d431e9b` stays the accepted checkpoint (`RELEASE-CANDIDATE.md` §9).
 - **Redrawn since (§9):** the B09 decision view, `6ed9066` (build `ekfY8a8woILuSdmtlccf8`). Same
   logic, new first screen; also not promoted.
+- **Hardened since (§10, 2026-11-18):** six defects found by a fresh-eyes review of this record.
+  Each was reproduced by a test that failed on `c445311`, then fixed in the working tree. Not
+  committed and not promoted: B09 stays unpromoted until the final candidate passes the full
+  release regression.
 
 ## 1. Expected outcomes, written before any code changed
 
@@ -157,6 +161,11 @@ was free. One view, the incident, also claimed a hold that did not exist.
 
 ### N1, checked on its own path
 
+> **Out of date since `350fb45` (2026-11-17).** A held day now holds its channel's decision through
+> eligibility (`product-audit/BUSINESS-FIT.md` §10). The table below is the measurement at
+> `718e4aa`, kept as history; §10.2 tests the hand-off from a refused revision to held spend on the
+> current tree.
+
 **World:** a second copy of the verified world (`revenue_signal_acceptance_r54_n1`), with one held
 day. `heldDay` sends lsa-B09's Oct 20, a day that campaign never spent, billed in CAD. Intake
 refuses it, and the ledger counts no revision of that campaign-day.
@@ -195,19 +204,26 @@ the counted one and the refused one; a shared ad account; a campaign name that n
 branch; an unmapped or unidentifiable campaign; duplicates, older revisions and re-sends while
 held. All of these are in `tests/integration/refused-revision.test.ts`.
 
+*Narrowed on 2026-11-18 (§10):* the tests cover three refusal codes, and their "unmapped" case is
+a campaign id the ledger has never counted. A campaign the ledger counts but maps to no branch is
+untested. Separate fetches of one campaign-day, a branch key in the payload and lifts that are not
+corrections were outside this class; §10 adds them.
+
 **GENERAL FIX:** migration 0034 adds two views.
 - `v_refused_spend_revisions` sets each refused ad spend record against the revision counted for
   the same campaign-day. Each is newer, superseded or at the same instant.
 - `v_quarantine_holds` lists the quarantined records that still hold something, each with its
   branch: the branch its payload names, or, for a newer refused revision, its campaign's mapped
-  branch.
+  branch. Since migration 0036 (§10), ad spend takes its campaign's branch only, whatever branch
+  key its payload carries.
 
 Readers of the shared rule:
 - Reconciliation's rule 1 groups those records into the branch's existing quarantine incident. No
   new incident kind. The incident's evidence lists each held campaign-day, its dates and channels,
   and the refused revision beside the counted one.
 - Rule 1a records how each held campaign-day was lifted, and by which delivery. When none is left,
-  that becomes the resolution.
+  that becomes the resolution. Since §10 it compares campaign-days, not refused records, and only an
+  accepted revision is called a correction.
 - The budget gate holds a period only if a held date falls inside it. Its blocker carries those
   revisions, and Decision Lab, the Overview and the incident read them from it.
 
@@ -222,7 +238,8 @@ Readers of the shared rule:
 - Decision Lab linked a spend refusal from its *lead-records* line. That line is now lead sources
   only.
 
-**PROPERTY TEST:** `refused-revision.test.ts`, 11 tests:
+**RULE TESTS** (hand-written examples, not generated inputs): `refused-revision.test.ts`, 11 tests
+at the time, 22 since §10:
 - every refusal code holds B09's October decision, with the counted amount unchanged;
 - a September date holds September only, and B09's October verdicts are identical, word for word;
 - another branch in the shared ad account, or a name that says B09, holds that branch only;
@@ -252,7 +269,7 @@ Readers of the shared rule:
 - `lib/ai/tools.ts`
 
 **Not changed, on purpose:**
-- a held day (N1) keeps its rule, a limitation, not a hold;
+- a held day (N1) kept its rule, a limitation, not a hold (since `350fb45` it holds its channel);
 - a currency-unstated newer revision still removes the older row ("the newest observation decides",
   `currency-rules.test.ts`). That is an existing, tested policy. The day then has no counted record, never $0, and the metric
   trace lists the held record.
@@ -324,6 +341,8 @@ In all four states:
 
 ## 6. N1, in short
 
+*Out of date since `350fb45`: a held day now holds its channel's decision (§2, §10).*
+
 N1 ("held spend never blocks a budget decision") is partly true, and it is not R-54's path.
 - A held day has no accepted amount. Verified readiness's `complete` rule and the scorecard see it,
   and call it a limitation.
@@ -335,18 +354,21 @@ Whether a held day should hold the decision too is a policy question (§7). Meas
 
 ## 7. Open edges, stated
 
-- **F2 (R-54, case 1).** A successor that started before the stop still leaves its overlap days
-  misfiled outside the window, while the window reads "reclassified, not added". Not touched.
+- **F2 (R-54, case 1), tested on 2026-11-18 (§10.4).** A successor that started before the stop
+  leaves its overlap days misfiled outside the window; the verification proves the window only.
+  Not fixed.
 - **F8 (R-54, case 3).** A re-send of the same instant written another way (`.000Z`) is stored as a
   new version. A refused record at the same instant as the counted revision holds nothing (neither
   is newer). It stays visible at company level.
-- **Held days (N1)** limit the decision but do not hold it. A newer revision with no stated currency
-  still removes the older row, so that day reads as no record, never $0. Whether either should hold
-  the decision is Moxie's call.
+- **Held days (N1)** hold their channel's decision since `350fb45`. A newer revision with no stated
+  currency still removes the older row; the refused-revision hold then hands off to held spend
+  (§10), never $0.
 - **Unattributable refused records** (an unmapped campaign, no campaign id) hold no branch. Their
   incident says so, and says no rule decides it. A company-wide viewer sees it; a scoped viewer does
   not.
-- **Revisions on the incident are capped at 50 per group.** The gate's period test reads every date.
+- **The incident page lists at most 50 held campaign-days.** Since §10 the incident stores every
+  one (one entry per campaign-day, every refused delivery kept), rule 1a and the gate read them
+  all, and the page says how many more it holds.
 - **"Reclassified, not added" is conservative.** A date restated to $0 and back before verification
   reads as changed.
 - **The trace's held-records card** filters by each record's own time (for spend, the fetch time).
@@ -502,3 +524,136 @@ Code: `6ed9066`, build `ekfY8a8woILuSdmtlccf8`.
   That is the app shell, outside this slice.
 - **Target size:** a date is 33 × 70 px on a phone. That passes AA's 24 px, not the 44 px
   touch-target aim.
+
+## 10. Hardened after a fresh-eyes review (2026-11-18)
+
+An EGM review found defects in the code this record describes. EGM is the Elephant-Goldfish Model:
+reviewers read this record and the code with no conversation history. Its report is
+`egm/hold-to-decision/consolidated_review_report.md`. The order of work: reproduce each defect on
+the current tree with a test that fails, then fix it, then rerun.
+
+- **Tree:** `c445311` plus this pass, uncommitted.
+- **Policy unchanged:** a refused newer revision still holds its branch's decision for the period
+  it falls in, and held spend still holds its channel (`350fb45`).
+
+### 10.1 Reproduced first
+
+Each test below failed on `c445311` before any product file changed
+(`hold-to-decision/hardening/repro-before.txt`: 11 failed).
+
+| | Defect | Test | What `c445311` did |
+|---|---|---|---|
+| K1 | Separate fetches of one refused campaign-day | three fetches, each refused | Stored 3 entries for 1 campaign-day, so the incident summed the counted $207.40 three times |
+| K1 | A held day past the 50-row display limit | re-fetches that would push a held day past row 50 | Stored Oct 21, still refused, as "Already corrected" |
+| K1 | More than 50 held campaign-days | 60 held campaign-days | Kept 50 of 60 |
+| K5 | A branch key in a refused spend payload | a branch named in the payload | Held B10 and left B09 free |
+| K2 | The ledger stops counting a held day | the ledger stops counting a held day | "Corrected. Oct 20: the ledger no longer counts a revision of this campaign-day." |
+| K2 | The campaign is mapped to another branch | the campaign is mapped to another branch | "Corrected. Oct 20: the counted revision or the campaign's mapping changed" |
+| K4 | The ingestion tool | groups the record where the incident does | Listed no B09 group |
+| K4 | The investigator, without a model | names the refused revision | "Paid CAC at B09 is overstated: a customer whose only lead record is quarantined…" |
+| K4 | The CAC inquiry | the earlier amount still counts | "October spend missing would lower October CAC" |
+| K4 | The suggested question | does not assume the CAC is too high | "Why is B09's paid CAC so high?" |
+| K6 | A replay through an older mapper | skips the check that refused a record | Accepted an ambiguous Performance Max record through ads@1.0, which files it as Google Search |
+
+### 10.2 Fixed
+
+- **One entry per campaign-day (K1).**
+  - Rule 1 stores each held campaign-day once: its newest refused revision beside the counted
+    one, and every refused delivery of that day (`refusedRawEventIds`).
+  - The list is bounded by campaign-days, not by deliveries, and is not cut. Rule 1a compares
+    campaign-days, not refused records.
+  - The incident, its tiles and the daily evidence count the accepted amount once per day
+    (`holdMoney`).
+  - Every refused delivery stays in the incident's records, and each links to the hold from the
+    daily evidence. The page lists the first 50 days and says how many more the incident holds.
+  - Evidence stored before this change reads the same way: `revisionsOf` merges the entries of one
+    day.
+- **The campaign's branch, never the payload's (K5).** Migration 0036 adds `raw_event_branch`: ad
+  spend belongs to the branch its campaign is mapped to, and any other record to the branch its
+  payload names. `v_quarantine_holds`, the investigator's tools, the metric trace and the shadow
+  snapshot all use it.
+- **"Corrected" only when a revision was accepted (K2).**
+  - A newer accepted revision, or the refused one itself, is a correction.
+  - A day the ledger stops counting reads "the $207.40 it counted left the total; the day is held
+    spend now, which Decision Lab holds on its own". Never $0.00, never "No amount changed".
+  - A campaign mapped elsewhere reads "the hold moved there with it".
+  - Either way the incident's headline is "No longer held by this incident".
+  - The test also checks the policy: after the hand-off, Decision Lab still holds Local Services
+    (`cost_held`).
+- **Readers that told the lead-record story (K4).**
+  - The ingestion tool groups held records as the incidents do and links the right incident.
+  - The investigator quotes the refused revision and the amount that still counts, and says it
+    cannot tell which way the CAC would move.
+  - The CAC inquiry lists a refused revision as counterevidence: no spend is absent.
+  - The suggested question becomes "What holds B09's budget decision?".
+- **No unsafe replay (K6).**
+  - A held record replays only through a mapper version that applies the check that refused it
+    (`REFUSAL_CHECKED_FROM`). `replay()` enforces this for every caller, dry runs included.
+  - For a refused spend revision no such version is newer than the deployed one, so the incident
+    offers no replay. It says the source has to send a newer revision.
+
+### 10.3 Not changed, on purpose
+
+- **The hold policy**, as above.
+- **Decimal conversions: deferred.** A fractional-conversion hold still lifts only through a newer
+  accepted revision. The adapter names the fix: a numeric conversions column and a `_v2` reporting
+  view.
+- **K3: deferred with it.**
+  - Scenario 6 still tells a re-map from a delivery by a one-second gap between receipt and
+    projection. A replay that accepted a refused revision would pass as a re-map.
+  - K6 closes that path today: no shipped mapper may replay these records.
+  - The fix, recording the amount a projection overwrites, ships with any mapper that accepts them.
+- **Not done from the review:**
+  - K7: "stayed $X" is the current total, not a compared one;
+  - K8: a refused amount in another currency is printed with "$";
+  - K9 and K10.
+- **Left alone:**
+  - the B03 CAC fix (uncommitted, another session's work);
+  - the verified B20 recording build in this folder's `.next`. All builds and browser runs for this
+    pass used the worktree `C:/Temp/rso-k1`.
+
+### 10.4 The earlier campaign overlap (F2)
+
+`b09-recovery.test.ts`, "a successor that started three days before the stop", in its own world:
+- pmax-lsa-B09 spends from Oct 10, three days before lsa-B09's last day (Oct 12).
+- The decision window still starts at the gap, Oct 13.
+- Re-sending Oct 13–30 verifies the incident: 18 of 18 days, "$3,743.19 moved from Google Search
+  to Google Local Services, and no amount changed: reclassified, not added".
+- Oct 10–12 of the same campaign ($612.21) stay filed as Google Search.
+
+So a verified window proves Oct 13–30 and nothing before it. B09's own fixture has no overlap (its
+successor starts on Oct 13), so §4's verified claim stands as written. With an overlap, the days
+before the window would need their own check. The test passes on `c445311` too: it pins a boundary
+and fixes nothing.
+
+### 10.5 Verification
+
+| Check | Result | Where |
+|---|---|---|
+| Typecheck, lint | Clean (lint on the 16 changed files) | `npm run typecheck`; `npx eslint` |
+| Reproduction, before the fixes | 11 failed on `c445311` | `hardening/repro-before.txt` |
+| Rule tests | 22 of 22: 11 earlier, 11 new | `tests/integration/refused-revision.test.ts` |
+| Rule unit tests | 10 of 10 | `tests/unit/refused-revisions.test.ts` |
+| The overlap test (F2) | Passes | `tests/integration/b09-recovery.test.ts` |
+| Full vitest | 1,008 passed, 1 expected failure (1,009 tests, 87 files). Run in this folder, which also holds another session's uncommitted B03 fix | `hardening/vitest-full.txt` |
+| Full browser suite on `revenue_signal_rc`, worktree build `ZwLMQtykCZaA47OuUlnWr` | 122 passed. 3 skipped by design: two pixel tests without `VISUAL=1`, and the demo video. 1 failed: Integration Studio's retry test, because its mock CRM address defaults to port 3000 and this run served 3989. With `FIELDROUTES_MOCK_BASE_URL` set to the test server: 7 of 7 | `hardening/e2e-full.txt`, `hardening/e2e-os-modules-rerun.txt` |
+| Pixel baselines, `VISUAL=1` | 8 of 8 against the committed baselines; none regenerated | `hardening/e2e-z-layout-visual.txt` |
+| B09 acceptance runner, worktree at `c445311` with this pass's changes (listed as tracked changes), its own build `QqL3Kc7yocI0X4uYh3RQT` | **177 of 177 checks**, 0 console or page errors | `hardening/acceptance-results.json`, `hardening/acceptance-b09.txt` |
+
+Two defects came from this pass itself, and the checks caught both:
+- The first full vitest run failed 3 Overview movement tests: an extra parenthesis in the daily
+  evidence query. It is fixed, and the re-fetch test now checks the daily evidence as well.
+- The first acceptance run failed 1 check: this pass had reworded the corrected hold's total
+  sentence. The accepted-correction sentence is restored word for word; only the hand-off cases
+  use new words. The check was not changed.
+
+The browser suite ran on build `ZwLMQtykCZaA47OuUlnWr`, before that sentence was restored. The
+acceptance runner ran on the restored code. Between the two builds only that one sentence differs.
+
+### 10.6 Status
+
+- **Candidate:** `c445311` plus this pass, uncommitted. Nothing committed, pushed or deployed.
+- **Accepted checkpoint:** still `d431e9b`. B09 stays unpromoted until the final candidate passes
+  the full release regression: the five frozen eval packs and the whole browser suite, in one run.
+- **The demo database** needs `npm run db:migrate` before this code runs against it. Migration 0036
+  adds one function and replaces one view, with no data change. It was not touched in this pass.

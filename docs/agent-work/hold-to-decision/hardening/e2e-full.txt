@@ -1,0 +1,350 @@
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2198 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 55897 ms
+
+Running 126 tests using 1 worker
+
+  -    1 [chromium] › tests\e2e\demo-video.spec.ts:13:5 › demo walkthrough
+  ok   2 [chromium] › tests\e2e\golden-path.spec.ts:12:7 › investigate → replay → verify › the overview points at the incident branch (3.4s)
+  ok   3 [chromium] › tests\e2e\golden-path.spec.ts:22:7 › investigate → replay → verify › the branch page shows why, and links to the exception (1.6s)
+  ok   4 [chromium] › tests\e2e\golden-path.spec.ts:31:7 › investigate → replay → verify › an engineer dry-runs; the panel cannot commit; the fix applies through approval, once (26.0s)
+  ok   5 [chromium] › tests\e2e\golden-path.spec.ts:66:7 › investigate → replay → verify › after replay the branch is no longer flagged for unattributed customers (1.7s)
+  ok   6 [chromium] › tests\e2e\golden-path.spec.ts:73:7 › investigate → replay → verify › a branch partner cannot read another branch (1.5s)
+  ok   7 [chromium] › tests\e2e\golden-path.spec.ts:84:7 › investigate → replay → verify › an out-of-scope incident reads as missing and does not name its branch (audit 2026-11-09, E-6) (330ms)
+  ok   8 [chromium] › tests\e2e\golden-path.spec.ts:96:7 › investigate → replay → verify › the replay API refuses non-engineers (77ms)
+  ok   9 [chromium] › tests\e2e\golden-path.spec.ts:104:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › the B09 budget signal is marked untrustworthy and links to the coverage gap (1.9s)
+  ok  10 [chromium] › tests\e2e\golden-path.spec.ts:115:7 › ChangeGuard: a reclassified channel blocks a budget decision until re-mapped › an engineer previews the re-map; it applies only through approval; the signal then reads clean and spend is unchanged (28.8s)
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2034 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 56366 ms
+  ok  11 [chromium] › tests\e2e\os-golden-path.spec.ts:40:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › a · the overview and the branch show the channel imbalance and a blocked budget signal (3.2s)
+  ok  12 [chromium] › tests\e2e\os-golden-path.spec.ts:55:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › b · the Decision Lab says not ready and links the blocking incident (2.2s)
+  ok  13 [chromium] › tests\e2e\os-golden-path.spec.ts:74:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › c · the incident shows campaign, spend, leads and CRM outcomes evidence (935ms)
+  ok  14 [chromium] › tests\e2e\os-golden-path.spec.ts:90:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › d · Investigate opens the AI investigator scoped to the incident; it cites evidence and proposes a re-map (3.1s)
+  ok  15 [chromium] › tests\e2e\os-golden-path.spec.ts:132:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › e · an integration engineer dry-runs it on the server: before/after, rolled back (9.3s)
+  ok  16 [chromium] › tests\e2e\os-golden-path.spec.ts:151:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › f · an approver, a different role, approves (1.0s)
+  ok  17 [chromium] › tests\e2e\os-golden-path.spec.ts:162:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › g · h · the application executes the re-projection; metrics recompute and the ledger is verified unchanged (10.9s)
+  ok  18 [chromium] › tests\e2e\os-golden-path.spec.ts:184:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › i · the audit trail shows proposer, dry run, approver, executed records and verification (2.1s)
+  ok  19 [chromium] › tests\e2e\os-golden-path.spec.ts:207:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › j · overview, branch and Decision Lab reflect the new state (4.8s)
+  ok  20 [chromium] › tests\e2e\os-golden-path.spec.ts:231:7 › second scenario · B20 call-feed incident through the Action Center › an engineer proposes a replay; the dry run verifies; an approver approves; the app executes (19.4s)
+  ok  21 [chromium] › tests\e2e\os-golden-path.spec.ts:262:7 › second scenario · B20 call-feed incident through the Action Center › after the replay B20 is no longer flagged for unattributed customers (1.9s)
+  ok  22 [chromium] › tests\e2e\os-modules.spec.ts:22:7 › Customer 360 › search by lead id → journey timeline → stored payload drawer (1.5s)
+  ok  23 [chromium] › tests\e2e\os-modules.spec.ts:46:7 › Customer 360 › a branch partner cannot open another branch's customer (85ms)
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":1,"errorKind":"unavailable","retryInMs":1824,"workerId":"web:2580"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":2,"errorKind":"unavailable","retryInMs":2570,"workerId":"web:2580"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":3,"errorKind":"unavailable","retryInMs":4976,"workerId":"web:2580"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":4,"errorKind":"unavailable","retryInMs":9767,"workerId":"web:2580"}
+[WebServer] {"level":"error","msg":"sync job failed","jobId":1,"office":103,"entity":"payment","errorKind":"unavailable","workerId":"web:2580"}
+  x   24 [chromium] › tests\e2e\os-modules.spec.ts:57:7 › Integration Studio · rate limit → retry → success › an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault (2.0m)
+  ok  25 [chromium] › tests\e2e\os-modules.spec.ts:120:7 › identity review permissions › guests, approvers and branch partners can read the conflict but not decide it (1.8s)
+  ok  26 [chromium] › tests\e2e\os-modules.spec.ts:144:7 › identity review permissions › a marketing analyst accepts one match; its sibling is rejected automatically (988ms)
+  ok  27 [chromium] › tests\e2e\os-modules.spec.ts:158:7 › identity review permissions › an integration engineer rejects a match (921ms)
+  ok  28 [chromium] › tests\e2e\os-modules.spec.ts:170:7 › command menu › ⌘K finds branch B09 and its incident (3.9s)
+  ok  29 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:29:7 › command menu · combobox semantics (J10) › the input is a combobox that controls the results listbox and tracks the active option (2.7s)
+  ok  30 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:75:7 › proposal card · status region and diff row headers (J8, J12) › an executed proposal keeps a status region, and its before/after rows are row headers (1.9s)
+  ok  31 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:101:7 › weekly bars · data table (J11) › each chart references a visually hidden table of its weekly values (1.6s)
+  ok  32 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:118:7 › paging and parameter validation (J4, J6, J7) › a customers page past the end says so and links to the last page (791ms)
+  ok  33 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:129:7 › paging and parameter validation (J4, J6, J7) › an inherited property name as ?period= falls back to the default period (5.3s)
+  ok  34 [chromium] › tests\e2e\z-a11y-regressions.spec.ts:138:7 › paging and parameter validation (J4, J6, J7) › an exact audit subject does not match longer ids with the same prefix (359ms)
+  ok  35 [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 1440px (22.2s)
+  ok  36 [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 1280px (20.5s)
+  ok  37 [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 768px (20.8s)
+  ok  38 [chromium] › tests\e2e\z-layout.spec.ts:51:9 › layout · no horizontal page scroll › every page fits 390px (19.2s)
+  ok  39 [chromium] › tests\e2e\z-layout.spec.ts:71:7 › shell › the top bar shows the viewer's scope and data freshness (3.4s)
+  ok  40 [chromium] › tests\e2e\z-layout.spec.ts:81:7 › shell › the sidebar collapses to an icon rail, keeps link names, and remembers the choice (4.0s)
+  -   41 [chromium] › tests\e2e\z-layout.spec.ts:105:9 › visual regression (VISUAL=1) › overview and incident at 1440px match their baselines
+  -   42 [chromium] › tests\e2e\z-layout.spec.ts:105:9 › visual regression (VISUAL=1) › overview and incident at 390px match their baselines
+  ok  43 [chromium] › tests\e2e\z-onboarding.spec.ts:20:5 › an analyst maps an unfamiliar call export, an approver publishes it, and every row is accounted for (2.1s)
+  ok  44 [chromium] › tests\e2e\z-onboarding.spec.ts:53:5 › a CRM payments export is compared with the ledger to the cent and can never be published (641ms)
+  ok  45 [chromium] › tests\e2e\z-onboarding.spec.ts:67:5 › branch-scoped and read-only roles cannot see onboarding at all (1.0s)
+[WebServer] {"level":"error","msg":"event consumer failed","consumer":"identity","error":"relation \"domain_events\" does not exist"}
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2308 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 56708 ms
+  ok  46 [chromium] › tests\e2e\z-onboarding.spec.ts:77:5 › a file that fits no dataset is not guessed at (286ms)
+  ok  47 [chromium] › tests\e2e\z-opportunities.spec.ts:15:5 › Decision Lab links to revenue opportunities; both journeys are labelled fact by fact (2.4s)
+  ok  48 [chromium] › tests\e2e\z-opportunities.spec.ts:35:5 › an approver is offered an override only where the block is a risk, not a data fault (1.5s)
+  ok  49 [chromium] › tests\e2e\z-quality-gates.spec.ts:87:5 › a keyboard-only user skips the navigation and opens the trace's primary action (2.1s)
+  ok  50 [chromium] › tests\e2e\z-quality-gates.spec.ts:109:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 1440px (53.0s)
+  ok  51 [chromium] › tests\e2e\z-quality-gates.spec.ts:109:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 1280px (46.9s)
+  ok  52 [chromium] › tests\e2e\z-quality-gates.spec.ts:109:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 768px (53.6s)
+  ok  53 [chromium] › tests\e2e\z-quality-gates.spec.ts:109:9 › quality gate · accessibility (axe, WCAG 2.2 AA) › every page has zero axe violations at 390px (46.4s)
+  ok  54 [chromium] › tests\e2e\z-quality-gates.spec.ts:139:9 › quality gate · layout shift › every page's first load shifts less than 0.1 (CLS) at 1440px (52.6s)
+  ok  55 [chromium] › tests\e2e\z-quality-gates.spec.ts:139:9 › quality gate · layout shift › every page's first load shifts less than 0.1 (CLS) at 390px (48.2s)
+  ok  56 [chromium] › tests\e2e\z-quality-gates.spec.ts:178:7 › quality gate · hydration › every page hydrates without an error as a non-guest role, and its HTML names that role (53.6s)
+  ok  57 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks / · marketing (31.2s)
+  ok  58 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /exceptions · marketing (6.3s)
+  ok  59 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /investigator · marketing (2.9s)
+  ok  60 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /customers · marketing (10.3s)
+  ok  61 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /decisions · marketing (35.7s)
+  ok  62 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /feedback · marketing (3.3s)
+  ok  63 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /integrations · marketing (1.4s)
+  ok  64 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /audit · marketing (9.5s)
+  ok  65 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /onboarding/1 · marketing (2.3s)
+  ok  66 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/onboarding/uploads/1/rows · marketing (230ms)
+  ok  67 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/search · marketing (139ms)
+  ok  68 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/customers · marketing (1.9s)
+  ok  69 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/metrics · marketing (30.7s)
+  ok  70 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/decisions/verdicts · marketing (207ms)
+  ok  71 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/identity/conflicts · marketing (204ms)
+  ok  72 [chromium] › tests\e2e\z-quality-gates.spec.ts:246:9 › quality gate · hostile inputs › no hostile path id breaks a page or API · marketing (5.7s)
+  ok  73 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks / · partner (26.6s)
+  ok  74 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /exceptions · partner (5.6s)
+  ok  75 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /investigator · partner (3.2s)
+  ok  76 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /customers · partner (7.5s)
+  ok  77 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /decisions · partner (35.0s)
+  ok  78 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /feedback · partner (1.4s)
+  ok  79 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /integrations · partner (1.2s)
+  ok  80 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /audit · partner (5.5s)
+  ok  81 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /onboarding/1 · partner (1.9s)
+  ok  82 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/onboarding/uploads/1/rows · partner (188ms)
+  ok  83 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/search · partner (132ms)
+  ok  84 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/customers · partner (1.3s)
+  ok  85 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/metrics · partner (28.1s)
+  ok  86 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/decisions/verdicts · partner (178ms)
+  ok  87 [chromium] › tests\e2e\z-quality-gates.spec.ts:237:11 › quality gate · hostile inputs › no hostile query value breaks /api/identity/conflicts · partner (192ms)
+  ok  88 [chromium] › tests\e2e\z-quality-gates.spec.ts:246:9 › quality gate · hostile inputs › no hostile path id breaks a page or API · partner (5.4s)
+  ok  89 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:12:7 › Incidents › an incident type filters the queue, shows a removable chip, and removing it restores the queue (864ms)
+  ok  90 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:30:7 › Incidents › the workflow strip links each state to its cases and marks the current one (614ms)
+  ok  91 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:40:7 › Incidents › a branch partner sees only their branch, and a filter cannot widen it (729ms)
+  ok  92 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:52:7 › Integrations › the three views live in the URL and each shows its own sections (2.2s)
+  ok  93 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:70:7 › Integrations › an unknown view falls back to the connector view, and a branch role is refused (936ms)
+  ok  94 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:81:7 › Audit & Health › the health strip comes first and links to the section that explains each number (524ms)
+  ok  95 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:97:7 › Audit & Health › an audit row opens to its full detail, formatted (1.2s)
+  ok  96 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:108:7 › Audit & Health › a filter shows as a chip that removes it (702ms)
+  ok  97 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:119:7 › Customers, Decision Lab, Definitions › the identity review queue comes before the customer directory (412ms)
+  ok  98 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:130:7 › Customers, Decision Lab, Definitions › Decision Lab sections are numbered by the three questions and readiness comes first (1.6s)
+  ok  99 [chromium] › tests\e2e\z-redesign-navigation.spec.ts:138:7 › Customers, Decision Lab, Definitions › a KPI's definition links to its dictionary entry (1.6s)
+  ok 100 [chromium] › tests\e2e\z-trace.spec.ts:9:5 › a branch's paid CAC opens its trace: reproduced, with campaigns, customers and limits (3.7s)
+  ok 101 [chromium] › tests\e2e\z-trace.spec.ts:28:5 › a branch outside the viewer's scope is refused (241ms)
+  ok 102 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:78:5 › J2 · collected cash equals an independent reference computed from the raw payloads (3.6s)
+  ok 103 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:94:5 › J3 · a false premise is answered as one, and every re-test is kept (8.8s)
+  ok 104 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:122:5 › J5 · a CRM refund lowers collected cash by exactly its amount, and a redelivery changes nothing (3.6s)
+  ok 105 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:171:5 › J6 · out-of-scope reads and writes are refused, and nothing is stored (954ms)
+  ok 106 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:202:5 › J9 · another system's figure and answer are checked against the records, and each check is stored and scoped (8.9s)
+  ok 107 [chromium] › tests\e2e\zx-vp-journeys.spec.ts:253:5 › J8 · an executive reads verified readiness, projects without storing, then saves an audited scenario (3.9s)
+  ok 108 [chromium] › tests\e2e\zy-evidence-journey.spec.ts:20:5 › an unexpected CAC is traced, investigated, corrected through ChangeGuard and verified, and no improvement is claimed (20.3s)
+  ok 109 [chromium] › tests\e2e\zy-overview-movement.spec.ts:160:5 › desktop: select B09 and October, read what changed, open the point's records, come back to the same selection (14.7s)
+  ok 110 [chromium] › tests\e2e\zy-overview-movement.spec.ts:263:5 › a recorded $0.00 is not a missing week (9.0s)
+  ok 111 [chromium] › tests\e2e\zy-overview-movement.spec.ts:297:5 › phone 390 and 320: the same journey reflows, keyboard and touch both select (17.9s)
+  ok 112 [chromium] › tests\e2e\zy-overview-movement.spec.ts:371:5 › touch: a phone with a touch screen selects by tapping, and opens the evidence (5.5s)
+  ok 113 [chromium] › tests\e2e\zy-overview-movement.spec.ts:385:5 › the B09 hold does not jump when the panel arrives after it (1440 and 390) (4.2s)
+  ok 114 [chromium] › tests\e2e\zy-overview-movement.spec.ts:412:5 › a branch-restricted viewer sees their branch only; another branch is refused, page and evidence (3.2s)
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 1912 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 45002 ms
+  ok 115 [chromium] › tests\e2e\zz-b09-four-minute-path.spec.ts:46:5 › the eight steps add up to four minutes, matching the golden fixture (1ms)
+  ok 116 [chromium] › tests\e2e\zz-b09-four-minute-path.spec.ts:52:5 › B09 golden path: overview → incident → evidence → dry run → approval → verified correction → readiness → audit (36.5s)
+  ok 117 [chromium] › tests\e2e\zzz-changeguard.spec.ts:33:5 › wrong branch blocked → corrected → approved by a different person → released → verified (13.0s)
+  ok 118 [chromium] › tests\e2e\zzz-changeguard.spec.ts:81:5 › a read-only role sees changes but no actions (328ms)
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":1,"errorKind":"rate_limit","retryInMs":90000,"workerId":"twin:evaluation:1:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":5,"attempt":1,"errorKind":"unavailable","retryInMs":1500,"workerId":"twin:evaluation:1:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":13,"attempt":1,"errorKind":"rate_limit","retryInMs":2000,"workerId":"twin:evaluation:1:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":13,"attempt":2,"errorKind":"rate_limit","retryInMs":2000,"workerId":"twin:evaluation:1:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":1,"attempt":1,"errorKind":"rate_limit","retryInMs":90000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":5,"attempt":1,"errorKind":"unavailable","retryInMs":1500,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":13,"attempt":1,"errorKind":"rate_limit","retryInMs":2000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":13,"attempt":2,"errorKind":"rate_limit","retryInMs":2000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":112,"attempt":1,"errorKind":"unavailable","retryInMs":1500,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":100,"attempt":1,"errorKind":"timeout","retryInMs":1500,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":112,"attempt":2,"errorKind":"unavailable","retryInMs":3000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":112,"attempt":3,"errorKind":"unavailable","retryInMs":6000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"warn","msg":"sync job retry scheduled","jobId":112,"attempt":4,"errorKind":"unavailable","retryInMs":12000,"workerId":"twin:evaluation:2:worker"}
+[WebServer] {"level":"error","msg":"sync job failed","jobId":112,"office":137,"entity":"customer","errorKind":"unavailable","workerId":"twin:evaluation:2:worker"}
+  ok 119 [chromium] › tests\e2e\zzzz-twin-rollout.spec.ts:50:5 › a stopped rollout and a passing one, as computed, with no deployment claimed (4.7m)
+  ok 120 [chromium] › tests\e2e\zzzzz-post-release-monitoring.spec.ts:91:5 › verified at release, then a clean scheduled check, then a conflicting revision: confirmed drift, mapping untouched (12.3s)
+  ok 121 [chromium] › tests\e2e\zzzzz-post-release-monitoring.spec.ts:176:5 › a reviewer starts in Incidents and reaches the changed lead without knowing the change id (5.2s)
+  ok 122 [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:154:5 › desktop: find the case, read the proof, compare versions, decide, and the decision persists (11.5s)
+  ok 123 [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:281:5 › phone 390: the reopened case, its new lead's versions, and needs investigation with a required owner (2.1s)
+  ok 124 [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:323:5 › stale save: newer evidence refuses the save, keeps the draft and marks what is new; then it saves (4.9s)
+  ok 125 [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:363:5 › roles: a guest reads without acting; the brand lead never sees B39 or the note that names it (1.6s)
+  ok 126 [chromium] › tests\e2e\zzzzzz-drift-review.spec.ts:397:5 › 320 px reflow, keyboard order, visible and unobscured focus (4.5s)
+
+
+  1) [chromium] › tests\e2e\os-modules.spec.ts:57:7 › Integration Studio · rate limit → retry → success › an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByTestId('jobs-live').locator('tbody tr').filter({ hasText: 'payment' }).first().getByText('succeeded')
+    Expected: visible
+    Timeout: 120000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByTestId('jobs-live').locator('tbody tr').filter({ hasText: 'payment' }).first().getByText('succeeded') with timeout 120000ms
+      - waiting for getByTestId('jobs-live').locator('tbody tr').filter({ hasText: 'payment' }).first().getByText('succeeded')
+
+
+      83 |     const jobs = page.getByTestId("jobs-live");
+      84 |     const row = jobs.locator("tbody tr").filter({ hasText: "payment" }).first();
+    > 85 |     await expect(row.getByText("succeeded")).toBeVisible({ timeout: 120_000 });
+         |                                              ^
+      86 |     const link = row.getByRole("link", { name: /^#\d+$/ });
+      87 |     jobId = Number((await link.textContent())!.slice(1));
+      88 |     // Attempt column (found by its header, not its position): it succeeded on a later attempt than the first.
+        at C:\Temp\rso-k1\tests\e2e\os-modules.spec.ts:85:46
+
+    Error Context: test-results\os-modules-Integration-Stu-d782f-cceed-then-clears-the-fault-chromium\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\os-modules-Integration-Stu-d782f-cceed-then-clears-the-fault-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\os-modules-Integration-Stu-d782f-cceed-then-clears-the-fault-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: [chromium] › tests\e2e\z-quality-gates.spec.ts (10.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    [chromium] › tests\e2e\os-modules.spec.ts:57:7 › Integration Studio · rate limit → retry → success › an engineer arms a rate_limit fault, runs a sync, sees the retry succeed, then clears the fault 
+  3 skipped
+  122 passed (28.5m)

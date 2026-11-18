@@ -1,0 +1,433 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 C:/Users/Pavan Kalyan/OneDrive/Documents/Desktop/Moxie pest Control
+
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > FRACTIONAL_CONVERSIONS: the counted amount stands and the branch's October decision is held, for that channel's integrity
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > CURRENCY_UNSUPPORTED: the counted amount stands and the branch's October decision is held, for that channel's integrity
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > AMBIGUOUS_CAMPAIGN_TYPE: the counted amount stands and the branch's October decision is held, for that channel's integrity
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > the period's first and last dates hold it; a refusal dated in September holds September and leaves October as it was
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > another branch's campaign in the shared ad account holds that branch, never B09; nor does a name that says B09
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > an exact duplicate, an older revision and a re-send of the counted one change nothing and clear nothing
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > an accepted revision between the counted one and the refused one moves the amount but keeps the hold
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > an accepted newer revision lifts only its own hold and names the delivery; another stays
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > within one incident, a corrected campaign-day is kept with its delivery while the other still holds
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > a refused record naming no campaign the ledger maps, or no campaign at all, holds no branch
+ ↓ tests/integration/refused-revision.test.ts > a newer spend revision the mapper refuses (R-54, case 2) > a refused revision older than the counted one holds nothing; one at the same instant is not newer
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":1}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":1}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":1}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":1}
+
+ × tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once 1558ms
+   → expected [ { date: '2026-10-20', …(13) }, …(2) ] to have a length of 1 but got 3
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > re-fetches that would push a held day past the 50-row display limit never record it as corrected
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > re-fetches that would push a held day past the 50-row display limit never record it as corrected
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+ × tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > re-fetches that would push a held day past the 50-row display limit never record it as corrected 1294ms
+   → expected [ { rawEventId: 122, …(14) } ] to deeply equal []
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > 60 held campaign-days: each one holds, none is corrected by a later run, and a correction of the last is recorded with its delivery
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > 60 held campaign-days: each one holds, none is corrected by a later run, and a correction of the last is recorded with its delivery
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+ × tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > 60 held campaign-days: each one holds, none is corrected by a later run, and a correction of the last is recorded with its delivery 1427ms
+   → expected [ { rawEventId: 121, …(13) }, …(49) ] to have a length of 60 but got 50
+stdout | tests/integration/refused-revision.test.ts > which branch a refused spend revision holds (K5) > a branch named in the payload never moves the hold off the branch the campaign is mapped to
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > which branch a refused spend revision holds (K5) > a branch named in the payload never moves the hold off the branch the campaign is mapped to
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":1}
+
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":1}
+
+ × tests/integration/refused-revision.test.ts > which branch a refused spend revision holds (K5) > a branch named in the payload never moves the hold off the branch the campaign is mapped to 1229ms
+   → expected [ 'B10' ] to deeply equal [ 'B09' ]
+ × tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held 1028ms
+   → expected 'Corrected. Oct 20: the ledger no long…' not to match /^Corrected/
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the campaign is mapped to another branch: the hold moves there, and the first incident is not 'corrected'
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the campaign is mapped to another branch: the hold moves there, and the first incident is not 'corrected'
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+ × tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the campaign is mapped to another branch: the hold moves there, and the first incident is not 'corrected' 938ms
+   → expected 'Corrected. Oct 20: the counted revisi…' not to match /^Corrected/
+stdout | tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4)
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4)
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+ × tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the ingestion tool groups the record where the incident does, and links the incident 5ms
+   → expected [] to match object [ { source: 'ads', …(4) } ]
+ × tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the investigator (no model) names the refused revision, never a lead-record story 227ms
+   → expected '{"mode":"deterministic","modeLabel":"…' not to match /lead record|no paid touch|is overstat…/
+ × tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the CAC inquiry says the earlier amount still counts, never that spend is missing 118ms
+   → expected '[{"code":"H1","statement":"Paid media…' not to match /spend missing/
+ × tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the suggested question does not assume the CAC is too high 5ms
+   → expected [ 'Why is B09\'s paid CAC so high?' ] to not include 'Why is B09\'s paid CAC so high?'
+stdout | tests/integration/refused-revision.test.ts > replaying refused spend (K6) > a mapper that skips the check that refused a record cannot replay it, and nothing is counted
+{"level":"info","msg":"event consumer ran","consumer":"reconciliation","delivered":2}
+
+stdout | tests/integration/refused-revision.test.ts > replaying refused spend (K6) > a mapper that skips the check that refused a record cannot replay it, and nothing is counted
+{"level":"info","msg":"event consumer ran","consumer":"identity","delivered":2}
+
+ × tests/integration/refused-revision.test.ts > replaying refused spend (K6) > a mapper that skips the check that refused a record cannot replay it, and nothing is counted 1118ms
+   → promise resolved "{ …(10) }" instead of rejecting
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > three fetches, each refused: every delivery is kept, the counted $207.40 is one amount, and the correction is named once
+AssertionError: expected [ { date: '2026-10-20', …(13) }, …(2) ] to have a length of 1 but got 3
+
+- Expected
++ Received
+
+- 1
++ 3
+
+ ❯ tests/integration/refused-revision.test.ts:310:34
+    308|     expect(h.evidence).toMatchObject({ records: 3, campaignDays: 1 });
+    309|     // One entry per campaign-day: the newest refusal, and every refus…
+    310|     expect(h.evidence.revisions).toHaveLength(1);
+       |                                  ^
+    311|     expect(h.evidence.revisions).toMatchObject([{ date: "2026-10-20", …
+    312|     const [b] = (await budgetSignal(pool, "B09", OCT)).blockers;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > re-fetches that would push a held day past the 50-row display limit never record it as corrected
+AssertionError: expected [ { rawEventId: 122, …(14) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "acceptedCents": 20777,
++     "acceptedFetchedAt": "2026-10-22T06:00:00+00:00",
++     "acceptedRawEventId": 21,
++     "acceptedRunId": null,
++     "campaignId": 3,
++     "channel": "google_lsa",
++     "correction": {
++       "at": "2026-10-31T13:05:00.000Z",
++       "branchId": "B09",
++       "cents": 20777,
++       "fetchedAt": "2026-10-22T06:00:00.000Z",
++       "how": "other",
++       "rawEventId": 21,
++       "replayId": null,
++       "runId": null,
++     },
++     "date": "2026-10-21",
++     "errorDetail": "spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only",
++     "externalCampaignId": "pmax-lsa-B09",
++     "platform": "google_ads",
++     "rawEventId": 122,
++     "refusedCents": 40000,
++     "refusedFetchedAt": "2026-10-31T12:00:00+00:00",
++     "refusedRunId": 1,
++   },
++ ]
+
+ ❯ tests/integration/refused-revision.test.ts:333:39
+    331|     const [h] = await holds();
+    332|     expect(h.status).toBe("open");
+    333|     expect(correctionsOf(h.evidence)).toEqual([]);
+       |                                       ^
+    334|     expect(await group()).toHaveLength(57);
+    335|     expect(h.evidence).toMatchObject({ records: 57, campaignDays: 2 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > separate fetches of one refused campaign-day (K1) > 60 held campaign-days: each one holds, none is corrected by a later run, and a correction of the last is recorded with its delivery
+AssertionError: expected [ { rawEventId: 121, …(13) }, …(49) ] to have a length of 60 but got 50
+
+- Expected
++ Received
+
+- 60
++ 50
+
+ ❯ tests/integration/refused-revision.test.ts:347:37
+    345|     let [h] = await holds();
+    346|     expect(h.evidence).toMatchObject({ records: 60, campaignDays: 60 }…
+    347|     expect(revisionsOf(h.evidence)).toHaveLength(60);
+       |                                     ^
+    348|
+    349|     // A later refused fetch re-runs reconciliation: nothing past row …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > which branch a refused spend revision holds (K5) > a branch named in the payload never moves the hold off the branch the campaign is mapped to
+AssertionError: expected [ 'B10' ] to deeply equal [ 'B09' ]
+
+- Expected
++ Received
+
+  [
+-   "B09",
++   "B10",
+  ]
+
+ ❯ tests/integration/refused-revision.test.ts:373:52
+    371|     const b10 = await verdictsOf("B10");
+    372|     await deliverAds([spend("pmax", date(10, 20), { fetchedAt: "2026-1…
+    373|     expect((await holds()).map((h) => h.branchId)).toEqual(["B09"]);
+       |                                                    ^
+    374|     expect((await budgetSignal(pool, "B09", OCT)).trustworthy).toBe(fa…
+    375|     expect(await budgetSignal(pool, "B10", OCT)).toMatchObject({ trust…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the ledger stops counting a held day: never 'Corrected', the counted amount is said to have left, and the decision stays held
+AssertionError: expected 'Corrected. Oct 20: the ledger no long…' not to match /^Corrected/
+
+- Expected:
+/^Corrected/
+
++ Received:
+"Corrected. Oct 20: the ledger no longer counts a revision of this campaign-day."
+
+ ❯ tests/integration/refused-revision.test.ts:397:34
+    395|     const after = (await holds()).find((h) => h.id === held.id)!;
+    396|     expect(correctionsOf(after.evidence)).toMatchObject([{ date: "2026…
+    397|     expect(after.resolution).not.toMatch(/^Corrected/);
+       |                                  ^
+    398|     expect(after.resolution).toContain("$207.40");
+    399|     expect(after.resolution).not.toContain("$0.00");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > a hold that leaves without a correction (K2) > the campaign is mapped to another branch: the hold moves there, and the first incident is not 'corrected'
+AssertionError: expected 'Corrected. Oct 20: the counted revisi…' not to match /^Corrected/
+
+- Expected:
+/^Corrected/
+
++ Received:
+"Corrected. Oct 20: the counted revision or the campaign's mapping changed (now mapped to B10)."
+
+ ❯ tests/integration/refused-revision.test.ts:418:34
+    416|     expect(first.status).toBe("resolved");
+    417|     expect(correctionsOf(first.evidence)).toMatchObject([{ date: "2026…
+    418|     expect(first.resolution).not.toMatch(/^Corrected/);
+       |                                  ^
+    419|     expect(first.resolution).toContain("B10");
+    420|     expect(rows.find((h) => h.id !== b09.id)).toMatchObject({ branchId…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the ingestion tool groups the record where the incident does, and links the incident
+AssertionError: expected [] to match object [ { source: 'ads', …(4) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "branchId": "B09",
+-     "errorCode": "FRACTIONAL_CONVERSIONS",
+-     "exceptionId": 1,
+-     "records": 1,
+-     "source": "ads",
+-   },
+- ]
++ []
+
+ ❯ tests/integration/refused-revision.test.ts:437:40
+    435|   it("the ingestion tool groups the record where the incident does, an…
+    436|     const tool = await getIngestionFailures.run({ db: pool, viewer: VI…
+    437|     expect(tool.data.quarantineGroups).toMatchObject([{ source: "ads",…
+       |                                        ^
+    438|   });
+    439|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the investigator (no model) names the refused revision, never a lead-record story
+AssertionError: expected '{"mode":"deterministic","modeLabel":"…' not to match /lead record|no paid touch|is overstat…/
+
+- Expected:
+/lead record|no paid touch|is overstated/
+
++ Received:
+"{\"mode\":\"deterministic\",\"modeLabel\":\"Deterministic investigator — no model configured\",\"intent\":\"high_cac\",\"summary\":\"The investigator's summary stated a figure, a change or a cause that its evidence does not support, so it was withheld. The verified findings below stand on their own.\",\"observations\":[{\"text\":\"B09, Oct 1–30, 2026 (UTC): paid-media CAC n/a = $15,172.05 paid spend ÷ 0 new customers whose first evidenced touch was paid; 0 of 0 new customers (n/a) have channel unknown.\",\"evidenceIds\":[\"branch_metrics:B09:oct\"],\"status\":\"verified\"},{\"text\":\"The number reproduces exactly from stored records. Largest spend: gs-B09 $9,000 filed as google_search (ads@1.2); pmax-lsa-B09 $6,172 filed as google_lsa (ads@1.2).\",\"evidenceIds\":[\"branch_metrics:B09:oct\",\"campaign:1\",\"campaign:3\"],\"status\":\"verified\"},{\"text\":\"1 ads record(s) at B09 are quarantined (FRACTIONAL_CONVERSIONS: spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only) from 2026-10-31 to 2026-10-31; 0 new customer(s) have no lead record because of it.\",\"evidenceIds\":[\"exception:1\",\"raw_event:121\"],\"status\":\"verified\"},{\"text\":\"Paid CAC at B09 is overstated: a customer whose only lead record is quarantined counts as channel unknown rather than paid, which shrinks the CAC denominator while the spend stays.\",\"evidenceIds\":[\"exception:1\",\"branch_metrics:B09:oct\",\"metric_definition:paidCac\"],\"status\":\"hypothesis\",\"strength\":\"strong\"},{\"text\":\"Decision readiness at B09: 4 of 4 paid channel(s) not ready to move budget; the budget signal is not trustworthy.\",\"evidenceIds\":[\"readiness:B09:oct:google_lsa\",\"readiness:B09:oct:google_search\",\"readiness:B09:oct:meta\",\"readiness:B09:oct:microsoft\"],\"status\":\"verified\"}],\"suspectedCause\":{\"text\":\"B09's ads feed changed shape from 2026-10-31: ads@the old mapper cannot read those records (FRACTIONAL_CONVERSIONS), so they are held and the customers they produced have no paid touch.\",\"evidenceIds\":[\"exception:1\",\"raw_event:121\"]},\"confidence\":{\"level\":\"medium\",\"why\":\"The quarantine explains missing paid customers, but no shipped mapper reads the held records yet.\"},\"recommendedNextAction\":\"Check decision readiness for B09 before acting on its CAC.\",\"expectedEffect\":\"None proposed.\",\"risks\":[\"Replayed records change historical lead counts and channel credit for the affected days.\"],\"missingInformation\":[],\"approvalRequired\":false,\"proposals\":[],\"refusal\":null,\"grounding\":{\"returnedEvidence\":16,\"claimsIn\":6,\"claimsKept\":6,\"claimsDropped\":0,\"downgraded\":0,\"numericDropped\":0,\"textWithheld\":2,\"proofDropped\":0,\"proofDowngraded\":0,\"staleDropped\":0,\"dropped\":[{\"where\":\"summary\",\"text\":\"B09's paid CAC (n/a) is inflated by a data problem, not only by spend: A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $207.40 still counts. Those customers count as unknown instead of paid.\",\"evidenceIds\":[],\"unsupported\":[],\"reason\":\"does not follow from the facts it cites: $207.40: the cited fact is $15,172.05\",\"proofs\":[{\"piece\":\"the earlier $207.40 still counts.\",\"figure\":\"$207.40\",\"subject\":{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(paidSpend, B09, oct)\",\"inputs\":[{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":1517205,\"unit\":\"usd_cents\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"usd_cents\",\"computed\":15172.05,\"claimed\":207.4,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":2,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"CONTRADICTED\",\"gap\":null,\"reason\":\"the cited fact is $15,172.05\"}]},{\"where\":\"risk\",\"text\":\"A lower CAC after the fix is a measurement correction, not a change in marketing performance.\",\"evidenceIds\":[],\"unsupported\":[],\"reason\":\"claims a business improvement was caused; only a measured experiment can show that, and none exists\"}]},\"warnings\":[],\"claims\":[{\"id\":\"c1\",\"type\":\"DERIVATION\",\"text\":\"B09, Oct 1–30, 2026 (UTC): paid-media CAC n/a = $15,172.05 paid spend ÷ 0 new customers whose first evidenced touch was paid; 0 of 0 new customers (n/a) have channel unknown.\",\"evidenceIds\":[\"branch_metrics:B09:oct\"],\"numbers\":[{\"text\":\"$15,172.05\",\"kind\":\"money\",\"supported\":true},{\"text\":\"0\",\"kind\":\"count\",\"supported\":true},{\"text\":\"0\",\"kind\":\"count\",\"supported\":true}],\"status\":\"SUPPORTED\",\"reason\":\"cited records returned by tools in this run; all 4 propositions follow from the facts they cite (proofs attached)\",\"origin\":\"template\",\"proofs\":[{\"piece\":\"B09, Oct 1–30, 2026 (UTC): paid-media CAC n/a = $15,172.05 paid spend ÷ 0 new customers whose first evidenced touch was paid\",\"figure\":\"$15,172.05\",\"subject\":{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(paidSpend, B09, oct)\",\"inputs\":[{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":1517205,\"unit\":\"usd_cents\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"usd_cents\",\"computed\":15172.05,\"claimed\":15172.05,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":2,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"},{\"piece\":\"B09, Oct 1–30, 2026 (UTC): paid-media CAC n/a = $15,172.05 paid spend ÷ 0 new customers whose first evidenced touch was paid\",\"figure\":\"0\",\"subject\":{\"metric\":\"paidAcquired\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(paidAcquired, B09, oct)\",\"inputs\":[{\"metric\":\"paidAcquired\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":0,\"unit\":\"count\",\"definitionVersion\":\"v4 (2026-11-17: not computed where paid customers have no paid spend counted in the scope, which read $0.00, business-fit fixture; v3 2026-11-12: customers credited to a campaign whose spend was all held at intake left the denominator too, held-out IV-26; v2 2026-11-09: campaigns mapped to no branch, audit D-3)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"count\",\"computed\":0,\"claimed\":0,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"},{\"piece\":\"0 of 0 new customers (n/a) have channel unknown.\",\"figure\":\"0\",\"subject\":{\"metric\":\"unknownAcquired\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(unknownAcquired, B09, oct)\",\"inputs\":[{\"metric\":\"unknownAcquired\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":0,\"unit\":\"count\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"count\",\"computed\":0,\"claimed\":0,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"},{\"piece\":\"0 of 0 new customers (n/a) have channel unknown.\",\"figure\":\"0\",\"subject\":{\"metric\":\"acquired\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(acquired, B09, oct)\",\"inputs\":[{\"metric\":\"acquired\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":0,\"unit\":\"count\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"count\",\"computed\":0,\"claimed\":0,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"}]},{\"id\":\"c2\",\"type\":\"DERIVATION\",\"text\":\"The number reproduces exactly from stored records. Largest spend: gs-B09 $9,000 filed as google_search (ads@1.2); pmax-lsa-B09 $6,172 filed as google_lsa (ads@1.2).\",\"evidenceIds\":[\"branch_metrics:B09:oct\",\"campaign:1\",\"campaign:3\"],\"numbers\":[{\"text\":\"$9,000\",\"kind\":\"money\",\"supported\":true},{\"text\":\"$6,172\",\"kind\":\"money\",\"supported\":true}],\"status\":\"SUPPORTED\",\"reason\":\"cited records returned by tools in this run; all 2 propositions follow from the facts they cite (proofs attached)\",\"origin\":\"template\",\"proofs\":[{\"piece\":\"Largest spend: gs-B09 $9,000 filed as google_search (ads@1.2)\",\"figure\":\"$9,000\",\"subject\":{\"metric\":\"campaignSpend\",\"entity\":\"gs-B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(campaignSpend, gs-B09, oct)\",\"inputs\":[{\"metric\":\"campaignSpend\",\"entity\":\"gs-B09\",\"period\":\"oct\",\"value\":900000,\"unit\":\"usd_cents\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"metric_definition:paidCac\",\"branch_metrics:B09:oct\",\"campaign:1\"],\"tool\":\"getMetricTrace\"}],\"unit\":\"usd_cents\",\"computed\":9000,\"claimed\":9000,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"},{\"piece\":\"pmax-lsa-B09 $6,172 filed as google_lsa (ads@1.2).\",\"figure\":\"$6,172\",\"subject\":{\"metric\":\"campaignSpend\",\"entity\":\"pmax-lsa-B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(campaignSpend, pmax-lsa-B09, oct)\",\"inputs\":[{\"metric\":\"campaignSpend\",\"entity\":\"pmax-lsa-B09\",\"period\":\"oct\",\"value\":617205,\"unit\":\"usd_cents\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"metric_definition:paidCac\",\"branch_metrics:B09:oct\",\"campaign:3\"],\"tool\":\"getMetricTrace\"}],\"unit\":\"usd_cents\",\"computed\":6172.05,\"claimed\":6172,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals the cited fact at the precision written\"}]},{\"id\":\"c3\",\"type\":\"OBSERVATION\",\"text\":\"1 ads record(s) at B09 are quarantined (FRACTIONAL_CONVERSIONS: spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only) from 2026-10-31 to 2026-10-31; 0 new customer(s) have no lead record because of it.\",\"evidenceIds\":[\"exception:1\",\"raw_event:121\"],\"numbers\":[{\"text\":\"0\",\"kind\":\"count\",\"supported\":true}],\"status\":\"SUPPORTED\",\"reason\":\"cited records returned by tools in this run; its 2 record figures equal the fields of the returned records it renders (proofs attached)\",\"origin\":\"template\",\"proofs\":[{\"piece\":\"0 new customer(s) have no lead record because of it.\",\"figure\":\"0\",\"subject\":{\"metric\":null,\"entity\":\"exception:1\",\"period\":null},\"against\":null,\"relation\":\"record\",\"formula\":\"getReconciliationExceptions → exception:1 · exceptions[id=1].evidence.customersWithoutLead\",\"inputs\":[],\"unit\":\"count\",\"computed\":0,\"claimed\":0,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals exceptions[id=1].evidence.customersWithoutLead of the record exception:1, as getReconciliationExceptions returned it in this run\"},{\"piece\":\"1 ads record(s) at B09 are quarantined (FRACTIONAL_CONVERSIONS: spend_day pmax-lsa-B09: 2.5 platform conversions; the store keeps whole numbers only) from 2026-10-31 to 2026-10-31; 0 new customer(s) have no lead record because of it.\",\"figure\":\"1\",\"subject\":{\"metric\":null,\"entity\":\"exception:1\",\"period\":null},\"against\":null,\"relation\":\"record\",\"formula\":\"getReconciliationExceptions → exception:1 · exceptions[id=1].evidence.records\",\"inputs\":[],\"unit\":\"count\",\"computed\":1,\"claimed\":1,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"equals exceptions[id=1].evidence.records of the record exception:1, as getReconciliationExceptions returned it in this run\"}]},{\"id\":\"c4\",\"type\":\"HYPOTHESIS\",\"text\":\"Paid CAC at B09 is overstated: a customer whose only lead record is quarantined counts as channel unknown rather than paid, which shrinks the CAC denominator while the spend stays.\",\"evidenceIds\":[\"exception:1\",\"branch_metrics:B09:oct\",\"metric_definition:paidCac\"],\"numbers\":[],\"status\":\"PARTIALLY_SUPPORTED\",\"reason\":\"consistent with the cited evidence (strong), not proof\",\"origin\":\"template\"},{\"id\":\"c5\",\"type\":\"OBSERVATION\",\"text\":\"Decision readiness at B09: 4 of 4 paid channel(s) not ready to move budget; the budget signal is not trustworthy.\",\"evidenceIds\":[\"readiness:B09:oct:google_lsa\",\"readiness:B09:oct:google_search\",\"readiness:B09:oct:meta\",\"readiness:B09:oct:microsoft\"],\"numbers\":[{\"text\":\"4\",\"kind\":\"count\",\"supported\":true}],\"status\":\"SUPPORTED\",\"reason\":\"cited records returned by tools in this run; all 2 propositions follow from the facts they cite (proofs attached)\",\"origin\":\"template\",\"proofs\":[{\"piece\":\"Decision readiness at B09: 4 of 4 paid channel(s) not ready to move budget\",\"figure\":\"4 of 4\",\"subject\":{\"metric\":null,\"entity\":\"B09\",\"period\":null},\"against\":null,\"relation\":\"status\",\"formula\":\"count(readiness(B09) ≠ ready) of count(readiness(B09))\",\"inputs\":[],\"unit\":\"count\",\"computed\":4,\"claimed\":4,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"4 of the 4 channel verdicts returned for B09 are not ready, as stated\"},{\"piece\":\"the budget signal is not trustworthy.\",\"figure\":\"\",\"subject\":{\"metric\":null,\"entity\":\"B09\",\"period\":null},\"against\":null,\"relation\":\"status\",\"formula\":\"budgetSignal(B09).trustworthy = false\",\"inputs\":[],\"unit\":null,\"computed\":null,\"claimed\":null,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":0,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"VERIFIED\",\"gap\":null,\"reason\":\"the budget signal's trust is as stated\"}]},{\"id\":\"c6\",\"type\":\"HYPOTHESIS\",\"text\":\"B09's ads feed changed shape from 2026-10-31: ads@the old mapper cannot read those records (FRACTIONAL_CONVERSIONS), so they are held and the customers they produced have no paid touch.\",\"evidenceIds\":[\"exception:1\",\"raw_event:121\"],\"numbers\":[],\"status\":\"PARTIALLY_SUPPORTED\",\"reason\":\"the most likely explanation of the evidence; an investigation does not prove a cause\",\"origin\":\"template\"},{\"id\":\"c7\",\"type\":\"OBSERVATION\",\"text\":\"B09's paid CAC (n/a) is inflated by a data problem, not only by spend: A newer revision of pmax-lsa-B09's spend on Oct 20 was refused (FRACTIONAL_CONVERSIONS); the earlier $207.40 still counts. Those customers count as unknown instead of paid.\",\"evidenceIds\":[],\"numbers\":[{\"text\":\"$207.40\",\"kind\":\"money\",\"supported\":true}],\"status\":\"UNSUPPORTED\",\"reason\":\"does not follow from the facts it cites: $207.40: the cited fact is $15,172.05 (withheld from the summary)\",\"origin\":\"template\",\"proofs\":[{\"piece\":\"the earlier $207.40 still counts.\",\"figure\":\"$207.40\",\"subject\":{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\"},\"against\":null,\"relation\":\"level\",\"formula\":\"v(paidSpend, B09, oct)\",\"inputs\":[{\"metric\":\"paidSpend\",\"entity\":\"B09\",\"period\":\"oct\",\"value\":1517205,\"unit\":\"usd_cents\",\"definitionVersion\":\"v1 (2026-10-31)\",\"currencyResolved\":true,\"incompleteReason\":null,\"evidenceIds\":[\"branch_metrics:B09:oct\",\"channel_metrics:B09:oct:google_lsa\",\"channel_metrics:B09:oct:google_search\",\"channel_metrics:B09:oct:meta\",\"channel_metrics:B09:oct:microsoft\"],\"tool\":\"getBranchMetrics\"}],\"unit\":\"usd_cents\",\"computed\":15172.05,\"claimed\":207.4,\"qualifier\":\"exact\",\"direction\":null,\"claimedDirection\":null,\"precision\":2,\"rounding\":\"equal at the precision written (half a unit of the last digit)\",\"verdict\":\"CONTRADICTED\",\"gap\":null,\"reason\":\"the cited fact is $15,172.05\"}]},{\"id\":\"c8\",\"type\":\"CAUSAL\",\"text\":\"A lower CAC after the fix is a measurement correction, not a change in marketing performance.\",\"evidenceIds\":[],\"numbers\":[],\"status\":\"UNSUPPORTED\",\"reason\":\"claims a business improvement was caused; only a measured experiment can show that, and none exists\",\"origin\":\"template\"},{\"id\":\"c9\",\"type\":\"RECOMMENDATION\",\"text\":\"Check decision readiness for B09 before acting on its CAC.\",\"evidenceIds\":[],\"numbers\":[],\"status\":\"PARTIALLY_SUPPORTED\",\"reason\":\"a suggested next step, not a fact; any change it leads to goes through dry run and approval\"}]}"
+
+ ❯ tests/integration/refused-revision.test.ts:443:22
+    441|     const out = await runInvestigation(pool, { question: "Why is B09's…
+    442|     const said = JSON.stringify(out.result);
+    443|     expect(said).not.toMatch(/lead record|no paid touch|is overstated/…
+       |                      ^
+    444|     expect(said).toContain("was refused");
+    445|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the CAC inquiry says the earlier amount still counts, never that spend is missing
+AssertionError: expected '[{"code":"H1","statement":"Paid media…' not to match /spend missing/
+
+- Expected:
+/spend missing/
+
++ Received:
+"[{\"code\":\"H1\",\"statement\":\"Paid media spend went up.\",\"status\":\"SUPPORTED\",\"summary\":\"Paid spend $9,000.00 → $15,172.05 (+$6,172.05).\",\"test\":\"SUPPORTED if October paid spend is above September's and accounts for at least 10.0% of ln(CAC Oct / CAC Sep); CONTRADICTED otherwise.\",\"evidence\":[{\"label\":\"Paid spend Sep → Oct\",\"value\":\"$9,000.00 → $15,172.05\",\"evidenceIds\":[\"branch_metrics:B09:sep\",\"branch_metrics:B09:oct\"]},{\"label\":\"Campaign pmax-lsa-B09\",\"value\":\"+$6,172.05\",\"evidenceIds\":[\"campaign:3\"]}],\"counterevidence\":[],\"wouldChange\":\"A restatement of October spend, or October spend found mapped to the wrong branch.\"},{\"code\":\"H2\",\"statement\":\"Fewer new customers came through paid channels.\",\"status\":\"CONTRADICTED\",\"summary\":\"Paid customers 0 → 0 (+0).\",\"test\":\"SUPPORTED if October has fewer paid customers than September, accounting for at least 10.0% of ln(CAC Oct / CAC Sep), and nothing suggests they are only unattributed or held; UNRESOLVED when the unknown share rose or customers were held out; CONTRADICTED otherwise.\",\"evidence\":[{\"label\":\"Paid customers Sep → Oct\",\"value\":\"0 → 0 (of 0 → 0 new customers)\",\"evidenceIds\":[\"branch_metrics:B09:sep\",\"branch_metrics:B09:oct\"]}],\"counterevidence\":[],\"wouldChange\":\"Held or unattributed October customers found to be paid (a replay of held call records, a mapping fix).\"},{\"code\":\"H3\",\"statement\":\"Spend or leads are misclassified (wrong channel or branch), so the paid figures are wrong.\",\"status\":\"CONTRADICTED\",\"summary\":\"No open classification exception, no October customer credited to an unmapped campaign or serviced away from its campaign's branch, and every spend day in both months was classified by the active mapper ads@1.2.\",\"test\":\"SUPPORTED if an open coverage-gap, branch-mismatch or channel-conflict exception at the branch falls in September–October, or October paid customers are split across branch rows (credited to an unmapped campaign, or serviced away from their campaign's branch); UNRESOLVED if none but some spend was classified by an older mapper; CONTRADICTED otherwise.\",\"evidence\":[],\"counterevidence\":[],\"wouldChange\":\"A new reconciliation run finding a coverage gap or a mismatch, or a mapper comparison showing a different channel.\"},{\"code\":\"H4\",\"statement\":\"An integration stopped or held records, so the measured change is partly missing data.\",\"status\":\"SUPPORTED\",\"summary\":\"2 sign(s) of missing data that would make CAC look higher: Feed calls (no successful run on record: October leads or customers may be missing, which raises October CAC); Feed crm.payment (no successful run on record: October leads or customers may be missing, which raises October CAC).\",\"test\":\"SUPPORTED if data is missing in the direction that raises the measured CAC: a stale or failed lead or customer feed (> 36 h since success), held lead or customer records, or September spend held at intake; CONTRADICTED otherwise. Missing October spend lowers CAC and is listed as counterevidence.\",\"evidence\":[{\"label\":\"Feed calls\",\"value\":\"no successful run on record: October leads or customers may be missing, which raises October CAC\",\"evidenceIds\":[]},{\"label\":\"Feed crm.payment\",\"value\":\"no successful run on record: October leads or customers may be missing, which raises October CAC\",\"evidenceIds\":[]}],\"counterevidence\":[{\"label\":\"Held source records\",\"value\":\"1 ads record(s), exception 1: October spend missing would lower October CAC\",\"evidenceIds\":[\"exception:1\"]}],\"wouldChange\":\"A failed run or a held batch found for October leads or customers, held September spend, or late-arriving October spend.\"},{\"code\":\"H5\",\"statement\":\"The definition of paid CAC changed.\",\"status\":\"CONTRADICTED\",\"summary\":\"Both months are computed now, under the same definition (v4): a definition change cannot create a difference between them.\",\"test\":\"Both periods are recomputed from stored records under the current definition; a change between them cannot come from the definition. (Whether a number reported earlier used an older version is not stored.)\",\"evidence\":[{\"label\":\"Definition\",\"value\":\"v4 (2026-11-17: not computed where paid customers have no paid spend counted in the scope, which read $0.00, business-fit fixture; v3 2026-11-12: customers credited to a campaign whose spend was all held at intake left the denominator too, held-out IV-26; v2 2026-11-09: campaigns mapped to no branch, audit D-3)\",\"evidenceIds\":[\"metric_definition:paidCac\"]}],\"counterevidence\":[],\"wouldChange\":\"Comparing with a CAC that was reported earlier, under an older definition: that comparison would be between definitions, not months.\"},{\"code\":\"H6\",\"statement\":\"October's paid leads have not finished converting yet (period CAC, not cohort CAC).\",\"status\":\"NOT_TESTABLE\",\"summary\":\"Too little to compare: 0 September and 0 October paid prospects, and no September conversion to measure a lag from (at least 10 of each are needed).\",\"test\":\"Needs at least 10 paid prospects in each month and a measured September lead-to-service lag.\",\"evidence\":[],\"counterevidence\":[],\"wouldChange\":\"More paid prospects, or a few more weeks of October conversions.\"}]"
+
+ ❯ tests/integration/refused-revision.test.ts:449:21
+    447|   it("the CAC inquiry says the earlier amount still counts, never that…
+    448|     const cac = JSON.stringify((await testCacChange(pool, VIEWERS.mark…
+    449|     expect(cac).not.toMatch(/spend missing/);
+       |                     ^
+    450|     expect(cac).toContain("still counts");
+    451|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > what the investigator and the inquiry say about a refused revision (K4) > the suggested question does not assume the CAC is too high
+AssertionError: expected [ 'Why is B09\'s paid CAC so high?' ] to not include 'Why is B09\'s paid CAC so high?'
+ ❯ tests/integration/refused-revision.test.ts:454:92
+    452|
+    453|   it("the suggested question does not assume the CAC is too high", asy…
+    454|     expect((await suggestedQuestions(pool, VIEWERS.marketing)).map((q)…
+       |                                                                                            ^
+    455|   });
+    456| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/11]⎯
+
+ FAIL  tests/integration/refused-revision.test.ts > replaying refused spend (K6) > a mapper that skips the check that refused a record cannot replay it, and nothing is counted
+AssertionError: promise resolved "{ …(10) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "after": {
++     "acquired": 0,
++     "atRiskCents": 0,
++     "branchIds": [
++       "B09",
++     ],
++     "channels": {
++       "google_lsa": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 596465,
++       },
++       "google_search": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 920740,
++       },
++       "meta": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 0,
++       },
++       "microsoft": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 0,
++       },
++     },
++     "googleConversionsToUpload": 0,
++     "openExceptions": 1,
++     "paidAcquired": 0,
++     "paidCacCents": null,
++     "paidSpendCents": 1517205,
++     "unknownAcquired": 0,
++   },
++   "alreadyProcessed": false,
++   "before": {
++     "acquired": 0,
++     "atRiskCents": 0,
++     "branchIds": [
++       "B09",
++     ],
++     "channels": {
++       "google_lsa": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 617205,
++       },
++       "google_search": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 900000,
++       },
++       "meta": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 0,
++       },
++       "microsoft": {
++         "acquired": 0,
++         "cacCents": null,
++         "spendCents": 0,
++       },
++     },
++     "googleConversionsToUpload": 0,
++     "openExceptions": 2,
++     "paidAcquired": 0,
++     "paidCacCents": null,
++     "paidSpendCents": 1517205,
++     "unknownAcquired": 0,
++   },
++   "claimed": 1,
++   "dryRun": false,
++   "errors": [],
++   "idempotencyKey": "k6-ambiguous",
++   "projected": 1,
++   "requested": 1,
++   "stillQuarantined": 0,
+  }
+
+ ❯ tests/integration/refused-revision.test.ts:481:76
+    479|     });
+    480|
+    481|     await expect(replay(pool, request([ambiguous], "1.0", "k6-ambiguou…
+       |                                                                            ^
+    482|     await expect(replay(pool, request([cad], "1.1", "k6-cad"))).reject…
+    483|     expect(await counted("pmax", date(10, 20))).toEqual({ cents: CENTS…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/11]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 11 skipped (22)
+   Start at  03:48:31
+   Duration  10.97s (tests 93%, import 5%, transform 2%)
+

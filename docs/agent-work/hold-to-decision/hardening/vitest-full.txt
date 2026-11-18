@@ -1,0 +1,15 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.5 C:/Users/Pavan Kalyan/OneDrive/Documents/Desktop/Moxie pest Control
+
+
+ Test Files  87 passed (87)
+      Tests  1008 passed | 1 expected fail (1009)
+   Start at  04:58:51
+   Duration  1173.47s (tests 98%, import 2%)
+
+    Isolate  87 workers spawned · ~162ms startup each (spawn + environment, per file)
+             at least ~13.97s faster with isolate: false — reuses workers across files instead of one per file
+

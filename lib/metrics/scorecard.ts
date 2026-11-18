@@ -124,18 +124,26 @@ export async function branchRows(db: Queryable, scope: Scope): Promise<BranchRow
        from v_leads l join channels ch on ch.code = l.channel_code, p
        where l.occurred_at >= p.t0 and l.occurred_at < p.t1
        group by 1),
+     -- Customers whose first subscription sold in the period, by the branch that sold it: the rows
+     -- v_acquisitions is built on, without the first touch it would credit to each (unused here,
+     -- 90 ms on the demo world).
      sold as (
-       select a.branch_id, count(*) as sold from v_acquisitions a, p
-       where a.sold_at >= p.t0 and a.sold_at < p.t1 group by 1),
+       select b.id as branch_id, count(*) as sold
+       from v_first_subscriptions fs
+       join crm_customers c on c.crm_customer_id = fs.crm_customer_id
+       join branches b on b.crm_office_id = fs.office_id
+       where fs.sold_at >= $1::timestamptz and fs.sold_at < $2::timestamptz group by 1),
      -- The period's new customers first, materialized and planned on their own: joined in the same
      -- step as v_lead_campaigns, the planner credited every customer's first touch before
-     -- filtering on the period (9,477 instead of 3,687 on the demo world, +150 ms).
+     -- filtering on the period (9,477 instead of 3,687 on the demo world, +150 ms). The period is
+     -- written as parameters, not read from p, for the same reason: the planner plans with their
+     -- values, so it keeps the period's appointments before it credits anyone.
      period_acq as materialized (
        select a.branch_id, a.lead_id, a.channel_code, a.channel_conflict, a.subscription_status, a.annual_value_cents,
               ch.is_paid, ch.cost_basis, r.collected_cents
        from v_acquisitions a join channels ch on ch.code = a.channel_code
-       left join v_customer_revenue r on r.crm_customer_id = a.crm_customer_id, p
-       where a.initial_status = 'completed' and a.initial_completed_at >= p.t0 and a.initial_completed_at < p.t1),
+       left join v_customer_revenue r on r.crm_customer_id = a.crm_customer_id
+       where a.initial_status = 'completed' and a.initial_completed_at >= $1::timestamptz and a.initial_completed_at < $2::timestamptz),
      acq as (
        select a.branch_id, count(*) as acquired,
               -- Paid MEDIA customers whose spend the numerator can see: the CAC denominator.
@@ -395,8 +403,20 @@ export async function conversionBridge(db: Queryable, scope: Scope): Promise<Bri
        where l.occurred_at >= $1 and l.occurred_at < $2 and ($3::text[] is null or l.effective_branch_id = any($3::text[]))),
      prospects as (
        select prospect_key, min(occurred_at) as first_at from paid_leads group by prospect_key),
+     -- The customers a prospect's lead can be credited to: v_acquisitions credits a customer only
+     -- with a lead that shares its phone or email. A superset, narrowed by the lead itself in
+     -- "credited"; it spares crediting the first touch of every other customer (240 ms on the demo
+     -- world). Passed as an array, so the planner keeps these customers before it credits anyone:
+     -- as a semi-join, it credited every customer first (1.9 s).
+     candidates as materialized (
+       select cu.crm_customer_id from v_leads l join crm_customers cu on cu.phone_hash = l.phone_hash
+       where l.prospect_key in (select prospect_key from prospects)
+       union
+       select cu.crm_customer_id from v_leads l join crm_customers cu on cu.email_hash = l.email_hash
+       where l.prospect_key in (select prospect_key from prospects)),
      acq as materialized (
-       select a.lead_id, a.channel_code, a.initial_status, a.sold_at from v_acquisitions a where a.lead_id is not null),
+       select a.lead_id, a.channel_code, a.initial_status, a.sold_at from v_acquisitions a
+       where a.lead_id is not null and a.crm_customer_id = any(array(select crm_customer_id from candidates))),
      credited as (
        -- the acquisition (if any) credited to a lead of this prospect, and its channel
        select distinct on (pr.prospect_key) pr.prospect_key, a.channel_code, a.initial_status, ch.is_paid

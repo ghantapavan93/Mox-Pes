@@ -27,11 +27,22 @@ export const DECISION_BLOCKING_KINDS = ["channel_coverage_gap", "quarantined_sou
  * platform's campaign with the same id is not this campaign's.
  */
 const UNMAPPED_AT_BRANCH = `
-  select distinct e.id, a.branch_id, a.channel_code, a.initial_completed_at, e.kind, e.summary, e.severity, e.amount_cents
-  from exceptions e
-  join v_lead_campaigns lc on lc.campaign_id = (e.evidence ->> 'campaignId')::bigint
-  join v_acquisitions a on a.lead_id = lc.lead_id and a.initial_status = 'completed'
-  where e.status = 'open' and e.kind = 'unmapped_spend' and e.branch_id is null`;
+  with unmapped as materialized (
+    select e.id, e.kind, e.summary, e.severity, e.amount_cents, lc.lead_id
+    from exceptions e
+    join v_lead_campaigns lc on lc.campaign_id = (e.evidence ->> 'campaignId')::bigint
+    where e.status = 'open' and e.kind = 'unmapped_spend' and e.branch_id is null),
+  -- Only a customer that shares a lead's phone or email can be credited with it (v_acquisitions'
+  -- first touch). Naming those customers first, as an array the planner applies before it credits
+  -- anyone, spares crediting every other customer (190 ms on the demo world).
+  candidates as materialized (
+    select cu.crm_customer_id from unmapped u join leads l on l.id = u.lead_id join crm_customers cu on cu.phone_hash = l.phone_hash
+    union
+    select cu.crm_customer_id from unmapped u join leads l on l.id = u.lead_id join crm_customers cu on cu.email_hash = l.email_hash)
+  select distinct u.id, a.branch_id, a.channel_code, a.initial_completed_at, u.kind, u.summary, u.severity, u.amount_cents
+  from unmapped u
+  join v_acquisitions a on a.lead_id = u.lead_id and a.initial_status = 'completed'
+    and a.crm_customer_id = any(array(select crm_customer_id from candidates))`;
 
 export const SIGNAL_RATIO = 1.5;
 export const SIGNAL_MIN_CUSTOMERS = 5;

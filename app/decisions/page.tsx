@@ -59,6 +59,13 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
   // the verdicts instead of after them. The hold above it never waits for it.
   const verified = verifiedReadinessSnapshot(getPool(), viewer, { branchId, period });
   verified.catch(() => undefined); // awaited by the card; an early rejection is not unhandled
+  // Started now too, and shown last, inside the verdicts' boundary. The A/A analysis is usually
+  // ready before the verdicts (192 ms against 254 ms on the seeded world). As a sibling boundary
+  // it was painted first, then pushed down the page when the verdicts replaced their short
+  // fallback above it: CLS 0.155 whenever the verdicts were slower, as on a busy server
+  // (docs/agent-work/product-audit/harness/recording/cls-race.cjs). Nested, it cannot appear first.
+  const experiments = experimentsData(viewer, period);
+  experiments.catch(() => undefined); // awaited by the section, as above
 
   return (
     <div className="space-y-6">
@@ -112,11 +119,7 @@ async function DecisionLab({ searchParams }: { searchParams: SearchParams }) {
       />
 
       <Suspense fallback={<Card title="Verdicts"><Skeleton lines={4} /></Card>}>
-        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} verified={verified} incidentQuery={incidentQuery} />
-      </Suspense>
-
-      <Suspense fallback={<Card title="A/A analysis"><Skeleton lines={5} /></Card>}>
-        <Experiments viewer={viewer} period={period} />
+        <VerdictsAndScenarios viewer={viewer} branchId={branch.id} period={period} verified={verified} experiments={experiments} incidentQuery={incidentQuery} />
       </Suspense>
     </div>
   );
@@ -126,7 +129,21 @@ const channelLabel = (code: string) => CHANNEL_BY_CODE.get(code as ChannelCode)?
 /** "A", "A and B", "A, B and C". */
 const listOf = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
-async function VerdictsAndScenarios({ viewer, branchId, period, verified, incidentQuery }: { viewer: Viewer; branchId: string; period: Period; verified: Promise<VerifiedReadiness>; incidentQuery: string }) {
+async function VerdictsAndScenarios({
+  viewer,
+  branchId,
+  period,
+  verified,
+  experiments,
+  incidentQuery,
+}: {
+  viewer: Viewer;
+  branchId: string;
+  period: Period;
+  verified: Promise<VerifiedReadiness>;
+  experiments: ExperimentsData;
+  incidentQuery: string;
+}) {
   const pool = getPool();
   const [verdicts, saved, gaps] = await Promise.all([
     decisionVerdicts(pool, viewer, { branchId, period }),
@@ -178,6 +195,10 @@ async function VerdictsAndScenarios({ viewer, branchId, period, verified, incide
           <SavedScenarios scenarios={saved} labelFor={channelLabel} />
         </Card>
       </div>
+
+      <Suspense fallback={<Card title="A/A analysis"><Skeleton lines={5} /></Card>}>
+        <Experiments viewer={viewer} data={experiments} />
+      </Suspense>
     </>
   );
 }
@@ -467,12 +488,19 @@ function Builder({ verdicts, period }: { verdicts: DecisionVerdicts; period: Per
   );
 }
 
-async function Experiments({ viewer, period }: { viewer: Viewer; period: Period }) {
+/** The A/A analysis and the recorded runs, read alongside the verdicts (see DecisionLab). */
+async function experimentsData(viewer: Viewer, period: Period) {
   const pool = getPool();
   const [live, stored] = await Promise.all([
     runAaExperiment(pool, viewer, { period: period.key, windowDays: AA_DEFAULTS.windowDays, salt: AA_DEFAULTS.salt }),
     listExperiments(pool, viewer),
   ]);
+  return { live, stored };
+}
+type ExperimentsData = ReturnType<typeof experimentsData>;
+
+async function Experiments({ viewer, data }: { viewer: Viewer; data: ExperimentsData }) {
+  const { live, stored } = await data;
   return (
     <section id="experiments" className="scroll-mt-28 space-y-6">
       <Card

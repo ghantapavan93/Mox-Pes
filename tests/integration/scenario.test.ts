@@ -1,15 +1,21 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { wallTimeToInstant } from "@/lib/primitives";
 import { BRANCH_BY_OFFICE, SCENARIO } from "@/lib/reference";
 import { seed, type SeedReport } from "@/lib/sim/seed";
 import { CALLS_FIX_DEPLOYED_AT, PERIOD_END } from "@/lib/sim/world";
-import { branchRows, conversionBridge, totals } from "@/lib/metrics/scorecard";
+import { branchRows, channelRows, conversionBridge, paidCac, totals } from "@/lib/metrics/scorecard";
 import { PERIODS } from "@/lib/period";
 import { quarantineGroupIds, replay } from "@/lib/ingest/replay";
 import { planReplay } from "@/lib/ingest/replay-plan";
 import { budgetSignal, decisionHolds } from "@/lib/metrics/decision";
 import { decisionVerdicts } from "@/lib/decision/verdicts";
+import { listScenarios, saveScenario, scenario, ScenarioRequestSchema } from "@/lib/decision/scenario";
+import { builderDefaults } from "@/lib/decision/signal-copy";
+import { revokeCurrencyRule } from "@/lib/currency/rules";
+import { reconcile } from "@/lib/reconcile/reconcile";
+import { withTransaction } from "@/lib/db";
+import { nestedPool } from "@/lib/workflow/nested";
 import { getException } from "@/lib/queries";
 import { VIEWERS, type Viewer } from "@/lib/viewer";
 import { one, testPool } from "../helpers";
@@ -173,5 +179,95 @@ describe("seeded demo scenario", () => {
     expect(VIEWERS.brand.branchIds).toContain("B44");
     expect(await hrefs(VIEWERS.brand)).not.toContain(`/exceptions/${unmapped.id}`);
     expect(await hrefs(VIEWERS.marketing)).toContain(`/exceptions/${unmapped.id}`);
+  });
+});
+
+/**
+ * A scenario's branch baseline is the scorecard's own figure (2026-11-17). In exp-n1 case R one
+ * person revokes B03's Local Services currency rule, so all of that campaign's October spend is held
+ * at intake. The scorecard's paid-media CAC (definition v3) then leaves out the 14 customers
+ * credited to the held campaign: $8,930.74 over 36 = $248.08. The scenario summed every paid-media
+ * channel's customers instead: $8,930.74 over 50 = $178.61, under the same name, for the same branch
+ * and period. Everything here runs in one transaction that is rolled back, so the seeded world the
+ * other tests read stays as it was.
+ */
+describe("a scenario's branch baseline is the scorecard's (B03 with Local Services held at intake)", () => {
+  let client: PoolClient;
+  let tx: Pool;
+  const NOW = new Date("2026-10-31T13:40:00Z");
+  const move = (fromChannel: string, toChannel: string) =>
+    ScenarioRequestSchema.parse({ branchId: "B03", period: "oct", changes: [{ fromChannel, toChannel, amountCents: 50_000 }] });
+  const ledger = () =>
+    one(
+      tx,
+      `select (select coalesce(sum(cost_cents), 0) from ad_spend_daily)::text as spend, (select count(*) from raw_events)::int as raw_events,
+              (select count(*) from crm_customers)::int as customers, (select coalesce(sum(total_cents), 0) from crm_tickets)::text as invoiced,
+              (select coalesce(sum(amount_cents), 0) from crm_payments where status = 'successful')::text as collected`,
+    );
+
+  beforeAll(async () => {
+    client = await pool.connect();
+    await client.query("begin");
+    tx = nestedPool(client);
+    const rule = await one<{ id: string }>(tx, "select id from currency_rules where platform = 'google_lsa' and ad_account_id = 'LSA-B03' and revoked_at is null");
+    await revokeCurrencyRule(tx, VIEWERS.engineer, { ruleId: Number(rule.id), reason: "test: account currency not confirmed", now: NOW });
+    await withTransaction(tx, (t) => reconcile(t, NOW));
+  });
+  afterAll(async () => {
+    await client.query("rollback");
+    client.release();
+  });
+
+  it("the scorecard counts 36 of B03's 50 paid-media customers: the 14 credited to the held campaign have no cost in any figure", async () => {
+    const [row] = await branchRows(tx, { from: PERIODS.oct.from, to: PERIODS.oct.to, branchIds: ["B03"] });
+    const channels = (await channelRows(tx, { from: PERIODS.oct.from, to: PERIODS.oct.to, branchIds: ["B03"] })).filter((c) => c.costBasis === "media");
+    expect(row).toMatchObject({ paidSpendCents: 893_074, paidAcquired: 36, heldCampaignAcquired: 14 });
+    expect(channels.reduce((t, c) => t + c.spendCents, 0)).toBe(row.paidSpendCents);
+    expect(channels.reduce((t, c) => t + c.acquired, 0)).toBe(50);
+    expect(paidCac(row.paidSpendCents, row.paidAcquired)).toBe(24_808);
+  });
+
+  it("a saved Search ↔ Meta scenario carries the scorecard's baseline, and reads the same after reload", async () => {
+    const [row] = await branchRows(tx, { from: PERIODS.oct.from, to: PERIODS.oct.to, branchIds: ["B03"] });
+    const scorecard = paidCac(row.paidSpendCents, row.paidAcquired);
+    for (const [from, to] of [["google_search", "meta"], ["meta", "google_search"]]) {
+      const computed = await scenario(tx, VIEWERS.marketing, move(from, to));
+      const saved = await saveScenario(tx, VIEWERS.marketing, move(from, to));
+      const reopened = (await listScenarios(tx, VIEWERS.marketing, { branchId: "B03" })).find((s) => s.id === saved.id)!;
+      for (const r of [computed, saved.result, reopened.result]) {
+        expect(r.baseline, `${from} → ${to}`).toMatchObject({ paidSpendCents: row.paidSpendCents, paidCustomers: row.paidAcquired, paidCacCents: scorecard });
+        // The projection's branch totals count the same customers: the forecast's change, on 36.
+        expect(r.projection.paidCustomers.point).toBeCloseTo(row.paidAcquired + r.projection.deltaCustomers.point, 9);
+        expect(r.projection.paidCacCents.point).toBe(Math.round(row.paidSpendCents / r.projection.paidCustomers.point));
+      }
+      expect(computed.decisionReady).toBe(true);
+      expect(computed.warnings.join(" ")).toMatch(/This compares two channels, not the branch/);
+    }
+  });
+
+  it("decides as before: Local Services held and not ready, the recommendation held, B04 untouched, the ledger unchanged", async () => {
+    const before = await ledger();
+    for (const [from, to] of [["google_search", "google_lsa"], ["google_lsa", "google_search"], ["meta", "google_lsa"], ["google_lsa", "meta"]]) {
+      await expect(scenario(tx, VIEWERS.marketing, move(from, to)), `${from} → ${to}`).rejects.toMatchObject({ status: 409, message: expect.stringMatching(/held at intake/) });
+    }
+    await saveScenario(tx, VIEWERS.marketing, move("google_search", "meta"));
+    const v = await decisionVerdicts(tx, VIEWERS.marketing, { branchId: "B03", period: PERIODS.oct });
+    expect(v.channels.find((c) => c.channelCode === "google_lsa")!.readiness.blockers.map((b) => b.code)).toContain("cost_held");
+    expect(v.budgetSignal.recommendation.status).toBe("held");
+    expect(builderDefaults(v.budgetSignal, v.channels.map((c) => c.channelCode))).toEqual({ from: "", to: "" });
+
+    // The clean-spend control: every B04 customer is counted, so its baseline is the scorecard's and
+    // the channels' sum alike, as it always was; nothing of B03's hold reaches it.
+    const [b04] = await branchRows(tx, { from: PERIODS.oct.from, to: PERIODS.oct.to, branchIds: ["B04"] });
+    const r04 = await scenario(tx, VIEWERS.marketing, ScenarioRequestSchema.parse({ branchId: "B04", period: "oct", changes: [{ fromChannel: "google_search", toChannel: "google_lsa", amountCents: 50_000 }] }));
+    const sum = (k: "spendCents" | "customers") => r04.baseline.channels.reduce((t, c) => t + c[k], 0);
+    expect(r04.baseline.paidCacCents).toBe(paidCac(b04.paidSpendCents, b04.paidAcquired));
+    expect(r04.baseline.paidCacCents).toBe(paidCac(sum("spendCents"), sum("customers")));
+    expect(r04.projection.paidCustomers.point).toBeCloseTo(sum("customers") + r04.projection.deltaCustomers.point, 9);
+    expect(r04.decisionReady).toBe(true);
+    const v04 = await decisionVerdicts(tx, VIEWERS.marketing, { branchId: "B04", period: PERIODS.oct });
+    expect(v04.budgetSignal.recommendation.status).toBe("shift");
+    expect(v04.channels.find((c) => c.channelCode === "google_lsa")!.readiness.status).toBe("ready");
+    expect(await ledger()).toEqual(before);
   });
 });

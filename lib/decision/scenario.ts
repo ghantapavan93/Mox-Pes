@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import { getNow, withTransaction, type Queryable } from "@/lib/db";
 import { SIGNAL_MIN_CUSTOMERS } from "@/lib/metrics/decision";
-import { paidCac } from "@/lib/metrics/scorecard";
+import { branchRows, paidCac } from "@/lib/metrics/scorecard";
 import { PERIODS, type Period, type PeriodKey } from "@/lib/period";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 import { gamma, quantile, rng, seedFrom } from "./stats";
@@ -131,6 +131,9 @@ export interface ScenarioResult {
 /**
  * Pure projection. Separated from the database so its arithmetic can be checked by hand.
  * `seed` makes the interval reproducible; the point estimate does not depend on it.
+ *
+ * `counted` is the branch's paid-media spend and the customers its CAC counts, per month (the
+ * scorecard's, see `scenario`). Without it the channels' sums are used, as before.
  */
 export function projectScenario(
   baseline: BaselineChannel[],
@@ -138,6 +141,7 @@ export function projectScenario(
   assumptions: Pick<ScenarioAssumptions, "elasticity" | "closeRateFactor">,
   seed: number,
   periodScale: number,
+  counted?: { spendCents: number; customers: number },
 ): Projection {
   const byCode = new Map(baseline.map((b) => [b.channelCode, b]));
   const delta = new Map<string, number>();
@@ -170,10 +174,16 @@ export function projectScenario(
     return ratio > 1 ? base + (scaled - base) * m : scaled;
   };
 
-  const paidSpend = baseline.reduce((s, b) => s + b.spendCents, 0);
   const baseCustomers = baseline.reduce((s, b) => s + b.customers, 0);
   const pointByChannel = baseline.map((b) => respond(b, b.customers));
   const pointTotal = pointByChannel.reduce((s, v) => s + v, 0);
+  // The branch totals (paid customers, paid-media CAC) are over the customers the branch's CAC
+  // counts. The channels also carry customers it leaves out (credited to a campaign mapped to no
+  // branch, or whose spend is all held at intake): they are kept as observed, so the forecast's
+  // change applies to the counted total. With every customer counted, `uncounted` is 0.
+  const paidSpend = counted?.spendCents ?? baseline.reduce((s, b) => s + b.spendCents, 0);
+  const uncounted = counted ? baseCustomers - counted.customers : 0;
+  const countedPoint = pointTotal - uncounted;
 
   // Monte Carlo over each channel's customer rate: Gamma(n + ½) on the PERIOD count, scaled to
   // the month exactly like the point estimate.
@@ -194,9 +204,9 @@ export function projectScenario(
       base += rate;
       projected += p;
     });
-    totals.push(projected);
+    totals.push(projected - uncounted);
     deltas.push(projected - base);
-    if (projected > 0) cacs.push(paidSpend / projected);
+    if (projected - uncounted > 0) cacs.push(paidSpend / (projected - uncounted));
   }
   // An equal-tailed posterior interval can exclude the observed count when that count is 0 (the
   // Jeffreys posterior puts no mass at exactly 0). The range is widened to include the point
@@ -206,7 +216,7 @@ export function projectScenario(
     return { point, low: Math.min(point, quantile(sorted, INTERVAL[0])), high: Math.max(point, quantile(sorted, INTERVAL[1])) };
   };
   const sortedCac = cacs.sort((a, b) => a - b);
-  const cacPoint = pointTotal > 0 ? Math.round(paidSpend / pointTotal) : null;
+  const cacPoint = countedPoint > 0 ? Math.round(paidSpend / countedPoint) : null;
   const cacBound = (q: number, pick: (a: number, b: number) => number) =>
     sortedCac.length === 0 ? null : Math.round(cacPoint === null ? quantile(sortedCac, q) : pick(cacPoint, quantile(sortedCac, q)));
 
@@ -221,7 +231,7 @@ export function projectScenario(
       customers: range(pointByChannel[k], drawsByChannel[k]),
       baselineCostPerCustomerCents: paidCac(b.spendCents, b.customers),
     })),
-    paidCustomers: range(pointTotal, totals),
+    paidCustomers: range(countedPoint, totals),
     deltaCustomers: range(pointTotal - baseCustomers, deltas),
     // Fewer customers → higher CAC, so the CAC interval is read off the same draws.
     paidCacCents: { point: cacPoint, low: cacBound(INTERVAL[0], Math.min), high: cacBound(INTERVAL[1], Math.max) },
@@ -259,14 +269,21 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
     customers: c.acquired * periodScale,
     observedCustomers: c.acquired,
   }));
+  // The branch's paid-media baseline is the scorecard's own (lib/metrics/scorecard.ts branchRows):
+  // the spend its CAC divides and the customers it counts. The channel rows above carry every
+  // customer credited to a paid-media channel, including those that CAC leaves out, so their sum is
+  // not the branch's figure: with B03's Local Services spend held at intake it was 50 customers
+  // against the scorecard's 36, and $178.61 against $248.08 (tests/integration/scenario.test.ts).
+  const [scorecard] = await branchRows(db, { from: period.from, to: period.to, branchIds: [request.branchId] });
+  const counted = { spendCents: Math.round(scorecard.paidSpendCents * periodScale), customers: scorecard.paidAcquired * periodScale };
 
   // One seed for the main projection and every sensitivity row (common random numbers): rows
   // then differ only by β, not by Monte Carlo noise, so they can be compared with each other.
   const seed = seedFrom(JSON.stringify([request.branchId, request.period, request.changes, assumptions, baseline]));
-  const projection = projectScenario(baseline, request.changes, assumptions, seed, periodScale);
+  const projection = projectScenario(baseline, request.changes, assumptions, seed, periodScale, counted);
   const sensitivity = [...assumptions.sensitivityElasticities]
     .sort((a, b) => a - b)
-    .map((beta) => projectScenario(baseline, request.changes, { ...assumptions, elasticity: beta }, seed, periodScale));
+    .map((beta) => projectScenario(baseline, request.changes, { ...assumptions, elasticity: beta }, seed, periodScale, counted));
 
   const involved = new Set(request.changes.flatMap((c) => [c.fromChannel, c.toChannel]));
   const involvedVerdicts = verdicts.channels.filter((c) => involved.has(c.channelCode));
@@ -306,8 +323,6 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
   }
 
   const coverageRows = involvedVerdicts.map((c) => c.integrity.coverage);
-  const paidSpendCents = baseline.reduce((s, b) => s + b.spendCents, 0);
-  const paidCustomers = baseline.reduce((s, b) => s + b.customers, 0);
 
   return {
     label: SCENARIO_LABEL,
@@ -320,9 +335,10 @@ export async function scenario(db: Queryable, viewer: Viewer, request: ScenarioR
     assumptions,
     baseline: {
       monthDays: MONTH_DAYS,
-      paidSpendCents,
-      paidCustomers,
-      paidCacCents: paidCac(paidSpendCents, paidCustomers),
+      paidSpendCents: counted.spendCents,
+      paidCustomers: counted.customers,
+      // The scorecard's figure for this branch and period itself, not a second derivation of it.
+      paidCacCents: paidCac(scorecard.paidSpendCents, scorecard.paidAcquired),
       channels: baseline,
     },
     projection,

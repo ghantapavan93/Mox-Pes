@@ -26,3 +26,15 @@ export const LIMITS = {
   /** Staged rows are deleted after this long, published or not. */
   retentionHours: 24,
 } as const;
+
+const megabytes = (bytes: number) => `${Math.ceil((bytes / 1_048_576) * 10) / 10} MB`;
+
+/**
+ * The size refusal, one wording for the browser's check before sending and the server's after
+ * (release design §5.2). `bytes` is null when only "more than the limit" is known. Rounded up, so a
+ * file one byte over 4 MB never reads "4 MB".
+ */
+export function tooLargeMessage(bytes: number | null, maxBytes: number, scope: "workspace" | "company"): string {
+  const size = bytes === null ? `over ${megabytes(maxBytes)}` : megabytes(bytes);
+  return `This file is ${size}; ${scope === "workspace" ? "the public demo takes" : "onboarding takes"} files up to ${megabytes(maxBytes)}.`;
+}

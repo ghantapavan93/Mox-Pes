@@ -1,5 +1,6 @@
 import type { Queryable } from "@/lib/db";
 import type { LeadRow, PaymentRow, SpendDayRow } from "@/lib/adapters/contract";
+import { PERIODS } from "@/lib/period";
 import { instantToWallTime, wallTimeToInstant } from "@/lib/primitives";
 import { BRANCH_BY_OFFICE } from "@/lib/reference";
 import type { RowOutcome } from "./compile";
@@ -25,11 +26,52 @@ export interface FactDiff {
   ledger: string;
 }
 
+/**
+ * The ledger record a matched or differing row was compared with (release design §5.3), stored on
+ * its row result so the result can link to it. `journey` is a Customer Journeys id: the CRM
+ * customer id, or "P-<identity id>" for a prospect; null while the lead has no identity yet.
+ */
+export type LedgerTarget =
+  | { kind: "lead"; leadId: number; branchId: string | null; journey: string | null }
+  | { kind: "payment"; branchId: string | null; journey: string }
+  | { kind: "spend_day"; branchId: string | null; channel: string; day: string };
+
 export interface LedgerRowResult {
   row: number;
   externalId: string;
   disposition: "eligible" | "matches_ledger" | "differs_from_ledger";
   diffs: FactDiff[];
+  /** Matched and differing rows only: the record they were compared with. */
+  target?: LedgerTarget;
+}
+
+const mondayOf = (day: string) => {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+};
+
+/**
+ * Where a ledger target opens: a lead or a payment on its journey; a spend day on its branch's
+ * paid-spend trace, selected on its channel and week in the month that holds the day, or the whole
+ * window when no month does. Null when there is nothing to open (a lead without an identity, a
+ * campaign mapped to no branch). The caller checks the viewer may see `target.branchId`.
+ */
+export function ledgerHref(target: LedgerTarget): string | null {
+  switch (target.kind) {
+    case "lead":
+      return target.journey ? `/customers/${encodeURIComponent(target.journey)}` : null;
+    case "payment":
+      return `/customers/${encodeURIComponent(target.journey)}`;
+    case "spend_day": {
+      if (!target.branchId) return null;
+      const at = Date.parse(`${target.day}T00:00:00Z`);
+      const month = (["sep", "oct"] as const).find((k) => PERIODS[k].from.getTime() <= at && at < PERIODS[k].to.getTime());
+      const base = `/branches/${encodeURIComponent(target.branchId)}/trace`;
+      if (!month) return `${base}?period=all&metric=paid_spend`;
+      return `${base}?period=${month}&metric=paid_spend&channel=${encodeURIComponent(target.channel)}&week=${mondayOf(target.day)}#selection`;
+    }
+  }
 }
 
 export interface MoneyReconciliation {
@@ -66,8 +108,18 @@ async function compareLeads(db: Queryable, source: "calls" | "web", outcomes: Ro
   const ids = rows.map((r) => (r.projection.row as LeadRow).sourceLeadId);
   const existing = new Map(
     (
-      await db.query<{ source_lead_id: string; branch_id: string | null; channel_code: string; occurred_at: Date; campaign_external_id: string | null }>(
-        "select source_lead_id, branch_id, channel_code, occurred_at, campaign_external_id from leads where source = $1 and source_lead_id = any($2::text[])",
+      await db.query<{
+        id: string; source_lead_id: string; branch_id: string | null; channel_code: string; occurred_at: Date; campaign_external_id: string | null;
+        identity_id: string | null; crm_customer_id: string | null;
+      }>(
+        `select l.id, l.source_lead_id, l.branch_id, l.channel_code, l.occurred_at, l.campaign_external_id, i.id as identity_id, i.crm_customer_id
+         from leads l
+         left join lateral (
+           select i.id, i.crm_customer_id from identity_links k join identities i on i.id = k.identity_id
+           where k.record_table = 'leads' and k.record_id = l.id and i.retired_at is null
+           order by k.id desc limit 1
+         ) i on true
+         where l.source = $1 and l.source_lead_id = any($2::text[])`,
         [source, ids],
       )
     ).rows.map((r) => [r.source_lead_id, r]),
@@ -81,7 +133,9 @@ async function compareLeads(db: Queryable, source: "calls" | "web", outcomes: Ro
     if (have.channel_code !== lead.channelCode) diffs.push({ fact: "channel", file: lead.channelCode, ledger: have.channel_code });
     if (iso(have.occurred_at) !== iso(lead.occurredAt)) diffs.push({ fact: "time", file: iso(lead.occurredAt), ledger: iso(have.occurred_at) });
     if ((have.campaign_external_id ?? "") !== (lead.campaignExternalId ?? "")) diffs.push({ fact: "campaign", file: lead.campaignExternalId ?? "none", ledger: have.campaign_external_id ?? "none" });
-    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs };
+    const journey = have.crm_customer_id !== null ? have.crm_customer_id : have.identity_id !== null ? `P-${have.identity_id}` : null;
+    const target: LedgerTarget = { kind: "lead", leadId: Number(have.id), branchId: have.branch_id, journey };
+    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs, target };
   });
   return { rows: results, money: null, counts: countOf(results) };
 }
@@ -132,7 +186,8 @@ async function comparePayments(db: Queryable, outcomes: RowOutcome[]): Promise<L
       const ledgerDay = instantToWallTime(new Date(have.paid_at), zone).slice(0, 10);
       if (fileDay !== ledgerDay) diffs.push({ fact: "paid on", file: fileDay, ledger: ledgerDay });
     } else if (iso(have.paid_at) !== iso(p.paidAt)) diffs.push({ fact: "paid at", file: iso(p.paidAt), ledger: iso(have.paid_at) });
-    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs };
+    const target: LedgerTarget = { kind: "payment", branchId: BRANCH_BY_OFFICE.get(have.office_id)?.id ?? null, journey: have.crm_customer_id };
+    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs, target };
   });
   money.matchedDifferenceCents = money.matchedFileCents - money.matchedLedgerCents;
 
@@ -176,9 +231,11 @@ async function compareSpend(db: Queryable, outcomes: RowOutcome[]): Promise<Ledg
   const days = rows.map((r) => ({ r, s: r.projection.row as SpendDayRow }));
   const existing = new Map(
     (
-      await db.query<{ platform: string; external_campaign_id: string; spend_date: string; cost_cents: string; clicks: number; platform_conversions: number }>(
-        `select c.platform, c.external_campaign_id, to_char(d.spend_date, 'YYYY-MM-DD') as spend_date, d.cost_cents, d.clicks, d.platform_conversions
+      await db.query<{ platform: string; external_campaign_id: string; spend_date: string; cost_cents: string; clicks: number; platform_conversions: number; channel_code: string; branch_id: string | null }>(
+        `select c.platform, c.external_campaign_id, to_char(d.spend_date, 'YYYY-MM-DD') as spend_date, d.cost_cents, d.clicks, d.platform_conversions,
+           c.channel_code, m.branch_id
          from ad_spend_daily d join ad_campaigns c on c.id = d.campaign_id
+         left join campaign_branch_map m on m.campaign_id = c.id
          where (c.platform, c.external_campaign_id) in (select * from unnest($1::text[], $2::text[]))`,
         [days.map((x) => x.s.platform), days.map((x) => x.s.externalCampaignId)],
       )
@@ -203,7 +260,8 @@ async function compareSpend(db: Queryable, outcomes: RowOutcome[]): Promise<Ledg
     if (Number(have.cost_cents) !== s.costCents) diffs.push({ fact: "cost", file: dollars(s.costCents), ledger: dollars(Number(have.cost_cents)) });
     if (have.clicks !== s.clicks) diffs.push({ fact: "clicks", file: String(s.clicks), ledger: String(have.clicks) });
     if (have.platform_conversions !== s.platformConversions) diffs.push({ fact: "platform conversions", file: String(s.platformConversions), ledger: String(have.platform_conversions) });
-    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs };
+    const target: LedgerTarget = { kind: "spend_day", branchId: have.branch_id, channel: have.channel_code, day: have.spend_date };
+    return { row: r.row, externalId: r.externalId, disposition: diffs.length ? "differs_from_ledger" : "matches_ledger", diffs, target };
   });
   money.matchedDifferenceCents = money.matchedFileCents - money.matchedLedgerCents;
   if (days.length > 0) {

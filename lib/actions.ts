@@ -17,7 +17,7 @@ import { lockReconcile, reconcile } from "@/lib/reconcile/reconcile";
  */
 
 export class ActionError extends Error {
-  constructor(message: string, readonly status: 400 | 404 | 409) {
+  constructor(message: string, readonly status: 400 | 404 | 409 | 413 | 422 | 429 | 503) {
     super(message);
   }
 }

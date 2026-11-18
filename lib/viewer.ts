@@ -41,6 +41,12 @@ export interface Permissions {
   sync: boolean;
   /** Accept or reject ambiguous identity matches. */
   reviewIdentity: boolean;
+  /**
+   * The visitor workspace (release design §5.1): stage, map and dry-run its own uploads and ask the
+   * deterministic investigator, all private to the visitor and never counted. Only the guest of a
+   * deployment with PUBLIC_WORKSPACE=1 has it (lib/server.ts); false for every role below.
+   */
+  workspace: boolean;
 }
 
 export interface Viewer {
@@ -64,9 +70,9 @@ export const ROLE_COOKIE = "rs_role";
 /** The sister brand the demo's brand-scoped role covers. */
 const SISTER_BRAND: BrandId = "joshuas";
 
-const NONE: Permissions = {
+export const NONE: Permissions = {
   replay: false, decide: false, closeConflicts: false, investigate: false, propose: false,
-  dryRun: false, approve: false, sync: false, reviewIdentity: false,
+  dryRun: false, approve: false, sync: false, reviewIdentity: false, workspace: false,
 };
 
 export const VIEWERS: Record<Role, Viewer> = {
@@ -114,6 +120,16 @@ export const VIEWERS: Record<Role, Viewer> = {
 };
 
 export const ROLES = Object.keys(VIEWERS) as Role[];
+
+/**
+ * The guest of a deployment with PUBLIC_WORKSPACE=1: read-only like the guest, plus its own workspace.
+ * A new object per call, so one visitor's owner never leaks into another request. `subject` is the
+ * owner (`visitor:<sha256>`), or null before the visitor has a cookie: then it is "demo:guest", which
+ * owns nothing and is never stored (the handler that starts an item creates the token first).
+ */
+export function workspaceViewer(subject: string | null): Viewer {
+  return { ...VIEWERS.guest, subject: subject ?? VIEWERS.guest.subject, label: "Guest · your workspace", can: { ...NONE, workspace: true } };
+}
 
 /** Unknown or missing role → read-only guest. Acting always requires an explicit role. */
 export function viewerFromRole(value: string | undefined): Viewer {

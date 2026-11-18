@@ -5,7 +5,7 @@ import { acknowledgeException, overrideLeadBranch } from "@/lib/actions";
 import { isRecordLevelError } from "@/lib/ingest/ingest";
 import { quarantineGroupIds, replay } from "@/lib/ingest/replay";
 import { branchRows, totals } from "@/lib/metrics/scorecard";
-import { VIEWERS, viewerFromRole } from "@/lib/viewer";
+import { VIEWERS, viewerFromRole, workspaceViewer } from "@/lib/viewer";
 import { T0, acquisition, call, crm, freshDb, ingest, one, runReconcile, testPool } from "../helpers";
 
 /**
@@ -107,8 +107,15 @@ describe("review regressions", () => {
     // added to the Permissions type, is false for a guest.
     expect(v.can).toEqual({
       replay: false, decide: false, closeConflicts: false,
-      investigate: false, propose: false, dryRun: false, approve: false, sync: false, reviewIdentity: false,
+      investigate: false, propose: false, dryRun: false, approve: false, sync: false, reviewIdentity: false, workspace: false,
     });
+    // The workspace guest (PUBLIC_WORKSPACE=1) gains its own workspace and nothing else, in a new
+    // object each time, so one visitor's owner never reaches another request.
+    const visitor = workspaceViewer("visitor:" + "a".repeat(64));
+    expect(visitor.can).toEqual({ ...v.can, workspace: true });
+    expect(workspaceViewer(null).subject).toBe("demo:guest");
+    expect(workspaceViewer(null)).not.toBe(workspaceViewer(null));
+    expect(VIEWERS.guest.can.workspace).toBe(false);
     expect(viewerFromRole("toString").role).toBe("guest"); // prototype keys are not roles
     expect(viewerFromRole("engineer")).toBe(VIEWERS.engineer);
   });

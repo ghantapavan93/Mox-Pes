@@ -6,6 +6,9 @@ import { runDryRun } from "@/lib/onboarding/service";
 import { parseRecordId } from "@/lib/record-id";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 
+/** A dry run of a 10,000-row workspace file compiles and compares every row in one request. */
+export const maxDuration = 60;
+
 const body = z.object({ mappingId: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) });
 
 /**

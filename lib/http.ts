@@ -43,10 +43,12 @@ export class PayloadTooLargeError extends Error {
  * Reads a request body up to `maxBytes`, refusing (413) as soon as the declared length or the
  * bytes actually received exceed it. Route handlers have no body limit of their own: without
  * this, one oversized push holds memory and, downstream, an ingest transaction (ADV-42).
+ * `tooLarge` words the refusal: it gets the declared length when the client sent one, else null.
  */
-export async function readBodyBytes(request: Request, maxBytes: number): Promise<Buffer> {
+export async function readBodyBytes(request: Request, maxBytes: number, tooLarge?: (declaredBytes: number | null) => string): Promise<Buffer> {
   const declared = Number(request.headers.get("content-length") ?? "");
-  if (Number.isFinite(declared) && declared > maxBytes) throw new PayloadTooLargeError(`Body over ${formatBytes(maxBytes)}`);
+  const refuse = (known: number | null) => new PayloadTooLargeError(tooLarge ? tooLarge(known) : `Body over ${formatBytes(maxBytes)}`);
+  if (request.headers.has("content-length") && Number.isFinite(declared) && declared > maxBytes) throw refuse(declared);
   if (!request.body) return Buffer.alloc(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -57,7 +59,7 @@ export async function readBodyBytes(request: Request, maxBytes: number): Promise
     size += value.byteLength;
     if (size > maxBytes) {
       await reader.cancel().catch(() => {});
-      throw new PayloadTooLargeError(`Body over ${formatBytes(maxBytes)}`);
+      throw refuse(null);
     }
     chunks.push(value);
   }

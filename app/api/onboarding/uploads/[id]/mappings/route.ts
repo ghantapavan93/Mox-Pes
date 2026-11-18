@@ -6,6 +6,9 @@ import { proposeMapping } from "@/lib/onboarding/service";
 import { parseRecordId } from "@/lib/record-id";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 
+/** Checking a mapping reads every staged row of the file, up to 50,000 of them. */
+export const maxDuration = 60;
+
 const body = z.object({ spec: z.unknown() });
 
 /**

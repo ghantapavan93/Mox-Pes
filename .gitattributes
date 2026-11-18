@@ -1,2 +1,5 @@
 # Fixture files whose exact bytes are part of a recorded expectation (sha256): never normalize line endings.
 tests/fixtures/byof/*.csv -text
+# The built-in sample: its bytes, and so the hash the workspace quota exemption compares, must be the
+# same on Windows and on Vercel (lib/workspace.ts, WORKSPACE.sampleSha256).
+public/samples/demo-calls.csv -text

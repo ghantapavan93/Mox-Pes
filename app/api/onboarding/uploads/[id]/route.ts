@@ -17,7 +17,10 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   }
 }
 
-/** DELETE /api/onboarding/uploads/:id — deletes the staged rows now (the summary stays for audit). */
+/**
+ * DELETE /api/onboarding/uploads/:id — a company upload: deletes the staged rows now (the summary
+ * stays for audit). A workspace upload, for its owner: deletes everything ("Delete it now").
+ */
 export async function DELETE(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   await connection();
   try {

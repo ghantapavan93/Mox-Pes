@@ -5,12 +5,14 @@ import { FindingsView } from "@/components/investigator/FindingsView";
 import { ProposedActions } from "@/components/investigator/ProposedActions";
 import { RefreshWhileRunning } from "@/components/investigator/RefreshWhileRunning";
 import { ModeBadge, TraceTable } from "@/components/investigator/TraceTable";
+import { DeleteInvestigation } from "@/components/investigator/DeleteInvestigation";
 import { Badge, Card, KV, Skeleton } from "@/components/ui";
 import { MODE_LABEL } from "@/lib/ai/contract";
 import { getInvestigation, proposalStates, type InvestigationDetail } from "@/lib/ai/queries";
 import { count, dateTime } from "@/lib/format";
 import { getPool, getViewer } from "@/lib/server";
 import type { Viewer } from "@/lib/viewer";
+import { availabilitySentence, deleteExpiredWorkspace } from "@/lib/workspace";
 import { parseRecordId } from "@/lib/record-id";
 
 type Props = { params: Promise<{ id: string }> };
@@ -33,7 +35,9 @@ async function Investigation({ params }: Props) {
   const investigationId = parseRecordId(id);
   if (investigationId === null) notFound();
   const viewer = await getViewer();
-  // Out of scope is indistinguishable from missing, as on every other page.
+  await deleteExpiredWorkspace(getPool());
+  // Out of scope is indistinguishable from missing, as on every other page (an expired or another
+  // visitor's workspace investigation included).
   const inv = await getInvestigation(getPool(), viewer, investigationId);
   if (!inv) notFound();
   const r = inv.result;
@@ -57,6 +61,19 @@ async function Investigation({ params }: Props) {
           {r?.approvalRequired && <Badge tone="warn">approval required</Badge>}
           {r && r.warnings.length > 0 && <Badge tone="warn">{r.warnings.length} injection warning(s)</Badge>}
         </div>
+        {r?.fallback && (
+          <p className="mt-2 text-sm text-muted" data-testid="investigation-fallback">
+            {r.modeLabel}
+          </p>
+        )}
+        {inv.workspaceStartedAt && (
+          <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="investigation-workspace">
+            <span>
+              Your question on the public demo. {availabilitySentence(inv.workspaceStartedAt)}
+            </span>
+            <DeleteInvestigation investigationId={inv.id} />
+          </p>
+        )}
       </div>
 
       <RefreshWhileRunning running={inv.status === "running"} />

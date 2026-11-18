@@ -1,6 +1,7 @@
 import { ActionError } from "@/lib/actions";
 import type { Queryable } from "@/lib/db";
 import { ForbiddenError, canSeeBranch, type Viewer } from "@/lib/viewer";
+import { WORKSPACE, deleteWorkspaceInvestigation } from "@/lib/workspace";
 import type { InvestigationResult } from "./contract";
 import { parseEvidenceId } from "./evidence";
 import type { InvestigationStep } from "./steps";
@@ -14,7 +15,10 @@ import { TOOLS, type ToolContext } from "./tools";
  *     viewers see all) — so a result can never show a partner another branch's records;
  *   * evidence is resolved only for ids that a step of THAT investigation returned, and is
  *     re-read through the same scoped tool, so the drawer can never show more than the tools
- *     would to this viewer now.
+ *     would to this viewer now;
+ *   * a workspace guest's own investigations live in workspace_investigations: only their owner
+ *     reads them, for 24 hours (release design §5.2). Ids come from one sequence, so an id names
+ *     one investigation whichever table holds it. Staff never read the workspace tables.
  */
 
 export interface InvestigationSummary {
@@ -32,6 +36,8 @@ export interface InvestigationSummary {
   latencyMs: number | null;
   costMicros: number;
   createdAt: string;
+  /** A workspace guest's own investigation: when it started, on the wall clock (its 24 hours run from here). */
+  workspaceStartedAt: string | null;
 }
 
 export interface InvestigationDetail extends Omit<InvestigationSummary, "confidence" | "observations" | "proposals" | "claimsDropped"> {
@@ -75,19 +81,33 @@ export function canSeeInvestigation(viewer: Viewer, row: { scope_branch_ids: str
   return row.scope_branch_ids !== null && row.scope_branch_ids.every((b) => viewer.branchIds!.includes(b));
 }
 
-export async function listInvestigations(db: Queryable, viewer: Viewer, limit = 25): Promise<InvestigationSummary[]> {
-  const { rows } = await db.query(
-    `select id, question, branch_id, scope_branch_ids, actor, mode, intent, status, latency_ms, cost_micros, created_at,
+const SUMMARY_COLUMNS = `id, question, branch_id, scope_branch_ids, actor, mode, intent, status, latency_ms, cost_micros, created_at,
             result -> 'confidence' ->> 'level' as confidence,
             coalesce(jsonb_array_length(result -> 'observations'), 0) as observations,
             coalesce(jsonb_array_length(result -> 'proposals'), 0) as proposals,
-            coalesce((grounding ->> 'claimsDropped')::int, 0) as claims_dropped
+            coalesce((grounding ->> 'claimsDropped')::int, 0) as claims_dropped`;
+
+/** The viewer's own live workspace investigations first (a workspace guest), then the company's in scope. */
+export async function listInvestigations(db: Queryable, viewer: Viewer, limit = 25): Promise<InvestigationSummary[]> {
+  const own = viewer.can.workspace
+    ? (
+        await db.query(
+          `select ${SUMMARY_COLUMNS}, workspace_started_at from workspace_investigations
+           where workspace_owner = $1 and workspace_started_at > now() - make_interval(hours => $2)
+           order by id desc limit $3`,
+          [viewer.subject, WORKSPACE.retentionHours, limit],
+        )
+      ).rows
+    : [];
+  const { rows: company } = await db.query(
+    `select ${SUMMARY_COLUMNS}, null::timestamptz as workspace_started_at
      from investigations
      where $1::text[] is null
         or (scope_branch_ids is not null and scope_branch_ids <@ $1::text[] and (branch_id is null or branch_id = any($1::text[])))
      order by created_at desc, id desc limit $2`,
     [viewer.branchIds, limit],
   );
+  const rows = [...own, ...company].slice(0, limit);
   return rows.map((r) => ({
     id: Number(r.id),
     question: r.question,
@@ -103,6 +123,7 @@ export async function listInvestigations(db: Queryable, viewer: Viewer, limit = 
     latencyMs: r.latency_ms === null ? null : Number(r.latency_ms),
     costMicros: Number(r.cost_micros),
     createdAt: r.created_at.toISOString(),
+    workspaceStartedAt: r.workspace_started_at ? (r.workspace_started_at as Date).toISOString() : null,
   }));
 }
 
@@ -121,12 +142,26 @@ const toStep = (r: Record<string, unknown>): InvestigationStep => ({
   at: (r.at as Date).toISOString(),
 });
 
-/** Null when missing or outside the viewer's scope (indistinguishable, as elsewhere). */
+/**
+ * Null when missing or outside the viewer's scope (indistinguishable, as elsewhere). A workspace
+ * guest also reads its own live workspace investigation by id; anyone else's, or an expired one,
+ * is null like a missing one.
+ */
 export async function getInvestigation(db: Queryable, viewer: Viewer, id: number, opts: { afterSeq?: number } = {}): Promise<InvestigationDetail | null> {
   const { rows } = await db.query<InvestigationRow>("select * from investigations where id = $1", [id]);
-  const r = rows[0];
+  let r: (InvestigationRow & { workspace_started_at?: Date | null }) | undefined = rows[0];
+  let stepsTable = "investigation_steps";
+  if (!r && viewer.can.workspace) {
+    r = (
+      await db.query<InvestigationRow & { workspace_started_at: Date }>(
+        "select * from workspace_investigations where id = $1 and workspace_owner = $2 and workspace_started_at > now() - make_interval(hours => $3)",
+        [id, viewer.subject, WORKSPACE.retentionHours],
+      )
+    ).rows[0];
+    stepsTable = "workspace_investigation_steps";
+  }
   if (!r || !canSeeInvestigation(viewer, r)) return null;
-  const steps = await db.query("select * from investigation_steps where investigation_id = $1 and seq > $2 order by seq", [id, opts.afterSeq ?? 0]);
+  const steps = await db.query(`select * from ${stepsTable} where investigation_id = $1 and seq > $2 order by seq`, [id, opts.afterSeq ?? 0]);
   return {
     id: Number(r.id),
     question: r.question,
@@ -145,8 +180,17 @@ export async function getInvestigation(db: Queryable, viewer: Viewer, id: number
     latencyMs: r.latency_ms === null ? null : Number(r.latency_ms),
     createdAt: r.created_at.toISOString(),
     finishedAt: iso(r.finished_at),
+    workspaceStartedAt: iso(r.workspace_started_at ?? null),
     steps: steps.rows.map(toStep),
   };
+}
+
+/** "Delete it now" for a workspace guest's own investigation: it and its steps go. Anyone else's: 404. */
+export async function deleteOwnInvestigation(db: Queryable, viewer: Viewer, id: number): Promise<void> {
+  if (!viewer.can.workspace) throw new ForbiddenError(`${viewer.label} cannot delete investigations`);
+  const own = await db.query("select 1 from workspace_investigations where id = $1 and workspace_owner = $2", [id, viewer.subject]);
+  if (own.rowCount === 0) throw new ActionError("This workspace item is not available. Items last 24 hours, and the oldest may be removed when the demo is full. Ask the question again.", 404);
+  await deleteWorkspaceInvestigation(db, id);
 }
 
 // ── proposals as they stand now ─────────────────────────────────────────────

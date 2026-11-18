@@ -10,19 +10,23 @@ import { TOOLS, TOOL_NAMES, type ToolContext } from "./tools";
 /**
  * The model investigator: an Anthropic Messages API tool loop over the same registry tools.
  *
- * Runs only when a client is supplied — in the product, when ANTHROPIC_API_KEY is set
- * (anthropicModelClient). The model chooses tools and arguments; the backend validates every
+ * Runs only when a client is supplied: in the product, when modelClientFromEnv() configures one
+ * (release design §5.9). The model chooses tools and arguments; the backend validates every
  * argument with the tool's zod schema, executes it with the viewer's scope and returns the
  * output inside <tool_output> delimiters as data. The model finishes by calling
  * submit_findings with the draft contract, which is validated here and then grounded by the
  * analyst exactly like the deterministic draft. Bounded by a tool-call budget, a turn budget
  * and a wall-clock deadline.
  *
- * Request shape (claude-api skill, TypeScript SDK 1.x): model claude-opus-5-5, adaptive
- * thinking, explicit effort, non-streaming beta create (the beta surface carries the
- * server-side refusal fallback, `fallbacks: "default"`), tool_choice auto (forced tool choice
- * is rejected on this model, so the prompt asks for submit_findings), assistant content passed
- * back unchanged so thinking blocks stay valid.
+ * Request shape, per provider (a ModelProfile builds it):
+ *   - Anthropic (claude-api skill, TypeScript SDK 1.x): model claude-opus-5-5, adaptive thinking,
+ *     explicit effort, non-streaming beta create (the beta surface carries the server-side refusal
+ *     fallback, `fallbacks: "default"`), tool_choice auto (forced tool choice is rejected on this
+ *     model, so the prompt asks for submit_findings), assistant content passed back unchanged so
+ *     thinking blocks stay valid.
+ *   - Ollama (a local model on this machine): the same SDK pointed at Ollama's Anthropic-format
+ *     endpoint (/v1/messages), the plain Messages request with no thinking, effort, cache control
+ *     or betas, and tighter time budgets. Never priced.
  */
 
 export const MODEL_ID = "claude-opus-5-5";
@@ -45,19 +49,148 @@ export interface ModelClient {
   create(params: CreateParams, options?: { signal?: AbortSignal; timeout?: number }): Promise<Message>;
 }
 
-/**
- * The production client, or null when no key is configured. A missing key is a supported
- * configuration: the deterministic investigator runs instead and is labelled as such. Setting
- * AI_INVESTIGATOR_MODE=deterministic forces that path even with a key.
- */
-export function anthropicModelClient(): ModelClient | null {
-  if (!process.env.ANTHROPIC_API_KEY || process.env.AI_INVESTIGATOR_MODE === "deterministic") return null;
-  const client = new Anthropic({ maxRetries: 2 });
-  return { create: (params, options) => client.beta.messages.create(params, options) };
+/** What a model run sends, and how long it may take, for one provider (release design §5.9). */
+export interface ModelProfile {
+  provider: "anthropic" | "ollama";
+  /** Stored on the investigation and shown: "claude-opus-5-5", or "ollama:qwen3:8b". */
+  model: string;
+  /** The model's own name, for sentences: "claude-opus-5-5", "qwen3:8b". */
+  name: string;
+  /** One request's limit. */
+  perRequestMs: number;
+  /** The whole investigation's limit. */
+  totalMs: number;
+  /** False for a local model: no cost is estimated. */
+  priced: boolean;
+  request(base: { system: string; tools: Anthropic.Beta.Messages.BetaTool[]; messages: MessageParam[] }): CreateParams;
 }
 
-export function modelConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY) && process.env.AI_INVESTIGATOR_MODE !== "deterministic";
+export const ANTHROPIC_PROFILE: ModelProfile = {
+  provider: "anthropic",
+  model: MODEL_ID,
+  name: MODEL_ID,
+  perRequestMs: 120_000,
+  totalMs: 120_000,
+  priced: true,
+  request: ({ system, tools, messages }) => ({
+    model: MODEL_ID,
+    max_tokens: 16000,
+    thinking: { type: "adaptive" },
+    output_config: { effort: "medium" },
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+    tools,
+    tool_choice: { type: "auto" },
+    messages,
+    betas: [FALLBACK_BETA],
+    fallbacks: "default",
+  }),
+};
+
+export const OLLAMA_DEFAULTS = { baseURL: "http://localhost:11434", model: "qwen3:8b" } as const;
+
+/** A local model through Ollama's Anthropic-format endpoint: the plain request, no Anthropic-only fields. */
+export function ollamaProfile(model: string): ModelProfile {
+  return {
+    provider: "ollama",
+    model: `ollama:${model}`,
+    name: model,
+    perRequestMs: 45_000,
+    totalMs: 90_000,
+    priced: false,
+    request: ({ system, tools, messages }) => ({ model, max_tokens: 8000, system, tools, tool_choice: { type: "auto" }, messages }),
+  };
+}
+
+/** A configuration the investigator refuses outright (not a model failure: a setting to fix). */
+export class ModelConfigError extends Error {}
+
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+/**
+ * The configured model path, or null for the deterministic investigator (release design §5.9).
+ * Which setting wins: AI_INVESTIGATOR_MODE=deterministic (no model at all), then
+ * AI_INVESTIGATOR_PROVIDER=ollama, then ANTHROPIC_API_KEY. No key is a supported configuration.
+ *
+ * The Ollama client is the Anthropic SDK with an explicit placeholder key, so no credential from
+ * the environment (ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, a profile) is ever sent to it, and an
+ * explicit base URL that must be this machine: a model elsewhere could be sent the records.
+ */
+export function modelClientFromEnv(env: Record<string, string | undefined> = process.env): { client: ModelClient; profile: ModelProfile } | null {
+  const profile = configuredProfile(env);
+  if (!profile) return null;
+  if (profile.provider === "ollama") {
+    const sdk = new Anthropic({ apiKey: "ollama", baseURL: ollamaBaseURL(env), maxRetries: 0 });
+    return {
+      profile,
+      // The plain Messages endpoint: the profile sends no betas, and Ollama serves /v1/messages.
+      client: { create: (params, options) => sdk.messages.create(params as Anthropic.Messages.MessageCreateParamsNonStreaming, options) as unknown as Promise<Message> },
+    };
+  }
+  const sdk = new Anthropic({ maxRetries: 2 });
+  return { profile, client: { create: (params, options) => sdk.beta.messages.create(params, options) } };
+}
+
+/** The profile modelClientFromEnv would use, without building a client (for labels). */
+export function configuredProfile(env: Record<string, string | undefined> = process.env): ModelProfile | null {
+  if (env.AI_INVESTIGATOR_MODE === "deterministic") return null;
+  if (env.AI_INVESTIGATOR_PROVIDER === "ollama") {
+    ollamaBaseURL(env);
+    return ollamaProfile(env.OLLAMA_MODEL || OLLAMA_DEFAULTS.model);
+  }
+  return env.ANTHROPIC_API_KEY ? ANTHROPIC_PROFILE : null;
+}
+
+function ollamaBaseURL(env: Record<string, string | undefined>): string {
+  const raw = env.OLLAMA_BASE_URL || OLLAMA_DEFAULTS.baseURL;
+  let host: string;
+  try {
+    host = new URL(raw).hostname;
+  } catch {
+    throw new ModelConfigError(`OLLAMA_BASE_URL is not a URL: ${raw}`);
+  }
+  if (!LOOPBACK.has(host)) throw new ModelConfigError(`OLLAMA_BASE_URL must be this machine (localhost, 127.0.0.1 or [::1]); ${host} is refused`);
+  return raw;
+}
+
+/** Why a model run ended without findings, in classes the fallback names (release design §5.9). */
+export type FallbackClass =
+  | "no_credentials"
+  | "unreachable"
+  | "timeout"
+  | "rate_limited"
+  | "auth"
+  | "bad_request"
+  | "declined"
+  | "invalid_output"
+  | "no_verified_statement"
+  | "other";
+
+export interface ModelFailure {
+  class: FallbackClass;
+  message: string;
+}
+
+/**
+ * A model request's error as a fallback class. Typed SDK errors, most specific first; never
+ * throws. Anything unrecognised is "other", which the caller logs with its stack and the fallback
+ * tests and the evaluation fail on, so a code defect cannot pass as a quiet deterministic answer.
+ */
+export function classifyModelError(error: unknown): ModelFailure {
+  if (error instanceof Anthropic.RateLimitError) return { class: "rate_limited", message: "rate limited (429)" };
+  if (error instanceof Anthropic.AuthenticationError) return { class: "auth", message: "authentication failed (401)" };
+  if (error instanceof Anthropic.PermissionDeniedError) return { class: "auth", message: "permission denied (403)" };
+  if (error instanceof Anthropic.BadRequestError) return { class: "bad_request", message: `rejected the request (400): ${error.message}` };
+  if (error instanceof Anthropic.NotFoundError) return { class: "bad_request", message: `was not found (404): ${error.message}` };
+  if (error instanceof Anthropic.APIConnectionTimeoutError) return { class: "timeout", message: "timed out" };
+  if (error instanceof Anthropic.APIUserAbortError) return { class: "timeout", message: "was stopped at the deadline" };
+  if (error instanceof Anthropic.APIConnectionError) return { class: "unreachable", message: "could not be reached" };
+  if (error instanceof Anthropic.APIError) {
+    return (error.status ?? 0) >= 500 ? { class: "unreachable", message: `failed on its side (${error.status})` } : { class: "other", message: `returned an error (${error.status ?? "no status"}): ${error.message}` };
+  }
+  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) return { class: "timeout", message: "was stopped at the deadline" };
+  // The SDK's own words when it finds no credential to send (it has no typed error for it).
+  if (error instanceof Error && error.message.startsWith("Could not resolve authentication method")) return { class: "no_credentials", message: "had no credentials to use" };
+  return { class: "other", message: `failed unexpectedly (${error instanceof Error ? `${error.name}: ${error.message}` : String(error)})` };
 }
 
 export interface TokenUsage {
@@ -74,6 +207,8 @@ export function costMicros(u: TokenUsage): number {
 
 export interface ModelRunInput {
   client: ModelClient;
+  /** What to send and the time budgets (ANTHROPIC_PROFILE, or a local model's). */
+  profile: ModelProfile;
   question: string;
   requestedBranch: string | null;
   viewer: Viewer;
@@ -93,6 +228,8 @@ export interface ModelRunOutput {
   toolCalls: number;
   /** Why the loop ended without a draft (refusal, budget, timeout, invalid submissions). */
   error: string | null;
+  /** The same, classified: the investigation's fallback says it. */
+  failure: ModelFailure | null;
 }
 
 export const SUBMIT_TOOL = "submit_findings";
@@ -139,7 +276,9 @@ function textOf(message: Message): string {
     .slice(0, 1000);
 }
 
-function addUsage(total: TokenUsage, u: Anthropic.Beta.Messages.BetaUsage): void {
+function addUsage(total: TokenUsage, u: Anthropic.Beta.Messages.BetaUsage | undefined): void {
+  // A response without usage (a local server may omit it) counts zero tokens; its answer stands.
+  if (!u) return;
   total.input += u.input_tokens ?? 0;
   total.output += u.output_tokens ?? 0;
   total.cacheRead += u.cache_read_input_tokens ?? 0;
@@ -149,7 +288,9 @@ function addUsage(total: TokenUsage, u: Anthropic.Beta.Messages.BetaUsage): void
 export async function runModelInvestigator(input: ModelRunInput): Promise<ModelRunOutput> {
   const maxToolCalls = input.maxToolCalls ?? 12;
   const maxTurns = input.maxTurns ?? maxToolCalls + 3;
-  const deadline = Date.now() + (input.timeoutMs ?? 120_000);
+  const totalMs = input.timeoutMs ?? input.profile.totalMs;
+  const deadline = Date.now() + totalMs;
+  const failed = (turns: number, failure: ModelFailure): ModelRunOutput => ({ draft: null, usage, turns, toolCalls, error: failure.message, failure });
   const usage: TokenUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
   const tools = modelTools();
   const scope = input.viewer.branchIds ? input.viewer.branchIds.join(", ") : "all branches";
@@ -165,32 +306,22 @@ export async function runModelInvestigator(input: ModelRunInput): Promise<ModelR
 
   for (let turn = 1; turn <= maxTurns; turn++) {
     const remaining = deadline - Date.now();
-    if (remaining <= 0) return { draft: null, usage, turns: turn - 1, toolCalls, error: "Timed out before the model submitted findings" };
+    if (remaining <= 0) return failed(turn - 1, { class: "timeout", message: `timed out after ${Math.round(totalMs / 1000)} s before submitting findings` });
     const started = performance.now();
+    const limit = Math.min(remaining, input.profile.perRequestMs);
     let response: Message;
     try {
-      response = await input.client.create(
-        {
-          model: MODEL_ID,
-          max_tokens: 16000,
-          thinking: { type: "adaptive" },
-          output_config: { effort: "medium" },
-          system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-          tools,
-          tool_choice: { type: "auto" },
-          messages,
-          betas: [FALLBACK_BETA],
-          fallbacks: "default",
-        },
-        { signal: AbortSignal.timeout(remaining), timeout: remaining },
-      );
+      response = await input.client.create(input.profile.request({ system: SYSTEM_PROMPT, tools, messages }), { signal: AbortSignal.timeout(limit), timeout: limit });
     } catch (error) {
-      const message = describeApiError(error);
+      const failure = classifyModelError(error);
+      // An unclassified failure is a defect until shown otherwise: its stack goes to the log.
+      if (failure.class === "other") console.error(JSON.stringify({ level: "error", msg: "model request failed unexpectedly", error: failure.message, stack: (error as Error)?.stack }));
+      const message = failure.class === "timeout" && limit < remaining ? `timed out after ${Math.round(limit / 1000)} s` : failure.message;
       await input.recorder.record({
         stage: "investigator", kind: "model_turn", tool: null, input: { turn }, outputSummary: `Model request failed: ${message}`,
         output: null, evidenceIds: [], status: "error", error: message, ms: performance.now() - started,
       });
-      return { draft: null, usage, turns: turn, toolCalls, error: message };
+      return failed(turn, { class: failure.class, message });
     }
     addUsage(usage, response.usage);
     const uses = response.content.filter((b): b is ToolUse => b.type === "tool_use");
@@ -202,17 +333,17 @@ export async function runModelInvestigator(input: ModelRunInput): Promise<ModelR
     });
 
     if (response.stop_reason === "refusal") {
-      return { draft: null, usage, turns: turn, toolCalls, error: `The model declined (${response.stop_details?.category ?? "no category"})` };
+      return failed(turn, { class: "declined", message: `declined the question (${response.stop_details?.category ?? "no category"})` });
     }
     if (response.stop_reason === "max_tokens") {
       // A tool input cut off at max_tokens may parse as a valid partial object: never run it.
-      return { draft: null, usage, turns: turn, toolCalls, error: "The model hit max_tokens before finishing" };
+      return failed(turn, { class: "invalid_output", message: "hit max_tokens before finishing" });
     }
     messages.push({ role: "assistant", content: response.content });
     if (response.stop_reason === "pause_turn") continue;
 
     if (uses.length === 0) {
-      if (nudged) return { draft: null, usage, turns: turn, toolCalls, error: "The model ended without submitting findings" };
+      if (nudged) return failed(turn, { class: "invalid_output", message: "ended without submitting findings" });
       nudged = true;
       messages.push({ role: "user", content: `Call ${SUBMIT_TOOL} now with your findings.` });
       continue;
@@ -249,23 +380,10 @@ export async function runModelInvestigator(input: ModelRunInput): Promise<ModelR
           : { type: "tool_result", tool_use_id: use.id, is_error: true, content: `${exec.status === "forbidden" ? "REFUSED" : "ERROR"}: ${exec.error}` },
       );
     }
-    if (submitted) return { draft: submitted, usage, turns: turn, toolCalls, error: null };
-    if (invalidSubmissions >= 3) return { draft: null, usage, turns: turn, toolCalls, error: "The model submitted invalid findings three times" };
+    if (submitted) return { draft: submitted, usage, turns: turn, toolCalls, error: null, failure: null };
+    if (invalidSubmissions >= 3) return failed(turn, { class: "invalid_output", message: "submitted invalid findings three times" });
     // Every tool result of a turn goes back in ONE user message.
     messages.push({ role: "user", content: results });
   }
-  return { draft: null, usage, turns: maxTurns, toolCalls, error: `No findings within ${maxTurns} model turns` };
-}
-
-/** Typed SDK errors, most specific first; never string-matched. */
-function describeApiError(error: unknown): string {
-  if (error instanceof Anthropic.RateLimitError) return "rate limited (429)";
-  if (error instanceof Anthropic.AuthenticationError) return "authentication failed (401): check ANTHROPIC_API_KEY";
-  if (error instanceof Anthropic.BadRequestError) return `bad request (400): ${error.message}`;
-  if (error instanceof Anthropic.APIConnectionTimeoutError) return "request timed out";
-  if (error instanceof Anthropic.APIUserAbortError) return "request aborted at the deadline";
-  if (error instanceof Anthropic.APIConnectionError) return "could not reach the API";
-  if (error instanceof Anthropic.APIError) return `API error ${error.status ?? ""}: ${error.message}`;
-  if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) return "request aborted at the deadline";
-  throw error;
+  return failed(maxTurns, { class: "invalid_output", message: `found nothing to submit within ${maxTurns} turns` });
 }

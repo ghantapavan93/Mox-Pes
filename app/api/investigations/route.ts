@@ -5,8 +5,12 @@ import { runInvestigation } from "@/lib/ai/investigate";
 import { listInvestigations } from "@/lib/ai/queries";
 import type { InvestigationStreamEvent } from "@/lib/ai/stream-events";
 import { errorResponse } from "@/lib/http";
-import { getPool, getViewer } from "@/lib/server";
+import { getPool, getViewer, viewerForWorkspaceStart, type VisitorCookie } from "@/lib/server";
 import { ForbiddenError, requirePermission, resolveScope } from "@/lib/viewer";
+import { deleteExpiredWorkspace } from "@/lib/workspace";
+
+/** A model run gets 120 s; a visitor's deterministic run takes seconds. Both fit. */
+export const maxDuration = 60;
 
 const body = z.strictObject({
   question: z.string().trim().min(3).max(2000),
@@ -24,6 +28,7 @@ export async function GET(request: Request) {
   try {
     const input = query.parse(Object.fromEntries(new URL(request.url).searchParams));
     const viewer = await getViewer();
+    await deleteExpiredWorkspace(getPool());
     return NextResponse.json({ investigations: await listInvestigations(getPool(), viewer, input.limit) });
   } catch (error) {
     return errorResponse(error);
@@ -31,8 +36,10 @@ export async function GET(request: Request) {
 }
 
 /**
- * POST /api/investigations — run an investigation as the current viewer (needs `investigate`;
- * a branch outside the viewer's scope is a 403). With `stream: true` the response is NDJSON:
+ * POST /api/investigations — run an investigation as the current viewer (needs `investigate`, or
+ * a workspace guest's workspace: its own deterministic investigation, release design §5.2; a
+ * branch outside the viewer's scope is a 403). A workspace guest's response sets or refreshes its
+ * `rs_visitor` cookie, so the investigation has a real owner. With `stream: true` the response is NDJSON:
  * `started` (with the id), one `step` per tool call / model turn / analyst / planner step as it
  * is recorded, then `done` or `error`. Every step is also persisted, so a client that loses the
  * stream can read the investigation by id.
@@ -40,18 +47,25 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   // Outside try: during prerendering connection() rejects by design, and that must not be logged as a route error.
   await connection();
+  let cookie: VisitorCookie | null = null;
+  const respond = <R extends NextResponse>(response: R): R => {
+    if (cookie) response.cookies.set(cookie);
+    return response;
+  };
   try {
     const input = body.parse(await request.json());
-    const viewer = await getViewer();
+    const start = await viewerForWorkspaceStart(request);
+    cookie = start.setCookie;
+    const { viewer } = start;
     // Checked before streaming starts, so refusals are ordinary 403/400 responses.
-    requirePermission(viewer, "investigate", "run investigations");
+    if (!viewer.can.workspace) requirePermission(viewer, "investigate", "run investigations");
     if (input.branchId) resolveScope(viewer, input.branchId);
     const pool = getPool();
     const args = { question: input.question, branchId: input.branchId, viewer };
 
     if (!input.stream) {
       const out = await runInvestigation(pool, args);
-      return NextResponse.json({ id: out.id, status: out.status, mode: out.mode, latencyMs: out.latencyMs, result: out.result }, { status: 201 });
+      return respond(NextResponse.json({ id: out.id, status: out.status, mode: out.mode, latencyMs: out.latencyMs, result: out.result }, { status: 201 }));
     }
 
     const encoder = new TextEncoder();
@@ -88,11 +102,13 @@ export async function POST(request: Request) {
         }
       },
     });
-    return new Response(stream, {
-      status: 201,
-      headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" },
-    });
+    return respond(
+      new NextResponse(stream, {
+        status: 201,
+        headers: { "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no" },
+      }),
+    );
   } catch (error) {
-    return errorResponse(error);
+    return respond(errorResponse(error));
   }
 }

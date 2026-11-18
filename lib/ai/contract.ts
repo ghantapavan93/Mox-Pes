@@ -229,15 +229,49 @@ export const InvestigationResultSchema = z.strictObject({
   warnings: z.array(InjectionWarningSchema),
   /** Absent on investigations stored before the claim check existed. */
   claims: z.array(ClaimSchema).optional(),
+  /**
+   * Set when a model was tried and the deterministic path answered instead: why, in a class the
+   * page and the evaluation name (release design §5.9). Absent before 2026-11-18 and on every
+   * answer no model was tried for.
+   */
+  fallback: z
+    .strictObject({
+      class: z.enum(["no_credentials", "unreachable", "timeout", "rate_limited", "auth", "bad_request", "declined", "invalid_output", "no_verified_statement", "other"]),
+      message: z.string(),
+    })
+    .optional(),
 });
 export type InvestigationResult = z.infer<typeof InvestigationResultSchema>;
 
+/** Which path answered, in the page's words (release design §5.9). */
 export const MODE_LABEL = {
-  deterministic: "Deterministic investigator — no model configured",
-  model: "Model investigator (Anthropic Messages API)",
+  deterministic: "Answered by the deterministic evidence path (no model)",
+  model: "Answered by a model",
 } as const;
 
-/** The deterministic investigator answered because a configured model's run failed: not "no model". */
-export function fallbackModeLabel(reason: string): string {
-  return `Deterministic fallback — the model run failed (${reason.slice(0, 120)})`;
+/** The model that answered: "Answered by claude-opus-5-5", or a local one, "… on this machine (Ollama)". */
+export function modelModeLabel(profile: { provider: "anthropic" | "ollama"; name: string }): string {
+  return profile.provider === "ollama" ? `Answered by ${profile.name} on this machine (Ollama)` : `Answered by ${profile.name}`;
+}
+
+/**
+ * A model was tried and failed, so the deterministic path answered: who failed, how, and that the
+ * answer came from the evidence path. "The local model timed out after 45 s, so this answer came
+ * from the deterministic evidence path."
+ */
+export function fallbackModeLabel(provider: "anthropic" | "ollama", failure: { class: string; message: string }): string {
+  const who = provider === "ollama" ? "The local model" : "The model";
+  const what =
+    failure.class === "no_verified_statement"
+      ? "gave no statement the records verify"
+      : failure.class === "unreachable"
+        ? "could not be reached"
+        : failure.class === "rate_limited"
+          ? "was rate limited"
+          : failure.class === "auth" || failure.class === "no_credentials"
+            ? "could not be used with the configured credentials"
+            : failure.class === "declined"
+              ? "declined the question"
+              : failure.message;
+  return `${who} ${what}, so this answer came from the deterministic evidence path.`;
 }

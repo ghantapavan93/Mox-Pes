@@ -1,7 +1,7 @@
 import { createPool, DEFAULT_DATABASE_URL, getNow, withRollback } from "@/lib/db";
 import { EVAL_CASES, DATASET_VERSION, loadFixture, scopeRefusedScore, scoreCase, skippedScore, summarize, type CaseScore } from "@/lib/ai/eval";
 import { runInvestigation } from "@/lib/ai/investigate";
-import { anthropicModelClient } from "@/lib/ai/model";
+import { modelClientFromEnv } from "@/lib/ai/model";
 import { ForbiddenError, VIEWERS } from "@/lib/viewer";
 import { nestedPool } from "@/lib/workflow/nested";
 
@@ -14,8 +14,10 @@ import { nestedPool } from "@/lib/workflow/nested";
  * changes the data it evaluates. Only the aggregate is stored, in ai_eval_runs (skip with
  * --no-store).
  *
- * --mode=model needs ANTHROPIC_API_KEY; without it the script refuses rather than silently
- * evaluating the deterministic path under the model's name.
+ * --mode=model needs a configured model (modelClientFromEnv: AI_INVESTIGATOR_PROVIDER=ollama for
+ * the local model, else ANTHROPIC_API_KEY); without one the script refuses rather than silently
+ * evaluating the deterministic path under the model's name. A case whose model run fell back with
+ * the class "other" (an unrecognised failure, possibly a code defect) fails the run.
  */
 
 function arg(name: string): string | undefined {
@@ -28,11 +30,13 @@ const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 async function main() {
   const mode = (arg("mode") ?? "deterministic") as "deterministic" | "model";
   if (mode !== "deterministic" && mode !== "model") throw new Error(`--mode must be deterministic or model, not ${mode}`);
-  const client = mode === "model" ? anthropicModelClient() : null;
-  if (mode === "model" && !client) {
-    console.error("Model mode was NOT evaluated: ANTHROPIC_API_KEY is not set (or AI_INVESTIGATOR_MODE=deterministic).");
+  const configured = mode === "model" ? modelClientFromEnv() : null;
+  if (mode === "model" && !configured) {
+    console.error("Model mode was NOT evaluated: no model is configured (set AI_INVESTIGATOR_PROVIDER=ollama or ANTHROPIC_API_KEY, and not AI_INVESTIGATOR_MODE=deterministic).");
     process.exit(2);
   }
+  const client = configured?.client ?? null;
+  let unexplained = 0;
   const only = arg("case");
   const store = !process.argv.includes("--no-store");
   const pool = createPool(process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL);
@@ -50,7 +54,11 @@ async function main() {
       if (c.setup) await c.setup(tx, fixture);
       const db = nestedPool(tx);
       try {
-        const out = await runInvestigation(db, { question, branchId: c.branchId, viewer: VIEWERS[c.role], mode: client ? "auto" : "deterministic", client });
+        const out = await runInvestigation(db, { question, branchId: c.branchId, viewer: VIEWERS[c.role], mode: client ? "auto" : "deterministic", client, profile: configured?.profile });
+        if (out.result.fallback?.class === "other") {
+          unexplained++;
+          console.error(`UNEXPLAINED FALLBACK  ${c.id}: ${out.result.fallback.message}`);
+        }
         if (c.expectScopeRefusal) return { ...scoreCase(c, question, fixture, { steps: out.steps, result: out.result, latencyMs: out.latencyMs, costMicros: out.costMicros }), pass: false, failures: ["answered a question naming a branch outside the viewer's scope"] };
         return scoreCase(c, question, fixture, { steps: out.steps, result: out.result, latencyMs: out.latencyMs, costMicros: out.costMicros });
       } catch (error) {
@@ -93,7 +101,8 @@ async function main() {
     console.log(`Stored as ai_eval_runs #${rows[0].id}.`);
   }
   await pool.end();
-  if (summary.passed < summary.scored) process.exitCode = 1;
+  if (summary.passed < summary.scored || unexplained > 0) process.exitCode = 1;
+  if (unexplained > 0) console.error(`${unexplained} case(s) fell back for an unrecognised reason ("other"): a defect until shown otherwise.`);
 }
 
 main().catch((error) => {

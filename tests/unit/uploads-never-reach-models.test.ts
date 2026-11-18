@@ -33,4 +33,15 @@ describe("uploaded rows never reach a model", () => {
     const scanner = readFileSync(path.join(root, "lib/ai/injection.ts"), "utf8");
     expect([...scanner.matchAll(/^import\s.*$/gm)].map((m) => m[0])).toEqual(['import type { InjectionWarning } from "./contract";']);
   });
+
+  it("only the investigator's own modules and the workspace module name the workspace investigation tables", () => {
+    // Every older build lists `investigations` to any guest; a visitor's questions live in tables
+    // only these modules read, so nothing else can show them (release design §5.1).
+    const allowed = new Set(["lib/ai/steps.ts", "lib/ai/investigate.ts", "lib/ai/queries.ts", "lib/workspace.ts"]);
+    const naming = ["lib", "app", "components"]
+      .flatMap((dir) => sources(dir))
+      .filter((file) => /workspace_investigation/.test(readFileSync(file, "utf8")))
+      .map((file) => path.relative(root, file).split(path.sep).join("/"));
+    expect(naming.filter((f) => !allowed.has(f))).toEqual([]);
+  });
 });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ActionError } from "@/lib/actions";
 import type { Queryable } from "@/lib/db";
-import { ForbiddenError } from "@/lib/viewer";
+import { ForbiddenError, type Viewer } from "@/lib/viewer";
 import type { InjectionWarning } from "./contract";
 import { scanForInstructions } from "./injection";
 import { TOOLS, isToolName, type ToolContext } from "./tools";
@@ -31,6 +31,23 @@ export interface InvestigationStep {
   at: string;
 }
 
+/**
+ * Where an investigation is stored. A workspace guest's go to their own tables (migration 0037):
+ * every older build lists `investigations` to any guest, so separate tables keep a visitor's
+ * questions out of them (release design §5.1).
+ */
+export type InvestigationTables = {
+  investigations: "investigations" | "workspace_investigations";
+  steps: "investigation_steps" | "workspace_investigation_steps";
+};
+
+export const COMPANY_TABLES: InvestigationTables = { investigations: "investigations", steps: "investigation_steps" };
+export const WORKSPACE_TABLES: InvestigationTables = { investigations: "workspace_investigations", steps: "workspace_investigation_steps" };
+
+export function tablesFor(viewer: Viewer): InvestigationTables {
+  return viewer.can.workspace ? WORKSPACE_TABLES : COMPANY_TABLES;
+}
+
 /** Stored outputs are bounded: a tool that returns more than this keeps only its summary. */
 const MAX_STORED_OUTPUT_CHARS = 60_000;
 
@@ -46,13 +63,15 @@ export class StepRecorder {
     readonly investigationId: number,
     private readonly now: Date,
     private readonly listener?: (step: InvestigationStep) => void,
+    /** The steps table: the company's, or a workspace guest's (tablesFor). */
+    private readonly table: InvestigationTables["steps"] = "investigation_steps",
   ) {}
 
   async record(step: Omit<InvestigationStep, "seq" | "at">): Promise<InvestigationStep> {
     const full: InvestigationStep = { ...step, seq: ++this.seq, at: this.now.toISOString() };
     const output = boundedOutput(full.output);
     await this.db.query(
-      `insert into investigation_steps (investigation_id, seq, stage, kind, tool, input, output_summary, output, evidence_ids, status, error, ms, at)
+      `insert into ${this.table} (investigation_id, seq, stage, kind, tool, input, output_summary, output, evidence_ids, status, error, ms, at)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
         this.investigationId, full.seq, full.stage, full.kind, full.tool, full.input, full.outputSummary.slice(0, 2000),

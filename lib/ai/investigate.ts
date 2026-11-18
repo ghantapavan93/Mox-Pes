@@ -3,13 +3,14 @@ import { ActionError } from "@/lib/actions";
 import { getNow } from "@/lib/db";
 import { BRANCH_BY_ID, BRANDS, BRAND_BY_ID, brandWords, branchesOfBrands } from "@/lib/reference";
 import { ForbiddenError, requirePermission, resolveScope, type Viewer } from "@/lib/viewer";
+import { countStart, deleteExpiredWorkspace, isWorkspaceOwner } from "@/lib/workspace";
 import { buildClaims, evidenceFacts, groundDraft } from "./analyst";
-import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, type DraftFindings, type InvestigationResult } from "./contract";
+import { fallbackModeLabel, InvestigationResultSchema, MODE_LABEL, modelModeLabel, type DraftFindings, type InvestigationResult } from "./contract";
 import { ACTION_REFUSAL, brandNamed, detectIntent, runDeterministic, type PlanContext } from "./deterministic";
-import { MODEL_ID, anthropicModelClient, costMicros, runModelInvestigator, type ModelClient, type TokenUsage } from "./model";
+import { ANTHROPIC_PROFILE, costMicros, modelClientFromEnv, runModelInvestigator, type ModelClient, type ModelFailure, type ModelProfile, type TokenUsage } from "./model";
 import { planProposals } from "./planner";
 import { staleRevisions } from "./revisions";
-import { StepRecorder, executeTool, type InvestigationStep } from "./steps";
+import { StepRecorder, executeTool, tablesFor, type InvestigationStep } from "./steps";
 import type { ToolContext, ToolData, ToolName } from "./tools";
 
 /**
@@ -22,6 +23,12 @@ import type { ToolContext, ToolData, ToolName } from "./tools";
  * Every step is written to investigation_steps as it happens and passed to `onStep`, which is
  * how the NDJSON route streams the live trace. A failure marks the row failed (with the error)
  * and is rethrown; the steps recorded so far stay, so a failed run is still explainable.
+ *
+ * A model run that fails in any way (no answer, an error, or an answer whose every statement the
+ * evidence check drops) falls back to the deterministic investigator, and the result says why in
+ * a class (release design §5.9). A workspace guest on the hosted demo always gets the
+ * deterministic path, in its own tables, counted against the start quota, never audited and never
+ * proposing a fix (§5.2).
  */
 
 export interface RunInvestigationInput {
@@ -31,8 +38,10 @@ export interface RunInvestigationInput {
   viewer: Viewer;
   /** "deterministic" forces the no-model path; "auto" uses the model when a client is available. */
   mode?: "auto" | "deterministic";
-  /** Injected model client (tests, evaluation); undefined = the configured production client. */
+  /** Injected model client (tests, evaluation); undefined = the configured client (modelClientFromEnv). */
   client?: ModelClient | null;
+  /** The injected client's profile; the Anthropic profile when a client is injected without one. */
+  profile?: ModelProfile;
   /** Business clock; defaults to app_clock. */
   now?: Date;
   onStart?: (info: { id: number; mode: "deterministic" | "model" }) => void;
@@ -104,8 +113,19 @@ function assertQuestionInScope(viewer: Viewer, question: string): void {
   }
 }
 
+/** A role with `investigate`, or a workspace guest (its own deterministic investigations). */
+function investigatorAccess(viewer: Viewer): "staff" | "workspace" {
+  if (viewer.can.investigate) return "staff";
+  if (viewer.can.workspace) return "workspace";
+  requirePermission(viewer, "investigate", "run investigations");
+  return "staff";
+}
+
 export async function runInvestigation(pool: Pool, input: RunInvestigationInput): Promise<InvestigationOutcome> {
-  requirePermission(input.viewer, "investigate", "run investigations");
+  const workspace = investigatorAccess(input.viewer) === "workspace";
+  if (workspace && !isWorkspaceOwner(input.viewer.subject)) {
+    throw new Error("A workspace investigation needs a viewer that holds its own token (viewerForWorkspaceStart)");
+  }
   const question = input.question.trim().replace(/\s+/g, " ");
   if (question.length < 3) throw new ActionError("Ask a question of at least 3 characters", 400);
   if (question.length > QUESTION_MAX) throw new ActionError(`Questions are limited to ${QUESTION_MAX} characters`, 400);
@@ -114,60 +134,48 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
     resolveScope(input.viewer, input.branchId);
   }
   assertQuestionInScope(input.viewer, question);
+  if (workspace) {
+    // Expired workspace items go first; then the start is counted, refusals included (§5.2).
+    await deleteExpiredWorkspace(pool);
+    const capacity = await countStart(pool, "investigation");
+    if (capacity) throw new ActionError(capacity.message, capacity.status);
+  }
 
   const started = performance.now();
   const now = input.now ?? (await getNow(pool));
-  const client = input.mode === "deterministic" ? null : input.client !== undefined ? input.client : anthropicModelClient();
-  let mode: "deterministic" | "model" = client ? "model" : "deterministic";
-  let fallbackReason: string | null = null;
+  const tables = tablesFor(input.viewer);
+  // A workspace guest never runs a model; staff use the configured one, or the injected one.
+  const configured =
+    workspace || input.mode === "deterministic"
+      ? null
+      : input.client !== undefined
+        ? input.client
+          ? { client: input.client, profile: input.profile ?? ANTHROPIC_PROFILE }
+          : null
+        : modelClientFromEnv();
+  let mode: "deterministic" | "model" = configured ? "model" : "deterministic";
+  let failure: ModelFailure | null = null;
   const actor = input.viewer.role;
 
   const { rows } = await pool.query<{ id: string }>(
-    `insert into investigations (question, branch_id, scope_branch_ids, actor, mode, model, status, created_at)
-     values ($1, $2, $3, $4, $5, $6, 'running', $7) returning id`,
-    [question, input.branchId, input.viewer.branchIds, actor, mode, mode === "model" ? MODEL_ID : null, now],
+    workspace
+      ? `insert into workspace_investigations (question, branch_id, scope_branch_ids, actor, mode, model, status, created_at, workspace_owner)
+         values ($1, $2, $3, $4, $5, $6, 'running', $7, $8) returning id`
+      : `insert into investigations (question, branch_id, scope_branch_ids, actor, mode, model, status, created_at)
+         values ($1, $2, $3, $4, $5, $6, 'running', $7) returning id`,
+    [question, input.branchId, input.viewer.branchIds, actor, mode, configured?.profile.model ?? null, now, ...(workspace ? [input.viewer.subject] : [])],
   );
   const id = Number(rows[0].id);
-  await audit(pool, now, actor, "investigation_start", id, { question, branchId: input.branchId, mode });
+  if (!workspace) await audit(pool, now, actor, "investigation_start", id, { question, branchId: input.branchId, mode });
   input.onStart?.({ id, mode });
 
-  const recorder = new StepRecorder(pool, id, now, input.onStep);
+  const recorder = new StepRecorder(pool, id, now, input.onStep, tables.steps);
   const toolCtx: ToolContext = { db: pool, viewer: input.viewer, now };
   const detected = detectIntent(question, input.viewer, input.branchId);
   const usage: TokenUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
 
-  try {
-    let draft: DraftFindings | null = null;
-    let intent: string = detected.intent;
-    let refusal: string | null = null;
-
-    if (client) {
-      const run = await runModelInvestigator({
-        client, question, requestedBranch: input.branchId, viewer: input.viewer, toolCtx, recorder, ...input.limits,
-      });
-      Object.assign(usage, run.usage);
-      draft = run.draft;
-      if (!draft) {
-        // The model path failed (API error, refusal, budget). Fall back to the deterministic
-        // investigator over the same tools, and say so: the stored mode is what actually answered.
-        await recorder.record({
-          stage: "investigator", kind: "model_turn", tool: null, input: {}, outputSummary: `Model path ended without findings (${run.error}); falling back to the deterministic investigator`,
-          output: null, evidenceIds: [], status: "error", error: run.error, ms: 0,
-        });
-        mode = "deterministic";
-        fallbackReason = run.error ?? "no findings";
-      } else {
-        refusal = detected.actionRequest ? ACTION_REFUSAL : null;
-      }
-    }
-    if (!draft) {
-      const outcome = await runDeterministic(planContext(toolCtx, recorder), question, input.branchId);
-      draft = outcome.draft;
-      intent = outcome.intent;
-      refusal = outcome.refusal;
-    }
-
-    // Analyst: ground every claim in this run's tool evidence, classify, adjust confidence.
+  // Analyst: ground every claim in this run's tool evidence, classify, adjust confidence.
+  const ground = async (draft: DraftFindings, origin: "model" | "template") => {
     const analystStarted = performance.now();
     // Numbers are checked against what the tools returned, outside the model (lib/ai/numbers.ts).
     const facts = evidenceFacts(recorder.steps);
@@ -175,23 +183,64 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
     // investigator writes templates filled from structured results; the model writes free text.
     const cited = [...draft.observations.flatMap((o) => o.evidenceIds), ...(draft.suspectedCause?.evidenceIds ?? [])];
     const stale = await staleRevisions(pool, cited);
-    const grounded = groundDraft(draft, recorder.returnedEvidence, facts, { origin: mode === "model" ? "model" : "template", branchId: input.branchId, stale });
+    const grounded = groundDraft(draft, recorder.returnedEvidence, facts, { origin, branchId: input.branchId, stale });
     const claims = buildClaims(grounded, facts);
     await recorder.record({
       stage: "analyst", kind: "analysis", tool: null, input: { claims: grounded.report.claimsIn },
       outputSummary: `Kept ${grounded.report.claimsKept} of ${grounded.report.claimsIn} claim(s); dropped ${grounded.report.claimsDropped} unsupported (${grounded.report.numericDropped ?? 0} for a figure no tool returned); downgraded ${grounded.report.downgraded}; ${recorder.returnedEvidence.size} evidence id(s) returned by tools`,
       output: grounded.report, evidenceIds: [], status: "ok", error: null, ms: performance.now() - analystStarted,
     });
+    return { grounded, claims };
+  };
+
+  try {
+    let checked: Awaited<ReturnType<typeof ground>> | null = null;
+    let intent: string = detected.intent;
+    let refusal: string | null = null;
+
+    if (configured) {
+      const run = await runModelInvestigator({
+        client: configured.client, profile: configured.profile, question, requestedBranch: input.branchId, viewer: input.viewer, toolCtx, recorder, ...input.limits,
+      });
+      Object.assign(usage, run.usage);
+      if (run.draft) {
+        const model = await ground(run.draft, "model");
+        // An answer with no statement the evidence supports is not an answer: fall back too.
+        if (model.grounded.report.claimsKept > 0) {
+          checked = model;
+          refusal = detected.actionRequest ? ACTION_REFUSAL : null;
+        } else failure = { class: "no_verified_statement", message: "gave no statement the records verify" };
+      } else failure = run.failure ?? { class: "other", message: run.error ?? "ended without findings" };
+      if (failure) {
+        // The deterministic investigator answers over the same tools, and the result says why:
+        // the stored mode is what actually answered.
+        await recorder.record({
+          stage: "investigator", kind: "model_turn", tool: null, input: { class: failure.class }, outputSummary: `The model path gave no answer (${failure.class}: ${failure.message}); the deterministic investigator answers`,
+          output: null, evidenceIds: [], status: "error", error: failure.message, ms: 0,
+        });
+        mode = "deterministic";
+      }
+    }
+    if (!checked) {
+      const outcome = await runDeterministic(planContext(toolCtx, recorder), question, input.branchId);
+      intent = outcome.intent;
+      refusal = outcome.refusal;
+      checked = await ground(outcome.draft, "template");
+    }
+    const { grounded, claims } = checked;
 
     // Planner: suggestions → Action Center proposals (source 'ai', pending dry run + approval).
-    const proposals = await planProposals(pool, recorder, {
-      suggestions: grounded.draft.proposals, viewer: input.viewer, returned: recorder.returnedEvidence, refusal: refusal !== null, investigationId: id, now,
-    });
+    // A workspace investigation proposes nothing: it changes no shared data (§5.2).
+    const proposals = workspace
+      ? []
+      : await planProposals(pool, recorder, {
+          suggestions: grounded.draft.proposals, viewer: input.viewer, returned: recorder.returnedEvidence, refusal: refusal !== null, investigationId: id, now,
+        });
 
     const g = grounded.draft;
     const result = InvestigationResultSchema.parse({
       mode,
-      modeLabel: fallbackReason ? fallbackModeLabel(fallbackReason) : MODE_LABEL[mode],
+      modeLabel: failure && configured ? fallbackModeLabel(configured.profile.provider, failure) : mode === "model" && configured ? modelModeLabel(configured.profile) : MODE_LABEL.deterministic,
       intent,
       summary: refusal ? `${refusal} ${g.summary}` : g.summary,
       observations: g.observations,
@@ -207,28 +256,32 @@ export async function runInvestigation(pool: Pool, input: RunInvestigationInput)
       grounding: grounded.report,
       warnings: recorder.warnings,
       claims,
+      ...(failure ? { fallback: failure } : {}),
     });
     const latencyMs = Math.round(performance.now() - started);
-    const cost = mode === "model" || usage.input + usage.output > 0 ? costMicros(usage) : 0;
+    // A local model is never priced; a fallback still paid for the tokens the model used.
+    const cost = configured?.profile.priced && usage.input + usage.output > 0 ? costMicros(usage) : 0;
     await pool.query(
-      `update investigations set status = 'completed', mode = $2, model = $3, intent = $4, result = $5, grounding = $6, warnings = $7,
+      `update ${tables.investigations} set status = 'completed', mode = $2, model = $3, intent = $4, result = $5, grounding = $6, warnings = $7,
          input_tokens = $8, output_tokens = $9, cost_micros = $10, latency_ms = $11, finished_at = $12
        where id = $1`,
-      [id, mode, usage.input + usage.output > 0 ? MODEL_ID : null, intent, result, result.grounding, JSON.stringify(result.warnings),
+      [id, mode, configured?.profile.model ?? null, intent, result, result.grounding, JSON.stringify(result.warnings),
         usage.input + usage.cacheRead + usage.cacheWrite, usage.output, cost, latencyMs, now],
     );
-    await audit(pool, now, actor, "investigation_complete", id, {
-      mode, intent, claimsDropped: result.grounding.claimsDropped, warnings: result.warnings.length,
-      proposals: proposals.map((p) => ({ kind: p.kind, exceptionId: p.exceptionId, status: p.status, proposalId: p.proposalId })),
-    });
+    if (!workspace) {
+      await audit(pool, now, actor, "investigation_complete", id, {
+        mode, intent, claimsDropped: result.grounding.claimsDropped, warnings: result.warnings.length, ...(failure ? { fallback: failure.class } : {}),
+        proposals: proposals.map((p) => ({ kind: p.kind, exceptionId: p.exceptionId, status: p.status, proposalId: p.proposalId })),
+      });
+    }
     return { id, status: "completed", mode, result, steps: recorder.steps, usage, costMicros: cost, latencyMs };
   } catch (error) {
     const message = (error as Error).message ?? String(error);
     await pool.query(
-      `update investigations set status = 'failed', error = $2, latency_ms = $3, finished_at = $4, input_tokens = $5, output_tokens = $6, cost_micros = $7 where id = $1`,
-      [id, message.slice(0, 2000), Math.round(performance.now() - started), now, usage.input + usage.cacheRead + usage.cacheWrite, usage.output, costMicros(usage)],
+      `update ${tables.investigations} set status = 'failed', error = $2, latency_ms = $3, finished_at = $4, input_tokens = $5, output_tokens = $6, cost_micros = $7 where id = $1`,
+      [id, message.slice(0, 2000), Math.round(performance.now() - started), now, usage.input + usage.cacheRead + usage.cacheWrite, usage.output, configured?.profile.priced ? costMicros(usage) : 0],
     );
-    await audit(pool, now, actor, "investigation_failed", id, { error: message.slice(0, 500) });
+    if (!workspace) await audit(pool, now, actor, "investigation_failed", id, { error: message.slice(0, 500) });
     throw error;
   }
 }

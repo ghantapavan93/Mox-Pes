@@ -31,6 +31,7 @@ export function InvestigateForm({
   initialBranch,
   canInvestigate,
   denyReason,
+  help,
 }: {
   branches: Array<{ id: string; label: string }>;
   suggestions: Suggestion[];
@@ -38,6 +39,8 @@ export function InvestigateForm({
   initialBranch: string | null;
   canInvestigate: boolean;
   denyReason: string;
+  /** What asking does, for this viewer; the default is the staff wording. */
+  help?: string;
 }) {
   const router = useRouter();
   const ids = { question: useId(), branch: useId(), help: useId() };
@@ -153,7 +156,7 @@ export function InvestigateForm({
         </div>
         <p id={ids.help} className="text-xs text-muted">
           {canInvestigate
-            ? "Reads with your role and branch scope. It can draft a fix as a proposal in Incidents for a person to review and approve; it never applies one."
+            ? (help ?? "Reads with your role and branch scope. It can draft a fix as a proposal in Incidents for a person to review and approve; it never applies one.")
             : denyReason}
         </p>
       </form>

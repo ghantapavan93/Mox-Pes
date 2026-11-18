@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import type { Queryable } from "@/lib/db";
-import { MODEL_ID, costMicros, modelTools, runModelInvestigator, type ModelClient } from "@/lib/ai/model";
+import { ANTHROPIC_PROFILE, MODEL_ID, costMicros, modelTools, runModelInvestigator, type ModelClient } from "@/lib/ai/model";
 import { StepRecorder } from "@/lib/ai/steps";
 import { VIEWERS } from "@/lib/viewer";
 
@@ -68,6 +68,7 @@ function setup(client: ModelClient, limits: { maxToolCalls?: number; maxTurns?: 
   const recorder = new StepRecorder(db, 1, now);
   const run = runModelInvestigator({
     client,
+    profile: ANTHROPIC_PROFILE,
     question: "What is paid CAC?",
     requestedBranch: null,
     viewer: VIEWERS.marketing,
@@ -164,7 +165,8 @@ describe("model tool loop", () => {
     expect(recorder.steps.filter((s) => s.kind === "tool_call")).toHaveLength(3);
     const last = client.calls[2].messages.at(-1)!.content as Anthropic.Beta.Messages.BetaToolResultBlockParam[];
     expect(String(last.at(-1)!.content)).toMatch(/Tool budget \(3 calls\) exhausted/);
-    expect(out.error).toMatch(/No findings within 3 model turns/);
+    // Failures are classified (release design §5.9); the words name what happened.
+    expect(out.failure).toEqual({ class: "invalid_output", message: "found nothing to submit within 3 turns" });
   });
 
   it("nudges once when the model stops without submitting, then ends", async () => {
@@ -178,11 +180,11 @@ describe("model tool loop", () => {
   it("stops on a refusal or max_tokens without running the turn's tools", async () => {
     const refusal = scripted([{ content: [toolUse("a", "getMetricDefinition", { key: "paidCac" })], stop: "refusal" }]);
     const r = await setup(refusal).run;
-    expect(r.error).toMatch(/declined \(cyber\)/);
+    expect(r.failure).toEqual({ class: "declined", message: "declined the question (cyber)" });
     expect(r.toolCalls).toBe(0);
     const truncated = scripted([{ content: [toolUse("a", "getMetricDefinition", { key: "paidCac" })], stop: "max_tokens" }]);
     const t = await setup(truncated).run;
-    expect(t.error).toMatch(/max_tokens/);
+    expect(t.failure).toEqual({ class: "invalid_output", message: "hit max_tokens before finishing" });
     expect(t.toolCalls).toBe(0);
   });
 
@@ -195,6 +197,6 @@ describe("model tool loop", () => {
     };
     const out = await setup(slow, { timeoutMs: 50 }).run;
     expect(out.draft).toBeNull();
-    expect(out.error).toMatch(/aborted at the deadline/);
+    expect(out.failure).toEqual({ class: "timeout", message: "was stopped at the deadline" });
   });
 });

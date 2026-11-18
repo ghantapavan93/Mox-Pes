@@ -5,7 +5,7 @@ import type { Pool } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RawRecord } from "@/lib/adapters/contract";
 import { ACTIVE_VERSION, mapperFor } from "@/lib/adapters/registry";
-import { InvestigationResultSchema } from "@/lib/ai/contract";
+import { InvestigationResultSchema, MODE_LABEL } from "@/lib/ai/contract";
 import { runInvestigation } from "@/lib/ai/investigate";
 import type { ModelClient } from "@/lib/ai/model";
 import { getInvestigation, listInvestigations, resolveEvidence } from "@/lib/ai/queries";
@@ -34,6 +34,8 @@ vi.mock("@/lib/server", () => ({
   getViewer: async () => route.viewer,
   getPool: () => route.pool,
   businessNow: async () => route.now,
+  // Staff roles never get a visitor cookie; the route asks for one before every start.
+  viewerForWorkspaceStart: async () => ({ viewer: route.viewer, setCookie: null }),
 }));
 vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), connection: async () => {} }));
 route.pool = pool;
@@ -279,7 +281,8 @@ describe("deterministic B09 investigation", () => {
 
     expect(InvestigationResultSchema.safeParse(r).success).toBe(true);
     expect(out.mode).toBe("deterministic");
-    expect(r.modeLabel).toBe("Deterministic investigator — no model configured");
+    expect(r.modeLabel).toBe(MODE_LABEL.deterministic);
+    expect(r.fallback).toBeUndefined();
     expect(r.intent).toBe("coverage_gap");
     expect(out.costMicros).toBe(0);
 
@@ -521,7 +524,7 @@ describe("model tool loop (mocked client)", () => {
     ]);
     const out = await runInvestigation(pool, { question: GOLDEN, branchId: B09, viewer: marketing, now: NOW, client });
     expect(out.mode).toBe("model");
-    expect(out.result.modeLabel).toMatch(/Model investigator/);
+    expect(out.result.modeLabel).toBe("Answered by claude-opus-5-5");
     expect(client.calls).toHaveLength(3);
     expect(client.calls[0]).toMatchObject({ model: "claude-opus-5-5", thinking: { type: "adaptive" }, tool_choice: { type: "auto" }, fallbacks: "default" });
     expect(client.calls[0].tools?.map((t) => (t as { name: string }).name)).toContain("submit_findings");
@@ -600,6 +603,10 @@ describe("model tool loop (mocked client)", () => {
             { text: `B09's October paid spend totals ${dollars(usd.cacCents)}.`, evidenceIds: [bm], status: "verified" },
             // September has no B09 activity in this world; a change against it is not in the cited facts.
             { text: `B09's paid spend rose by ${dollars(usd.spendCents)} from September.`, evidenceIds: [bm], status: "verified" },
+            // One statement the evidence supports, with no figure: since the release design (§5.9) an
+            // answer with nothing verified left falls back to the deterministic path, and this test is
+            // about the three rejections inside a model answer that stands.
+            { text: "B09's October paid CAC was traced to its stored records.", evidenceIds: [bm], status: "hypothesis", strength: "weak" },
           ],
           suspectedCause: null,
           confidence: { level: "medium", why: "Traced." },
@@ -613,7 +620,7 @@ describe("model tool loop (mocked client)", () => {
     ]);
     const out = await runInvestigation(pool, { question: "Why is B09's paid CAC what it is?", branchId: B09, viewer: marketing, now: NOW, client });
     expect(out.mode).toBe("model");
-    expect(out.result.observations).toEqual([]);
+    expect(out.result.observations.map((o) => o.text)).toEqual(["B09's October paid CAC was traced to its stored records."]);
     const claims = out.result.claims!;
     // $12,000.00 appears in no output: dropped before its proof (the numeric check), as it should be.
     expect(claims.find((c) => c.text.includes("$12,000.00"))?.status).toBe("UNSUPPORTED");
@@ -630,12 +637,12 @@ describe("model tool loop (mocked client)", () => {
     expect(client.calls).toHaveLength(4);
     expect(out.mode).toBe("deterministic");
     // Audit 2026-11-09 (I-2): a model WAS configured and billed; the label must say it failed,
-    // not that none was configured.
-    expect(out.result.modeLabel).toMatch(/^Deterministic fallback — the model run failed \(/);
-    expect(out.result.modeLabel).not.toMatch(/no model configured/);
-    expect(out.steps.some((s) => s.kind === "model_turn" && s.status === "error" && /falling back/.test(s.outputSummary))).toBe(true);
+    // not that none was configured. Since the release design (§5.9) the failure has a class.
+    expect(out.result.fallback).toEqual({ class: "invalid_output", message: "found nothing to submit within 4 turns" });
+    expect(out.result.modeLabel).toBe("The model found nothing to submit within 4 turns, so this answer came from the deterministic evidence path.");
+    expect(out.steps.some((s) => s.kind === "model_turn" && s.status === "error" && /the deterministic investigator answers/.test(s.outputSummary))).toBe(true);
     // Budget: of the model's four tool requests only two ran; the rest were refused unrun.
-    const fallbackAt = out.steps.findIndex((s) => /falling back/.test(s.outputSummary));
+    const fallbackAt = out.steps.findIndex((s) => /the deterministic investigator answers/.test(s.outputSummary));
     expect(out.steps.slice(0, fallbackAt).filter((s) => s.kind === "tool_call")).toHaveLength(2);
     expect(out.costMicros).toBeGreaterThan(0);
     expect(out.result.proposals[0]?.kind).toBe("remap_channel");

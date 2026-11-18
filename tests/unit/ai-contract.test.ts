@@ -40,7 +40,8 @@ const draft = {
 describe("output contract", () => {
   it("accepts a complete result and labels the deterministic mode honestly", () => {
     expect(InvestigationResultSchema.safeParse(result).success).toBe(true);
-    expect(MODE_LABEL.deterministic).toBe("Deterministic investigator — no model configured");
+    // Reworded by the release design (§5.9): the page says which path answered.
+    expect(MODE_LABEL.deterministic).toBe("Answered by the deterministic evidence path (no model)");
   });
 
   it("rejects unknown fields, bad statuses, unknown proposal kinds and malformed evidence ids", () => {

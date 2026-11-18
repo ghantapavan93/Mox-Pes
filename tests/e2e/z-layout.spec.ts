@@ -82,15 +82,16 @@ test.describe("shell", () => {
     await setRole(page, "marketing");
     await page.goto("/");
     const toggle = page.getByTestId("sidebar-collapse");
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    // A disclosure (release WP-A): aria-expanded names the sidebar's state; it was aria-pressed.
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
     await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
     // The width animates (150 ms): poll until it settles on the rail.
     await expect.poll(() => page.locator("[data-sidebar-root]").evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(64);
     // Labels are hidden visually; each link still has its name (title + text for assistive tech).
     await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Incidents" })).toBeVisible();
     await page.reload();
-    await expect(page.getByTestId("sidebar-collapse")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("sidebar-collapse")).toHaveAttribute("aria-expanded", "false");
     await page.getByTestId("sidebar-collapse").click(); // leave it expanded for later specs
   });
 });

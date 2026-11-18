@@ -126,8 +126,10 @@ export function SidebarCollapseButton() {
     <button
       type="button"
       onClick={toggle}
-      aria-pressed={collapsed}
-      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      // A disclosure: one constant name, its state in aria-expanded (the name never flips with the
+      // state, so a screen reader hears "Navigation sidebar, expanded" or "…, collapsed").
+      aria-expanded={!collapsed}
+      aria-label="Navigation sidebar"
       title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       className="hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-shell-muted hover:bg-shell-raised/60 hover:text-white lg:flex"
       data-testid="sidebar-collapse"

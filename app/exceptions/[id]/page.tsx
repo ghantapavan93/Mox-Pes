@@ -10,7 +10,7 @@ import { DriftReview } from "@/components/incidents/DriftReview";
 import { GapRecovery } from "@/components/incidents/GapRecovery";
 import { FixResult } from "@/components/incidents/FixResult";
 import { RevisionHold } from "@/components/incidents/RevisionHold";
-import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, KV, PageHeader, SectionNav, SeverityBadge, Skeleton, StateBadge, StatusBadge, TableWrap, Td, Th } from "@/components/ui";
 import { ACTIVE_VERSION, compareVersions, mapperVersions, replayableVersions } from "@/lib/adapters/registry";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
 import { quarantineGroupIds } from "@/lib/ingest/replay";
@@ -28,6 +28,7 @@ import { gapStatus } from "@/lib/reconcile/gap-status";
 import { dayEvidence, defaultDay, windowFacts } from "@/lib/reconcile/gap-days";
 import { correctionsOf, dayKey, holdMoney, isCorrection, isRefusedRevisionHold, revisionsOf, unattributedSentence, unattributedSpend } from "@/lib/reconcile/refused-revisions";
 import { BRAND_BY_ID, BRANCH_BY_ID, type BrandId } from "@/lib/reference";
+import { demoModeEnabled } from "@/lib/demo-mode";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { parseRecordId } from "@/lib/record-id";
@@ -208,6 +209,8 @@ async function ExceptionDetail({ params, searchParams }: Props) {
           <>
             <SeverityBadge severity={exception.severity} />
             <StatusBadge status={exception.status} />
+            {/* The product state (release design §5.8): this incident holds its branch's budget decision. */}
+            {(status?.held || (revisionHold && exception.status === "open")) && <StateBadge state="held" detail="budget decision" testId="incident-held" />}
             {exception.branchId && (
               <Link href={`/branches/${exception.branchId}`} className="inline-flex items-center gap-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[11px] font-medium text-accent hover:bg-accent-soft">
                 <MapPin aria-hidden className="size-3" />
@@ -546,7 +549,19 @@ async function Actions({ exception, viewer }: { exception: ExceptionRow; viewer:
       return exception.status === "resolved" ? (
         <p className="text-sm text-muted">Resolved. Nothing to do.</p>
       ) : (
-        <p className="text-sm text-muted">Switch to <Badge>Integration engineer</Badge> to dry-run or {plan?.mode === "reproject" ? "re-map" : "replay"} these {count(ids.length)} records.</p>
+        <p className="text-sm text-muted">
+          {/* Roles switch only in demo mode; on the hosted demo the guest cannot become an engineer. */}
+          {demoModeEnabled() ? (
+            <>
+              Switch to <Badge>Integration engineer</Badge> to dry-run or {plan?.mode === "reproject" ? "re-map" : "replay"} these {count(ids.length)} records.
+            </>
+          ) : (
+            <>
+              An integration engineer dry-runs, then {plan?.mode === "reproject" ? "re-maps" : "replays"} these {count(ids.length)} records after an approval; on the public demo
+              they are shown read-only.
+            </>
+          )}
+        </p>
       );
     }
     return (

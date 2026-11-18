@@ -106,7 +106,8 @@ export function ProposeForm({ exceptionId, kinds }: { exceptionId: number; kinds
           className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1"
         />
       </label>
-      <Button type="submit" variant="primary" busy={!!busy} busyLabel="Recording…">
+      {/* Secondary: the incident page's one primary action is in its header or its decision panel. */}
+      <Button type="submit" variant="secondary" busy={!!busy} busyLabel="Recording…">
         Propose fix
       </Button>
       {message && (

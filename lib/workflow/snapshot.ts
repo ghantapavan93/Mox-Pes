@@ -1,7 +1,7 @@
-import type { Queryable } from "@/lib/db";
+import { getNow, type Queryable } from "@/lib/db";
 import { budgetSignal } from "@/lib/metrics/decision";
 import { branchRows, channelRows, paidCac } from "@/lib/metrics/scorecard";
-import { PERIODS } from "@/lib/period";
+import { PERIODS, type Period, type PeriodKey } from "@/lib/period";
 
 /**
  * Before/after state of one proposal's dry run or execution, and the checks that decide
@@ -30,7 +30,7 @@ export const LEDGER_LABEL: Record<LedgerKey, string> = {
 
 export interface BranchSnapshot {
   branchId: string;
-  /** Whole demo period (PERIODS.all), like the replay snapshot. */
+  /** The snapshot's period: the whole demo window (PERIODS.all) for `branch`, a calendar month for `month`. */
   paidSpendCents: number;
   acquired: number;
   paidAcquired: number;
@@ -43,6 +43,11 @@ export interface BranchSnapshot {
    */
   openExceptionList?: OpenExceptionRef[];
   channels: Record<string, { spendCents: number; acquired: number; cacCents: number | null }>;
+  /**
+   * New customers per channel, every channel (door-to-door and unknown included), so a receipt can
+   * say where newly credited customers came from. Absent from snapshots stored before 2026-11-18.
+   */
+  acquiredByChannel?: Record<string, number>;
   /**
    * October budget signal, as the branch page shows it. `recommendation` and `heldBy` (absent from
    * snapshots stored before 2026-11-17) say whether anything still holds the recommendation once no
@@ -61,7 +66,19 @@ export interface StateSnapshot {
   exception: { id: number; status: string; lastDetectedAt: string | null };
   ledger: Record<LedgerKey, number>;
   openExceptionsCompanyWide: number;
+  /** The whole demo window (PERIODS.all). */
   branch: BranchSnapshot | null;
+  /**
+   * The same branch in the latest calendar month the business clock has reached (October on the
+   * seeded data), by the same branchRows: what a receipt leads with (release design §5.8). Absent
+   * on executions stored before 2026-11-18, whose receipt shows the window only.
+   */
+  month?: { key: PeriodKey; branch: BranchSnapshot } | null;
+}
+
+/** The latest calendar month (September or October) whose start the business clock has passed. */
+function latestMonth(now: Date): Period | null {
+  return [PERIODS.oct, PERIODS.sep].find((p) => p.from.getTime() <= now.getTime()) ?? null;
 }
 
 export async function captureState(db: Queryable, exceptionId: number, branchId: string | null): Promise<StateSnapshot> {
@@ -93,12 +110,20 @@ export async function captureState(db: Queryable, exceptionId: number, branchId:
       collectedCents: Number(l.collected),
     },
     openExceptionsCompanyWide: Number(l.open_exceptions),
-    branch: branchId ? await branchSnapshot(db, branchId) : null,
+    branch: branchId ? await branchSnapshot(db, branchId, PERIODS.all) : null,
+    month: branchId ? await monthSnapshot(db, branchId) : null,
   };
 }
 
-async function branchSnapshot(db: Queryable, branchId: string): Promise<BranchSnapshot | null> {
-  const scope = { from: PERIODS.all.from, to: PERIODS.all.to, branchIds: [branchId] };
+async function monthSnapshot(db: Queryable, branchId: string): Promise<StateSnapshot["month"]> {
+  const month = latestMonth(await getNow(db));
+  if (!month) return null;
+  const branch = await branchSnapshot(db, branchId, month);
+  return branch ? { key: month.key, branch } : null;
+}
+
+async function branchSnapshot(db: Queryable, branchId: string, period: Period): Promise<BranchSnapshot | null> {
+  const scope = { from: period.from, to: period.to, branchIds: [branchId] };
   const [row] = await branchRows(db, scope);
   if (!row) return null;
   const channels = await channelRows(db, scope);
@@ -122,6 +147,7 @@ async function branchSnapshot(db: Queryable, branchId: string): Promise<BranchSn
         .filter((c) => c.costBasis === "media")
         .map((c) => [c.channelCode, { spendCents: c.spendCents, acquired: c.acquired, cacCents: c.cacCents }]),
     ),
+    acquiredByChannel: Object.fromEntries(channels.map((c) => [c.channelCode, c.acquired])),
     budgetSignal: {
       signal: signal.signal,
       trustworthy: signal.trustworthy,

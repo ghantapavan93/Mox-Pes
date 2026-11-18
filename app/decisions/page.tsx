@@ -5,7 +5,7 @@ import { ExperimentHistory, SavedScenarios } from "@/components/decisions/Histor
 import { ScenarioBuilder, type ScenarioChannelOption } from "@/components/decisions/ScenarioBuilder";
 import { VerdictMatrix } from "@/components/decisions/VerdictMatrix";
 import { ChevronRight, Info, ShieldAlert, ShieldCheck, XCircle } from "lucide-react";
-import { Badge, ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton } from "@/components/ui";
+import { Badge, ButtonLink, Card, Forbidden, PageHeader, PeriodTabs, SectionNav, Skeleton, StateBadge } from "@/components/ui";
 import { AA_DEFAULTS, listExperiments, runAaExperiment } from "@/lib/decision/experiment";
 import { DEFAULT_ASSUMPTIONS, MONTH_DAYS, listScenarios } from "@/lib/decision/scenario";
 import { budgetSignalNote, builderDefaults } from "@/lib/decision/signal-copy";
@@ -16,6 +16,7 @@ import { parseChannel, parseWeek } from "@/lib/metrics/movement";
 import { parsePeriod, type Period } from "@/lib/period";
 import { gapStatusesAt, type GapStatus } from "@/lib/reconcile/gap-status";
 import { BRAND_BY_ID, BRANCHES, BRANCH_BY_ID, CHANNEL_BY_CODE, type BrandId, type ChannelCode } from "@/lib/reference";
+import { demoModeEnabled } from "@/lib/demo-mode";
 import { getPool, getViewer } from "@/lib/server";
 import { ForbiddenError, resolveScope, type Viewer } from "@/lib/viewer";
 
@@ -187,7 +188,14 @@ async function VerdictsAndScenarios({
         >
           {canModel ? <Builder verdicts={verdicts} period={period} /> : (
             <p className="text-sm text-muted">
-              Your role ({viewer.label}) can read verdicts and saved scenarios but cannot model scenarios. Switch to <Badge>Marketing analyst</Badge> to run one.
+              Your role ({viewer.label}) can read verdicts and saved scenarios but cannot model scenarios.{" "}
+              {demoModeEnabled() ? (
+                <>
+                  Switch to <Badge>Marketing analyst</Badge> to run one.
+                </>
+              ) : (
+                "On the public demo, saved scenarios are shown read-only."
+              )}
             </p>
           )}
         </Card>
@@ -315,6 +323,8 @@ function ReadinessSummary({
   const Icon = ready ? Info : XCircle;
   // The same incident evidence the Overview and the daily records open, with the selection carried.
   const incidentHref = (id: string | number) => `/exceptions/${id}${incidentQuery}#recovery`;
+  // The one next action, right under the verdict, so a phone's first screen holds both (route audit).
+  const firstIncident = [...blockers.keys()].map((href) => href.match(/\/exceptions\/(\d+)$/)?.[1] ?? null).find((id) => id !== null) ?? null;
   return (
     <section
       id="readiness"
@@ -327,24 +337,29 @@ function ReadinessSummary({
       <div className="min-w-0 flex-1 space-y-2.5">
         <p className="flex flex-wrap items-center gap-2">
           {ready ? <Badge tone="accent">Ready for review</Badge> : <Badge tone="bad">Not ready</Badge>}
-          <span className="font-medium text-text">
+          {blockers.size > 0 && <StateBadge state="held" detail="an open incident holds the decision" testId="readiness-held" />}
+          <span className="font-medium text-text" elementtiming="verdict">
             {ready
               ? `Every paid channel at ${verdicts.branchId} passes the readiness rules for ${verdicts.period.label}: no open incident holds the decision, so a person can review it. Nothing here approves a budget change.`
               : `${notReady.length} of ${verdicts.channels.length} paid channels at ${verdicts.branchId} are not ready for a budget decision in ${verdicts.period.label}: ${notReady.map((c) => c.label).join(", ")}.`}
           </span>
         </p>
+        {firstIncident && (
+          <div data-testid="readiness-next">
+            <ButtonLink href={incidentHref(firstIncident)} variant="primary" testId="readiness-incident-link">
+              Open incident #{firstIncident}
+            </ButtonLink>
+          </div>
+        )}
         {blockers.size > 0 && (
           <ul className="space-y-2 text-text" data-testid="readiness-blockers">
-            {[...blockers].map(([href, text], i) => {
+            {[...blockers].map(([href, text]) => {
               const id = href.match(/\/exceptions\/(\d+)$/)?.[1];
               return (
                 <li key={href} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <span className="basis-full">{text}</span>
-                  {id && i === 0 ? (
-                    <ButtonLink href={incidentHref(id)} variant="primary" testId="readiness-incident-link">
-                      Open incident #{id}
-                    </ButtonLink>
-                  ) : (
+                  {/* The first incident's action is the button above the list. */}
+                  {id !== firstIncident && (
                     <Link href={id ? incidentHref(id) : href} className="font-medium text-accent hover:underline" data-testid="readiness-incident-link">
                       {id ? `Open incident #${id}` : "Open the evidence"}
                     </Link>

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { KIND_LABEL, count, dateTime, money } from "@/lib/format";
+import { StateBadge } from "@/components/ui";
 import { PERIODS } from "@/lib/period";
+import { CHANNEL_BY_CODE } from "@/lib/reference";
 import type { ExceptionRow } from "@/lib/queries";
 import { getPool } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
@@ -18,6 +20,10 @@ import { caseForException, caseProposals } from "@/lib/workflow/queries";
  * Shown for an executed fix that moved the branch's paid-media CAC (B20's replay is the case it
  * was built for). An incident with its own decision panel (a coverage gap, a refused revision)
  * leads with that panel instead.
+ *
+ * It leads with the latest calendar month the business clock has reached (October on the seeded
+ * data), the period a budget decision is made on, with the replay's whole window below it
+ * (release design §5.8). An execution stored before the month was captured shows the window only.
  */
 export async function FixResult({ exception, viewer }: { exception: ExceptionRow; viewer: Viewer }) {
   if (exception.status !== "resolved") return null;
@@ -27,13 +33,21 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
   const proposal = (await caseProposals(pool, kase.id)).find((p) => p.execution?.status === "succeeded" && p.execution.before?.branch && p.execution.after?.branch);
   const execution = proposal?.execution;
   if (!proposal || !execution) return null;
-  const b0 = execution.before!.branch!;
-  const b1 = execution.after!.branch!;
-  if (b0.paidCacCents === b1.paidCacCents) return null;
+  const w0 = execution.before!.branch!;
+  const w1 = execution.after!.branch!;
+  if (w0.paidCacCents === w1.paidCacCents) return null;
+  // The month leads when both snapshots have it; otherwise the window, as before.
+  const monthKey = execution.before!.month && execution.after!.month ? execution.after!.month.key : null;
+  const b0 = monthKey ? execution.before!.month!.branch : w0;
+  const b1 = monthKey ? execution.after!.month!.branch : w1;
+  const periodLabel = monthKey ? PERIODS[monthKey].label : PERIODS.all.label;
+  const approval = proposal.approvals.find((a) => a.decision === "approved") ?? null;
 
   const branchId = b0.branchId;
   const moreToPaid = b1.paidAcquired - b0.paidAcquired;
   const fewerUnattributed = b0.unknownAcquired - b1.unknownAcquired;
+  // Which channels customers left and joined, when the snapshots record every channel (2026-11-18 on).
+  const moves = channelMoves(b0.acquiredByChannel, b1.acquiredByChannel);
   const replayed = Number(execution.result?.projected ?? execution.result?.requested ?? 0);
   const source = typeof exception.evidence?.source === "string" ? exception.evidence.source : null;
   const what = source === "calls" ? "calls" : source ? `${source} records` : "records";
@@ -59,10 +73,14 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
           </span>
         </p>
       </div>
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-3" data-testid="fix-result-states">
+        <StateBadge state="corrected" detail={`CAC ${money(b0.paidCacCents)} → ${money(b1.paidCacCents)}`} testId="fix-result-corrected" />
+        {approval && <StateBadge state="approved" detail={`by ${approval.actor}, ${dateTime(approval.decidedAt)}`} testId="fix-result-approved" />}
+      </div>
       <div className="space-y-3 px-4 py-3">
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <span className="text-xs text-muted">
-            Paid-media CAC at {branchId}, {PERIODS.all.label}
+            Paid-media CAC at {branchId}, {periodLabel}
           </span>{" "}
           <span className="text-[22px] font-semibold leading-7 tracking-tight tabular-nums text-text" data-testid="fix-result-cac">
             <span className="text-muted">{money(b0.paidCacCents)}</span>
@@ -77,14 +95,16 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
           <dt className="font-medium text-text">Why it moved</dt>
           <dd className="text-muted" data-testid="fix-result-why">
             {proposal.kind === "replay_quarantine" && replayed > 0 ? `Replaying the ${count(replayed)} held ${what} attached lead records to customers who had none: ` : "Attribution changed: "}
-            {count(fewerUnattributed)} fewer unattributed ({count(b0.unknownAcquired)} → {count(b1.unknownAcquired)}), {count(moreToPaid)} more credited to paid media (
-            {count(b0.paidAcquired)} → {count(b1.paidAcquired)}).
+            paid customers {count(b0.paidAcquired)} → {count(b1.paidAcquired)}.{" "}
+            {moves
+              ? `Of the ${count(moves.total)} customers whose channel changed, ${moves.from} before; ${moves.to} now.`
+              : `${count(fewerUnattributed)} fewer unattributed (${count(b0.unknownAcquired)} → ${count(b1.unknownAcquired)}), ${count(moreToPaid)} more credited to paid media.`}
           </dd>
           {(spendSame || customersSame || ledgerConserved) && (
             <>
               <dt className="font-medium text-text">What did not</dt>
               <dd className="text-muted" data-testid="fix-result-unchanged">
-                {[spendSame && `paid-media spend (${money(b1.paidSpendCents)})`, customersSame && `new customers on all channels (${count(b1.acquired)})`].filter(Boolean).join(" and ")}
+                {[spendSame && `paid-media spend (${money(b1.paidSpendCents)})`, customersSame && `serviced customers on all channels (${count(b1.acquired)})`].filter(Boolean).join(" and ")}
                 {(spendSame || customersSame) && " did not change"}
                 {ledgerConserved && `${spendSame || customersSame ? "; " : ""}the five ledger totals were conserved`}.
               </dd>
@@ -122,6 +142,12 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
             )}
           </dd>
         </dl>
+        {monthKey && (
+          <p className="text-sm text-muted" data-testid="fix-result-window">
+            <span className="font-medium text-text">Replay window</span>, {PERIODS.all.label}: paid-media CAC {money(w0.paidCacCents)} → {money(w1.paidCacCents)}, paid
+            customers {count(w0.paidAcquired)} → {count(w1.paidAcquired)}.
+          </p>
+        )}
         <p className="text-xs">
           <a href={`#proposal-${proposal.id}-execution`} className="inline-flex min-h-6 items-center font-medium text-accent hover:underline">
             The full receipt: every number before and after ↓
@@ -130,4 +156,32 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
       </div>
     </section>
   );
+}
+
+/** A stored channel code's channel, if the reference still has it (snapshots outlive releases). */
+const channelOf = (code: string) => (CHANNEL_BY_CODE as ReadonlyMap<string, { label: string; costBasis: string }>).get(code);
+const channelName = (code: string) => (code === "unknown" ? "no channel (unknown)" : (channelOf(code)?.label ?? code));
+const listed = (parts: string[]) => (parts.length <= 1 ? (parts[0] ?? "") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`);
+
+/**
+ * Where customers' credit moved between two snapshots, in words: "30 had no channel (unknown) and
+ * 3 had Door-to-door" before; "25 count as paid media and 8 as Google Business Profile (organic)"
+ * now. Paid-media channels are summed, as the paid customer count is. Null without per-channel
+ * counts (snapshots stored before 2026-11-18) or when nothing moved.
+ */
+function channelMoves(before: Record<string, number> | undefined, after: Record<string, number> | undefined) {
+  if (!before || !after) return null;
+  const codes = [...new Set([...Object.keys(before), ...Object.keys(after)])];
+  const delta = (c: string) => (after[c] ?? 0) - (before[c] ?? 0);
+  const isPaidMedia = (c: string) => channelOf(c)?.costBasis === "media";
+  const lost = codes.filter((c) => delta(c) < 0).sort((a, b) => delta(a) - delta(b));
+  const total = lost.reduce((s, c) => s - delta(c), 0);
+  if (total === 0) return null;
+  const paidGain = codes.filter(isPaidMedia).reduce((s, c) => s + delta(c), 0);
+  const otherGains = codes.filter((c) => !isPaidMedia(c) && delta(c) > 0).sort((a, b) => delta(b) - delta(a));
+  return {
+    total,
+    from: listed(lost.map((c) => `${count(-delta(c))} had ${channelName(c)}`)),
+    to: listed([...(paidGain > 0 ? [`${count(paidGain)} count as paid media`] : []), ...otherGains.map((c) => `${count(delta(c))} as ${channelName(c)}`)]),
+  };
 }

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Activity, ArrowLeftRight, CalendarX2, FileDiff, FileWarning, MapPinned, ReceiptText, Unlink, type LucideIcon } from "lucide-react";
-import { Badge, EmptyState, SeverityBadge, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, EmptyState, SeverityBadge, StateBadge, TableWrap, Td, Th } from "@/components/ui";
 import { KIND_LABEL, count, date, money } from "@/lib/format";
+import { DECISION_BLOCKING_KINDS } from "@/lib/metrics/decision";
 import { KIND_TITLE } from "@/lib/workflow/kinds";
 import type { QueueGroup, QueueRow } from "@/lib/workflow/queries";
 import { CaseStateBadge, ProposalStatusBadge, SourceBadge } from "./badges";
@@ -40,6 +41,19 @@ function TableHead() {
   );
 }
 
+const BLOCKING: ReadonlySet<string> = new Set(DECISION_BLOCKING_KINDS);
+
+/**
+ * The product state a case's incident is in, beside its workflow state (release design §5.8): an
+ * open incident of a kind that gates budget decisions holds its branch's decision; a resolved one
+ * whose latest proposal was executed was corrected by it.
+ */
+function IncidentState({ r }: { r: QueueRow }) {
+  if (r.exceptionStatus === "open" && r.branchId && BLOCKING.has(r.kind)) return <StateBadge state="held" detail="budget decision" />;
+  if (r.exceptionStatus === "resolved" && r.proposal?.status === "executed") return <StateBadge state="corrected" />;
+  return null;
+}
+
 /** A case's cells after the first, the same in the list and in a group. */
 function CaseCells({ r }: { r: QueueRow }) {
   return (
@@ -49,7 +63,10 @@ function CaseCells({ r }: { r: QueueRow }) {
         <SeverityBadge severity={r.severity} />
       </Td>
       <Td>
-        <CaseStateBadge state={r.state} />
+        <div className="flex flex-wrap items-center gap-1">
+          <CaseStateBadge state={r.state} />
+          <IncidentState r={r} />
+        </div>
         {r.reopenCount > 0 && <div className="mt-0.5 text-[11px] text-warn">re-opened {r.reopenCount}×</div>}
       </Td>
       <Td className="text-xs">{r.owner ?? <span className="text-faint">unassigned</span>}</Td>
@@ -78,6 +95,7 @@ function CaseFacts({ r }: { r: QueueRow }) {
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <SeverityBadge severity={r.severity} />
         <CaseStateBadge state={r.state} />
+        <IncidentState r={r} />
         <span className="text-muted">
           {r.branchId ?? "company"} · {r.owner ?? "unassigned"} · detected {date(r.firstDetectedAt)}
         </span>

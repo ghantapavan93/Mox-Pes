@@ -1,4 +1,4 @@
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -6,9 +6,10 @@ import { createInterface } from "node:readline";
 import { Pool } from "pg";
 import { createPool } from "@/lib/db";
 import { seed } from "@/lib/sim/seed";
+import { readClipboard, writeClipboard } from "./clipboard";
 
 /**
- * Loads the synthetic demo world into a hosted Postgres (Render, behind the Vercel deployment):
+ * Loads the synthetic demo world into a hosted Postgres (a Neon branch, behind the Vercel deployment):
  * `npm run db:load-hosted`. It seeds a fresh local copy, dumps it, and restores the dump into
  * the hosted database in one transaction. Copying the finished world takes seconds; replaying
  * the seed's daily runs over the internet would take a round trip per query. Rerun it to reset
@@ -107,30 +108,10 @@ function askHidden(question: string): Promise<string> {
 }
 
 const PASTE_HELP =
-  "In the Render dashboard, click the copy icon beside External Database URL, then paste here " +
-  "(right-click or Ctrl+V) and press Enter.";
+  "In Neon's Connect dialog, turn Connection pooling off and click the copy button beside the " +
+  "connection string, then paste here (right-click or Ctrl+V) and press Enter.";
 const FROM_CLIPBOARD = process.argv.includes("--from-clipboard");
 const DATABASE_URL_PATTERN = /^postgres(ql)?:\/\//;
-
-/** The clipboard's text (Windows; the machine docs/deploy.md is written for). */
-function readClipboard(): Promise<string> {
-  if (process.platform !== "win32") return Promise.reject(new Error("--from-clipboard works on Windows only."));
-  return new Promise((resolve, reject) => {
-    execFile("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Get-Clipboard -Raw"], { windowsHide: true }, (error, stdout) =>
-      error ? reject(error) : resolve(stdout.trim()),
-    );
-  });
-}
-
-/** Puts a value on the clipboard (Windows) without printing it. */
-function writeClipboard(value: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn("clip.exe", [], { stdio: ["pipe", "ignore", "inherit"], windowsHide: true });
-    child.on("error", reject);
-    child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`clip.exe exited with code ${code}`))));
-    child.stdin.end(value);
-  });
-}
 
 /** The hosted URL: HOSTED_DATABASE_URL, the clipboard when asked, or three tries at the hidden prompt. */
 async function readHostedUrl(): Promise<string> {
@@ -142,7 +123,7 @@ async function readHostedUrl(): Promise<string> {
   }
   console.log(PASTE_HELP);
   for (let attempt = 1; attempt <= 3; attempt++) {
-    const answer = await askHidden("Render External Database URL: ");
+    const answer = await askHidden("Neon connection string: ");
     if (DATABASE_URL_PATTERN.test(answer)) return answer;
     console.log(
       answer === ""
@@ -159,12 +140,16 @@ async function hostedTarget(): Promise<URL> {
   try {
     url = new URL(raw);
   } catch {
-    throw new Error("That is not a database URL. Copy the External Database URL from the Render dashboard.");
+    throw new Error("That is not a database URL. Copy the connection string from Neon's Connect dialog.");
   }
   if (!/^postgres(ql)?:$/.test(url.protocol)) throw new Error("The URL must start with postgres:// or postgresql://.");
-  // Render's internal host is a bare service id (dpg-…-a); the external one is a full domain.
+  // A host with no domain is a name inside some private network, not one this computer can reach.
   if (!isLocalHost(url) && !url.hostname.includes(".")) {
-    throw new Error("That is the Internal Database URL, which works only inside Render. Copy the External Database URL.");
+    throw new Error("That host has no domain, so it is not reachable from here. Copy the connection string Neon's Connect dialog shows.");
+  }
+  // Neon's pooler (PgBouncer, transaction mode) cannot hold the restore's single transaction.
+  if (url.hostname.includes("-pooler.")) {
+    throw new Error("That is Neon's pooled connection string. Turn Connection pooling off in the Connect dialog and copy it again.");
   }
   if (isLocalHost(url)) {
     if (process.env.ALLOW_LOCAL_TARGET !== "1") {

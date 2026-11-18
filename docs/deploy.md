@@ -37,8 +37,9 @@ instead. A rehearsal loads a local database (`ALLOW_LOCAL_TARGET=1`, see the rel
 
 1. Import `ghantapavan93/Mox-Pes` as a Next.js project; leave the build settings as they are.
 2. Environment variables, per environment (Production, and Preview for the release branch):
-   - `DATABASE_URL`: the value step 2 left on the clipboard, added with
-     `vercel env add DATABASE_URL <environment>` from stdin, so it never appears in a terminal.
+   - `DATABASE_URL`: the value step 2 left on the clipboard, piped from it so it never appears in
+     a terminal: `npx tsx scripts/clipboard-to-stdout.ts | npx vercel env add DATABASE_URL preview <git branch>`
+     (or `production`); then clear the clipboard (`Set-Clipboard -Value $null`).
      The app turns on TLS with certificate checks for any database that is not on this machine
      (`lib/db.ts`).
    - `PUBLIC_WORKSPACE=1`: the visitor workspace. Without it the guest is read-only.

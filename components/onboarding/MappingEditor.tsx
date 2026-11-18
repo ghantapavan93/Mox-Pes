@@ -300,7 +300,8 @@ export function MappingEditor(props: {
                   )}
                   {vals && vals.length > 0 && (
                     // Scrolls inside the card on a narrow screen: the selects' option names are wider than 320 px allows.
-                    <div className="max-w-full overflow-x-auto">
+                    // A named, focusable region (as TableWrap), so the keyboard can scroll it when its selects are disabled.
+                    <div className="max-w-full overflow-x-auto" role="region" aria-label={`Translations for ${f.label}`} tabIndex={0}>
                     <table className="w-full text-xs">
                       <caption className="sr-only">Translations for {f.label}</caption>
                       <thead>

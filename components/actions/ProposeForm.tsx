@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useAction } from "./useAction";
+import { Button } from "@/components/ui";
 
 export interface ParamField {
   name: string;
@@ -105,9 +106,9 @@ export function ProposeForm({ exceptionId, kinds }: { exceptionId: number; kinds
           className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1"
         />
       </label>
-      <button type="submit" disabled={!!busy} className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:bg-accent-hover disabled:opacity-50">
-        {busy ? "Recording…" : "Propose fix"}
-      </button>
+      <Button type="submit" variant="primary" busy={!!busy} busyLabel="Recording…">
+        Propose fix
+      </Button>
       {message && (
         <p role={message.ok ? "status" : "alert"} className={message.ok ? "text-good" : "text-bad"}>
           {message.text}

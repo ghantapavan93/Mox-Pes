@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useAction } from "./useAction";
+import { Button } from "@/components/ui";
 
 /** Owner assignment and closing a case without a fix (with a reason). Server-checked. */
 export function CaseControls({
@@ -41,14 +42,19 @@ export function CaseControls({
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            disabled={!!busy || nextOwner === (owner ?? "")}
-            onClick={() => run("assign", url, { action: "assign", owner: nextOwner || null })}
-            className="rounded border border-border px-3 py-1 hover:bg-surface-2 disabled:opacity-50"
+          <Button
+            size="sm"
+            testId="case-assign"
+            busy={busy === "assign"}
+            busyLabel="Saving…"
+            aria-disabled={(!!busy && busy !== "assign") || nextOwner === (owner ?? "") || undefined}
+            onClick={() => {
+              if (busy || nextOwner === (owner ?? "")) return;
+              void run("assign", url, { action: "assign", owner: nextOwner || null });
+            }}
           >
-            {busy === "assign" ? "Saving…" : "Assign"}
-          </button>
+            Assign
+          </Button>
         </div>
       )}
       {closeOptions.length > 0 && (
@@ -58,6 +64,7 @@ export function CaseControls({
             className="mt-2 space-y-2"
             onSubmit={(e) => {
               e.preventDefault();
+              if (busy) return;
               void run("close", url, { action: "close", outcome, reason });
             }}
           >
@@ -83,9 +90,9 @@ export function CaseControls({
                 className="min-w-0 flex-1 rounded border border-border bg-surface px-2 py-1"
               />
             </label>
-            <button type="submit" disabled={!!busy} className="rounded border border-border px-3 py-1 hover:bg-surface-2 disabled:opacity-50">
-              {busy === "close" ? "Closing…" : "Close case"}
-            </button>
+            <Button type="submit" size="sm" variant="danger" busy={busy === "close"} busyLabel="Closing…" aria-disabled={(!!busy && busy !== "close") || undefined}>
+              Close case
+            </Button>
           </form>
         </details>
       )}

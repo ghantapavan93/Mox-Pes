@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { CheckCircle2, LoaderCircle, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { Working } from "@/components/ui";
 import { useAction } from "./useAction";
-
-/** A busy button's content: a spinner beside its working label. Under reduced motion the spinner holds still; the label says it. */
-function Working({ label }: { label: string }) {
-  return (
-    <>
-      <LoaderCircle aria-hidden className="size-3.5 shrink-0 animate-spin" />
-      {label}
-    </>
-  );
-}
 
 /**
  * The next step for one proposal, as the server allows it for this viewer. Buttons appear

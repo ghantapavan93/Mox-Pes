@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, ChevronRight, Info, Minus, TrendingDown, TrendingUp, XCircle } from "lucide-react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, ChevronRight, CircleDashed, Info, LoaderCircle, Lock, Minus, Signature, TrendingDown, TrendingUp, XCircle } from "lucide-react";
 import { METRICS } from "@/lib/metrics/definitions";
 
 /**
@@ -114,17 +114,21 @@ export function PageHeader({
 
 // ── Controls ────────────────────────────────────────────────────────────────
 
-/** Link-based segmented control: the choice lives in the URL, so it is shareable and back-able. */
+/**
+ * Link-based segmented control: the choice lives in the URL, so it is shareable and back-able.
+ * A 32 px sunken track; the current item stays dark, the clearest selected state before any
+ * interaction (docs/design-system.md, "Buttons and controls").
+ */
 export function Segmented({ label, items, testId }: { label: string; items: Array<{ href: string; label: ReactNode; current: boolean }>; testId?: string }) {
   return (
-    <nav aria-label={label} data-testid={testId} className="inline-flex max-w-full items-center overflow-x-auto rounded-md border border-border bg-surface p-0.5 text-xs shadow-raised">
+    <nav aria-label={label} data-testid={testId} className="inline-flex h-8 max-w-full items-center overflow-x-auto rounded-lg bg-sunken p-[3px] text-xs">
       <span className="sr-only">{label}:</span>
       {items.map((it, i) => (
         <Link
           key={i}
           href={it.href}
           aria-current={it.current ? "page" : undefined}
-          className={`whitespace-nowrap rounded px-2.5 py-1 font-medium ${it.current ? "bg-text text-white" : "text-muted hover:bg-surface-2 hover:text-text"}`}
+          className={`tap-target relative inline-flex h-full items-center whitespace-nowrap rounded-md px-2.5 font-medium transition-colors duration-100 ${it.current ? "bg-text text-white shadow-raised" : "text-muted hover:bg-surface hover:text-text"}`}
         >
           {it.label}
         </Link>
@@ -144,15 +148,115 @@ export function PeriodTabs({ current, base, extra = "" }: { current: string; bas
   return <Segmented label="Period" items={tabs.map(([key, label]) => ({ href: `${base}?period=${key}${extra}`, label, current: current === key }))} />;
 }
 
-/** Primary / secondary / ghost link-buttons, one style everywhere. */
-export function ButtonLink({ href, children, variant = "secondary", testId, icon }: { href: string; children: ReactNode; variant?: "primary" | "secondary" | "ghost"; testId?: string; icon?: ReactNode }) {
-  const styles = {
-    primary: "bg-accent text-white hover:bg-accent-hover border-transparent",
-    secondary: "bg-surface text-text border-border hover:bg-surface-2",
-    ghost: "border-transparent text-accent hover:bg-accent-soft",
-  }[variant];
+// ── Buttons ─────────────────────────────────────────────────────────────────
+
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "md" | "sm";
+
+const BUTTON_VARIANT: Record<ButtonVariant, string> = {
+  // The page's one main action for its current state.
+  primary: "border-transparent bg-accent text-white shadow-raised hover:bg-accent-hover active:bg-accent-hover",
+  secondary: "border-border bg-surface text-text shadow-raised hover:bg-surface-2 active:bg-sunken",
+  ghost: "border-transparent text-accent hover:bg-accent-soft active:bg-accent-soft",
+  // Reject, cancel, delete: an outline with red words, never a red fill.
+  danger: "border-border bg-surface text-bad shadow-raised hover:bg-bad-soft active:bg-bad-soft",
+};
+
+const BUTTON_SIZE: Record<ButtonSize, string> = {
+  md: "h-8 gap-1.5 px-3 text-sm [&_svg]:size-4",
+  sm: "h-7 gap-1 px-2.5 text-[13px] [&_svg]:size-3.5",
+};
+
+/**
+ * One class list for every button and button-styled link (docs/design-system.md, "Buttons and
+ * controls"): 32 px (`md`) or 28 px (`sm`) tall, 16 px icons (14 px at `sm`), an 8 px radius, a 1 px
+ * press, and on coarse pointers an invisible hit area of at least 44 × 44 px (`.tap-target`,
+ * app/globals.css) that leaves the visual size alone. Focus keeps the global outline.
+ */
+export function buttonClass({ variant = "secondary", size = "md", className = "" }: { variant?: ButtonVariant; size?: ButtonSize; className?: string } = {}): string {
+  return [
+    "tap-target relative inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-lg border font-medium",
+    "transition-colors duration-100 active:translate-y-px",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+    "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-busy:cursor-progress aria-busy:opacity-100 aria-busy:active:translate-y-0",
+    BUTTON_SIZE[size],
+    BUTTON_VARIANT[variant],
+    className,
+  ].join(" ");
+}
+
+/** A busy control's content: a spinner beside its working words. Under reduced motion the spinner holds still; the words say it. */
+export function Working({ label }: { label: string }) {
   return (
-    <Link href={href} data-testid={testId} className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium shadow-raised ${styles}`}>
+    <>
+      <LoaderCircle aria-hidden className="size-3.5 shrink-0 animate-spin" />
+      {label}
+    </>
+  );
+}
+
+/**
+ * A `<button>` in the shared style. `busy` keeps it focusable (`aria-disabled`, design rule 13),
+ * ignores further presses, and shows `Working` with `busyLabel`; both labels share one grid cell,
+ * so the button keeps the width of the wider one and nothing around it moves.
+ */
+export function Button({
+  variant = "secondary",
+  size = "md",
+  icon,
+  busy = false,
+  busyLabel,
+  testId,
+  className,
+  children,
+  onClick,
+  type = "button",
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; icon?: ReactNode; busy?: boolean; busyLabel?: string; testId?: string }) {
+  return (
+    <button
+      {...rest}
+      type={type}
+      data-testid={testId}
+      data-variant={variant}
+      aria-busy={busy || undefined}
+      aria-disabled={busy || rest["aria-disabled"] ? true : undefined}
+      onClick={busy ? (e) => e.preventDefault() : onClick}
+      className={buttonClass({ variant, size, className })}
+    >
+      <span className="grid">
+        <span className={`col-start-1 row-start-1 inline-flex items-center justify-center gap-[inherit] ${busy && busyLabel ? "invisible" : ""}`}>
+          {icon}
+          {children}
+        </span>
+        {busyLabel && (
+          <span className={`col-start-1 row-start-1 inline-flex items-center justify-center gap-[inherit] ${busy ? "" : "invisible"}`}>
+            <Working label={busyLabel} />
+          </span>
+        )}
+      </span>
+    </button>
+  );
+}
+
+/** A link in the shared button style: the same variants and sizes as `Button`. */
+export function ButtonLink({
+  href,
+  children,
+  variant = "secondary",
+  size = "md",
+  testId,
+  icon,
+}: {
+  href: string;
+  children: ReactNode;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  testId?: string;
+  icon?: ReactNode;
+}) {
+  return (
+    <Link href={href} data-testid={testId} data-variant={variant} className={buttonClass({ variant, size })}>
       {icon}
       {children}
     </Link>
@@ -357,7 +461,9 @@ export function Pager({ page, lastPage, first, last, total, hrefFor, label, test
   );
 }
 
-export function Badge({ children, tone = "neutral", dot = false }: { children: ReactNode; tone?: "neutral" | "bad" | "warn" | "good" | "accent"; dot?: boolean }) {
+export type BadgeTone = "neutral" | "bad" | "warn" | "good" | "accent";
+
+export function Badge({ children, tone = "neutral", dot = false, testId }: { children: ReactNode; tone?: BadgeTone; dot?: boolean; testId?: string }) {
   const map = {
     neutral: "bg-surface-2 text-muted ring-border",
     bad: "bg-bad-soft text-bad ring-bad/20",
@@ -366,9 +472,37 @@ export function Badge({ children, tone = "neutral", dot = false }: { children: R
     accent: "bg-accent-soft text-accent ring-accent/20",
   };
   return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${map[tone]}`}>
+    <span data-testid={testId} className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${map[tone]}`}>
       {dot && <span aria-hidden className="size-1.5 rounded-full bg-current" />}
       {children}
+    </span>
+  );
+}
+
+/** The five states a figure or a decision can be in. Each looks different and says its word (§5.8 of the release design). */
+export type ProductState = "missing" | "held" | "zero" | "corrected" | "approved";
+
+const PRODUCT_STATE: Record<ProductState, { tone: BadgeTone; word: string; icon: ReactNode }> = {
+  missing: { tone: "neutral", word: "No record", icon: <CircleDashed aria-hidden className="size-3" /> },
+  held: { tone: "warn", word: "Held", icon: <Lock aria-hidden className="size-3" /> },
+  zero: { tone: "neutral", word: "$0.00 recorded", icon: <Minus aria-hidden className="size-3" /> },
+  corrected: { tone: "good", word: "Corrected", icon: <CheckCircle2 aria-hidden className="size-3" /> },
+  approved: { tone: "neutral", word: "Approved", icon: <Signature aria-hidden className="size-3" /> },
+};
+
+/**
+ * A state in words, colour and icon, built on `Badge`. Amber and green are data states; blue stays
+ * "you can act here", so no state is blue. `detail` adds the date or the approver.
+ */
+export function StateBadge({ state, detail, testId }: { state: ProductState; detail?: ReactNode; testId?: string }) {
+  const s = PRODUCT_STATE[state];
+  return (
+    <span data-state={state} className="inline-flex">
+      <Badge tone={s.tone} testId={testId}>
+        {s.icon}
+        {s.word}
+        {detail ? <span className="font-normal">· {detail}</span> : null}
+      </Badge>
     </span>
   );
 }

@@ -147,6 +147,24 @@ details > summary::-webkit-details-marker {
   }
 }
 
+/* A control's hit area on a touch screen: at least 44 × 44 px around it, invisible, so a 28 or
+   32 px button stays compact on screen and is still easy to tap (docs/design-system.md, "Button,
+   ButtonLink, buttonClass"). The control itself is `position: relative` (buttonClass). A Tailwind
+   utility, so it is emitted wherever the class is used (a plain rule here was dropped by the build). */
+@utility tap-target {
+  @media (pointer: coarse) {
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 /* CountUp (components/CountUp.tsx), the one counter: the element's text is the final figure from the
    first byte. While it counts (until the script sets data-counted) that text is painted transparent
    and the moving figure is drawn over it from data-display, with an empty alternative text so it never

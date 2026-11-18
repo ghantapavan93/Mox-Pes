@@ -35,7 +35,8 @@ test("an analyst maps an unfamiliar call export, an approver publishes it, and e
   await questions.getByText(/branch local time/).click();
   await page.getByTestId("propose-and-dry-run").click();
   await expect(page.getByTestId("accounted")).toContainText("Every row is accounted for: 12 rows, 12 dispositions");
-  await expect(page.getByTestId("dry-run-counts")).toContainText("New, eligible6");
+  // Unpublished, for a staff role: what "eligible" would mean once approved (release design §5.2).
+  await expect(page.getByTestId("dry-run-counts")).toContainText("Would count after approval6");
 
   // The analyst cannot approve their own mapping: the control says why.
   await expect(page.getByRole("button", { name: "Approve mapping" })).toBeDisabled();
@@ -64,14 +65,24 @@ test("a CRM payments export is compared with the ledger to the cent and can neve
   await expect(page.getByTestId("publish")).toHaveCount(0);
 });
 
-test("branch-scoped and read-only roles cannot see onboarding at all", async ({ page }) => {
+test("branch-scoped roles cannot see onboarding at all; the guest gets its own workspace, never a staff upload", async ({ page }) => {
   const href = await stageSample(page, "demo-google-ads.csv");
-  for (const role of ["partner", "brand", "guest"] as const) {
+  const api = `/api${href.replace("/onboarding", "/onboarding/uploads")}`;
+  for (const role of ["partner", "brand"] as const) {
     await setRole(page, role);
     await page.goto("/onboarding");
     await expect(page.getByText(/limited to company-wide/)).toBeVisible();
-    expect((await page.request.get(`/api${href.replace("/onboarding", "/onboarding/uploads")}`)).status()).toBe(403);
+    expect((await page.request.get(api)).status()).toBe(403);
   }
+  // The e2e server runs with PUBLIC_WORKSPACE=1: the guest may upload into its own workspace, and a
+  // company upload is not its own, so it is not found (release design §5.1).
+  await setRole(page, "guest");
+  await page.goto("/onboarding");
+  await expect(page.getByTestId("workspace-mode")).toBeVisible();
+  await expect(page.getByTestId("upload-form")).toBeVisible();
+  expect((await page.request.get(api)).status()).toBe(404);
+  await page.goto(href);
+  await expect(page.getByTestId("workspace-not-available")).toBeVisible();
 });
 
 test("a file that fits no dataset is not guessed at", async ({ page }) => {

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DecisionPanel } from "@/components/onboarding/DecisionPanel";
+import { DeleteNow } from "@/components/onboarding/DeleteNow";
 import { MappingEditor, type ColumnFacts, type EditorDataset } from "@/components/onboarding/MappingEditor";
-import { Badge, Callout, Card, EmptyState, Forbidden, KV, PageHeader, Pager, Skeleton, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, EmptyState, Forbidden, KV, PageHeader, Pager, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { ActionError } from "@/lib/actions";
 import { count, dateTime } from "@/lib/format";
+import { WORKSPACE_NOT_AVAILABLE, onboardingAccess } from "@/lib/onboarding/access";
 import type { ColumnProfile } from "@/lib/onboarding/profile";
 import { getUpload, rowResults, type UploadDetail } from "@/lib/onboarding/service";
 import { DATASETS, DATASET_IDS, MONEY_MEANINGS } from "@/lib/onboarding/targets";
@@ -13,6 +15,7 @@ import { parseRecordId } from "@/lib/record-id";
 import { BRANCHES } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import type { Viewer } from "@/lib/viewer";
+import { LOCAL_DEMO_URL, availabilitySentence } from "@/lib/workspace";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -29,8 +32,21 @@ export default function OnboardingUploadPage(props: Props) {
 /** Exact dollars and cents: reconciliation never rounds. */
 const exact = (cents: number) => `${cents < 0 ? "−" : ""}$${(Math.abs(cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const DISPOSITION: Record<string, { label: string; tone: "neutral" | "bad" | "warn" | "good" | "accent" }> = {
-  eligible: { label: "New, eligible", tone: "good" },
+/** Who is looking at the upload: a visitor's workspace on the public demo, or a staff role. */
+type Mode = "workspace" | "company";
+type Disposition = { label: string; tone: "neutral" | "bad" | "warn" | "good" | "accent" };
+
+/**
+ * Row outcomes in the reader's words. "Eligible" says what it would mean here: counted after
+ * approval (staff), counted only in the local demo (a visitor's workspace), or new to a ledger the
+ * file can never change (payments and ad spend).
+ */
+function dispositions(mode: Mode, authority: "publish" | "reconcile"): Record<string, Disposition> {
+  const eligible = authority === "reconcile" ? "New to the ledger (compare-only)" : mode === "workspace" ? "Would count after staff approval (local demo only)" : "Would count after approval";
+  return { eligible: { label: eligible, tone: "good" }, ...OTHER_DISPOSITIONS };
+}
+
+const OTHER_DISPOSITIONS: Record<string, Disposition> = {
   matches_ledger: { label: "Matches ledger", tone: "neutral" },
   differs_from_ledger: { label: "Differs from ledger", tone: "warn" },
   invalid: { label: "Needs correction", tone: "bad" },
@@ -55,7 +71,7 @@ function findings(c: ColumnProfile): string[] {
 
 const looksLike = (c: ColumnProfile) => (c.personal ? `${c.inferred.replace(/_/g, " ")} · personal` : c.inferred.replace(/_/g, " "));
 
-function stepState(detail: UploadDetail, viewer: Viewer) {
+function stepState(detail: UploadDetail, viewer: Viewer, mode: Mode) {
   const latest = detail.mappings[0] ?? null;
   const dry = detail.dryRun;
   const dryMapping = dry ? detail.mappings.find((m) => m.id === dry.mappingId) ?? null : null;
@@ -70,7 +86,15 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
       key: "mapping",
       title: "Map meanings",
       state: !latest ? ("todo" as const) : latest.problems.length ? ("attention" as const) : ("done" as const),
-      note: !latest ? (detail.assistant.dataset.chosen ? `Suggested: ${DATASETS[detail.assistant.dataset.chosen].label}` : "No dataset fits; choose one or stop") : latest.problems.length ? `${latest.problems.length} question${latest.problems.length === 1 ? "" : "s"} open` : `Version ${latest.version} · ${latest.status}`,
+      note: !latest
+        ? detail.assistant.dataset.chosen
+          ? `Suggested: ${DATASETS[detail.assistant.dataset.chosen].label}`
+          : "No dataset fits; choose one or stop"
+        : latest.problems.length
+          ? `${latest.problems.length} question${latest.problems.length === 1 ? "" : "s"} open`
+          : latest.ordinal !== null
+            ? `Mapping ${latest.ordinal} · saved`
+            : `Version ${latest.version} · ${latest.status}`,
     },
     {
       key: "dry-run",
@@ -78,16 +102,26 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
       state: !dry ? ("todo" as const) : dry.mappingId !== latest?.id ? ("attention" as const) : ("done" as const),
       note: !dry ? "Every row checked, nothing written" : `${count(dry.counts.eligible)} new · ${count(dry.counts.invalid + dry.counts.quarantined)} held back`,
     },
-    {
-      key: "decision",
-      title: "Independent approval",
-      state: !dryMapping ? ("todo" as const) : dryMapping.status === "approved" ? ("done" as const) : dryMapping.status === "rejected" ? ("blocked" as const) : ("waiting" as const),
-      note: !dryMapping ? "After the dry run" : dryMapping.status === "proposed" ? `Waiting for a role other than ${dryMapping.proposedRole}${viewer.can.approve ? "" : " (an approver)"}` : `${dryMapping.status} by ${dryMapping.decidedBy}`,
-    },
+    mode === "workspace"
+      ? { key: "decision", title: "Independent approval", state: "elsewhere" as const, note: "Local demo only: a second person approves" }
+      : {
+          key: "decision",
+          title: "Independent approval",
+          state: !dryMapping ? ("todo" as const) : dryMapping.status === "approved" ? ("done" as const) : dryMapping.status === "rejected" ? ("blocked" as const) : ("waiting" as const),
+          note: !dryMapping ? "After the dry run" : dryMapping.status === "proposed" ? `Waiting for a role other than ${dryMapping.proposedRole}${viewer.can.approve ? "" : " (an approver)"}` : `${dryMapping.status} by ${dryMapping.decidedBy}`,
+        },
     {
       key: "outcome",
-      title: authority === "reconcile" ? "Reconcile with ledger" : "Publish",
-      state: published ? ("done" as const) : authority === "reconcile" && dry ? (comparedNothing ? ("none" as const) : ("done" as const)) : ("todo" as const),
+      title: authority === "reconcile" ? "Reconcile with ledger" : mode === "workspace" ? "Count" : "Publish",
+      state: published
+        ? ("done" as const)
+        : authority === "reconcile" && dry
+          ? comparedNothing
+            ? ("none" as const)
+            : ("done" as const)
+          : mode === "workspace" && authority !== "reconcile"
+            ? ("elsewhere" as const)
+            : ("todo" as const),
       note: published
         ? `Published ${count((detail.publication!.stats as { published?: number }).published ?? 0)} rows`
         : authority === "reconcile"
@@ -96,7 +130,9 @@ function stepState(detail: UploadDetail, viewer: Viewer) {
               ? "The ledger holds none of these rows"
               : `${count(dry.counts.differs_from_ledger)} differ from the ledger`
             : "Compare only: never published"
-          : "Approved rows go through intake",
+          : mode === "workspace"
+            ? "Never on the public demo"
+            : "Approved rows go through intake",
     },
   ];
 }
@@ -127,7 +163,7 @@ type DryRunIssue = NonNullable<UploadDetail["dryRun"]>["issues"][number];
  * one next action (BYOF-WORKFLOW.md). Every figure is the dry run's own; the profile, mapping,
  * counts and every row stay below it.
  */
-function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<UploadDetail["dryRun"]> }) {
+function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry: NonNullable<UploadDetail["dryRun"]>; mode: Mode; startedAt: string | null }) {
   const c = dry.counts;
   const counted = (c.eligible ?? 0) + (c.matches_ledger ?? 0) + (c.differs_from_ledger ?? 0);
   const compared = dry.ledger.counts.matches + dry.ledger.counts.differs;
@@ -151,7 +187,8 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
       ? `${plural(spend.campaigns, "campaign")} in ${spend.accounts.length === 1 ? `account ${spend.accounts[0]}` : `accounts ${spend.accounts.join(", ")}`}. ${heldBack > 0 ? `The ${plural(counted, "counted row")} passed` : "Every row passed"} the checks the live feed applies.`
       : "Every counted row passed the checks the live feed applies.",
     ledgerLine,
-    dry.authority === "reconcile" ? "Nothing was added to the ledger." : "Nothing is in the ledger until an approver publishes it.",
+    // The workspace's own label below says it for a visitor's file.
+    mode === "workspace" ? "" : dry.authority === "reconcile" ? "Nothing was added to the ledger." : "Nothing is in the ledger until an approver publishes it.",
     notRecords > 0 ? `${plural(notRecords, "line")} of the file ${notRecords === 1 ? "is not a record" : "are not records"} (a report total, a title or footer line) and ${notRecords === 1 ? "was" : "were"} left out.` : "",
   ].filter(Boolean).join(" ");
 
@@ -164,7 +201,9 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
           ? "Compare only: an ad report cannot add spend to the ledger, and spend alone does not tell leads, customers or cost per customer."
           : dry.authority === "reconcile"
             ? "Compare only: this export can show differences from the ledger; it never changes the ledger."
-            : "An approver, a different role, must approve the mapping before these rows are published.";
+            : mode === "workspace"
+              ? "On the public demo a file is compared, never counted: rows are counted only in the local demo, after a second person approves the mapping."
+              : "An approver, a different role, must approve the mapping before these rows are published.";
 
   const next =
     heldBack > 0
@@ -175,20 +214,35 @@ function ResultCard({ uploadId, dry }: { uploadId: number; dry: NonNullable<Uplo
     <section id="result" aria-labelledby="result-title" data-testid="upload-result" data-dry-run={dry.id} className="scroll-mt-20 rounded-xl bg-surface p-4 ring-1 ring-text/10">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="result-title" className="text-xs font-semibold uppercase tracking-wider text-faint">Result</h2>
+        {mode === "workspace" && <Badge tone="accent">comparison workspace</Badge>}
         {dry.authority === "reconcile" && <Badge tone="neutral">compare only</Badge>}
       </div>
-      <p className="mt-2 text-base font-semibold" data-testid="result-conclusion">{conclusion}</p>
+      <p className="mt-2 text-base font-semibold" data-testid="result-conclusion" elementtiming="verdict">
+        {conclusion}
+      </p>
       <p className="mt-1 text-sm text-muted">{support}</p>
       <p className="mt-3 rounded-md border border-warn/40 bg-warn-soft px-3 py-2 text-sm" data-testid="result-limitation">
         <span className="font-semibold">Limitation: </span>
         {limitation}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Link href={next.href} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover" data-testid="result-next">
+        <ButtonLink href={next.href} variant="primary" testId="result-next">
           {next.label}
-        </Link>
+        </ButtonLink>
         <span className="text-xs text-faint">The file&apos;s profile, the mapping and every row&apos;s outcome are below.</span>
       </div>
+      {/* After the next step, so a phone's first screen holds the answer and the action (route audit). */}
+      {mode === "workspace" && (
+        <p className="mt-3 border-t border-border pt-3 text-sm text-muted" data-testid="workspace-label">
+          <span className="font-semibold text-text">Comparison workspace on the public demo.</span> Nothing was added to the ledger. Files are counted only in the{" "}
+          <a href={LOCAL_DEMO_URL} className="text-accent hover:underline">
+            local demo
+          </a>
+          , after a second person approves the mapping and publishes; ad-spend and payment files are compared, never counted.
+          {startedAt ? ` ${availabilitySentence(startedAt)}` : ""}{" "}
+          <DeleteNow uploadId={uploadId} />
+        </p>
+      )}
     </section>
   );
 }
@@ -203,29 +257,61 @@ const STEP_STYLE = {
   waiting: { dot: "bg-accent", word: "Waiting" },
   blocked: { dot: "bg-bad", word: "Rejected" },
   none: { dot: "bg-border-strong", word: "Nothing compared" },
+  elsewhere: { dot: "bg-border-strong", word: "Not here" },
 };
+
+/**
+ * What a visitor sees for any upload that is not its own live one: another visitor's, an expired
+ * one, a company upload. One answer for all of them, so none can be told apart (§5.2).
+ */
+function NotAvailable() {
+  return (
+    <div className="space-y-6">
+      <PageHeader crumbs={[{ href: "/onboarding", label: "Data onboarding" }, { label: "Not available" }]} title="This upload is not available" />
+      <Card testId="workspace-not-available">
+        <p className="text-sm">{WORKSPACE_NOT_AVAILABLE}</p>
+        <div className="mt-3">
+          <ButtonLink href="/onboarding" variant="primary">
+            Upload a file
+          </ButtonLink>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+const LEDGER_LINK_LABEL = (href: string) => (href.startsWith("/customers/") ? "Customer journey" : "Spend trace");
 
 async function Workspace({ params, searchParams }: Props) {
   const uploadId = parseRecordId((await params).id);
-  if (uploadId === null) notFound();
   const viewer = await getViewer();
-  if (viewer.branchIds !== null || !(viewer.can.propose || viewer.can.approve)) {
+  const mode = onboardingAccess(viewer);
+  if (mode === null) {
     return <Forbidden message="Data onboarding is limited to company-wide analyst, engineer and approver roles: an export spans every branch." />;
+  }
+  if (uploadId === null) {
+    if (mode === "workspace") return <NotAvailable />;
+    notFound();
   }
   let detail: UploadDetail;
   try {
     detail = await getUpload(getPool(), viewer, uploadId, await businessNow());
   } catch (error) {
-    if (error instanceof ActionError && error.status === 404) notFound();
+    if (error instanceof ActionError && error.status === 404) {
+      if (mode === "workspace") return <NotAvailable />;
+      notFound();
+    }
     throw error;
   }
   const sp = await searchParams;
-  const filter = typeof sp.rows === "string" && DISPOSITION[sp.rows] ? sp.rows : undefined;
-  const page = parseRecordId(typeof sp.page === "string" ? sp.page : null) ?? 1;
-  const rows = await rowResults(getPool(), viewer, { uploadId, disposition: filter, page });
-  const steps = stepState(detail, viewer);
   const dry = detail.dryRun;
   const latest = detail.mappings[0] ?? null;
+  const DISPOSITION = dispositions(mode, dry?.authority ?? (latest ? DATASETS[latest.spec.dataset].authority : "publish"));
+  // Own keys only: a plain lookup would accept inherited names such as "toString".
+  const filter = typeof sp.rows === "string" && Object.hasOwn(DISPOSITION, sp.rows) ? sp.rows : undefined;
+  const page = parseRecordId(typeof sp.page === "string" ? sp.page : null) ?? 1;
+  const rows = await rowResults(getPool(), viewer, { uploadId, disposition: filter, page });
+  const steps = stepState(detail, viewer, mode);
   const dryMapping = dry ? detail.mappings.find((m) => m.id === dry.mappingId) ?? null : null;
   const staged = detail.upload.status === "staged" && !detail.upload.rowsPurged;
 
@@ -244,6 +330,9 @@ async function Workspace({ params, searchParams }: Props) {
   }));
   const proposerRole = dryMapping?.proposedRole ?? null;
   const canDecide = viewer.can.approve && proposerRole !== viewer.role;
+  const workspace = mode === "workspace";
+  const startedAt = detail.upload.workspaceStartedAt;
+  const publishedRows = detail.publication ? ((detail.publication.stats as { published?: number }).published ?? 0) : 0;
   const dryCurrent = dry !== null && dryMapping !== null && dry.mappingId === latest?.id;
   const canPublish = viewer.can.approve && staged && dryCurrent && dryMapping?.status === "approved" && (dry?.publishable ?? 0) > 0;
   const lastPage = Math.max(1, Math.ceil(rows.total / rows.pageSize));
@@ -253,18 +342,26 @@ async function Workspace({ params, searchParams }: Props) {
     <div className="space-y-6">
       <PageHeader
         crumbs={[{ href: "/onboarding", label: "Data onboarding" }, { label: detail.upload.filename }]}
-        eyebrow={`Upload #${detail.upload.id} · ${detail.upload.uploadedBy}`}
+        eyebrow={workspace ? `Your workspace · upload #${detail.upload.id}` : `Upload #${detail.upload.id} · ${detail.upload.uploadedBy}`}
         title={detail.upload.filename}
         badges={
-          <>
-            <Badge tone={detail.upload.status === "published" ? "good" : detail.upload.status === "staged" ? "accent" : "neutral"} dot>
-              {detail.upload.status}
-            </Badge>
-            <Badge tone="accent">synthetic</Badge>
-          </>
+          workspace ? (
+            <Badge tone="accent">comparison workspace</Badge>
+          ) : (
+            <>
+              <Badge tone={detail.upload.status === "published" ? "good" : detail.upload.status === "staged" ? "accent" : "neutral"} dot>
+                {detail.upload.status}
+              </Badge>
+              <Badge tone="accent">synthetic</Badge>
+            </>
+          )
         }
         description={
-          detail.upload.rowsPurged ? (
+          workspace && startedAt ? (
+            <>
+              Started {dateTime(startedAt)}. {availabilitySentence(startedAt)} Nothing in this file has touched the ledger.
+            </>
+          ) : detail.upload.rowsPurged ? (
             <>The staged rows were deleted ({detail.upload.status === "published" ? "after publication" : "after retention or on request"}). The profile, the mapping versions and every row&apos;s disposition remain as the record.</>
           ) : (
             <>Staged until {dateTime(detail.upload.expiresAt)}. Nothing in this file has touched the ledger{detail.publication ? " except what was published below" : ""}.</>
@@ -272,7 +369,13 @@ async function Workspace({ params, searchParams }: Props) {
         }
       />
 
-      {dry && <ResultCard uploadId={uploadId} dry={dry} />}
+      {workspace && sp.repeat === "1" && startedAt && (
+        <Callout title="You already uploaded this file" testId="repeat-notice">
+          You uploaded this exact file on {dateTime(startedAt)}. {dry ? "Its result is below." : "It is below, where you left it."} Nothing was staged again.
+        </Callout>
+      )}
+
+      {dry && <ResultCard uploadId={uploadId} dry={dry} mode={mode} startedAt={startedAt} />}
 
       <nav aria-label="Onboarding steps" className="rounded-xl bg-surface p-3 ring-1 ring-text/10" data-testid="step-rail">
         <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">
@@ -373,22 +476,24 @@ async function Workspace({ params, searchParams }: Props) {
             suggestedDataset={detail.assistant.dataset.chosen}
             initial={latest?.spec ?? null}
             initialValues={detail.values}
-            canPropose={viewer.can.propose}
-            proposeReason={viewer.can.propose ? null : `${viewer.label} reviews mappings; an analyst or engineer proposes them.`}
+            canPropose={workspace || viewer.can.propose}
+            proposeReason={workspace || viewer.can.propose ? null : `${viewer.label} reviews mappings; an analyst or engineer proposes them.`}
+            primary={!dry}
           />
         ) : (
           <p className="text-sm text-muted">This upload is {detail.upload.status}; its mapping can no longer change. The approved mapping applies to the next export with the same layout.</p>
         )}
         {detail.mappings.length > 0 && (
           <div className="mt-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-faint">Mapping versions for this export layout</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-faint">{workspace ? "Mappings of this upload" : "Mapping versions for this export layout"}</h3>
             <ul className="mt-2 space-y-1 text-sm" data-testid="mapping-versions">
               {detail.mappings.map((m) => (
                 <li key={m.id} className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">v{m.version}</span>
-                  <Badge tone={m.status === "approved" ? "good" : m.status === "rejected" ? "bad" : m.status === "proposed" ? "accent" : "neutral"}>{m.status}</Badge>
+                  <span className="font-medium">{m.ordinal !== null ? `Mapping ${m.ordinal}` : `v${m.version}`}</span>
+                  {m.ordinal === null && <Badge tone={m.status === "approved" ? "good" : m.status === "rejected" ? "bad" : m.status === "proposed" ? "accent" : "neutral"}>{m.status}</Badge>}
                   <span className="text-muted">
-                    {DATASETS[m.spec.dataset].label} · proposed by {m.proposedBy}
+                    {DATASETS[m.spec.dataset].label}
+                    {m.ordinal !== null ? "" : ` · proposed by ${m.proposedBy}`}
                     {m.decidedBy ? ` · ${m.status} by ${m.decidedBy}${m.reason ? `: “${m.reason}”` : ""}` : ""}
                   </span>
                   <span className="font-mono text-xs text-faint">rules {m.specHash}</span>
@@ -508,7 +613,7 @@ async function Workspace({ params, searchParams }: Props) {
             <div className="p-4"><EmptyState title="No rows with this disposition" /></div>
           ) : (
             <>
-              <TableWrap flush label="Row results" minWidth={820}>
+              <TableWrap flush label="Row results" minWidth={920}>
                 <thead>
                   <tr>
                     <Th align="right">Source row</Th>
@@ -516,16 +621,26 @@ async function Workspace({ params, searchParams }: Props) {
                     <Th>Reason</Th>
                     <Th>Detail</Th>
                     <Th>Suggested correction</Th>
+                    <Th>In the ledger</Th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(rows.rows as Array<{ row_ref: number; disposition: string; code: string | null; field: string | null; detail: string | null; suggestion: string | null; raw_event_id: string | null }>).map((r) => (
+                  {rows.rows.map((r) => (
                     <tr key={r.row_ref} className="border-t border-border align-top">
                       <Td align="right">{r.row_ref}</Td>
                       <Td><Badge tone={DISPOSITION[r.disposition]?.tone ?? "neutral"}>{DISPOSITION[r.disposition]?.label ?? r.disposition}</Badge></Td>
                       <Td className="font-mono text-xs">{r.code ?? "—"}{r.field && r.field !== "*" ? ` · ${r.field}` : ""}</Td>
                       <Td className="break-words text-xs">{r.detail ?? (r.raw_event_id ? `raw event #${r.raw_event_id}` : "—")}</Td>
                       <Td className="text-xs">{r.suggestion ?? "—"}</Td>
+                      <Td className="text-xs">
+                        {r.ledger_href ? (
+                          <Link href={r.ledger_href} className="text-accent hover:underline" data-testid="ledger-link">
+                            {LEDGER_LINK_LABEL(r.ledger_href)}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </Td>
                     </tr>
                   ))}
                 </tbody>
@@ -536,10 +651,35 @@ async function Workspace({ params, searchParams }: Props) {
         </Card>
       )}
 
+      {workspace ? (
+        <Card id="decision" title="Counting" subtitle="What the public demo never does with a file.">
+          <p className="text-sm text-muted">
+            On the public demo a file is compared with the ledger and never counted: there is no approval or publication here. In the{" "}
+            <a href={LOCAL_DEMO_URL} className="text-accent hover:underline">
+              local demo
+            </a>
+            , a second person approves the exact rules a dry run used, and only then are calls and web leads published; payments and ad spend are compared only.
+          </p>
+          <div className="mt-3">
+            <DeleteNow uploadId={uploadId} />
+          </div>
+        </Card>
+      ) : (
       <Card id="decision" title={dry?.authority === "reconcile" ? "Approval" : "Approval and publication"} subtitle="A different role must approve the exact rules the dry run used. Publication re-checks the ledger and skips any row it gained since.">
         {detail.publication ? (
           <Callout tone="good" title="Published">
-            {count((detail.publication.stats as { published?: number }).published ?? 0)} rows went through intake on {dateTime(detail.publication.publishedAt)} by {detail.publication.publishedBy}. Identity resolution and reconciliation picked them up like any delivery.{" "}
+            {count(publishedRows)} rows went through intake on {dateTime(detail.publication.publishedAt)} by {detail.publication.publishedBy}.{" "}
+            {publishedRows > 0 ? (
+              <>
+                Identity resolution and reconciliation run right after publication;{" "}
+                <Link href="/audit" className="text-accent hover:underline">
+                  Audit &amp; Health
+                </Link>{" "}
+                shows their last runs.
+              </>
+            ) : (
+              "Nothing new was added, so there was nothing to reconcile."
+            )}{" "}
             <Link href={`/audit?subject=onboarding:${uploadId}`} className="text-accent hover:underline">Audit trail</Link>
           </Callout>
         ) : !dry || !dryMapping ? (
@@ -571,6 +711,7 @@ async function Workspace({ params, searchParams }: Props) {
           />
         )}
       </Card>
+      )}
     </div>
   );
 }

@@ -1,7 +1,10 @@
 import type { Pool } from "pg";
 import { createPool, DEFAULT_DATABASE_URL, getNow } from "../../lib/db";
 import { resolveIdentities } from "../../lib/identity/resolve";
+import { instantToWallTime } from "../../lib/primitives";
+import { deleteWorkspaceUploads } from "../../lib/workspace";
 import { seed } from "../../lib/sim/seed";
+import type { LedgerCall } from "../fixtures/onboarding/unseen";
 import { call, crm, ingest } from "../helpers";
 
 /**
@@ -87,4 +90,58 @@ export async function seedIdentityConflicts(): Promise<ConflictFixture> {
     await resolveIdentities(pool, now);
   });
   return fixture;
+}
+
+/**
+ * Calls the demo ledger holds, as a call-tracking export would state them, for the unseen export
+ * of J2: their rows are compared with the ledger and link to their journeys. Only calls with a
+ * live identity (so the link exists), no campaign and a whole-minute start (so every compared fact
+ * can agree with a file that has no campaign column and minute times).
+ */
+export async function ledgerCalls(n: number): Promise<LedgerCall[]> {
+  return withDemoPool(async (pool) => {
+    const rows = (
+      await pool.query<{ id: string; branch: string; timezone: string; occurred_at: Date; source: string }>(
+        `select l.source_lead_id as id, b.name as branch, b.timezone, l.occurred_at, r.payload->>'source' as source
+         from leads l
+         join branches b on b.id = l.branch_id
+         join raw_events r on r.id = l.raw_event_id
+         where l.source = 'calls' and l.campaign_external_id is null and extract(second from l.occurred_at) = 0
+           and exists (
+             select 1 from identity_links k join identities i on i.id = k.identity_id
+             where k.record_table = 'leads' and k.record_id = l.id and i.retired_at is null
+           )
+         order by l.occurred_at desc, l.id
+         limit $1`,
+        [n],
+      )
+    ).rows;
+    // The world stores callers' numbers hashed; the export states a fictional 555 number instead.
+    // The comparison never reads the phone (branch, channel, time and campaign are the facts).
+    return rows.map((r, i) => {
+      const [date, time] = instantToWallTime(r.occurred_at, r.timezone).split(" ");
+      const [y, m, d] = date.split("-");
+      return { id: r.id, branch: r.branch, startedLocal: `${m}/${d}/${y} ${time.slice(0, 5)}`, source: r.source, phone: `(206) 555-01${String(40 + i).padStart(2, "0")}` };
+    });
+  });
+}
+
+/** Moves a workspace upload past its 24 hours, as the wall clock would (release design §5.2). */
+export async function expireWorkspaceItem(uploadId: number): Promise<void> {
+  await withDemoPool(async (pool) => {
+    const { rowCount } = await pool.query(
+      "update onboarding_uploads set workspace_started_at = now() - interval '25 hours' where id = $1 and workspace_owner is not null",
+      [uploadId],
+    );
+    if (rowCount !== 1) throw new Error(`upload ${uploadId} is not a workspace upload`);
+  });
+}
+
+/** Removes every visitor-workspace item and quota counter, so a journey starts from an empty workspace. */
+export async function clearWorkspace(): Promise<void> {
+  await withDemoPool(async (pool) => {
+    const ids = (await pool.query<{ id: string }>("select id from onboarding_uploads where workspace_owner is not null")).rows.map((r) => Number(r.id));
+    await deleteWorkspaceUploads(pool, ids);
+    await pool.query("delete from workspace_quota");
+  });
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui";
 import type { FieldSuggestion } from "@/lib/onboarding/assistant";
 import type { MappingSpec, SpecProblem } from "@/lib/onboarding/compile";
 import type { DatasetId, FieldKind, MoneyMeaning } from "@/lib/onboarding/targets";
@@ -71,6 +72,8 @@ export function MappingEditor(props: {
   initialValues: Record<string, ValueRow[]>;
   canPropose: boolean;
   proposeReason: string | null;
+  /** Saving is the page's main action until a dry run has a result; then the result's next step is. */
+  primary: boolean;
 }) {
   const id = useId();
   const router = useRouter();
@@ -152,7 +155,7 @@ export function MappingEditor(props: {
     setProblems([]);
     try {
       const res = await fetch(`/api/onboarding/uploads/${props.uploadId}/mappings`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ spec: buildSpec() }) });
-      const json = (await res.json()) as { mappingId?: number; problems?: SpecProblem[]; error?: string; issues?: string[] };
+      const json = (await res.json().catch(() => ({}))) as { mappingId?: number; problems?: SpecProblem[]; error?: string; issues?: string[] };
       if (!res.ok || !json.mappingId) throw new Error([json.error ?? `HTTP ${res.status}`, ...(json.issues ?? [])].join(" — "));
       if (json.problems && json.problems.length > 0) {
         setProblems(json.problems);
@@ -160,7 +163,7 @@ export function MappingEditor(props: {
         return;
       }
       const dry = await fetch(`/api/onboarding/uploads/${props.uploadId}/dry-run`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mappingId: json.mappingId }) });
-      const dj = (await dry.json()) as { id?: number; error?: string };
+      const dj = (await dry.json().catch(() => ({}))) as { id?: number; error?: string };
       if (!dry.ok) throw new Error(dj.error ?? `HTTP ${dry.status}`);
       router.refresh();
       // Land on the result of THIS dry run once the refreshed page renders it (BYOF-WORKFLOW.md).
@@ -380,9 +383,9 @@ export function MappingEditor(props: {
       )}
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
       {target && (
-        <button type="submit" disabled={disabled} className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50" data-testid="propose-and-dry-run">
-          {busy ? "Checking every row…" : "Save mapping version and dry-run"}
-        </button>
+        <Button type="submit" variant={props.primary ? "primary" : "secondary"} disabled={!props.canPropose} busy={busy} busyLabel="Checking every row…" testId="propose-and-dry-run">
+          Save mapping version and dry-run
+        </Button>
       )}
     </form>
   );

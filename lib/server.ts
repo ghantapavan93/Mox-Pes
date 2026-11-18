@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getNow, getPool } from "@/lib/db";
 import { demoModeEnabled } from "@/lib/demo-mode";
 import { ROLE_COOKIE, viewerFromRole, type Viewer } from "@/lib/viewer";
@@ -14,6 +15,11 @@ export async function getViewer(): Promise<Viewer> {
   // the request-time payload names the real role. That text mismatch was React error #418 on
   // every page for any non-guest role (R-20).
   const jar = await cookies();
+  // A request-time prerender (the session App Shell that cacheComponents with partialPrefetching
+  // builds for a route that reads cookies) never passes connection(), so it stops here, before any
+  // database read; the dynamic render passes at once. Without it, every document request ran every
+  // read twice and threw the prerender's results away (docs/agent-work/release/measurements/steps.md).
+  await connection();
   // Outside demo mode the role cookie is not trusted: everyone is a read-only guest.
   if (!demoModeEnabled()) return viewerFromRole(undefined);
   return viewerFromRole(jar.get(ROLE_COOKIE)?.value);

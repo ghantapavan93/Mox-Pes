@@ -16,6 +16,8 @@ const cookies = vi.fn(async () => ({ get: (name: string) => (name === "rs_role" 
 vi.mock("next/headers", () => ({ cookies }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ getNow: vi.fn(), getPool: vi.fn() }));
+// connection() throws outside a request; getViewer waits for it so a prerender stops before any read.
+vi.mock("next/server", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/server")>()), connection: async () => {} }));
 
 describe("getViewer", () => {
   beforeEach(() => cookies.mockClear());

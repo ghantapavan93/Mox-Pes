@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Database, Globe2 } from "lucide-react";
 import { dateTime } from "@/lib/format";
 import { dataAsOf, dataTimes, freshness } from "@/lib/metrics/scorecard";
@@ -11,6 +12,8 @@ import { businessNow, getPool, getViewer } from "@/lib/server";
  * Every page's numbers are only as current as this, so it is always visible.
  */
 export async function FreshnessIndicator() {
+  // It reads data without the viewer, so it stops a request-time prerender itself (see getViewer).
+  await connection();
   const [streams, now, times] = await Promise.all([freshness(getPool()), businessNow(), dataTimes(getPool())]);
   const asOf = dataAsOf(streams);
   const { stale, failing, ok } = feedAttention(streams, now);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Database, Globe2 } from "lucide-react";
 import { dateTime } from "@/lib/format";
-import { freshness } from "@/lib/metrics/scorecard";
+import { dataAsOf, dataTimes, freshness } from "@/lib/metrics/scorecard";
 import { feedAttention } from "@/lib/health/feeds";
 import { BRAND_BY_ID } from "@/lib/reference";
 import { businessNow, getPool, getViewer } from "@/lib/server";
@@ -11,15 +11,26 @@ import { businessNow, getPool, getViewer } from "@/lib/server";
  * Every page's numbers are only as current as this, so it is always visible.
  */
 export async function FreshnessIndicator() {
-  const [streams, now] = await Promise.all([freshness(getPool()), businessNow()]);
-  const successes = streams.map((s) => s.lastSuccessAt).filter((d): d is Date => d !== null);
-  const asOf = successes.length ? new Date(Math.min(...successes.map((d) => new Date(d).getTime()))) : null;
+  const [streams, now, times] = await Promise.all([freshness(getPool()), businessNow(), dataTimes(getPool())]);
+  const asOf = dataAsOf(streams);
   const { stale, failing, ok } = feedAttention(streams, now);
+  // The link's name carries all four data times (release design §5.4); the visible text keeps one.
+  const sync = times.lastSourceSync;
+  const name = [
+    asOf ? `Data as of ${dateTime(asOf)}` : "No successful sync yet",
+    times.snapshotAt ? `synthetic snapshot ${dateTime(times.snapshotAt)}` : null,
+    sync ? `last successful source sync ${dateTime(sync.at)} (${sync.kind === "polling_run" ? `polling run, ${sync.stream}` : `CRM sync job, ${sync.entity}, office ${sync.officeId}`})` : null,
+    times.lastCountedImport ? `last counted import ${dateTime(times.lastCountedImport.at)}` : "no counted import",
+    ok ? `${streams.length} feeds fresh` : `${stale.length + failing.length} of ${streams.length} feeds need attention`,
+  ]
+    .filter(Boolean)
+    .join("; ");
   return (
     <Link
       href="/audit"
       className="hidden min-w-0 items-center gap-2 rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2 hover:text-text md:inline-flex"
       data-testid="freshness-indicator"
+      aria-label={`${name}. Open Audit & Health`}
       title={ok ? "All feeds succeeded within 36 hours" : `${stale.length} stale, ${failing.length} failing — open Audit & Health`}
     >
       <span aria-hidden className={`size-2 shrink-0 rounded-full ${ok ? "bg-good" : "bg-warn"}`} />

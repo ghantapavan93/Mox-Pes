@@ -480,3 +480,70 @@ export async function freshness(db: Queryable): Promise<StreamFreshness[]> {
     quarantined: num(bySource.get(r.source)?.quarantined),
   }));
 }
+
+/**
+ * The three named times beside "Data as of" (release design §5.4), each read from what is stored:
+ *
+ * - snapshotAt: the business clock (`app_clock.now`), where the generated data stops;
+ * - lastSourceSync: the later of the newest succeeded polling run (`ingestion_runs`, business clock)
+ *   and the newest succeeded CRM sync job (`sync_jobs`, wall clock), named with its own clock. A job
+ *   covers one office, so it is shown as itself and never moves a company-wide stream;
+ * - lastCountedImport: the newest publication whose ingestion inserted at least one raw event.
+ *
+ * Queued, running, failed and cancelled jobs, previews, refused or repeated files, compare-only
+ * dry runs and publications that added nothing leave all three unchanged.
+ */
+/** "Data as of": the earliest, across streams, of each stream's last succeeded run (the header's rule). */
+export function dataAsOf(streams: StreamFreshness[]): Date | null {
+  const successes = streams.map((s) => s.lastSuccessAt).filter((d): d is Date => d !== null);
+  return successes.length ? new Date(Math.min(...successes.map((d) => new Date(d).getTime()))) : null;
+}
+
+export interface DataTimes {
+  snapshotAt: Date | null;
+  lastSourceSync:
+    | { at: Date; kind: "polling_run"; stream: string; clock: "business" }
+    | { at: Date; kind: "sync_job"; entity: string; officeId: number; clock: "wall" }
+    | null;
+  lastCountedImport: { at: Date; uploadId: number } | null;
+}
+
+export async function dataTimes(db: Queryable): Promise<DataTimes> {
+  const { rows } = await db.query<{
+    snapshot_at: Date | null;
+    run_at: Date | null;
+    run_stream: string | null;
+    job_at: Date | null;
+    job_entity: string | null;
+    job_office: number | null;
+    import_at: Date | null;
+    import_upload: string | null;
+  }>(
+    `select (select now from app_clock limit 1) as snapshot_at,
+            r.finished_at as run_at, r.stream as run_stream,
+            j.finished_at as job_at, j.entity as job_entity, j.office_id as job_office,
+            p.published_at as import_at, p.upload_id as import_upload
+     from (select 1) one
+     left join lateral (
+       select finished_at, stream from ingestion_runs
+       where status = 'succeeded' and finished_at is not null order by finished_at desc, id desc limit 1
+     ) r on true
+     left join lateral (
+       select finished_at, entity, office_id from sync_jobs
+       where state = 'succeeded' and finished_at is not null order by finished_at desc, id desc limit 1
+     ) j on true
+     left join lateral (
+       select published_at, upload_id from onboarding_publications
+       where coalesce((stats -> 'stats' ->> 'inserted')::int, 0) > 0 order by published_at desc, id desc limit 1
+     ) p on true`,
+  );
+  const r = rows[0];
+  const run = r.run_at ? { at: r.run_at, kind: "polling_run" as const, stream: r.run_stream!, clock: "business" as const } : null;
+  const job = r.job_at ? { at: r.job_at, kind: "sync_job" as const, entity: r.job_entity!, officeId: Number(r.job_office), clock: "wall" as const } : null;
+  const lastSourceSync = run && job ? (job.at.getTime() > run.at.getTime() ? job : run) : (job ?? run);
+  return {
+    snapshotAt: r.snapshot_at,
+    lastSourceSync,
+    lastCountedImport: r.import_at ? { at: r.import_at, uploadId: Number(r.import_upload) } : null,
+  };
+}

@@ -7,7 +7,7 @@ import { connectorSummaries } from "@/lib/connectors/studio";
 import { consumerHealth, recentEvents } from "@/lib/events/health";
 import { count, date, dateTime } from "@/lib/format";
 import { feedAttention } from "@/lib/health/feeds";
-import { freshness } from "@/lib/metrics/scorecard";
+import { dataAsOf, dataTimes, freshness, type DataTimes, type StreamFreshness } from "@/lib/metrics/scorecard";
 import { failedRunsWithRecovery } from "@/lib/queries";
 import { businessNow, getPool, getViewer } from "@/lib/server";
 import { auditFacets, auditFeedPage, ingestionHealth, parseAuditCursor, throughput, type AuditFilters } from "@/lib/workflow/queries";
@@ -76,7 +76,7 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
   };
   const pool = getPool();
   const now = await businessNow();
-  const [facets, { rows: feed, next }, flow, streams, runs, failures, connectors, consumers, events] = await Promise.all([
+  const [facets, { rows: feed, next }, flow, streams, runs, failures, connectors, consumers, events, times] = await Promise.all([
     auditFacets(pool),
     auditFeedPage(pool, filters),
     throughput(pool, now),
@@ -87,6 +87,7 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
     connectorSummaries(pool, null, now, new Date()),
     consumerHealth(pool),
     recentEvents(pool),
+    dataTimes(pool),
   ]);
   const filtered = Boolean(filters.actor || filters.action || filters.subject || filters.from || filters.to);
   /** The current filters as a query string, with one filter or the cursor patched in or out. */
@@ -403,6 +404,8 @@ async function AuditAndHealth({ searchParams }: { searchParams: SearchParams }) 
         </Card>
       </div>
 
+      <DataTimesCard streams={streams} times={times} />
+
       <div id="feeds" className="grid scroll-mt-28 gap-6 2xl:grid-cols-2">
         <Card
           title="Feed freshness"
@@ -608,5 +611,54 @@ function SubjectLink({ subject }: { subject: string }) {
     <Link href={`/audit?subject=${encodeURIComponent(subject)}#audit-trail`} className="[overflow-wrap:anywhere] hover:underline">
       {subject}
     </Link>
+  );
+}
+
+/**
+ * The four data times (release design §5.4), each read from what is stored. Previews, refused or
+ * repeated files, queued jobs and compare-only files never move them.
+ */
+function DataTimesCard({ streams, times }: { streams: StreamFreshness[]; times: DataTimes }) {
+  const asOf = dataAsOf(streams);
+  const sync = times.lastSourceSync;
+  return (
+    <Card
+      id="data-times"
+      testId="data-times"
+      title="Data times"
+      subtitle="Previews, refused or repeated files, queued jobs and compare-only files never move these."
+    >
+      <KV
+        items={[
+          ["Data as of", <span key="asof" data-testid="data-as-of">{asOf ? dateTime(asOf) : "No successful run yet"} <span className="text-muted">· the oldest feed&apos;s last success</span></span>],
+          ["Synthetic snapshot", <span key="snap" data-testid="data-snapshot">{times.snapshotAt ? dateTime(times.snapshotAt) : "Not set"} <span className="text-muted">· where the generated data stops</span></span>],
+          [
+            "Last successful source sync",
+            <span key="sync" data-testid="data-last-sync">
+              {sync
+                ? sync.kind === "polling_run"
+                  ? <>{dateTime(sync.at)} <span className="text-muted">· polling run, {sync.stream} (business clock)</span></>
+                  : <>{dateTime(sync.at)} <span className="text-muted">· CRM sync job, {sync.entity}, office {sync.officeId} (real time)</span></>
+                : "None yet"}
+            </span>,
+          ],
+          [
+            "Last counted import",
+            <span key="import" data-testid="data-last-import">
+              {times.lastCountedImport ? (
+                <>
+                  {dateTime(times.lastCountedImport.at)}{" "}
+                  <Link href={`/onboarding/${times.lastCountedImport.uploadId}`} className="text-accent hover:underline">
+                    upload #{times.lastCountedImport.uploadId}
+                  </Link>
+                </>
+              ) : (
+                "None: no file has been counted"
+              )}
+            </span>,
+          ],
+        ]}
+      />
+    </Card>
   );
 }

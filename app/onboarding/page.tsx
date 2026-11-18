@@ -123,7 +123,7 @@ function UploadTerms({ workspace }: { workspace: boolean }) {
                 It is read and profiled on this server, compared with the ledger, and never added to it or sent to a model. Only your browser can open it: a
                 private cookie names your workspace, with no account. It is available for {WORKSPACE.retentionHours} hours, then deleted within a day with every
                 row, mapping and result (sooner if the demo is full), and you can delete it at any time. Deleted rows then stay {WORKSPACE.hostHistoryHours} hours in the
-                database host's change history, which only the operator can restore from.
+                database host&apos;s change history, which only the operator can restore from.
               </>
             ) : (
               <>

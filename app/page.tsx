@@ -7,7 +7,7 @@ import { CountUp } from "@/components/CountUp";
 import { StackedWeeks } from "@/components/StackedWeeks";
 import { IncidentRef } from "@/components/incidents/IncidentRef";
 import { MovementSectionAsync, MovementSkeleton } from "@/components/overview/MovementSection";
-import { Badge, ButtonLink, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
+import { Badge, ButtonLink, Callout, Card, Forbidden, PageHeader, PeriodTabs, Segmented, Skeleton, Stat, StatDelta, StatDeltaPending, TableWrap, Td, Th, metricAnchor } from "@/components/ui";
 import { attentionFlags } from "@/lib/attention";
 import { KIND_LABEL, count, dateTime, money, pct } from "@/lib/format";
 import { brandRows } from "@/lib/metrics/brands";
@@ -216,9 +216,7 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
         />
       </Suspense>
 
-      <Suspense fallback={<StatTiles t={t} before={null} pending={compare !== null} />}>
-        <StatTilesAsync t={t} before={beforeReady} />
-      </Suspense>
+      <StatTiles t={t} before={compare ? beforeReady : null} />
 
       <div className="grid gap-6 xl:grid-cols-5">
         <Card
@@ -354,21 +352,36 @@ async function Overview({ searchParams }: { searchParams: SearchParams }) {
  * The six tiles: their values from this period's totals, their deltas once September arrives
  * (`pending` holds each delta's line meanwhile, so the cards below do not move).
  */
-function StatTiles({ t, before, pending = false }: { t: Totals; before: Totals | null; pending?: boolean }) {
+/**
+ * The six tiles render once, with the verdict's own figures. Each tile's change against September
+ * streams in on its own: when the whole row waited behind one Suspense boundary, its arrival
+ * replaced every tile, and a definition a reader had opened closed under them (Linux CI, bd6acef).
+ */
+function StatTiles({ t, before }: { t: Totals; before: Promise<Totals | null> | null }) {
+  const slot = (now: number | null, field: keyof Totals, better: "up" | "down" | null, kind: "pct" | "pts" = "pct") =>
+    before ? (
+      <Suspense fallback={<StatDeltaPending />}>
+        <DeltaAsync before={before} now={now} field={field} better={better} kind={kind} />
+      </Suspense>
+    ) : null;
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-      <Stat deltaPending={pending} metric="paidSpend" value={money(t.paidSpendCents, true)} delta={delta(t.paidSpendCents, before?.paidSpendCents ?? null, null)} sub={t.unallocatedSpendCents > 0 ? `+ ${money(t.unallocatedSpendCents)} on unmapped campaigns` : "all spend mapped"} subTone={t.unallocatedSpendCents > 0 ? "bad" : "neutral"} />
-      <Stat deltaPending={pending} metric="prospects" value={count(t.prospects)} delta={delta(t.prospects, before?.prospects ?? null, "up")} sub={`${count(t.rawLeads)} lead records`} />
-      <Stat deltaPending={pending} metric="acquired" value={count(t.acquired)} delta={delta(t.acquired, before?.acquired ?? null, "up")} sub={`${count(t.paidAcquired)} from paid media`} />
-      <Stat deltaPending={pending} metric="paidCac" value={money(t.paidCacCents)} delta={delta(t.paidCacCents, before?.paidCacCents ?? null, "down")} sub="period CAC, not cohort" />
-      <Stat deltaPending={pending} metric="unknownShare" value={pct(t.unknownShare)} delta={delta(t.unknownShare, before?.unknownShare ?? null, "down", "pts")} sub={`${count(t.unknownAcquired)} customers`} />
-      <Stat deltaPending={pending} metric="newCollected" value={money(t.newCustomerCollectedCents, true)} delta={delta(t.newCustomerCollectedCents, before?.newCustomerCollectedCents ?? null, "up")} sub={`${money(t.newCustomerAcvCents, true)} booked annual value (not revenue)`} />
+      <Stat metric="paidSpend" value={money(t.paidSpendCents, true)} deltaSlot={slot(t.paidSpendCents, "paidSpendCents", null)} sub={t.unallocatedSpendCents > 0 ? `+ ${money(t.unallocatedSpendCents)} on unmapped campaigns` : "all spend mapped"} subTone={t.unallocatedSpendCents > 0 ? "bad" : "neutral"} />
+      <Stat metric="prospects" value={count(t.prospects)} deltaSlot={slot(t.prospects, "prospects", "up")} sub={`${count(t.rawLeads)} lead records`} />
+      <Stat metric="acquired" value={count(t.acquired)} deltaSlot={slot(t.acquired, "acquired", "up")} sub={`${count(t.paidAcquired)} from paid media`} />
+      <Stat metric="paidCac" value={money(t.paidCacCents)} deltaSlot={slot(t.paidCacCents, "paidCacCents", "down")} sub="period CAC, not cohort" />
+      <Stat metric="unknownShare" value={pct(t.unknownShare)} deltaSlot={slot(t.unknownShare, "unknownShare", "down", "pts")} sub={`${count(t.unknownAcquired)} customers`} />
+      <Stat metric="newCollected" value={money(t.newCustomerCollectedCents, true)} deltaSlot={slot(t.newCustomerCollectedCents, "newCustomerCollectedCents", "up")} sub={`${money(t.newCustomerAcvCents, true)} booked annual value (not revenue)`} />
     </div>
   );
 }
 
-async function StatTilesAsync({ t, before }: { t: Totals; before: Promise<Totals | null> }) {
-  return <StatTiles t={t} before={await before} />;
+/** One tile's change against September, once the comparison period's figures have been read. */
+async function DeltaAsync({ before, now, field, better, kind }: { before: Promise<Totals | null>; now: number | null; field: keyof Totals; better: "up" | "down" | null; kind: "pct" | "pts" }) {
+  const b = await before;
+  const was = b ? b[field] : null;
+  const d = delta(now, typeof was === "number" ? was : null, better, kind);
+  return d ? <StatDelta delta={d} /> : null;
 }
 
 async function WeeksAsync({ weeks, periodKey }: { weeks: ReturnType<typeof weeklySeries>; periodKey: string }) {

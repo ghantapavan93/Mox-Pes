@@ -293,6 +293,22 @@ export function metricAnchor(key: string): string {
 }
 
 /** A KPI with its definition one click away. Every headline number goes through this. */
+/** A tile's change against a comparison period. The sign and the words carry it; the icon repeats it for the eye. */
+export function StatDelta({ delta }: { delta: { label: string; direction: "up" | "down" | "flat"; good: boolean | null } }) {
+  const TrendIcon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
+  return (
+    <p className={`mt-1 inline-flex items-center gap-1 text-xs font-medium tabular-nums ${delta.good === null ? "text-muted" : delta.good ? "text-good" : "text-bad"}`}>
+      <TrendIcon aria-hidden className="size-3.5 shrink-0" />
+      {delta.label}
+    </p>
+  );
+}
+
+/** Holds a delta line's height while it loads, so nothing below the tile moves when it arrives. */
+export function StatDeltaPending() {
+  return <p aria-hidden className="mt-1 h-4" data-testid="stat-delta-pending" />;
+}
+
 export function Stat({
   metric,
   value,
@@ -301,6 +317,7 @@ export function Stat({
   subTone = "neutral",
   delta,
   deltaPending = false,
+  deltaSlot,
   traceHref,
 }: {
   metric: keyof typeof METRICS;
@@ -312,12 +329,17 @@ export function Stat({
   delta?: { label: string; direction: "up" | "down" | "flat"; good: boolean | null };
   /** The delta is still loading: keep its line's height, so nothing below moves when it arrives. */
   deltaPending?: boolean;
+  /**
+   * The delta line, rendered by the caller in place of `delta` and `deltaPending`: a delta that
+   * streams in inside its own Suspense boundary, so the tile, and a definition a reader opened in
+   * it, stay mounted when it arrives.
+   */
+  deltaSlot?: ReactNode;
   /** Where the number's evidence trace is (lib/lineage/trace.ts), for metrics that have one. */
   traceHref?: string;
 }) {
   const def = METRICS[metric];
   const toneClass = tone === "bad" ? "text-bad" : tone === "good" ? "text-good" : "text-text";
-  const TrendIcon = delta?.direction === "up" ? TrendingUp : delta?.direction === "down" ? TrendingDown : Minus;
   return (
     <div className="flex flex-col rounded-xl bg-surface p-4 ring-1 ring-text/10">
       <details className="group">
@@ -338,14 +360,7 @@ export function Stat({
         </div>
       </details>
       <p className={`mt-2 text-[26px] font-semibold leading-8 tracking-tight tabular-nums ${toneClass}`}>{value}</p>
-      {delta && (
-        // The sign and the words carry the change; the trend icon repeats it for the eye.
-        <p className={`mt-1 inline-flex items-center gap-1 text-xs font-medium tabular-nums ${delta.good === null ? "text-muted" : delta.good ? "text-good" : "text-bad"}`}>
-          <TrendIcon aria-hidden className="size-3.5 shrink-0" />
-          {delta.label}
-        </p>
-      )}
-      {!delta && deltaPending && <p aria-hidden className="mt-1 h-4" data-testid="stat-delta-pending" />}
+      {deltaSlot !== undefined ? deltaSlot : delta ? <StatDelta delta={delta} /> : deltaPending ? <StatDeltaPending /> : null}
       {sub && <p className={`mt-1 text-xs leading-4 ${subTone === "bad" ? "font-medium text-bad" : "text-muted"}`}>{sub}</p>}
       {traceHref && (
         <Link href={traceHref} className="mt-2 text-xs font-medium text-accent hover:underline" data-testid={`trace-link-${String(metric)}`}>

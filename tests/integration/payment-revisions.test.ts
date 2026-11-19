@@ -45,6 +45,43 @@ const live = (id = PAY) => one<{ status: string; amount_cents: string }>(pool, "
 const collected = async () => (await branchRows(pool, { ...PERIODS.oct, branchIds: null })).find((r) => r.branchId === "B01")!.collectedCents;
 const conflicts = async () => (await pool.query<{ summary: string; evidence: Record<string, unknown> }>("select summary, evidence from exceptions where kind = 'payload_conflict' order by id")).rows;
 
+/** One delivery in its own transaction, as one poll writes it. */
+const deliver = (r: RawRecord, now: Date) =>
+  withTransaction(pool, (tx) => ingestRecords(tx, { source: "crm", records: [r], mapper: mapperFor("crm"), ctx: referenceContext, runId: null, now }));
+
+/** Resolves once a backend in this database waits on a row lock, read from Postgres's own wait state. */
+async function waitingOnRowLock(): Promise<void> {
+  for (let i = 0; i < 250; i++) {
+    const r = await pool.query("select 1 from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and wait_event in ('transactionid', 'tuple')");
+    if (r.rowCount) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error("no delivery is waiting on the held transaction's row lock");
+}
+
+/**
+ * Delivers `first` in a transaction held open, starts `second`, and commits `first` only once
+ * `second` is shown waiting on its row lock: the order of events is the one the test names, every
+ * run. Returns what `second` returned.
+ */
+async function whileHeldOpen<T>(first: RawRecord, at: Date, second: () => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await ingestRecords(client, { source: "crm", records: [first], mapper: mapperFor("crm"), ctx: referenceContext, runId: null, now: at });
+    const pending = second();
+    pending.catch(() => undefined); // awaited below; not an unhandled rejection while it waits
+    await waitingOnRowLock();
+    await client.query("commit");
+    return await pending;
+  } catch (error) {
+    await client.query("rollback").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 beforeEach(async () => {
   await freshDb(pool);
   // The acquisition without its own payment: the tests deliver payment 7201's versions.
@@ -149,11 +186,29 @@ describe("R-37 · payment versions never resurrect cash", () => {
 
   it("concurrent deliveries of a stale copy and the void end voided, whatever commits first", async () => {
     await ingest(pool, "crm", [pay("1")], { now: T(1) });
-    const deliver = (r: RawRecord, now: Date) => withTransaction(pool, (tx) => ingestRecords(tx, { source: "crm", records: [r], mapper: mapperFor("crm"), ctx: referenceContext, runId: null, now }));
     await Promise.all([deliver(pay("2"), T(2)), deliver(pay("1"), T(3))]);
     await deliver(pay("1"), T(4));
     expect(await live()).toMatchObject({ status: "voided" });
     expect(await collected()).toBe(0);
+  });
+
+  // The two orders of the race above, staged so each runs every time.
+  it("a stale copy waiting on the void's row lock is held once the void commits", async () => {
+    await ingest(pool, "crm", [pay("1")], { now: T(1) });
+    const stats = await whileHeldOpen(pay("2"), T(2), () => deliver(pay("1"), T(3)));
+    expect(stats).toMatchObject({ inserted: 0, duplicates: 1 });
+    expect(await live()).toMatchObject({ status: "voided" });
+    expect(await collected()).toBe(0);
+    const [c] = await conflicts();
+    expect(c?.evidence).toMatchObject({ conflict: "earlier_version_after_later", liveStatus: "voided", incomingStatus: "successful" });
+  });
+
+  it("a void waiting on a stale copy's row lock applies once the copy commits", async () => {
+    await ingest(pool, "crm", [pay("1")], { now: T(1) });
+    await whileHeldOpen(pay("1"), T(2), () => deliver(pay("2"), T(3)));
+    expect(await live()).toMatchObject({ status: "voided" });
+    expect(await collected()).toBe(0);
+    expect(await conflicts()).toHaveLength(0);
   });
 
   it("full re-projection from the raw ledger, by observation, gives the same payments", async () => {

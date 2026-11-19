@@ -97,11 +97,18 @@ async function heldPaymentObservations(tx: Queryable, source: SourceName, observ
   );
   if (payments.length === 0) return held;
   const ids = [...new Set(payments.map(({ p }) => p.identity.entityId))].map(Number).sort((a, b) => a - b);
+  // Lock, then read: two statements, not one locking join. Under READ COMMITTED, a locking read
+  // that waited on another batch re-checks its join against the raw event it first saw. Once that
+  // batch committed a new version of the payment (a new raw_event_id), the re-check dropped the
+  // payment, so an earlier version looked like the first one seen and put voided cash back
+  // (tests/integration/payment-revisions.test.ts, the staged race). The read below is a new
+  // statement, so it sees what the other batch committed.
+  await tx.query("select 1 from crm_payments where crm_payment_id = any($1::bigint[]) order by crm_payment_id for update", [ids]);
   const live = await tx.query<{ id: string; status: string; amount_cents: string; paid_at: Date; crm_ticket_id: string | null; crm_customer_id: string; office_id: number; original_payment_id: string | null; external_id: string; received_at: Date }>(
     `select cp.crm_payment_id as id, cp.status, cp.amount_cents, cp.paid_at, cp.crm_ticket_id, cp.crm_customer_id, cp.office_id,
             cp.original_payment_id, re.external_id, re.received_at
      from crm_payments cp join raw_events re on re.id = cp.raw_event_id
-     where cp.crm_payment_id = any($1::bigint[]) order by cp.crm_payment_id for update of cp`,
+     where cp.crm_payment_id = any($1::bigint[])`,
     [ids],
   );
   const stored = await tx.query<{ external_id: string; received_at: Date }>(

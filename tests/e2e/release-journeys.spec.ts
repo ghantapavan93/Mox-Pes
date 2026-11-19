@@ -300,9 +300,12 @@ test.describe("J4 · the investigator, as a visitor", () => {
     // scorecard, and the answer says the correction approved no budget move.
     if (NO_DATABASE || (await incidentOf("B20", "quarantined_source_records"))?.status === "resolved") {
       const findings = page.getByTestId("findings");
+      // What happened: the receipt, stored when the repair ran, whatever ran since.
       await expect(findings).toContainText("read $490.11: $15,193.47 of paid spend divided by 31 new customers");
       await expect(findings).toContainText("paid attribution moved from 31 to 56 customers, while the $15,193.47 in paid spend and the 109 serviced customers stayed unchanged");
-      await expect(findings).toContainText("paid-media CAC $271.31");
+      // What it is now: the scorecard. $271.31 on the hosted copy; here earlier specs sync more B20
+      // customers after the repair (os-modules), so only the sentence is checked.
+      await expect(findings).toContainText(`B20, Oct 1–30, 2026 (UTC): paid-media CAC $${NO_DATABASE ? "271.31" : ""}`);
       // The recommended next action (the claim check repeats it, collapsed).
       await expect(page.locator("dd", { hasText: "a verified repair is not permission to move budget" })).toBeVisible();
     }

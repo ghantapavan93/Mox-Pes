@@ -11,22 +11,33 @@ export const metadata = {
 /** The repository: source, tests and every release's check results. */
 const REPOSITORY = "https://github.com/ghantapavan93/Mox-Pes";
 
+/** The walkthrough on this page: recorded on the hosted site, as a visitor (docs/agent-work/release/recording/revenue-signal-os-walkthrough.md). */
+const VIDEO = { src: "/media/revenue-signal-os-walkthrough.mp4", poster: "/media/revenue-signal-os-walkthrough.jpg", megabytes: 12.6 };
+
 /**
  * The walkthrough's captions, in order, as text: for a reader who cannot play the video, and for
  * screen readers (the captions are part of the picture). They are the recording's own words
- * (docs/agent-work/release/recording/b20-receipt-walkthrough.md): figures of the day it was
- * recorded, from B20's stored receipt, which does not change.
+ * (docs/agent-work/release/harness/record-vp-walkthrough.cjs): figures of the hosted copy on the day
+ * it was recorded, the visitor's file counted in their private copy.
  */
 const CAPTIONS = [
-  "B20's October paid CAC was reported at $490.11. An approved, verified repair corrected it to $271.31.",
-  "Same $15,193.47 of paid spend. While 119 call records were held, 25 paid customers had no paid touch on record: 31 before, 56 after.",
-  "The evidence: 119 call records failed validation (MISSING_FIELD) and were held instead of guessed.",
-  "Replayed through calls@1.1, each held call attached to the customer it produced, with its paid source.",
-  "Unchanged: the same $15,193.47 of paid spend and the same 109 serviced customers. Only attribution moved.",
-  "Ask the investigator the same question.",
-  "It answers from the stored receipt for what happened and from today's scorecard for now, and cites both.",
-  "Its next step: a verified repair is not permission to move budget.",
-  "Correction verified. Budget move not approved.",
+  "Built before the interview: a working prototype of what I would build for your marketing and data teams. It makes sure ad spend, call tracking and CRM records agree before anyone moves marketing budget.",
+  "When the systems disagree, it holds the decision, shows the evidence, and sends the fix through a test run and a separate approval.",
+  "Ad platforms claimed 7,776 conversions in October. 4,753 paid prospects reached the business, and 1,386 are serviced customers so far.",
+  "Where the records disagree, it stops the line: two branches' budget decisions are on hold.",
+  "B09 is held until the incident behind it is resolved: no channel comparison is a safe basis for moving budget yet.",
+  "B20's October cost per paid customer was reported at $490.11. A verified repair corrected it to $271.31.",
+  "The cause: the call feed renamed a field. 119 calls failed validation and were held, not guessed.",
+  "Replayed through the corrected mapper: the same $15,193.47 of spend and the same 109 customers. Only the attribution moved.",
+  "One role proposed it, another tested it in a dry run that saved nothing, and a different role approved it. Every step is audited.",
+  "Ask why a number moved. It answers from stored records with read-only tools, and every finding cites the record it rests on.",
+  "Now your own data. Upload an export, or this sample: calls a feed never delivered for B01's customers.",
+  "Every row is checked with the rules the live feed uses. Then count it in a private copy.",
+  "Your dashboard moves with your file: B01's cost per paid customer, $392.50 to $322.73. Nobody else's numbers change.",
+  "Counted through the real intake and reconciliation, in a transaction that is rolled back. Spend did not change; attribution did.",
+  "Configuration changes are run through the production write path in a rolled-back transaction, then approved by someone else.",
+  "Next.js and Postgres. Every source lands once per version, every metric is defined once in SQL, and over a thousand tests run before each release.",
+  "Rather than only describe how I would contribute, I built it first.",
 ];
 
 /** The stack, in one line a part: what an engineer would ask first. Counts are left out: they move with every release. */
@@ -73,17 +84,17 @@ export default function StartPage() {
             controls
             playsInline
             preload="metadata"
-            poster="/media/b20-receipt-walkthrough.jpg"
+            poster={VIDEO.poster}
             width={1920}
             height={1200}
-            aria-label="The B20 repair in one minute: a captioned walkthrough with no sound"
+            aria-label="The prototype in two minutes: a captioned walkthrough with no sound"
             className="aspect-[8/5] h-auto w-full rounded-xl bg-sunken ring-1 ring-text/10"
           >
-            <source src="/media/b20-receipt-walkthrough.mp4" type="video/mp4" />
-            <a href="/media/b20-receipt-walkthrough.mp4">Download the walkthrough (MP4, 6.9 MB)</a>
+            <source src={VIDEO.src} type="video/mp4" />
+            <a href={VIDEO.src}>Download the walkthrough (MP4, {VIDEO.megabytes} MB)</a>
           </video>
           <figcaption className="text-xs leading-5 text-muted">
-            55 seconds, no sound needed: the captions tell the story. Recorded on this site, as a visitor.
+            Two minutes, no sound needed: the captions tell the story. Recorded on this site, as a visitor.
           </figcaption>
           <details className="rounded-lg bg-surface px-3 py-2 text-sm ring-1 ring-text/10" data-testid="start-transcript">
             <summary className="inline-flex min-h-6 items-center font-medium text-accent">Read the video as text</summary>

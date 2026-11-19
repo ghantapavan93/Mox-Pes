@@ -352,12 +352,12 @@ test.describe("J5 · Start here and the visitor tour", () => {
       await expect(visitor.getByRole("heading", { level: 1 })).toHaveText("Revenue Signal OS");
       await expect(visitor.getByTestId("start-summary")).toContainText("before anyone moves marketing budget");
       await expect(visitor.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Start here" })).toHaveAttribute("aria-current", "page");
-      await expect(visitor.getByTestId("start-video").locator("video source")).toHaveAttribute("src", "/media/b20-receipt-walkthrough.mp4");
-      const mp4 = await visitor.request.get("/media/b20-receipt-walkthrough.mp4", { headers: { range: "bytes=0-1023" } });
+      await expect(visitor.getByTestId("start-video").locator("video source")).toHaveAttribute("src", "/media/revenue-signal-os-walkthrough.mp4");
+      const mp4 = await visitor.request.get("/media/revenue-signal-os-walkthrough.mp4", { headers: { range: "bytes=0-1023" } });
       expect([200, 206], "the walkthrough is served").toContain(mp4.status());
       expect(mp4.headers()["content-type"]).toBe("video/mp4");
-      expect((await visitor.request.get("/media/b20-receipt-walkthrough.jpg")).status(), "its poster is served").toBe(200);
-      await expect(visitor.getByTestId("start-transcript").locator("li")).toHaveCount(9);
+      expect((await visitor.request.get("/media/revenue-signal-os-walkthrough.jpg")).status(), "its poster is served").toBe(200);
+      await expect(visitor.getByTestId("start-transcript").locator("li")).toHaveCount(17);
       expect(await visitor.locator(PRIMARY).count()).toBe(1);
 
       // The tour: seven steps, the bar in view at each, and no action a visitor could take.

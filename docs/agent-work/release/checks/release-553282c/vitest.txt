@@ -1,0 +1,19 @@
+
+> moxie-revenue-signal@0.1.0 test
+> vitest run
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v5.0.5 C:/Temp/rso-release
+
+
+ Test Files  99 passed (99)
+      Tests  1090 passed | 1 expected fail (1091)
+   Start at  02:40:29
+   Duration  1148.19s (tests 98%, import 2%)
+
+    Isolate  99 workers spawned · ~150ms startup each (spawn + environment, per file)
+             at least ~14.72s faster with isolate: false — reuses workers across files instead of one per file
+

@@ -5,6 +5,11 @@ https://revenue-signal-os-green.vercel.app as the public-demo guest, with produc
 `8bbf37c`, by `../harness/record-b20-receipt.cjs`. It replaces `b20-walkthrough.webm`, which
 opened on the Overview.
 
+`b20-receipt-walkthrough.mp4` is the same recording for sending: H.264, 6.9 MB, made with
+`ffmpeg -c:v libx264 -crf 20 -pix_fmt yuv420p -movflags +faststart -an`. It plays in mail
+previews and on phones, where WebM often does not, and GitHub's file page offers WebM only as a
+download.
+
 | Time | Page | Caption |
 |---|---|---|
 | 0:00 | Incident #1063, the receipt | B20's October paid CAC was reported at $490.11. An approved, verified repair corrected it to $271.31. |

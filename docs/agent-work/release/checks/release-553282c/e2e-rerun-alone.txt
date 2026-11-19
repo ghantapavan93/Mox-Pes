@@ -1,0 +1,151 @@
+[seed] applied 0001_init.sql
+[seed] applied 0002_attribution_views.sql
+[seed] applied 0003_channel_classification.sql
+[seed] applied 0004_identity.sql
+[seed] applied 0005_connectors.sql
+[seed] applied 0006_action_center.sql
+[seed] applied 0007_decision_lab.sql
+[seed] applied 0008_investigations.sql
+[seed] applied 0009_organization_and_events.sql
+[seed] applied 0010_reporting_contract.sql
+[seed] applied 0011_sync_requests.sql
+[seed] applied 0012_audit_corrections.sql
+[seed] applied 0013_onboarding.sql
+[seed] applied 0014_subjects_and_append_only_audit.sql
+[seed] applied 0015_cross_brand_crm_identity.sql
+[seed] applied 0016_opportunity_overrides.sql
+[seed] applied 0017_config_changes.sql
+[seed] applied 0018_source_semantics.sql
+[seed] applied 0019_source_semantics_backfill.sql
+[seed] applied 0020_currency_rules.sql
+[seed] applied 0021_inquiries.sql
+[seed] applied 0022_unambiguous_touch.sql
+[seed] applied 0023_shadow_checks.sql
+[seed] applied 0024_one_lead_one_customer.sql
+[seed] applied 0025_rollout_evaluations.sql
+[seed] applied 0026_latest_identity_decision.sql
+[seed] applied 0027_post_release_monitoring.sql
+[seed] applied 0028_drift_reviews.sql
+[seed] applied 0029_campaign_platform_match.sql
+[seed] applied 0030_run_effect.sql
+[seed] applied 0031_campaign_source_clock.sql
+[seed] applied 0032_answer_check_brand_scope.sql
+[seed] applied 0033_shadow_check_named_scope.sql
+[seed] applied 0034_refused_spend_revisions.sql
+[seed] applied 0035_fictional_brand_names.sql
+[seed] applied 0036_spend_branch_from_campaign.sql
+[seed] applied 0037_workspace_and_ledger_targets.sql
+[seed] applied 0038_set_based_acquisitions.sql
+[seed] world: 134337 source record versions, 156 campaigns
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2037 ms
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 48036 ms
+
+Running 20 tests using 1 worker
+
+[1/20] [chromium] › tests\e2e\os-golden-path.spec.ts:40:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › a · the overview and the branch show the channel imbalance and a blocked budget signal
+[chromium] › tests\e2e\os-golden-path.spec.ts:40:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › a · the overview and the branch show the channel imbalance and a blocked budget signal
+[seed] applied 0001_init.sql
+
+[seed] applied 0002_attribution_views.sql
+
+[seed] applied 0003_channel_classification.sql
+
+[seed] applied 0004_identity.sql
+
+[seed] applied 0005_connectors.sql
+
+[seed] applied 0006_action_center.sql
+
+[seed] applied 0007_decision_lab.sql
+
+[seed] applied 0008_investigations.sql
+
+[seed] applied 0009_organization_and_events.sql
+
+[seed] applied 0010_reporting_contract.sql
+
+[seed] applied 0011_sync_requests.sql
+
+[seed] applied 0012_audit_corrections.sql
+
+[seed] applied 0013_onboarding.sql
+
+[seed] applied 0014_subjects_and_append_only_audit.sql
+
+[seed] applied 0015_cross_brand_crm_identity.sql
+
+[seed] applied 0016_opportunity_overrides.sql
+
+[seed] applied 0017_config_changes.sql
+
+[seed] applied 0018_source_semantics.sql
+
+[seed] applied 0019_source_semantics_backfill.sql
+
+[seed] applied 0020_currency_rules.sql
+
+[seed] applied 0021_inquiries.sql
+
+[seed] applied 0022_unambiguous_touch.sql
+
+[seed] applied 0023_shadow_checks.sql
+
+[seed] applied 0024_one_lead_one_customer.sql
+
+[seed] applied 0025_rollout_evaluations.sql
+
+[seed] applied 0026_latest_identity_decision.sql
+
+[seed] applied 0027_post_release_monitoring.sql
+
+[seed] applied 0028_drift_reviews.sql
+
+[seed] applied 0029_campaign_platform_match.sql
+
+[seed] applied 0030_run_effect.sql
+
+[seed] applied 0031_campaign_source_clock.sql
+
+[seed] applied 0032_answer_check_brand_scope.sql
+
+[seed] applied 0033_shadow_check_named_scope.sql
+
+[seed] applied 0034_refused_spend_revisions.sql
+
+[seed] applied 0035_fictional_brand_names.sql
+
+[seed] applied 0036_spend_branch_from_campaign.sql
+
+[seed] applied 0037_workspace_and_ledger_targets.sql
+
+[seed] applied 0038_set_based_acquisitions.sql
+
+[seed] world: 134337 source record versions, 156 campaigns
+
+[seed] 2026-10-09T08:00:00.000Z crm.ticket FAILED: HTTP 503 Service Unavailable from CRM /ticket/search
+
+[seed] identity: 17111 customers, 10496 prospects, 12522 of 24891 leads linked to a CRM customer, 0 pending conflicts (0 opened), 42002 link changes, 2047 ms
+
+[seed] seeded: 675 runs (1 failed), 134088 raw events, 65923 duplicate deliveries absorbed, 119 quarantined, 50535 ms
+
+[2/20] [chromium] › tests\e2e\os-golden-path.spec.ts:55:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › b · the Decision Lab says not ready and links the blocking incident
+[3/20] [chromium] › tests\e2e\os-golden-path.spec.ts:74:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › c · the incident shows campaign, spend, leads and CRM outcomes evidence
+[4/20] [chromium] › tests\e2e\os-golden-path.spec.ts:90:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › d · Investigate opens the AI investigator scoped to the incident; it cites evidence and proposes a re-map
+[5/20] [chromium] › tests\e2e\os-golden-path.spec.ts:132:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › e · an integration engineer dry-runs it on the server: before/after, rolled back
+[6/20] [chromium] › tests\e2e\os-golden-path.spec.ts:151:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › f · an approver, a different role, approves
+[7/20] [chromium] › tests\e2e\os-golden-path.spec.ts:162:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › g · h · the application executes the re-projection; metrics recompute and the ledger is verified unchanged
+[8/20] [chromium] › tests\e2e\os-golden-path.spec.ts:184:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › i · the audit trail shows proposer, dry run, approver, executed records and verification
+[9/20] [chromium] › tests\e2e\os-golden-path.spec.ts:207:7 › golden path · B09 LSA → PMax incident, from signal to verified fix › j · overview, branch and Decision Lab reflect the new state
+[10/20] [chromium] › tests\e2e\os-golden-path.spec.ts:231:7 › second scenario · B20 call-feed incident through the Action Center › an engineer proposes a replay; the dry run verifies; an approver approves; the app executes
+[11/20] [chromium] › tests\e2e\os-golden-path.spec.ts:262:7 › second scenario · B20 call-feed incident through the Action Center › after the replay B20 is no longer flagged for unattributed customers
+[12/20] [chromium] › tests\e2e\release-journeys.spec.ts:132:7 › J1 · the Overview chart: select, then open; Back restores › @core hover a point: the tooltip says what the panel says once it is selected
+[13/20] [chromium] › tests\e2e\release-journeys.spec.ts:144:7 › J1 · the Overview chart: select, then open; Back restores › @core keyboard only: a week, its evidence, and Back to the same week with focus on Open evidence
+[14/20] [chromium] › tests\e2e\release-journeys.spec.ts:161:7 › J1 · the Overview chart: select, then open; Back restores › @core a phone with a touch screen: tap a point, tap Open evidence, Back
+[15/20] [chromium] › tests\e2e\release-journeys.spec.ts:172:7 › J1 · the Overview chart: select, then open; Back restores › @core with reduced motion the same journey holds and nothing animates
+[16/20] [chromium] › tests\e2e\release-journeys.spec.ts:186:7 › J1 · the Overview chart: select, then open; Back restores › @core one primary action, and on a 720 × 450 screen the verdict and its action are in view
+[17/20] [chromium] › tests\e2e\release-journeys.spec.ts:204:7 › J3 · incidents and the Decision Lab › a dry run saves nothing; B20's receipt leads with October; a guest sees why and no action; a held decision offers no approval
+[18/20] [chromium] › tests\e2e\release-journeys.spec.ts:285:7 › J4 · the investigator, as a visitor › @core a guest asks by keyboard; the answer names its path and cites records; a cited record opens
+[19/20] [chromium] › tests\e2e\release-journeys.spec.ts:324:7 › J2 · upload to result, twice › @core two visitors: A reads its result and follows the ledger; B cannot open it, and nothing shared moves
+[20/20] [chromium] › tests\e2e\release-journeys.spec.ts:391:7 › J2 · upload to result, twice › @edge a malformed file, a file over 4 MB, the same file twice, and an expired upload
+  20 passed (3.2m)

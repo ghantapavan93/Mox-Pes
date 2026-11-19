@@ -1,0 +1,205 @@
+
+> moxie-revenue-signal@0.1.0 build
+> next build
+
+▲ Next.js 16.4.6 (Turbopack)
+✓ Running next.config.ts took 100ms
+- Cache Components enabled
+- Partial Prefetching enabled
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.0s
+  Running TypeScript ...
+  Finished TypeScript in 17.9s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/52) ...
+  Generating static pages using 15 workers (13/52) 
+  Generating static pages using 15 workers (26/52) 
+  Generating static pages using 15 workers (39/52) 
+✓ Generating static pages using 15 workers (52/52) in 1456ms
+Turbopack build encountered 3 warnings:
+./lib/twin/world.ts:48:25
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m46 |[0m ...t: string[] = [];
+  [90m47 |[0m ...lk = (rel: string) => {
+[33m[1m>[0m [90m48 |[0m ...[36monst[0m entry [36mof[0m readdirSync(path.join(root, rel), { withFileTypes: [36mtrue[0m }).sort((a, b) =>...
+  [90m   |[0m                  [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m49 |[0m ...[36mt[0m child = [32m`[0m${rel[32m}/[0m${entry.name[32m}`[0m;
+  [90m50 |[0m ...skip(child)) [36mcontinue[0m;
+  [90m51 |[0m ...entry.isDirectory()) walk(child);
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readdir(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./lib/twin/world.ts
+    ./app/api/changes/[id]/rollout/route.ts
+
+  Server Component:
+    ./lib/twin/world.ts
+    ./app/changes/[id]/page.tsx
+
+
+./lib/twin/world.ts:48:37
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m46 |[0m ...[36monst[0m out: string[] = [];
+  [90m47 |[0m ...[36monst[0m walk = (rel: string) => {
+[33m[1m>[0m [90m48 |[0m ... [36mfor[0m ([36mconst[0m entry [36mof[0m readdirSync(path.join(root, rel), { withFileTypes: [36mtrue[0m }).sort((a...
+  [90m   |[0m                                     [33m[1m^^^^^^^^^^^^^^^^^^^^[0m
+  [90m49 |[0m ...   [36mconst[0m child = [32m`[0m${rel[32m}/[0m${entry.name[32m}`[0m;
+  [90m50 |[0m ...   [36mif[0m (skip(child)) [36mcontinue[0m;
+  [90m51 |[0m ...   [36mif[0m (entry.isDirectory()) walk(child);
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./lib/twin/world.ts
+    ./app/api/changes/[id]/rollout/route.ts
+
+  Server Component:
+    ./lib/twin/world.ts
+    ./app/changes/[id]/page.tsx
+
+
+./lib/twin/world.ts:52:53
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m50 |[0m ...)) [36mcontinue[0m;
+  [90m51 |[0m ...rectory()) walk(child);
+[33m[1m>[0m [90m52 |[0m ...[32m`[0m${child[32m}:[0m${sha256(readFileSync(path.join(root, child), [32m"utf8"[0m).replace([35m/\r\n/g[0m, [32m"\n"[0m))[32m..[0m.
+  [90m   |[0m                                    [33m[1m^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m53 |[0m ...
+  [90m54 |[0m ...
+  [90m55 |[0m ...
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: path.join(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  App Route:
+    ./lib/twin/world.ts
+    ./app/api/changes/[id]/rollout/route.ts
+
+  Server Component:
+    ./lib/twin/world.ts
+    ./app/changes/[id]/page.tsx
+
+
+  Finalizing page optimization ...
+
+Route (app)
+┌ ◐ /
+├ ◐ /_not-found
+├ ƒ /api/cases/[id]
+├ ƒ /api/changes
+├ ƒ /api/changes/[id]
+├ ƒ /api/changes/[id]/rollout
+├ ƒ /api/connectors/[id]/compare
+├ ƒ /api/connectors/[id]/jobs
+├ ƒ /api/connectors/[id]/sync
+├ ƒ /api/connectors/faults
+├ ƒ /api/connectors/jobs/[jobId]
+├ ƒ /api/currency-rules
+├ ƒ /api/currency-rules/[id]
+├ ƒ /api/customers
+├ ƒ /api/customers/[id]
+├ ƒ /api/customers/[id]/raw-events/[rawEventId]
+├ ƒ /api/decisions/experiments
+├ ƒ /api/decisions/scenarios
+├ ƒ /api/decisions/verdicts
+├ ƒ /api/exceptions/[id]/actions
+├ ƒ /api/exceptions/[id]/review
+├ ƒ /api/health
+├ ƒ /api/identity/conflicts
+├ ƒ /api/identity/conflicts/[id]/decision
+├ ƒ /api/ingest/[source]
+├ ƒ /api/inquiries
+├ ƒ /api/inquiries/[id]
+├ ƒ /api/investigations
+├ ƒ /api/investigations/[id]
+├ ƒ /api/investigations/[id]/evidence
+├ ƒ /api/metrics
+├ ƒ /api/metrics/trace
+├ ƒ /api/mock/fieldroutes/[...path]
+├ ƒ /api/onboarding/mappings/[id]/decision
+├ ƒ /api/onboarding/uploads
+├ ƒ /api/onboarding/uploads/[id]
+├ ƒ /api/onboarding/uploads/[id]/dry-run
+├ ƒ /api/onboarding/uploads/[id]/mappings
+├ ƒ /api/onboarding/uploads/[id]/publish
+├ ƒ /api/onboarding/uploads/[id]/rows
+├ ƒ /api/onboarding/uploads/[id]/values
+├ ƒ /api/opportunities
+├ ƒ /api/proposals
+├ ƒ /api/proposals/[id]
+├ ƒ /api/reconcile
+├ ƒ /api/replays
+├ ƒ /api/role
+├ ƒ /api/search
+├ ƒ /api/shadow
+├ ƒ /api/shadow/[id]
+├ ƒ /api/workspace/cleanup
+├ ◐ /assurance
+├   /assurance/[id]
+│ └ ◐ /assurance/[id]
+├ ◐ /audit
+├   /branches/[id]
+│ └ ◐ /branches/[id]
+├   /branches/[id]/trace
+│ └ ◐ /branches/[id]/trace
+├ ◐ /changes
+├   /changes/[id]
+│ └ ◐ /changes/[id]
+├   /changes/[id]/checks/[runId]
+│ └ ◐ /changes/[id]/checks/[runId]
+├ ◐ /customers
+├   /customers/[id]
+│ └ ◐ /customers/[id]
+├ ◐ /decisions
+├ ◐ /decisions/opportunities
+├ ◐ /definitions
+├ ◐ /demo
+├ ƒ /demo/tour
+├ ◐ /exceptions
+├   /exceptions/[id]
+│ └ ◐ /exceptions/[id]
+├ ◐ /feedback
+├ ◐ /integrations
+├   /integrations/jobs/[id]
+│ └ ◐ /integrations/jobs/[id]
+├ ◐ /investigator
+├   /investigator/[id]
+│ └ ◐ /investigator/[id]
+├   /investigator/inquiries/[id]
+│ └ ◐ /investigator/inquiries/[id]
+├ ◐ /onboarding
+├   /onboarding/[id]
+│ └ ◐ /onboarding/[id]
+└ ◐ /start
+
+
+ƒ Proxy (Middleware)
+
+◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+ƒ  (Dynamic)            server-rendered on demand
+

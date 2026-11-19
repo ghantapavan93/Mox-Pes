@@ -1,0 +1,2 @@
+https://revenue-signal-os-green.vercel.app: the figure ended above the tour bar in 10 of 10 loads
+1:above(scrollY 500) 2:above(scrollY 500) 3:above(scrollY 500) 4:above(scrollY 500) 5:above(scrollY 500) 6:above(scrollY 500) 7:above(scrollY 500) 8:above(scrollY 500) 9:above(scrollY 500) 10:above(scrollY 500)

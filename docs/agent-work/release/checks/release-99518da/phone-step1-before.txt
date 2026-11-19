@@ -1,0 +1,2 @@
+Production serving b47e298, before 99518da; node tour-phone-step1.cjs https://revenue-signal-os-green.vercel.app 10 (run as /c/Temp/phone-step1.cjs, the same script)
+https://revenue-signal-os-green.vercel.app: figure above the bar 1/10 · 1:UNDER(0) 2:UNDER(0) 3:UNDER(0) 4:UNDER(0) 5:above(500) 6:UNDER(0) 7:UNDER(0) 8:UNDER(0) 9:UNDER(0) 10:UNDER(0)

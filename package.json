@@ -26,8 +26,10 @@
     "db:load-hosted": "tsx scripts/load-hosted-db.ts",
     "db:load-hosted:clipboard": "tsx scripts/load-hosted-db.ts --from-clipboard",
     "db:correct-hosted": "tsx scripts/correct-hosted-demo.ts",
+    "db:examples-hosted": "tsx scripts/populate-hosted-demo.ts",
     "audit:report": "tsx scripts/audit-report.ts",
     "demo:exports": "tsx scripts/make-demo-exports.ts",
+    "demo:missed-calls": "tsx scripts/make-missed-calls.ts",
     "eval:mapping": "tsx scripts/eval-mapping.ts",
     "bench:onboarding": "tsx scripts/bench-onboarding.ts",
     "twin": "tsx scripts/twin-rollout.ts"

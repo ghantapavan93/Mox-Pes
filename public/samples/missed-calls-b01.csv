@@ -1,0 +1,9 @@
+Start Time,Company,Customer Phone Number,Tracking Phone Number,Source,Campaign,Duration (seconds),Call Status,Call Id,Note
+09/21/2026 3:15 PM,Alder,(501) 555-0120,(206) 555-0190,Google Ads,gs-B01,90,Answered,MISS10001,
+09/23/2026 4:15 PM,Alder,(277) 555-0190,(206) 555-0191,Facebook,fb-B01,127,Answered,MISS10002,
+10/01/2026 5:15 PM,Alder,(387) 555-0199,(206) 555-0190,Google Ads,gs-B01,164,Answered,MISS10003,
+10/03/2026 6:15 PM,Alder,(429) 555-0113,(206) 555-0192,Bing,ms-B01,201,Answered,MISS10004,
+10/13/2026 3:15 PM,Alder,(511) 555-0176,(206) 555-0190,Google Ads,gs-B01,238,Answered,MISS10005,
+10/13/2026 4:15 PM,Alder,(731) 555-0195,(206) 555-0191,Facebook,fb-B01,95,Answered,MISS10006,
+10/15/2026 5:15 PM,Alder,(819) 555-0198,(206) 555-0190,Google Ads,gs-B01,132,Answered,MISS10007,
+10/16/2026 6:15 PM,Alder,(354) 555-0125,(206) 555-0192,Bing,ms-B01,169,Answered,MISS10008,

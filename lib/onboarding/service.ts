@@ -1,8 +1,10 @@
 import type { Pool } from "pg";
 import { ActionError } from "@/lib/actions";
 import { mapperFor, referenceContext } from "@/lib/adapters/registry";
-import { withTransaction, type Queryable } from "@/lib/db";
+import { withRollback, withTransaction, type Queryable } from "@/lib/db";
 import { LEAD_WRITE_LOCK, ingestRecords } from "@/lib/ingest/ingest";
+import { compareSnapshots, dashboardSnapshot, type SnapshotChange } from "@/lib/metrics/dashboard-snapshot";
+import { reconcile, tryLockReconcile } from "@/lib/reconcile/reconcile";
 import { sha256 } from "@/lib/primitives";
 import { ForbiddenError, canSeeBranch, type Viewer } from "@/lib/viewer";
 import {
@@ -55,6 +57,8 @@ export interface DryRunSummary {
   accounted: boolean;
   /** Ad spend only: what the counted rows cover. Absent on dry runs stored before it existed. */
   scope?: SpendScope | null;
+  /** The dashboard with this file counted in a private, rolled-back copy (previewUpload); absent until counted. */
+  preview?: UploadPreview | null;
 }
 
 /** The rows an ad-spend dry run counted: their days, campaigns, accounts and currency basis. */
@@ -672,6 +676,88 @@ export async function publishUpload(pool: Pool, args: { viewer: Viewer; uploadId
     await args.hooks?.afterWrite?.();
     return result;
   });
+}
+
+/**
+ * The dashboard with this file counted, privately (sharing review, 2026-11-19: "the dashboard has to
+ * change along with the data that is uploaded"). Today's dry run compares a file with the ledger;
+ * this counts it, in a copy that is rolled back, and keeps only the before and after figures.
+ */
+export interface UploadPreview {
+  version: 1;
+  /** The business clock when it was counted. */
+  computedAt: string;
+  /** The dry run it counted: a new dry run replaces it, and this with it. */
+  dryRunId: number;
+  dataset: DatasetId;
+  authority: "publish" | "reconcile";
+  counted: { rows: number; inserted: number; duplicates: number; quarantined: number; skipped: number };
+  change: SnapshotChange;
+}
+
+/**
+ * Counts an upload's dry-run-eligible rows in a private copy: one transaction, always rolled back.
+ * Inside it, the dashboard's October figures are read (lib/metrics/dashboard-snapshot.ts), the
+ * rows still new go through the intake a publication uses (ingestRecords, the same filter as
+ * publishUpload: a file adds what the ledger lacks and never changes what it holds),
+ * reconciliation runs, and the figures are read again. Nothing the file did survives the
+ * rollback: other visitors' numbers never move, and nothing is published or audited. The before
+ * and after figures are kept on the upload's own dry run (summary.preview), which a new dry run,
+ * Delete now and expiry remove.
+ *
+ * Reconcile-only datasets (ad spend, CRM payments) are counted too: never published, but a private
+ * copy may show what the dashboard would read if their new rows were counted. Their pages say so.
+ *
+ * It answers "busy" (503) rather than queue behind another copy or a reconciliation: it holds one
+ * of a remote database's few connections while it runs, and statements are bounded.
+ */
+export async function previewUpload(pool: Pool, args: { viewer: Viewer; uploadId: number; now: Date }): Promise<UploadPreview> {
+  const access = requireOnboarding(args.viewer, "count an import in a private copy");
+  await enforceRetention(pool, args.now);
+  const upload = await uploadFor(pool, args.viewer, args.uploadId);
+  if (upload.status !== "staged") throw new ActionError(`This upload is ${upload.status}`, 409);
+  const dry = await latestDryRun(pool, args.uploadId);
+  if (!dry) throw new ActionError("Run a dry run first", 409);
+  if (access === "workspace") {
+    // The copy writes the file's rows before rolling them back: counted like a dry run (§5.2).
+    const sample = (await pool.query<{ sample: boolean }>("select file_sha256 = $2 as sample from onboarding_uploads where id = $1", [upload.id, WORKSPACE.sampleSha256])).rows[0].sample;
+    const capacity = await countRows(pool, upload.rowCount, sample);
+    if (capacity) throw new ActionError(capacity.message, capacity.status);
+  }
+  const preview = await withRollback(pool, async (tx): Promise<UploadPreview> => {
+    await tx.query("set local statement_timeout = '30s'");
+    await tx.query("set local lock_timeout = '5s'");
+    // First, before any row: the order every reconciling transaction keeps (lib/reconcile/reconcile.ts).
+    if (!(await tryLockReconcile(tx))) throw new ActionError("Another private copy is being counted right now. Try again in a few seconds.", 503);
+    const before = await dashboardSnapshot(tx);
+    const table = await loadTable(tx, upload, args.now);
+    const m = (await tx.query<{ spec: MappingSpec; spec_hash: string }>("select spec, spec_hash from onboarding_mappings where id = $1", [dry.mappingId])).rows[0];
+    if (!m || m.spec_hash !== dry.specHash) throw new ActionError("The dry run's mapping changed since it ran; run the dry run again", 409);
+    const target = DATASETS[m.spec.dataset];
+    const outcomes = scoped(args.viewer, m.spec.dataset, compileRows(table, m.spec, args.now));
+    const ledger = await compareWithLedger(tx, m.spec.dataset, outcomes);
+    const stillNew = new Set(ledger.rows.filter((r) => r.disposition === "eligible").map((r) => r.row));
+    const dryEligible = new Set(
+      (await tx.query<{ row_ref: number }>("select row_ref from onboarding_row_results where dry_run_id = $1 and disposition = 'eligible'", [dry.id])).rows.map((r) => r.row_ref),
+    );
+    const toCount = outcomes.filter((o): o is Extract<RowOutcome, { disposition: "eligible" }> => o.disposition === "eligible" && stillNew.has(o.row) && dryEligible.has(o.row));
+    const stats = toCount.length
+      ? await ingestRecords(tx, { source: target.source, records: toCount.map((o) => o.record), mapper: mapperFor(target.source), ctx: referenceContext, runId: null, now: args.now })
+      : { inserted: 0, duplicates: 0, quarantined: 0 };
+    await reconcile(tx, args.now);
+    const after = await dashboardSnapshot(tx);
+    return {
+      version: 1,
+      computedAt: args.now.toISOString(),
+      dryRunId: dry.id,
+      dataset: m.spec.dataset,
+      authority: target.authority,
+      counted: { rows: toCount.length, inserted: stats.inserted, duplicates: stats.duplicates, quarantined: stats.quarantined, skipped: dryEligible.size - toCount.length },
+      change: compareSnapshots(before, after),
+    };
+  });
+  await pool.query("update onboarding_dry_runs set summary = summary || jsonb_build_object('preview', $2::jsonb) where id = $1 and upload_id = $3", [dry.id, JSON.stringify(preview), args.uploadId]);
+  return preview;
 }
 
 /**

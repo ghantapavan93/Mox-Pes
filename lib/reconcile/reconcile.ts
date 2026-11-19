@@ -41,6 +41,17 @@ export async function lockReconcile(tx: Queryable): Promise<void> {
   await tx.query("select pg_advisory_xact_lock($1)", [RECONCILE_LOCK]);
 }
 
+/**
+ * The same lock, without waiting: false at once when another transaction holds it. For work
+ * that should answer "busy" rather than queue, such as a visitor's private copy
+ * (lib/onboarding/service.ts, previewUpload), which holds one of a remote database's few
+ * connections while it runs. Taken first, as lockReconcile is.
+ */
+export async function tryLockReconcile(tx: Queryable): Promise<boolean> {
+  const { rows } = await tx.query<{ locked: boolean }>("select pg_try_advisory_xact_lock($1) as locked", [RECONCILE_LOCK]);
+  return rows[0].locked;
+}
+
 const DETECTORS: string[] = [
   // 1. Source records that failed validation, grouped by source + error + branch, with
   //    the business impact: customers whose only lead record is sitting in quarantine.

@@ -29,6 +29,16 @@ const CAPTIONS = [
   "Correction verified. Budget move not approved.",
 ];
 
+/** The stack, in one line a part: what an engineer would ask first. Counts are left out: they move with every release. */
+const BUILT: Array<[string, string]> = [
+  ["App", "Next.js App Router and TypeScript, server-rendered and streamed, deployed on Vercel."],
+  ["Ledger", "Postgres. Every source lands once per record version through a versioned mapper; each metric is defined once in SQL."],
+  ["Reconciliation", "Detectors written in SQL turn disagreements between ads, calls, web leads, door-to-door and the CRM into incidents with evidence."],
+  ["Safe changes", "A fix is dry-run in a transaction that rolls back, approved by a different role, applied once and audited."],
+  ["Investigator", "Read-only tools with role and branch scope; every finding cites a stored record."],
+  ["Tests", "Over a thousand unit and integration tests on a real Postgres, and browser journeys with accessibility and layout-shift gates, run before every release."],
+];
+
 /** Four words the product uses, in plain terms. */
 const WORDS: Array<[string, string]> = [
   ["CAC", "Customer acquisition cost: paid ad spend divided by the new customers those ads brought in."],
@@ -114,7 +124,7 @@ export default function StartPage() {
             <WayIn
               icon={<FileUp aria-hidden className="size-5" />}
               title="Try your own file"
-              text="Upload an export (CSV, XLSX or JSON) and read what was understood, what was counted, and what was held back and why. A visitor's file is compared with the ledger, never added to it, and deleted after 24 hours."
+              text="Upload an export (CSV, XLSX or JSON), or start with the sample of calls the feed missed. Read what was understood, counted and held back, then count it in a private copy: your own dashboard shows the figures with your file in them. Nobody else's numbers move, and the file is deleted after 24 hours."
               action={
                 <ButtonLink href="/onboarding" testId="start-upload">
                   Upload a file
@@ -124,6 +134,16 @@ export default function StartPage() {
           </ul>
         </section>
       </div>
+
+      <Card title="How it is built" subtitle="For engineers: the whole stack is in this site, and every part of it is tested" testId="start-built">
+        <ul className="grid gap-x-6 gap-y-2 text-sm leading-6 text-muted md:grid-cols-2">
+          {BUILT.map(([what, how]) => (
+            <li key={what}>
+              <span className="font-medium text-text">{what}.</span> {how}
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Words you will see">

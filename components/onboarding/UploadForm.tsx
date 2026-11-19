@@ -7,6 +7,7 @@ import { tooLargeMessage } from "@/lib/onboarding/limits";
 
 /** Synthetic exports (public/samples/README.md lists every deliberate difference from the ledger). */
 export const SAMPLES: Array<{ file: string; label: string; what: string }> = [
+  { file: "missed-calls-b01.csv", label: "Calls the feed missed: B01 Alder", what: "8 paid calls for customers with no lead record. Count them and watch B01’s cost per customer move" },
   { file: "demo-crm-payments.csv", label: "CRM payments export", what: "Disagrees with the ledger on 2 payments; an invoice Total; damaged ids" },
   { file: "demo-calls.csv", label: "Call-tracking export", what: "US dates, branch names, a duplicate, an injected note" },
   { file: "demo-google-ads.csv", label: "Google Ads daily report", what: "Title lines, a total row, one restated day" },

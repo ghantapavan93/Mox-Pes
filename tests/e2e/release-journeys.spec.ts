@@ -479,6 +479,74 @@ test.describe("J5 · Start here and the visitor tour", () => {
   });
 });
 
+test.describe("J6 · your own file on your own dashboard", () => {
+  /** "$392.50" → 39250. */
+  const cents = (s: string) => Math.round(Number(s.replace(/[$,]/g, "")) * 100);
+
+  test("@core a visitor counts a file privately: their dashboard moves, nobody else's does", async ({ browser }) => {
+    test.setTimeout(240_000);
+    const a = await newPage(browser);
+    const b = await newPage(browser);
+    let uploadPath: string | null = null;
+    try {
+      // The missed-calls sample (public/samples/missed-calls-b01.csv), through the real upload path.
+      await a.goto("/onboarding");
+      await a.getByRole("button", { name: /Calls the feed missed/ }).click();
+      await a.waitForURL(/\/onboarding\/\d+$/, { timeout: 60_000 });
+      uploadPath = new URL(a.url()).pathname;
+      await answerAndCompare(a);
+      await expect(a.getByTestId("upload-result")).toContainText("8 of 8 rows passed every check");
+      await expect(a.getByTestId("count-privately")).toBeVisible();
+      expect(await a.locator(PRIMARY).count()).toBe(1);
+
+      // Counted in a private copy: the visitor's dashboard opens with B01's figures moved.
+      await a.getByTestId("count-privately").click();
+      await a.waitForURL(/\/onboarding\/\d+\/dashboard$/, { timeout: 90_000 });
+      const headline = a.getByTestId("your-headline");
+      await expect(headline).toContainText("B01 Alder's paid-media CAC moves from");
+      const [, from, to] = /moves from (\$[\d,]+\.\d{2}) to (\$[\d,]+\.\d{2})/.exec((await headline.textContent()) ?? "") ?? [];
+      expect(cents(to), "B01's CAC falls once its customers' paid calls count").toBeLessThan(cents(from));
+      if (NO_DATABASE) {
+        // The hosted copy, as loaded: B01's 37 paid customers become 45 over the same spend.
+        expect([from, to]).toEqual(["$392.50", "$322.73"]);
+      }
+      await expect(a.getByTestId("your-scope")).toContainText("Only you see these figures");
+      await expect(a.getByTestId("your-branches")).toContainText("B01 Alder");
+      await expect(a.getByTestId("your-unchanged")).toContainText("paid media spend");
+      const dashboardPath = new URL(a.url()).pathname;
+      const was = /was (\$[\d,]+\.\d{2})/.exec((await a.getByTestId("your-tiles").textContent()) ?? "")?.[1];
+
+      // Another visitor: the shared Overview reads the "before" figure, and the dashboard is not theirs.
+      await b.goto("/?period=oct");
+      const shared = /Paid-media CAC is (\$[\d,]+\.\d{2})/.exec((await b.locator("main").textContent()) ?? "")?.[1];
+      expect(shared, "the shared company CAC is the figure before the visitor's file").toBe(was);
+      await b.goto(dashboardPath);
+      await expect(b.getByTestId("workspace-not-available")).toBeVisible();
+
+      // The visitor's dashboard passes the same accessibility gate as every page.
+      await a.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
+      const violations = await a.evaluate(async () => {
+        const axe = (window as unknown as { axe: { run: (ctx: Document, opts: unknown) => Promise<{ violations: Array<{ id: string }> }> } }).axe;
+        const r = await axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"] } });
+        return r.violations.map((v) => v.id);
+      });
+      expect(violations).toEqual([]);
+    } finally {
+      // The visitor's file is theirs: delete it, so a run against a deployment leaves nothing.
+      if (uploadPath) {
+        await a.goto(uploadPath);
+        const del = a.getByTestId("delete-now").first();
+        if (await del.count()) {
+          await del.click();
+          await a.waitForURL(/\/onboarding\?deleted=1$/, { timeout: 30_000 });
+        }
+      }
+      await a.context().close();
+      await b.context().close();
+    }
+  });
+});
+
 test.describe("J2 · upload to result, twice", () => {
   test("@core two visitors: A reads its result and follows the ledger; B cannot open it, and nothing shared moves", async ({ browser }) => {
     test.setTimeout(240_000);

@@ -171,13 +171,13 @@ async function Uploads({ searchParams }: Props) {
       </Card>
       {workspace && (
         <Callout title="Comparison workspace on the public demo" testId="workspace-mode">
-          Upload an export and see what it would change: every row is checked and compared with the ledger, and nothing is added to it. Files are counted only in
-          the{" "}
+          Upload an export and see what it would change: every row is checked and compared with the ledger, and nothing is added to it. Then count it in a
+          private copy to see your own dashboard with the file counted; the copy is rolled back, so nobody else&apos;s numbers move. For everyone, a file is
+          counted only in the{" "}
           <a href={LOCAL_DEMO_URL} className="text-accent hover:underline">
             local demo
           </a>
-          , after a second person approves the mapping and publishes; ad-spend and payment files are compared, never counted. This is a public demo: upload a
-          synthetic or test export, not real customer data.
+          , after a second person approves its mapping. This is a public demo: upload a synthetic or test export, not real customer data.
         </Callout>
       )}
       <UploadTerms workspace={workspace} />

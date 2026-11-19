@@ -120,7 +120,15 @@ export async function connectorHealth(db: Queryable, connector: ConnectorRow, sc
     },
   };
   if (n(j.queued) + n(j.running) + n(j.succeeded) + n(j.failed) + n(j.cancelled) === 0) {
-    Object.assign(health, { status: "idle", reason: "No sync has run yet." });
+    // A copy loaded by the data generator holds CRM records that no connector job fetched (the
+    // hosted demo): say where they came from, not only that no sync ran (sharing review, 2026-11-19).
+    const loaded = (await db.query<{ loaded: boolean }>("select exists (select 1 from raw_events where source = 'crm') as loaded")).rows[0].loaded;
+    Object.assign(health, {
+      status: "idle",
+      reason: loaded
+        ? "No connector sync has run on this copy: its CRM records were loaded by the data generator's own run. The connector syncs from its FieldRoutes-style mock on a local copy."
+        : "No sync has run yet.",
+    });
   } else if (latestFailed > 0) {
     Object.assign(health, { status: "failing", reason: `${latestFailed} stream${latestFailed === 1 ? "" : "s"} failed on the latest run and need${latestFailed === 1 ? "s" : ""} a person.` });
   } else if (n(j.retrying) > 0 || recent429) {

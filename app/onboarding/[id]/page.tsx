@@ -2,14 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DecisionPanel } from "@/components/onboarding/DecisionPanel";
+import { CountPrivately } from "@/components/onboarding/CountPrivately";
 import { DeleteNow } from "@/components/onboarding/DeleteNow";
 import { MappingEditor, type ColumnFacts, type EditorDataset } from "@/components/onboarding/MappingEditor";
 import { Badge, ButtonLink, Callout, Card, EmptyState, Forbidden, KV, PageHeader, Pager, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { ActionError } from "@/lib/actions";
-import { count, dateTime } from "@/lib/format";
+import { count, dateTime, money } from "@/lib/format";
 import { WORKSPACE_NOT_AVAILABLE, onboardingAccess } from "@/lib/onboarding/access";
 import type { ColumnProfile } from "@/lib/onboarding/profile";
-import { getUpload, rowResults, type UploadDetail } from "@/lib/onboarding/service";
+import { getUpload, rowResults, type UploadDetail, type UploadPreview } from "@/lib/onboarding/service";
 import { DATASETS, DATASET_IDS, MONEY_MEANINGS } from "@/lib/onboarding/targets";
 import { parseRecordId } from "@/lib/record-id";
 import { BRANCHES } from "@/lib/reference";
@@ -79,6 +80,8 @@ function stepState(detail: UploadDetail, viewer: Viewer, mode: Mode) {
   const published = detail.publication !== null;
   // A comparison with a ledger that holds none of the rows compared nothing: never shown as done.
   const comparedNothing = dry !== null && dry.ledger.counts.matches + dry.ledger.counts.differs === 0;
+  const preview = mode === "workspace" ? (dry?.preview ?? null) : null;
+  const newRows = dry ? (dry.counts.eligible ?? 0) : 0;
   return [
     { key: "upload", title: "Upload", state: "done" as const, note: `${detail.upload.format.toUpperCase()} · ${count(detail.upload.rowCount)} rows` },
     { key: "profile", title: "Profile", state: "done" as const, note: `${detail.table.columns.length} columns${detail.table.warnings.length ? ` · ${detail.table.warnings.length} warnings` : ""}` },
@@ -110,30 +113,39 @@ function stepState(detail: UploadDetail, viewer: Viewer, mode: Mode) {
           state: !dryMapping ? ("todo" as const) : dryMapping.status === "approved" ? ("done" as const) : dryMapping.status === "rejected" ? ("blocked" as const) : ("waiting" as const),
           note: !dryMapping ? "After the dry run" : dryMapping.status === "proposed" ? `Waiting for a role other than ${dryMapping.proposedRole}${viewer.can.approve ? "" : " (an approver)"}` : `${dryMapping.status} by ${dryMapping.decidedBy}`,
         },
-    {
-      key: "outcome",
-      title: authority === "reconcile" ? "Reconcile with ledger" : mode === "workspace" ? "Count" : "Publish",
-      state: published
-        ? ("done" as const)
-        : authority === "reconcile" && dry
-          ? comparedNothing
-            ? ("none" as const)
-            : ("done" as const)
-          : mode === "workspace" && authority !== "reconcile"
-            ? ("elsewhere" as const)
-            : ("todo" as const),
-      note: published
-        ? `Published ${count((detail.publication!.stats as { published?: number }).published ?? 0)} rows`
-        : authority === "reconcile"
-          ? dry
-            ? comparedNothing
-              ? "The ledger holds none of these rows"
-              : `${count(dry.counts.differs_from_ledger)} differ from the ledger`
-            : "Compare only: never published"
-          : mode === "workspace"
-            ? "Never on the public demo"
-            : "Approved rows go through intake",
-    },
+    mode === "workspace"
+      ? {
+          key: "outcome",
+          title: "Count privately",
+          state: preview ? ("done" as const) : newRows > 0 ? ("todo" as const) : ("nothing" as const),
+          note: preview
+            ? `${plural(preview.counted.rows, "row")} counted in your private copy`
+            : newRows > 0
+              ? "Only you see it; the copy is rolled back"
+              : dry
+                ? "Nothing new in this file to count"
+                : "After the dry run",
+        }
+      : {
+          key: "outcome",
+          title: authority === "reconcile" ? "Reconcile with ledger" : "Publish",
+          state: published
+            ? ("done" as const)
+            : authority === "reconcile" && dry
+              ? comparedNothing
+                ? ("none" as const)
+                : ("done" as const)
+              : ("todo" as const),
+          note: published
+            ? `Published ${count((detail.publication!.stats as { published?: number }).published ?? 0)} rows`
+            : authority === "reconcile"
+              ? dry
+                ? comparedNothing
+                  ? "The ledger holds none of these rows"
+                  : `${count(dry.counts.differs_from_ledger)} differ from the ledger`
+                : "Compare only: never published"
+              : "Approved rows go through intake",
+        },
   ];
 }
 
@@ -163,7 +175,9 @@ type DryRunIssue = NonNullable<UploadDetail["dryRun"]>["issues"][number];
  * one next action (BYOF-WORKFLOW.md). Every figure is the dry run's own; the profile, mapping,
  * counts and every row stay below it.
  */
-function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry: NonNullable<UploadDetail["dryRun"]>; mode: Mode; startedAt: string | null }) {
+function ResultCard({ uploadId, dry, mode, startedAt, canCount }: { uploadId: number; dry: NonNullable<UploadDetail["dryRun"]>; mode: Mode; startedAt: string | null; canCount: boolean }) {
+  // A visitor's file counted in a private copy (previewUpload): its dashboard is one link away.
+  const preview = mode === "workspace" ? (dry.preview ?? null) : null;
   const c = dry.counts;
   const counted = (c.eligible ?? 0) + (c.matches_ledger ?? 0) + (c.differs_from_ledger ?? 0);
   const compared = dry.ledger.counts.matches + dry.ledger.counts.differs;
@@ -202,7 +216,7 @@ function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry:
           : dry.authority === "reconcile"
             ? "Compare only: this export can show differences from the ledger; it never changes the ledger."
             : mode === "workspace"
-              ? "On the public demo a file is compared, never counted: rows are counted only in the local demo, after a second person approves the mapping."
+              ? "The shared ledger never holds a visitor's file. Counted, it moves only your private copy, which is rolled back: nobody else's numbers change."
               : "An approver, a different role, must approve the mapping before these rows are published.";
 
   const next =
@@ -225,8 +239,17 @@ function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry:
         <span className="font-semibold">Limitation: </span>
         {limitation}
       </p>
+      {preview && <PreviewLine preview={preview} />}
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <ButtonLink href={next.href} variant="primary" testId="result-next">
+        {/* One primary: the visitor's dashboard once counted, counting it while there are new rows, else the rows. */}
+        {preview ? (
+          <ButtonLink href={`/onboarding/${uploadId}/dashboard`} variant="primary" testId="open-dashboard">
+            Open my dashboard
+          </ButtonLink>
+        ) : (
+          canCount && <CountPrivately uploadId={uploadId} />
+        )}
+        <ButtonLink href={next.href} variant={preview || canCount ? "secondary" : "primary"} testId="result-next">
           {next.label}
         </ButtonLink>
         <span className="text-xs text-faint">The file&apos;s profile, the mapping and every row&apos;s outcome are below.</span>
@@ -234,16 +257,31 @@ function ResultCard({ uploadId, dry, mode, startedAt }: { uploadId: number; dry:
       {/* After the next step, so a phone's first screen holds the answer and the action (route audit). */}
       {mode === "workspace" && (
         <p className="mt-3 border-t border-border pt-3 text-sm text-muted" data-testid="workspace-label">
-          <span className="font-semibold text-text">Comparison workspace on the public demo.</span> Nothing was added to the ledger. Files are counted only in the{" "}
+          <span className="font-semibold text-text">Comparison workspace on the public demo.</span> Nothing was added to the ledger. Your private copy counts
+          the file for you alone and is rolled back, so nobody else&apos;s numbers move. For everyone, a calls or web-leads file is counted only in the{" "}
           <a href={LOCAL_DEMO_URL} className="text-accent hover:underline">
             local demo
           </a>
-          , after a second person approves the mapping and publishes; ad-spend and payment files are compared, never counted.
+          , after a second person approves its mapping; ad-spend and payment files never are.
           {startedAt ? ` ${availabilitySentence(startedAt)}` : ""}{" "}
           <DeleteNow uploadId={uploadId} />
         </p>
       )}
     </section>
+  );
+}
+
+/** A counted copy's headline on the result card: the branch that moved most, then the company. */
+function PreviewLine({ preview }: { preview: UploadPreview }) {
+  const top = preview.change.branches[0];
+  const { before, after } = preview.change.company;
+  return (
+    <p className="mt-3 rounded-md border border-accent/30 bg-accent-soft px-3 py-2 text-sm" data-testid="preview-line">
+      <span className="font-semibold">Counted in your private copy: </span>
+      {top
+        ? `${top.after.branchId} ${top.after.name}'s paid-media CAC ${money(top.before.paidCacCents)} → ${money(top.after.paidCacCents)}; all branches ${money(before.paidCacCents)} → ${money(after.paidCacCents)}.`
+        : "no branch's figures moved."}
+    </p>
   );
 }
 
@@ -258,6 +296,7 @@ const STEP_STYLE = {
   blocked: { dot: "bg-bad", word: "Rejected" },
   none: { dot: "bg-border-strong", word: "Nothing compared" },
   elsewhere: { dot: "bg-border-strong", word: "Not here" },
+  nothing: { dot: "bg-border-strong", word: "Nothing to count" },
 };
 
 /**
@@ -335,6 +374,8 @@ async function Workspace({ params, searchParams }: Props) {
   const publishedRows = detail.publication ? ((detail.publication.stats as { published?: number }).published ?? 0) : 0;
   const dryCurrent = dry !== null && dryMapping !== null && dry.mappingId === latest?.id;
   const canPublish = viewer.can.approve && staged && dryCurrent && dryMapping?.status === "approved" && (dry?.publishable ?? 0) > 0;
+  // A visitor may count the dry run's new rows in a private, rolled-back copy (previewUpload).
+  const canCount = workspace && staged && dryCurrent && (dry?.counts.eligible ?? 0) > 0;
   const lastPage = Math.max(1, Math.ceil(rows.total / rows.pageSize));
   const hrefFor = (p: number) => `/onboarding/${uploadId}?${new URLSearchParams({ ...(filter ? { rows: filter } : {}), page: String(p) })}#rows`;
 
@@ -375,7 +416,7 @@ async function Workspace({ params, searchParams }: Props) {
         </Callout>
       )}
 
-      {dry && <ResultCard uploadId={uploadId} dry={dry} mode={mode} startedAt={startedAt} />}
+      {dry && <ResultCard uploadId={uploadId} dry={dry} mode={mode} startedAt={startedAt} canCount={canCount} />}
 
       <nav aria-label="Onboarding steps" className="rounded-xl bg-surface p-3 ring-1 ring-text/10" data-testid="step-rail">
         <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-6">

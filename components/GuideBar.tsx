@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { B09_STEPS, GUIDE_ID, PATH_SECONDS, ROLE_LABEL, stepAt, stepHref } from "@/lib/demo/b09-path";
 import { B20_TOUR, TOUR_ID, tourHref, tourPlace, tourStepAt } from "@/lib/demo/b20-tour";
 import { buttonClass } from "@/components/ui";
@@ -37,6 +37,7 @@ export function GuideBar({ roleSwitch }: { roleSwitch: boolean }) {
 function TourBar({ params }: { params: ReadonlyURLSearchParams }) {
   const pathname = usePathname();
   const place = tourPlace({ guide: params.get("guide"), step: params.get("step") ?? undefined, incident: params.get("incident") ?? undefined });
+  useOpenSection(place ? `${place.step.n}|${place.incidentId}` : null);
   if (!place) return null;
   const { step, incidentId } = place;
   const prev = tourStepAt(step.n - 1);
@@ -86,6 +87,51 @@ function TourBar({ params }: { params: ReadonlyURLSearchParams }) {
       </div>
     </nav>
   );
+}
+
+/**
+ * Opens a tour step's section (`#fix-result`, `#evidence`…) once it is shown. Next scrolls to a
+ * `#section` itself on its client-side navigations, but on a full page load (the tour's start is a
+ * redirect; a reload) the browser tries once, while the section may still be streaming in, hidden.
+ * On production 1 load in 3 at 390 px stayed at the top, with the receipt's figure under the tour
+ * bar (journey J5). For five seconds this keeps the section at the top of the window: it scrolls
+ * once the section has a box, and again if content streaming in above it moves it. It stops for
+ * good when the visitor scrolls, presses a key or touches the page, or when the page cannot scroll
+ * any further. `place` changes with the step, so each step opens its own section.
+ */
+function useOpenSection(place: string | null) {
+  useEffect(() => {
+    const id = place ? decodeURIComponent(window.location.hash.slice(1)) : "";
+    if (!id) return;
+    let frame = 0;
+    let stopped = false;
+    const until = performance.now() + 5000;
+    const stop = () => {
+      stopped = true;
+      cancelAnimationFrame(frame);
+    };
+    const events = ["wheel", "touchstart", "keydown", "mousedown"] as const;
+    for (const e of events) window.addEventListener(e, stop, { passive: true, once: true });
+    const open = () => {
+      if (stopped) return;
+      const section = document.getElementById(id);
+      // No client rects: not in the page yet, or still inside a hidden streamed boundary.
+      if (section && section.getClientRects().length > 0) {
+        const margin = parseFloat(getComputedStyle(section).scrollMarginTop) || 0;
+        if (Math.abs(section.getBoundingClientRect().top - margin) > 4) {
+          const before = window.scrollY;
+          section.scrollIntoView({ block: "start" });
+          if (window.scrollY === before) return; // the end of the page: as far as it goes
+        }
+      }
+      if (performance.now() < until) frame = requestAnimationFrame(open);
+    };
+    frame = requestAnimationFrame(open);
+    return () => {
+      stop();
+      for (const e of events) window.removeEventListener(e, stop);
+    };
+  }, [place]);
 }
 
 /** The presenter's rail for the four-minute B09 path. The role button is the demo role switch (POST /api/role). */

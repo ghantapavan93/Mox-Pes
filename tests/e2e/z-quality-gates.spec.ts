@@ -82,8 +82,10 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     // A branch partner's guided demo: the tour of their own branch, without B09's path.
     ["demo-partner", "/demo", "partner"],
     ["demo", "/demo", "marketing"],
-    ["start", "/start", "guest"],
-    ["tour", tour, "guest"],
+    // Staff roles, as every entry: the hydration gate checks the HTML names a non-guest viewer. The
+    // visitor's own walk of these pages is journey J5.
+    ["start", "/start", "marketing"],
+    ["tour", tour, "marketing"],
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],
     ["inquiry", inquiry, "marketing"],

@@ -679,7 +679,10 @@ async function Records({ exception }: { exception: ExceptionRow }) {
                   {s.error_code ? <Badge tone="bad">{s.error_code}</Badge> : <Badge tone="good">projected</Badge>}
                   <div className="mt-1 text-muted">{s.error_detail}</div>
                 </Td>
-                <Td><pre role="region" aria-label="Payload sample" tabIndex={0} className="max-w-xs overflow-x-auto whitespace-pre-wrap break-all text-[10px] text-muted">{JSON.stringify(s.payload, null, 1).slice(0, 420)}</pre></Td>
+                <Td>
+                  {/* One region per row, each named for its record: regions that share a name are one landmark repeated (axe landmark-unique). */}
+                  <pre role="region" aria-label={`Payload of raw event #${s.id}`} tabIndex={0} className="max-w-xs overflow-x-auto whitespace-pre-wrap break-all text-[10px] text-muted">{JSON.stringify(s.payload, null, 1).slice(0, 420)}</pre>
+                </Td>
                 <Td className="text-xs">
                   {(s.customers as Array<{ customerId: number; basis: string; channel: string }> | null)?.map((c) => (
                     <div key={c.customerId}>

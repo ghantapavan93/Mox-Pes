@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense, type ReactNode } from "react";
 import { CommandMenu } from "@/components/CommandMenu";
 import { GuideBar } from "@/components/GuideBar";
@@ -40,6 +41,16 @@ async function ViewerControls() {
       <RoleSwitcher current={viewer.role} guestLabel={workspaceEnabled() ? "Guest (own workspace)" : "Guest (read-only)"} />
     </div>
   );
+}
+
+/**
+ * The guided paths' bar (components/GuideBar.tsx). Whether roles switch is this deployment's demo
+ * mode, read at request time: the flag is given to `next start`, not `next build`, so a value
+ * read while prerendering would bake the build's answer into every page's static shell.
+ */
+async function GuideSlot() {
+  await connection();
+  return <GuideBar roleSwitch={demoModeEnabled()} />;
 }
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -113,7 +124,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </div>
             </header>
             <Suspense fallback={null}>
-              <GuideBar />
+              <GuideSlot />
             </Suspense>
             <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 focus-visible:outline-none lg:px-6">
               {children}

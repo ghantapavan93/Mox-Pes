@@ -1,16 +1,29 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Badge, Card, Forbidden, Skeleton, TableWrap, Td, Th } from "@/components/ui";
+import { Badge, ButtonLink, Card, Forbidden, PageHeader, Skeleton, TableWrap, Td, Th } from "@/components/ui";
 import { B09_STEPS, PATH_SECONDS, ROLE_LABEL, stepHref } from "@/lib/demo/b09-path";
+import { B20_TOUR, TOUR_BRANCH, tourHref } from "@/lib/demo/b20-tour";
+import { repairedTourIncident } from "@/lib/demo/tour-incident";
+import { demoModeEnabled } from "@/lib/demo-mode";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch } from "@/lib/viewer";
 
-export const metadata = { title: "Guided path" };
+export const metadata = { title: "Guided demo" };
+
+/** The repository, for the hands-on path that runs on a local copy. */
+const REPOSITORY = "https://github.com/ghantapavan93/Mox-Pes";
 
 /**
- * /demo — the presenter page for the four-minute B09 golden path (lib/demo/b09-path.ts).
- * Resolves the incident's exception id from the database (ids are not stable across seeds) and
- * says whether the path can be presented as-is or the demo database needs a reseed first.
+ * /demo — the guided paths.
+ *
+ *   - The visitor tour (lib/demo/b20-tour.ts): B20's finished repair, read-only, for anyone who may
+ *     see B20. It is the hosted demo's path: it needs no role and changes no shared data.
+ *   - The four-minute B09 presenter path (lib/demo/b09-path.ts), in demo mode only: it proposes,
+ *     dry-runs, approves and executes a fix, switching roles three times. A deployment without demo
+ *     mode switches no roles (POST /api/role answers 404), so a visitor stopped at its fourth step
+ *     (sharing review, 2026-11-19); there it is described, not offered.
+ *
+ * Incident ids are resolved from the database: they are not stable across seeds.
  */
 export default function DemoPage() {
   return (
@@ -21,11 +34,101 @@ export default function DemoPage() {
 }
 
 async function Demo() {
-  // The path is about B09 and quotes its figures: a viewer who may not see B09 does not see it
-  // (UX red team 2026-11-12, P0: a branch partner and a brand lead read B09's incident here while
-  // /branches/B09 refused them).
   const viewer = await getViewer();
-  if (!canSeeBranch(viewer, "B09")) return <Forbidden message={`The guided path is about branch B09, which is outside your scope (${viewer.label}).`} />;
+  const demoMode = demoModeEnabled();
+  const tour = canSeeBranch(viewer, TOUR_BRANCH);
+  // The presenter path is about B09 and quotes its figures: a viewer who may not see B09 does not see
+  // it (UX red team 2026-11-12, P0: a branch partner and a brand lead read B09's incident here while
+  // /branches/B09 refused them).
+  const presenter = demoMode && canSeeBranch(viewer, "B09");
+  if (!tour && !presenter) {
+    return <Forbidden message={`The guided demos are about branches ${TOUR_BRANCH} and B09, which are outside your scope (${viewer.label}).`} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Guided demo"
+        description={
+          <p className="max-w-3xl">
+            {tour && presenter
+              ? "Two paths. The tour walks a repair that was already made, read-only. The presenter path makes one, switching roles as it goes."
+              : tour
+                ? "A short tour of one repair that was already made: what was wrong, the evidence, who approved the fix, and why a fixed number is not a budget decision."
+                : "The presenter path makes one repair, switching roles as it goes."}{" "}
+            All data is synthetic.
+          </p>
+        }
+      />
+      {tour && (
+        <Suspense fallback={<Skeleton lines={6} />}>
+          <TourCard primary={!presenter} />
+        </Suspense>
+      )}
+      {presenter ? (
+        <Suspense fallback={<Skeleton lines={10} />}>
+          <PresenterPath />
+        </Suspense>
+      ) : (
+        !demoMode && <HandsOnNote />
+      )}
+    </div>
+  );
+}
+
+/** The visitor tour: its steps, and the way in once the repair it walks has been made. */
+async function TourCard({ primary }: { primary: boolean }) {
+  const incident = await repairedTourIncident(getPool());
+  return (
+    <Card title={`Walk through a finished repair · ${TOUR_BRANCH}`} subtitle="Seven short steps, about two minutes. Read-only: nothing you do on it changes the shared data." testId="tour-card">
+      {incident ? (
+        <div className="flex flex-wrap items-center gap-3 text-sm" data-testid="tour-state">
+          <Badge tone="good">Ready</Badge>
+          <span>The repair of incident #{incident.id} is on record.</span>
+          <ButtonLink href={tourHref(B20_TOUR[0], incident.id)} variant={primary ? "primary" : "secondary"} testId="tour-start">
+            Start the tour →
+          </ButtonLink>
+        </div>
+      ) : (
+        <p className="text-sm text-warn" data-testid="tour-state">
+          {TOUR_BRANCH}&apos;s repair has not been made in this database yet. Make it through the Action Center on its held-calls incident (propose a replay
+          through calls@1.1, dry-run it, then approve and execute it as another role), then come back.
+        </p>
+      )}
+      <ol className="mt-4 space-y-2 text-sm" data-testid="tour-steps">
+        {B20_TOUR.map((s) => (
+          <li key={s.n} className="flex gap-3">
+            <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold text-text">
+              {s.n}
+            </span>
+            <span className="min-w-0">
+              <span className="font-medium text-text">{s.title}.</span> <span className="text-muted">{s.says}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
+/** Outside demo mode: what the presenter path does, and where it runs. */
+function HandsOnNote() {
+  return (
+    <Card title="The hands-on path" subtitle="Propose, dry-run, approve and execute a fix yourself" testId="hands-on-note">
+      <p className="max-w-3xl text-sm leading-6 text-muted">
+        Making a repair needs staff roles (an analyst or engineer proposes it, an engineer dry-runs it, a different role approves it) and it changes the
+        stored records. On this shared site every visitor is a read-only guest, so it runs on a local copy instead:{" "}
+        <a href={`${REPOSITORY}#run-the-demo-locally`} className="font-medium text-accent">
+          run the demo locally
+        </a>{" "}
+        (the project&apos;s README).
+      </p>
+    </Card>
+  );
+}
+
+/** The four-minute B09 path, for a presenter on a demo-mode copy. */
+async function PresenterPath() {
   const { rows } = await getPool().query<{ id: string; status: string }>(
     "select id, status from exceptions where kind = 'channel_coverage_gap' and branch_id = 'B09' order by id desc limit 1",
   );
@@ -38,7 +141,7 @@ async function Demo() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">The four-minute path: B09</h1>
+        <h2 className="text-lg font-semibold tracking-tight">The four-minute path: B09</h2>
         <p className="mt-1 max-w-3xl text-sm text-muted">
           One incident from the number a marketer would act on to the audit row that proves who changed what. Synthetic data: Google&apos;s Local
           Services → Performance Max change is real; this branch, its dates and the pipeline failure are invented.

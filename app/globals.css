@@ -109,6 +109,33 @@ body {
   }
 }
 
+/* The visitor tour's bar (components/GuideBar.tsx) is fixed to the bottom of the content column,
+   beside the sidebar, never over it: the sidebar's footer says the data is synthetic. While it is
+   shown, the page gets room below its last line, and a focused control scrolls clear of it
+   (WCAG 2.4.11), so nothing ends up under the bar. */
+@media (min-width: 1024px) {
+  [data-tour-bar] {
+    left: 15rem;
+  }
+  html[data-sidebar="collapsed"] [data-tour-bar] {
+    left: 4rem;
+  }
+}
+html:has([data-tour-bar]) {
+  scroll-padding-bottom: 12rem;
+}
+body:has([data-tour-bar]) main#main {
+  padding-bottom: 12rem;
+}
+@media (min-width: 1024px) {
+  html:has([data-tour-bar]) {
+    scroll-padding-bottom: 7rem;
+  }
+  body:has([data-tour-bar]) main#main {
+    padding-bottom: 7rem;
+  }
+}
+
 /* A grid cell may shrink below its widest table, which then scrolls inside its panel instead of
    widening the page (pinned by tests/e2e/z-layout.spec.ts at 1440/1280/768/390 px). */
 .grid > * {

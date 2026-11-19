@@ -23,7 +23,8 @@ type RunState =
  * The question box. Submits to POST /api/investigations with `stream: true` and renders the
  * NDJSON trace as it arrives (each tool call, the analyst pass, the planner's proposals); when
  * the investigation finishes it opens the result page. If the stream breaks, the steps already
- * recorded are on the server and the result page is linked.
+ * recorded are on the server and the result page is linked. `resultQuery` is kept on the result
+ * page's URL: on the visitor tour it is the tour's place, so the tour bar stays on the answer.
  */
 export function InvestigateForm({
   branches,
@@ -33,6 +34,7 @@ export function InvestigateForm({
   canInvestigate,
   denyReason,
   help,
+  resultQuery = "",
 }: {
   branches: Array<{ id: string; label: string }>;
   suggestions: Suggestion[];
@@ -42,6 +44,8 @@ export function InvestigateForm({
   denyReason: string;
   /** What asking does, for this viewer; the default is the staff wording. */
   help?: string;
+  /** A query string ("?guide=…") for the result page's URL, or "". */
+  resultQuery?: string;
 }) {
   const router = useRouter();
   const ids = { question: useId(), branch: useId(), help: useId() };
@@ -82,7 +86,7 @@ export function InvestigateForm({
           if (event.type === "step") steps.push(event.step);
           if (event.type === "error") throw new Error(event.message);
           if (event.type === "done") {
-            router.push(`/investigator/${event.id}`);
+            router.push(`/investigator/${event.id}${resultQuery}`);
             return;
           }
           setRun({ state: "running", id, steps: [...steps] });
@@ -191,7 +195,7 @@ export function InvestigateForm({
               {run.id ? ` · investigation #${run.id}` : ""}
             </span>
             {run.id && run.state === "error" && (
-              <Link href={`/investigator/${run.id}`} className="text-accent hover:underline">
+              <Link href={`/investigator/${run.id}${resultQuery}`} className="text-accent hover:underline">
                 Open what was recorded
               </Link>
             )}

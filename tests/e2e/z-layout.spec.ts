@@ -44,6 +44,7 @@ const PAGES = (incident: string, upload: string): Array<[string, string]> => [
   ["onboarding-upload", upload],
   ["branch", "/branches/B09?period=oct"],
   ["demo", "/demo"],
+  ["start", "/start"],
 ];
 
 test.describe("layout · no horizontal page scroll", () => {

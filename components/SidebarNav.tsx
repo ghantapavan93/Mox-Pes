@@ -6,6 +6,7 @@ import { useSyncExternalStore } from "react";
 import {
   BookOpen,
   Bot,
+  Compass,
   FlaskConical,
   LayoutDashboard,
   type LucideIcon,
@@ -23,9 +24,10 @@ import {
 } from "lucide-react";
 import { NAV, type NavItem } from "@/lib/nav";
 
-const GROUPS: NavItem["group"][] = ["Operate", "Understand", "Systems"];
+const GROUPS: NavItem["group"][] = ["Start", "Operate", "Understand", "Systems"];
 
 const ICON: Record<string, LucideIcon> = {
+  "/start": Compass,
   "/": LayoutDashboard,
   "/exceptions": Siren,
   "/investigator": Bot,
@@ -53,7 +55,8 @@ function NavLinks({ pathname }: { pathname: string | null }) {
     <nav aria-label="Main" className="space-y-5">
       {GROUPS.map((group) => (
         <div key={group}>
-          <p data-sidebar-label className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-shell-muted">{group}</p>
+          {/* "Start here" stands alone above the groups: a heading would only repeat it. */}
+          {group !== "Start" && <p data-sidebar-label className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-shell-muted">{group}</p>}
           <ul className="space-y-0.5">
             {NAV.filter((n) => n.group === group).map((n) => {
               const active = isActive(pathname, n.href);

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runInvestigation } from "@/lib/ai/investigate";
 import { resolveEvidence } from "@/lib/ai/queries";
 import { applyHostedCorrection, type HostedCorrection } from "@/lib/demo/hosted-correction";
+import { repairedTourIncident } from "@/lib/demo/tour-incident";
 import { seed } from "@/lib/sim/seed";
 import { workspaceViewer } from "@/lib/viewer";
 import { subjectOf } from "@/lib/workspace";
@@ -23,6 +24,8 @@ const pool = testPool();
 const NOW = new Date("2026-10-31T13:00:00Z");
 const visitor = workspaceViewer(subjectOf("r".repeat(43)));
 let receipt: HostedCorrection;
+/** The visitor tour's incident (lib/demo/tour-incident.ts) on the seeded world, before the repair. */
+let tourBeforeRepair: { id: number } | null;
 
 const ask = (question: string) => runInvestigation(pool, { question, branchId: null, viewer: visitor, now: NOW });
 const textOf = (out: Awaited<ReturnType<typeof ask>>) => out.result.observations.map((o) => o.text).join("\n");
@@ -30,6 +33,7 @@ const citedBy = (out: Awaited<ReturnType<typeof ask>>) => new Set(out.result.obs
 
 beforeAll(async () => {
   await seed(pool);
+  tourBeforeRepair = await repairedTourIncident(pool);
   const done = await applyHostedCorrection(pool);
   if (!done) throw new Error("the seeded world has no open B20 quarantine to correct");
   receipt = done;
@@ -40,6 +44,11 @@ afterAll(async () => {
 });
 
 describe("B20's October CAC, after the approved repair", () => {
+  it("the visitor tour walks the incident the repair resolved, and none before it was made", async () => {
+    expect(tourBeforeRepair).toBeNull();
+    expect(await repairedTourIncident(pool)).toEqual({ id: receipt.exceptionId });
+  });
+
   it("the hosted copy holds the receipt the answer reads", () => {
     expect([receipt.before?.paidCacCents, receipt.after?.paidCacCents]).toEqual([49_011, 27_131]);
     expect([receipt.before?.paidAcquired, receipt.after?.paidAcquired]).toEqual([31, 56]);

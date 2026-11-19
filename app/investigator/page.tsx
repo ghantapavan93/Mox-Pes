@@ -12,6 +12,7 @@ import { listInquiries } from "@/lib/inquiry/store";
 import { getException } from "@/lib/queries";
 import { BRANCHES } from "@/lib/reference";
 import { demoModeEnabled } from "@/lib/demo-mode";
+import { tourPlace, tourQuery } from "@/lib/demo/b20-tour";
 import { getPool, getViewer } from "@/lib/server";
 import { canSeeBranch, type Viewer } from "@/lib/viewer";
 import { availabilitySentence, deleteExpiredWorkspace } from "@/lib/workspace";
@@ -78,6 +79,8 @@ async function Investigator({ searchParams }: { searchParams: SearchParams }) {
   if (!initialBranch && branchParam && /^B\d{2}$/.test(branchParam) && canSeeBranch(viewer, branchParam)) initialBranch = branchParam;
 
   const branches = BRANCHES.filter((b) => canSeeBranch(viewer, b.id)).map((b) => ({ id: b.id, label: `${b.id} ${b.name}` }));
+  // On the visitor tour (lib/demo/b20-tour.ts) the answer opens on the tour's same step, bar and all.
+  const tour = tourPlace({ guide: one(sp.guide), step: one(sp.step), incident: one(sp.incident) });
   return (
     <div className="space-y-4">
       {workspace ? (
@@ -118,6 +121,7 @@ async function Investigator({ searchParams }: { searchParams: SearchParams }) {
             suggestions={suggestions}
             initialQuestion={initialQuestion}
             initialBranch={initialBranch}
+            resultQuery={tour ? tourQuery(tour.step.n, tour.incidentId) : ""}
             canInvestigate={canAsk}
             help={workspace ? "Reads the stored records with the same read-only tools and cites each one. On the public demo it answers by the deterministic evidence path and drafts no fix." : undefined}
             denyReason={

@@ -69,7 +69,8 @@ export async function FixResult({ exception, viewer }: { exception: ExceptionRow
   const signal = b1.budgetSignal;
 
   return (
-    <section aria-labelledby="fix-result-title" className="overflow-hidden rounded-xl bg-surface ring-1 ring-text/10" data-testid="fix-result">
+    // `id`: the visitor tour opens the receipt at the top of the window (lib/demo/b20-tour.ts).
+    <section id="fix-result" aria-labelledby="fix-result-title" className="scroll-mt-28 overflow-hidden rounded-xl bg-surface ring-1 ring-text/10" data-testid="fix-result">
       <div className="flex items-start gap-2 bg-good-soft px-4 py-2.5">
         <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0 text-good" />
         <p className="min-w-0 text-sm leading-5">

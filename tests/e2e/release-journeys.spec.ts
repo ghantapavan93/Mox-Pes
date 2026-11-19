@@ -21,6 +21,11 @@ import { clearWorkspace, expireWorkspaceItem, incidentOf, ledgerCalls, seedRepla
  *
  * J4 · The investigator, as a visitor: a question asked by keyboard, answered by the deterministic
  * evidence path in the visitor's own workspace, citing records that open.
+ *
+ * J5 · Start here and the visitor tour: the page a link opens first says what the product does and
+ * plays its walkthrough; the tour walks B20's finished repair in seven steps, its bar always in
+ * view, with no role and no action; the guided demo offers a role step only where roles switch
+ * (sharing review, 2026-11-19: on the hosted site the B09 path stopped at "Use this role").
  */
 
 test.describe.configure({ mode: "serial" });
@@ -128,6 +133,26 @@ async function newPage(browser: Browser, options: BrowserContextOptions = {}) {
   return (await browser.newContext(options)).newPage();
 }
 
+/**
+ * B20's held-calls incident, repaired: golden-path.spec.ts repairs it earlier in the suite, and the
+ * hosted copy carries the repair (lib/demo/hosted-correction.ts). Run alone, it is repaired here the
+ * same way, through the Action Center. Returns its id; leaves the approver role active.
+ */
+async function ensureB20Repaired(page: Page): Promise<number> {
+  const b20 = await incidentOf("B20", "quarantined_source_records");
+  expect(b20, "the seeded world has B20's quarantine incident").not.toBeNull();
+  if (b20!.status !== "resolved") {
+    await page.goto(`/exceptions/${b20!.id}`);
+    await fixThroughActionCenter(page, {
+      kind: "replay_quarantine",
+      mapper: "1.1",
+      rationale: "calls@1.1 reads the renamed caller field; replay the held records",
+      approval: "Dry run projects every held record and conserves the ledger",
+    });
+  }
+  return b20!.id;
+}
+
 test.describe("J1 · the Overview chart: select, then open; Back restores", () => {
   test("@core hover a point: the tooltip says what the panel says once it is selected", async ({ page }) => {
     await page.goto(B09);
@@ -228,20 +253,9 @@ test.describe("J3 · incidents and the Decision Lab", () => {
     expect(await page.locator(PRIMARY).count()).toBe(0);
 
     // B20's receipt, from its stored execution: Corrected and Approved, October first, the window below.
-    const b20 = await incidentOf("B20", "quarantined_source_records");
-    expect(b20, "the seeded world has B20's quarantine incident").not.toBeNull();
-    if (b20!.status !== "resolved") {
-      // Run alone (golden-path.spec.ts fixes it earlier in the suite): fix it the same way.
-      await page.goto(`/exceptions/${b20!.id}`);
-      await fixThroughActionCenter(page, {
-        kind: "replay_quarantine",
-        mapper: "1.1",
-        rationale: "calls@1.1 reads the renamed caller field; replay the held records",
-        approval: "Dry run projects every held record and conserves the ledger",
-      });
-    }
+    const b20 = await ensureB20Repaired(page);
     await setRole(page, "marketing");
-    await page.goto(`/exceptions/${b20!.id}`);
+    await page.goto(`/exceptions/${b20}`);
     const receipt = page.getByTestId("fix-result");
     await expect(receipt.getByTestId("fix-result-corrected")).toContainText("Corrected");
     await expect(receipt.getByTestId("fix-result-approved")).toContainText(/Approved.*by .+, [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M UTC/);
@@ -317,6 +331,151 @@ test.describe("J4 · the investigator, as a visitor", () => {
     await page.keyboard.press("Escape");
     await expect(cite).toBeFocused();
     expect(await page.locator(PRIMARY).count()).toBeLessThanOrEqual(1);
+  });
+});
+
+test.describe("J5 · Start here and the visitor tour", () => {
+  /** Whether this deployment switches roles (demo mode): only then does the header offer the picker. */
+  async function rolesSwitch(page: Page): Promise<boolean> {
+    await expect(page.getByTestId("viewer-label")).toBeAttached();
+    return (await page.getByTestId("role-switcher").count()) > 0;
+  }
+
+  test("@core a visitor reads Start here and walks the tour to its end, the bar in view at every step", async ({ page, browser }) => {
+    test.setTimeout(240_000);
+    if (!NO_DATABASE) await ensureB20Repaired(page);
+    const visitor = await newPage(browser);
+    let question: string | null = null;
+    try {
+      // Start here: two sentences, the walkthrough and its words, three ways in.
+      await visitor.goto("/start");
+      await expect(visitor.getByRole("heading", { level: 1 })).toHaveText("Revenue Signal OS");
+      await expect(visitor.getByTestId("start-summary")).toContainText("before anyone moves marketing budget");
+      await expect(visitor.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Start here" })).toHaveAttribute("aria-current", "page");
+      await expect(visitor.getByTestId("start-video").locator("video source")).toHaveAttribute("src", "/media/b20-receipt-walkthrough.mp4");
+      const mp4 = await visitor.request.get("/media/b20-receipt-walkthrough.mp4", { headers: { range: "bytes=0-1023" } });
+      expect([200, 206], "the walkthrough is served").toContain(mp4.status());
+      expect(mp4.headers()["content-type"]).toBe("video/mp4");
+      expect((await visitor.request.get("/media/b20-receipt-walkthrough.jpg")).status(), "its poster is served").toBe(200);
+      await expect(visitor.getByTestId("start-transcript").locator("li")).toHaveCount(9);
+      expect(await visitor.locator(PRIMARY).count()).toBe(1);
+
+      // The tour: seven steps, the bar in view at each, and no action a visitor could take.
+      await visitor.getByTestId("start-tour").click();
+      await expect(visitor).toHaveURL(/\/exceptions\/\d+\?guide=b20&step=1&incident=\d+#fix-result$/);
+      const bar = visitor.getByTestId("tour-bar");
+      const at = async (n: number, title: string) => {
+        await expect(visitor.getByTestId("tour-step")).toHaveText(`Step ${n} of 7 · ${title}`);
+        await expect(bar).toBeInViewport();
+        await expect(visitor.getByRole("button", { name: /Dry run|Propose fix|Approve|Execute/ })).toHaveCount(0);
+      };
+      const next = async (n: number, title: string) => {
+        await visitor.getByTestId("tour-next").click();
+        await at(n, title);
+      };
+      await at(1, "The result");
+      await expect(visitor.getByTestId("fix-result-cac")).toBeInViewport();
+      await next(2, "Why it moved");
+      await expect(visitor.getByTestId("fix-result-why")).toBeVisible();
+      await expect(visitor.getByTestId("fix-result-unchanged")).toBeVisible();
+      await next(3, "Evidence");
+      await expect(visitor.locator("#evidence")).toBeInViewport();
+      await expect(visitor.locator("#evidence")).toContainText("MISSING_FIELD");
+      await next(4, "Held records");
+      await expect(visitor.locator("#records")).toBeInViewport();
+      await next(5, "Approval");
+      const audit = visitor.getByTestId("case-audit");
+      await expect(audit).toBeInViewport();
+      for (const action of ["proposal_create", "proposal_dry_run", "proposal_approve", "proposal_execute"]) await expect(audit).toContainText(action);
+
+      // The investigator, pre-filled; the answer opens on the same step, bar and all.
+      await next(6, "Ask the investigator");
+      await expect(visitor.getByLabel("Question")).toHaveValue("Why did B20's CAC jump in October?");
+      await visitor.getByTestId("investigate-submit").click();
+      await visitor.waitForURL(/\/investigator\/\d+\?guide=b20&step=6&incident=\d+$/, { timeout: 90_000 });
+      question = new URL(visitor.url()).pathname;
+      await at(6, "Ask the investigator");
+      await expect(visitor.getByTestId("tour-say")).toContainText("Each finding cites the stored record it rests on");
+      await expect(visitor.getByTestId("findings")).toBeVisible();
+
+      await next(7, "The budget decision");
+      await expect(visitor).toHaveURL(/\/decisions\?branch=B20&period=oct&guide=b20&step=7&incident=\d+$/);
+      await expect(visitor.getByTestId("readiness-summary")).toBeVisible();
+      await expect(visitor.getByRole("button", { name: /approve/i })).toHaveCount(0);
+      await visitor.getByTestId("tour-done").click();
+      await expect(visitor).toHaveURL(/\/start$/);
+      await expect(visitor.getByTestId("tour-bar")).toHaveCount(0);
+    } finally {
+      // The visitor's question is theirs: delete it, so a run against a deployment leaves nothing.
+      if (question) {
+        await visitor.goto(question);
+        await visitor.getByRole("button", { name: "Delete it now" }).first().click();
+        await visitor.waitForURL(/\/investigator$/, { timeout: 30_000 });
+      }
+      await visitor.context().close();
+    }
+  });
+
+  test("@core on a phone the tour's bar stays in view and leaves the page most of the screen", async ({ page, browser }) => {
+    if (!NO_DATABASE) await ensureB20Repaired(page);
+    const phone = await newPage(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    try {
+      await phone.goto("/start");
+      await expect(phone.getByTestId("start-video")).toBeVisible();
+      await phone.getByTestId("start-tour").click();
+      await expect(phone.getByTestId("tour-step")).toHaveText("Step 1 of 7 · The result");
+      // The figure the step is about is above the bar, not under it (it was, before the step opened
+      // the receipt). Measured once both are shown: streamed text is in the document before it is.
+      const bar = phone.getByTestId("tour-bar");
+      const figure = phone.getByTestId("fix-result-cac");
+      await expect(bar).toBeInViewport();
+      await expect(figure).toBeInViewport();
+      await expect
+        .poll(async () => {
+          const [f, b] = [await figure.boundingBox(), await bar.boundingBox()];
+          return f !== null && b !== null && f.y >= 0 && f.y + f.height <= b.y;
+        }, { message: "the figure is in the window, above the tour bar" })
+        .toBe(true);
+      await phone.getByTestId("tour-next").click();
+      await expect(phone.getByTestId("tour-step")).toHaveText("Step 2 of 7 · Why it moved");
+      await phone.getByTestId("tour-next").click();
+      await expect(phone.getByTestId("tour-step")).toHaveText("Step 3 of 7 · Evidence");
+      await expect(phone.locator("#evidence")).toBeInViewport();
+      await expect(bar).toBeInViewport();
+      const box = await bar.boundingBox();
+      expect(box!.height, "the bar takes under a third of the screen").toBeLessThan(844 / 3);
+      const { scroll, client } = await phone.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
+      expect(scroll, "no sideways scroll").toBeLessThanOrEqual(client + 1);
+    } finally {
+      await phone.context().close();
+    }
+  });
+
+  test("@core the guided demo offers the tour, and a role step only where roles switch", async ({ page, browser }) => {
+    if (!NO_DATABASE) await ensureB20Repaired(page);
+    const visitor = await newPage(browser);
+    try {
+      await visitor.goto("/demo");
+      await expect(visitor.getByTestId("tour-card")).toBeVisible();
+      await expect(visitor.getByTestId("tour-start")).toHaveAttribute("href", /\/exceptions\/\d+\?guide=b20&step=1&incident=\d+#fix-result$/);
+      const switching = await rolesSwitch(visitor);
+      if (switching) {
+        // A presenter's copy (demo mode): the B09 path is there as well.
+        await expect(visitor.getByTestId("demo-steps")).toBeVisible();
+      } else {
+        // The hosted site: no step a visitor cannot take, and one way in.
+        await expect(visitor.getByTestId("hands-on-note")).toBeVisible();
+        await expect(visitor.getByTestId("demo-steps")).toHaveCount(0);
+        expect(await visitor.locator(PRIMARY).count()).toBe(1);
+      }
+      // An old link into the B09 presenter path: its role button only where it works.
+      await visitor.goto("/?period=oct&guide=b09&step=4&gap=1");
+      await expect(visitor.getByTestId("guide-bar")).toBeVisible();
+      await expect(visitor.getByTestId("guide-use-role")).toHaveCount(switching ? 1 : 0);
+      if (!switching) await expect(visitor.getByTestId("guide-role-off")).toBeVisible();
+    } finally {
+      await visitor.context().close();
+    }
   });
 });
 

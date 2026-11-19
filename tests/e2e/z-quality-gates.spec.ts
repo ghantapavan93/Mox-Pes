@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { setRole, type Role } from "./action-center";
+import { incidentOf } from "./db";
 import { stageSample } from "./onboarding";
 
 /**
@@ -54,6 +55,9 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
   });
   expect(shadowRes.status()).toBe(201);
   const shadow = `/assurance/${(await shadowRes.json()).check.id}`;
+  // The visitor tour's step on the held calls' evidence: its bar fixed over the page.
+  const b20 = await incidentOf("B20", "quarantined_source_records");
+  const tour = b20 ? `/exceptions/${b20.id}?guide=b20&step=3&incident=${b20.id}#evidence` : "/start";
   return [
     ["overview", "/?period=oct", "marketing"],
     ["incidents", "/exceptions", "marketing"],
@@ -73,9 +77,13 @@ async function pages(page: Page): Promise<Array<[string, string, Role]>> {
     ["branch", "/branches/B09?period=oct", "marketing"],
     ["trace", "/branches/B09/trace?period=oct&metric=paid_cac", "marketing"],
     ["cash-trace", "/branches/B09/trace?period=oct&metric=collected", "approver"],
-    // The refusal a branch partner sees for another branch's guided path.
-    ["forbidden", "/demo", "partner"],
+    // The refusal a branch partner sees for another branch.
+    ["forbidden", "/branches/B09?period=oct", "partner"],
+    // A branch partner's guided demo: the tour of their own branch, without B09's path.
+    ["demo-partner", "/demo", "partner"],
     ["demo", "/demo", "marketing"],
+    ["start", "/start", "guest"],
+    ["tour", tour, "guest"],
     ["changes", "/changes", "marketing"],
     ["change", change, "approver"],
     ["inquiry", inquiry, "marketing"],

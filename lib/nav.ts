@@ -7,10 +7,12 @@ export interface NavItem {
   label: string;
   /** Extra words the command menu matches on. */
   keywords: string;
-  group: "Operate" | "Understand" | "Systems";
+  /** "Start" is the one entry above the groups, shown without a heading. */
+  group: "Start" | "Operate" | "Understand" | "Systems";
 }
 
 export const NAV: NavItem[] = [
+  { href: "/start", label: "Start here", keywords: "welcome introduction about what is this video tour guide begin", group: "Start" },
   { href: "/", label: "Overview", keywords: "command center scorecard branches cac revenue", group: "Operate" },
   { href: "/exceptions", label: "Incidents", keywords: "action center cases exceptions approvals replay", group: "Operate" },
   { href: "/investigator", label: "AI Investigator", keywords: "ai investigate why evidence tools", group: "Operate" },
